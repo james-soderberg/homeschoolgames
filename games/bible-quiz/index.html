@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bible Quiz — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <style>
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.07); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-9px); }
+      40%     { transform: translateX(9px); }
+      60%     { transform: translateX(-6px); }
+      80%     { transform: translateX(6px); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .quiz-page {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    /* Top bar */
+    .quiz-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .quiz-top h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .stat-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .stat-badge {
+      background: var(--cream-dark);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      padding: 0.45rem 1rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+
+    .stat-badge.hot {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--ink);
+    }
+
+    /* Verse card */
+    .verse-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 1.75rem 1.5rem 1.5rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .cat-pill {
+      display: inline-block;
+      padding: 0.18rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      font-family: var(--font-sans);
+    }
+    .cat-story     { background: #FFF3D0; color: #7A5C00; }
+    .cat-verse     { background: #D4EEF5; color: #1A5C6B; }
+    .cat-character { background: #E4DAF2; color: #4A2C6B; }
+    .cat-wild      { background: #E4F2E8; color: #2A5C3F; }
+    .cat-trap      { background: #FAE0E0; color: #8B2020; }
+
+    .verse-text {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 5vw, 2.1rem);
+      font-weight: 600;
+      font-style: italic;
+      color: var(--ink);
+      line-height: 1.35;
+      margin-bottom: 0.9rem;
+    }
+    .verse-text::before { content: "\201C"; }
+    .verse-text::after  { content: "\201D"; }
+
+    .verse-blurb {
+      font-size: 1rem;
+      color: var(--ink-light);
+      line-height: 1.5;
+      max-width: 42ch;
+      margin: 0 auto;
+    }
+
+    /* Reveal title (shown after answering) */
+    .reveal-name {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--gold);
+      margin-top: 1rem;
+      min-height: 0;
+    }
+
+    .prompt {
+      text-align: center;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink-light);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.9rem;
+    }
+
+    /* Feedback */
+    .feedback {
+      min-height: 1.9rem;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+    }
+
+    /* Options grid */
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .option-btn {
+      background: white;
+      border: 2.5px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem 0.75rem;
+      font-family: var(--font-serif);
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(26,23,20,0.07);
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+
+    .option-btn .key-hint {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ink-light);
+      background: var(--cream-dark);
+      border-radius: 5px;
+      padding: 0.1rem 0.4rem;
+      flex-shrink: 0;
+    }
+
+    .option-btn .option-val {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.15;
+    }
+
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--gold);
+      background: #FFFDF4;
+      transform: translateY(-2px);
+    }
+
+    .option-btn.correct {
+      background: #EAF4EE;
+      border-color: var(--green);
+      animation: pop 0.3s ease;
+    }
+    .option-btn.correct .option-val { color: var(--green); }
+    .option-btn.correct .key-hint { color: var(--green); }
+
+    .option-btn.wrong {
+      background: #FAE8E8;
+      border-color: var(--red);
+      animation: shake 0.4s ease;
+    }
+    .option-btn.wrong .option-val { color: var(--red); }
+    .option-btn.wrong .key-hint { color: var(--red); }
+
+    .option-btn.reveal-correct {
+      background: #EAF4EE;
+      border-color: var(--green);
+    }
+    .option-btn.reveal-correct .option-val { color: var(--green); }
+    .option-btn.reveal-correct .key-hint { color: var(--green); }
+
+    .option-btn:disabled { cursor: default; transform: none; }
+
+    /* Next button */
+    #nextBtn {
+      display: block;
+      width: 100%;
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      border-radius: 12px;
+      padding: 1.05rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-bottom: 1rem;
+      transition: background 0.15s;
+    }
+    #nextBtn:hover { background: #b08e30; }
+
+    .control-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.25rem;
+    }
+
+    .reset-link {
+      background: none;
+      border: none;
+      color: var(--ink-light);
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      text-decoration: underline;
+      padding: 0.3rem 0.5rem;
+    }
+    .reset-link:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      .option-grid { grid-template-columns: 1fr; }
+      .option-btn { min-height: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← All Games</a>
+  </nav>
+</header>
+
+<div class="quiz-page">
+
+  <div class="quiz-top">
+    <h1>Bible Quiz</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="scoreBadge">0 / 0</div>
+      <div class="stat-badge" id="streakBadge">0 streak</div>
+    </div>
+  </div>
+
+  <div class="verse-card">
+    <span class="cat-pill" id="catPill">Story</span>
+    <div class="verse-text" id="verseText">Loading…</div>
+    <div class="verse-blurb" id="verseBlurb"></div>
+    <div class="reveal-name" id="revealName"></div>
+  </div>
+
+  <div class="prompt">Which book of the Bible is this from?</div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="option-grid" id="optionGrid"></div>
+
+  <button id="nextBtn" onclick="nextCard()" style="display:none">Next Verse →</button>
+
+  <div class="control-row">
+    <button class="reset-link" onclick="resetAll()">Start Over</button>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script>
+// ============================================================
+// BIBLE BOOK QUIZ
+// ============================================================
+
+const DECK = [
+  // TORAH GROUP
+  {name:"Noah's Ark", books:["Genesis"], verse:"Come thou and all thy house into the ark.", blurb:"An ark built to survive the flood.", tier:"gimme", cat:"story"},
+  {name:"Sodom and Gomorrah", books:["Genesis"], verse:"Look not behind thee.", blurb:"Cities of fire. A wife turned to salt.", tier:"medium", cat:"story"},
+  {name:"Wrestling the Angel", books:["Genesis"], verse:"I will not let thee go, except thou bless me.", blurb:"A patriarch wrestles God until dawn.", tier:"niche", cat:"story"},
+  {name:"Joseph's Coat", books:["Genesis"], verse:"Behold, this dreamer cometh.", blurb:"Sold by his brothers in a coat of many colors.", tier:"niche", cat:"story"},
+  {name:"Burning Bush", books:["Exodus"], verse:"I AM THAT I AM.", blurb:"A flame that does not consume.", tier:"medium", cat:"story"},
+  {name:"Parting the Sea", books:["Exodus"], verse:"Stand still, and see the salvation of the LORD.", blurb:"Dry ground between walls of water.", tier:"gimme", cat:"story"},
+  {name:"Golden Calf", books:["Exodus"], verse:"These be thy gods, O Israel.", blurb:"An idol built while the prophet was on the mountain.", tier:"medium", cat:"story"},
+  {name:"Scapegoat", books:["Leviticus"], verse:"The goat shall bear upon him all their iniquities.", blurb:"Sin carried into the wilderness on a goat.", tier:"niche", cat:"story"},
+  {name:"Bronze Serpent", books:["Numbers"], verse:"Make thee a fiery serpent, and set it upon a pole.", blurb:"Lifted up in the wilderness for healing.", tier:"niche", cat:"story"},
+  {name:"The Talking Donkey", books:["Numbers"], verse:"What have I done unto thee, that thou hast smitten me?", blurb:"An animal rebukes its rider.", tier:"niche", cat:"story"},
+  {name:"Shema", books:["Deuteronomy"], verse:"Hear, O Israel: The LORD our God is one LORD.", blurb:"Israel's great confession of faith.", tier:"niche", cat:"verse"},
+
+  // HISTORICAL BOOKS
+  {name:"Walls of Jericho", books:["Joshua"], verse:"Shout; for the LORD hath given you the city.", blurb:"Walls fall to a march and a shout.", tier:"medium", cat:"story"},
+  {name:"Gideon's 300", books:["Judges"], verse:"By the three hundred men... will I save you.", blurb:"Trumpets and pitchers rout an army.", tier:"niche", cat:"story"},
+  {name:"Samson's Strength", books:["Judges"], verse:"If I be shaven, then my strength will go from me.", blurb:"A strongman undone by his hair.", tier:"medium", cat:"story"},
+  {name:"Hannah's Prayer", books:["1 Samuel"], verse:"For this child I prayed.", blurb:"A barren woman prays for a son and receives him.", tier:"niche", cat:"story"},
+  {name:"David and Goliath", books:["1 Samuel"], verse:"I come to thee in the name of the LORD of hosts.", blurb:"A shepherd boy fells a giant with a stone.", tier:"gimme", cat:"story"},
+  {name:"Absalom's Rebellion", books:["2 Samuel"], verse:"O my son Absalom, my son, my son.", blurb:"A prince revolts and dies caught in an oak.", tier:"niche", cat:"story"},
+  {name:"The Widow's Oil", books:["1 Kings"], verse:"The barrel of meal shall not waste.", blurb:"Flour and oil that never run out.", tier:"niche", cat:"story"},
+  {name:"Fire on the Mountain", books:["1 Kings"], verse:"The God that answereth by fire, let him be God.", blurb:"An altar consumed; false prophets fail.", tier:"niche", cat:"story"},
+  {name:"Naboth's Vineyard", books:["1 Kings"], verse:"Hast thou killed, and also taken possession?", blurb:"A king's wife murders a man for his land.", tier:"niche", cat:"story"},
+  {name:"Chariot of Fire", books:["2 Kings"], verse:"There appeared a chariot of fire... and he went up.", blurb:"A prophet taken up in a whirlwind.", tier:"niche", cat:"story"},
+  {name:"Naaman's Leprosy", books:["2 Kings"], verse:"Wash in Jordan seven times.", blurb:"A general healed by dipping in a river.", tier:"niche", cat:"story"},
+  {name:"The Floating Axe", books:["2 Kings"], verse:"And the iron did swim.", blurb:"A borrowed tool lost and miraculously recovered.", tier:"niche", cat:"story"},
+  {name:"If I Perish, I Perish", books:["Esther"], verse:"If I perish, I perish.", blurb:"A queen risks death to save her people.", tier:"niche", cat:"story"},
+
+  // WISDOM BOOKS
+  {name:"Scraping with a Potsherd", books:["Job"], verse:"The LORD gave, and the LORD hath taken away.", blurb:"A righteous man sits in ashes, covered in sores.", tier:"niche", cat:"story"},
+  {name:"Be Still", books:["Psalms"], verse:"Be still, and know that I am God.", blurb:"A command to the anxious soul.", tier:"medium", cat:"verse"},
+  {name:"The Lord is My Shepherd", books:["Psalms"], verse:"The LORD is my shepherd; I shall not want.", blurb:"The most beloved psalm.", tier:"gimme", cat:"verse"},
+  {name:"Trust in the Lord", books:["Proverbs"], verse:"Trust in the LORD with all thine heart; and lean not unto thine own understanding.", blurb:"Wisdom for the path ahead.", tier:"niche", cat:"verse"},
+  {name:"To Every Thing a Season", books:["Ecclesiastes"], verse:"To every thing there is a season, and a time to every purpose.", blurb:"The teacher's meditation on time.", tier:"niche", cat:"verse"},
+
+  // MAJOR PROPHETS
+  {name:"Isaiah's Coal", books:["Isaiah"], verse:"Lo, this hath touched thy lips.", blurb:"A seraph cleanses a prophet's unclean lips.", tier:"niche", cat:"story"},
+  {name:"Plans to Prosper You", books:["Jeremiah"], verse:"Thoughts of peace, and not of evil, to give you an expected end.", blurb:"A letter written to exiles in Babylon.", tier:"niche", cat:"verse"},
+  {name:"New Every Morning", books:["Lamentations"], verse:"His compassions fail not. They are new every morning.", blurb:"Mercy found in the ruins of Jerusalem.", tier:"niche", cat:"verse"},
+  {name:"Valley of Dry Bones", books:["Ezekiel"], verse:"Can these bones live?", blurb:"Bones rattle, connect, and breathe again.", tier:"niche", cat:"story"},
+  {name:"The Fiery Furnace", books:["Daniel"], verse:"Our God whom we serve is able to deliver us.", blurb:"Three men refuse to bow and walk unharmed in fire.", tier:"medium", cat:"story"},
+  {name:"The Lions' Den", books:["Daniel"], verse:"My God hath sent his angel.", blurb:"A man of prayer keeps his window open.", tier:"medium", cat:"story"},
+
+  // MINOR PROPHETS
+  {name:"Swallowed by the Great Fish", books:["Jonah"], verse:"Out of the belly of hell cried I.", blurb:"Three days in the deep.", tier:"medium", cat:"story"},
+  {name:"Let Justice Roll Down", books:["Amos"], verse:"Let judgment run down as waters, and righteousness as a mighty stream.", blurb:"A shepherd-prophet's cry for justice.", tier:"niche", cat:"verse"},
+  {name:"Do Justly, Love Mercy", books:["Micah"], verse:"Do justly, and to love mercy, and to walk humbly with thy God.", blurb:"What the LORD requires.", tier:"niche", cat:"verse"},
+  {name:"The Just Shall Live by Faith", books:["Habakkuk"], verse:"The just shall live by his faith.", blurb:"A watchman waits on his tower.", tier:"niche", cat:"verse"},
+
+  // GOSPEL WILDS (any correct gospel counts)
+  {name:"Nativity", books:["Matthew","Luke"], verse:"Unto you is born this day a Saviour.", blurb:"A child born in Bethlehem, laid in a manger.", tier:"gimme", cat:"wild"},
+  {name:"Sermon on the Mount", books:["Matthew","Luke"], verse:"Blessed are the pure in heart.", blurb:"Teaching on the Beatitudes from a hillside.", tier:"medium", cat:"wild"},
+  {name:"Calming the Storm", books:["Matthew","Mark","Luke"], verse:"Peace, be still.", blurb:"Wind and waves stilled with two words.", tier:"medium", cat:"wild"},
+  {name:"Walking on Water", books:["Matthew","Mark","John"], verse:"Be of good cheer; be not afraid.", blurb:"Footsteps on the sea at night.", tier:"medium", cat:"wild"},
+  {name:"Transfiguration", books:["Matthew","Mark","Luke"], verse:"This is my beloved Son.", blurb:"A mountaintop glow with Moses and Elijah present.", tier:"niche", cat:"wild"},
+  {name:"Last Supper", books:["Matthew","Mark","Luke","John","1 Corinthians"], verse:"This do in remembrance of me.", blurb:"Bread broken and cup poured among the twelve.", tier:"medium", cat:"wild"},
+  {name:"The Crucifixion", books:["Matthew","Mark","Luke","John"], verse:"Father, forgive them.", blurb:"Three crosses at Golgotha.", tier:"gimme", cat:"wild"},
+
+  // ACTS
+  {name:"Pentecost", books:["Acts"], verse:"They were all filled with the Holy Ghost.", blurb:"Tongues of fire and a rushing wind.", tier:"medium", cat:"story"},
+  {name:"Damascus Road", books:["Acts"], verse:"Why persecutest thou me?", blurb:"A persecutor struck blind by a great light.", tier:"medium", cat:"story"},
+  {name:"Ananias and Sapphira", books:["Acts"], verse:"Why hath Satan filled thine heart?", blurb:"A husband and wife lie about an offering and fall dead.", tier:"niche", cat:"story"},
+
+  // MULTI-BOOK CHARACTERS (any correct book counts)
+  {name:"Moses", books:["Exodus","Numbers","Deuteronomy","Joshua","Hebrews"], verse:"Choosing rather to suffer affliction with the people of God.", blurb:"Lawgiver. Prophet. Reluctant leader of a nation.", tier:"niche", cat:"character"},
+  {name:"Peter", books:["Matthew","Mark","Luke","John","Acts","1 Peter","2 Peter"], verse:"Thou art the Christ.", blurb:"Fisherman. Apostle. Denier. Pillar of the church.", tier:"niche", cat:"character"},
+  {name:"John the Apostle", books:["John","1 John","2 John","3 John","Revelation"], verse:"Beloved, let us love one another.", blurb:"Beloved disciple. Seer on the isle of Patmos.", tier:"niche", cat:"character"},
+  {name:"Abraham", books:["Genesis","Romans","Galatians","Hebrews","James"], verse:"And he believed in the LORD; and he counted it to him for righteousness.", blurb:"Father of faith. Friend of God.", tier:"niche", cat:"character"},
+  {name:"Elijah", books:["1 Kings","2 Kings","Malachi","Matthew","Mark","Luke","James"], verse:"A man subject to like passions as we are.", blurb:"Prophet of fire and whirlwind.", tier:"niche", cat:"character"},
+  {name:"Melchizedek", books:["Genesis","Psalms","Hebrews"], verse:"A priest for ever after the order of Melchizedek.", blurb:"Mysterious priest-king of Salem who appears and vanishes.", tier:"niche", cat:"character"},
+  {name:"Sarah", books:["Genesis","Romans","Hebrews","1 Peter"], verse:"Through faith also Sara herself received strength.", blurb:"She laughed. Then bore a son in old age.", tier:"niche", cat:"character"},
+  {name:"Rahab", books:["Joshua","Matthew","Hebrews","James"], verse:"By faith the harlot Rahab perished not.", blurb:"Hid the spies. Hung a scarlet cord from her window.", tier:"niche", cat:"character"},
+  {name:"Enoch", books:["Genesis","Hebrews","Jude"], verse:"He walked with God: and he was not.", blurb:"Walked with God. Taken alive without dying.", tier:"niche", cat:"character"},
+  {name:"Balaam", books:["Numbers","2 Peter","Jude","Revelation"], verse:"Following the way of Balaam.", blurb:"Prophet for hire. Rebuked by his own donkey.", tier:"niche", cat:"character"},
+  {name:"David", books:["1 Samuel","2 Samuel","1 Kings","Psalms","Matthew","Acts","Hebrews"], verse:"A man after mine own heart.", blurb:"Shepherd. Warrior. Psalmist. King.", tier:"medium", cat:"character"},
+  {name:"Noah (character)", books:["Genesis","Matthew","Luke","Hebrews","1 Peter","2 Peter"], verse:"By faith, being warned of God of things not seen as yet.", blurb:"Found grace in his generation.", tier:"niche", cat:"character"},
+  {name:"John the Baptist", books:["Matthew","Mark","Luke","John"], verse:"Prepare ye the way of the Lord.", blurb:"Voice in the wilderness. Baptizer in the Jordan.", tier:"medium", cat:"character"},
+  {name:"Adam", books:["Genesis","Romans","1 Corinthians","1 Timothy"], verse:"By one man sin entered into the world.", blurb:"Formed of dust. The first man.", tier:"niche", cat:"character"},
+  {name:"Mary the Mother", books:["Matthew","Luke","John","Acts"], verse:"My soul doth magnify the Lord.", blurb:"Yielded handmaid. Mother of the Christ.", tier:"medium", cat:"character"},
+  {name:"Elisha", books:["2 Kings","Luke"], verse:"Let a double portion of thy spirit be upon me.", blurb:"Successor to Elijah. Worker of miracles.", tier:"niche", cat:"character"},
+  {name:"Samson (character)", books:["Judges","Hebrews"], verse:"By faith Samson... waxed valiant in fight.", blurb:"Strongman. Betrayed. Brought the temple down.", tier:"niche", cat:"character"},
+  {name:"Deborah", books:["Judges","Hebrews"], verse:"By faith... the women received their dead raised to life.", blurb:"Prophet and judge of Israel.", tier:"niche", cat:"character"},
+
+  // TRAPS (look multi-book, are single book)
+  {name:"Joseph (Son of Jacob)", books:["Genesis"], verse:"Ye thought evil against me; but God meant it unto good.", blurb:"Dreamer. Sold. Ruler in Egypt. Only in one book.", tier:"niche", cat:"trap"},
+  {name:"Jacob", books:["Genesis"], verse:"Jacob have I loved.", blurb:"Stole a birthright. Wrestled an angel.", tier:"niche", cat:"trap"},
+  {name:"Solomon", books:["1 Kings"], verse:"Give therefore thy servant an understanding heart.", blurb:"Wisest king of Israel.", tier:"niche", cat:"trap"},
+
+  // NT VERSE CARDS
+  {name:"For God So Loved", books:["John"], verse:"For God so loved the world, that he gave his only begotten Son.", blurb:"The most memorized verse in the Bible.", tier:"medium", cat:"verse"},
+  {name:"All Things Work Together", books:["Romans"], verse:"All things work together for good to them that love God.", blurb:"A promise to the faithful.", tier:"niche", cat:"verse"},
+  {name:"I Can Do All Things", books:["Philippians"], verse:"I can do all things through Christ which strengtheneth me.", blurb:"Written from prison.", tier:"niche", cat:"verse"},
+  {name:"Now Faith Is", books:["Hebrews"], verse:"Now faith is the substance of things hoped for, the evidence of things not seen.", blurb:"Faith defined in one sentence.", tier:"niche", cat:"verse"},
+  {name:"Cast Your Care", books:["1 Peter"], verse:"Casting all your care upon him; for he careth for you.", blurb:"A word to the burdened.", tier:"niche", cat:"verse"},
+  {name:"Armor of God", books:["Ephesians"], verse:"Put on the whole armour of God.", blurb:"Helmet, breastplate, sword, shield.", tier:"niche", cat:"verse"},
+  {name:"Fruit of the Spirit", books:["Galatians"], verse:"Love, joy, peace, longsuffering, gentleness, goodness, faith.", blurb:"What the Spirit grows in a believer.", tier:"niche", cat:"verse"},
+  {name:"Faith Without Works", books:["James"], verse:"Faith, if it hath not works, is dead.", blurb:"Belief that must breathe.", tier:"niche", cat:"verse"},
+];
+
+// Full canon — used to draw plausible wrong-answer options.
+const CANON = [
+  "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
+  "1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
+  "Nehemiah","Esther","Job","Psalms","Proverbs","Ecclesiastes","Song of Solomon",
+  "Isaiah","Jeremiah","Lamentations","Ezekiel","Daniel","Hosea","Joel","Amos",
+  "Obadiah","Jonah","Micah","Nahum","Habakkuk","Zephaniah","Haggai","Zechariah","Malachi",
+  "Matthew","Mark","Luke","John","Acts","Romans","1 Corinthians","2 Corinthians",
+  "Galatians","Ephesians","Philippians","Colossians","1 Thessalonians","2 Thessalonians",
+  "1 Timothy","2 Timothy","Titus","Philemon","Hebrews","James","1 Peter","2 Peter",
+  "1 John","2 John","3 John","Jude","Revelation",
+];
+
+const CAT_LABEL = {
+  story: "Story", verse: "Verse", character: "Character",
+  wild: "Many Books", trap: "Tricky",
+};
+
+const KEYS = ['A','B','C','D'];
+
+let correct = 0;
+let total = 0;
+let streak = 0;
+let answered = false;
+let currentCard = null;
+let queue = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function drawCard() {
+  if (queue.length === 0) queue = shuffle(DECK);
+  return queue.pop();
+}
+
+function buildOptions(card) {
+  // One correct option drawn from the card's valid books...
+  const answer = card.books[Math.floor(Math.random() * card.books.length)];
+  // ...and three distractors that are NOT valid for this card.
+  const pool = shuffle(CANON.filter(b => !card.books.includes(b)));
+  const options = shuffle([answer, ...pool.slice(0, 3)]);
+  return { answer, options };
+}
+
+function nextCard() {
+  answered = false;
+  currentCard = drawCard();
+  const { answer, options } = buildOptions(currentCard);
+  currentCard._answer = answer;
+  currentCard._options = options;
+
+  const pill = document.getElementById('catPill');
+  pill.textContent = CAT_LABEL[currentCard.cat] || currentCard.cat;
+  pill.className = 'cat-pill cat-' + currentCard.cat;
+
+  document.getElementById('verseText').textContent = currentCard.verse;
+  document.getElementById('verseBlurb').textContent = currentCard.blurb;
+  document.getElementById('revealName').textContent = '';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  const grid = document.getElementById('optionGrid');
+  grid.innerHTML = '';
+  options.forEach((book, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.dataset.idx = i;
+    btn.dataset.book = book;
+
+    const keyEl = document.createElement('span');
+    keyEl.className = 'key-hint';
+    keyEl.textContent = KEYS[i];
+
+    const valEl = document.createElement('span');
+    valEl.className = 'option-val';
+    valEl.textContent = book;
+
+    btn.appendChild(keyEl);
+    btn.appendChild(valEl);
+    btn.addEventListener('click', () => handleAnswer(book, btn));
+    grid.appendChild(btn);
+  });
+}
+
+function handleAnswer(chosen, clickedBtn) {
+  if (answered) return;
+  answered = true;
+  total++;
+
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  // Any of the card's books is a correct answer.
+  const isCorrect = currentCard.books.includes(chosen);
+
+  if (isCorrect) {
+    correct++;
+    streak++;
+    clickedBtn.classList.add('correct');
+    const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
+              : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
+              :                `✓ Correct!`;
+    document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
+  } else {
+    streak = 0;
+    clickedBtn.classList.add('wrong');
+    // Reveal the one correct option in the grid.
+    allBtns.forEach(b => {
+      if (b.dataset.book === currentCard._answer) b.classList.add('reveal-correct');
+    });
+    document.getElementById('feedback').innerHTML =
+      `<span style="color:var(--red)">✗ This is from ${currentCard._answer}</span>`;
+  }
+
+  // Reveal the scene name, plus other books it appears in (for wilds/characters).
+  const others = currentCard.books.filter(b => b !== currentCard._answer);
+  let nameLine = currentCard.name.replace(/ \(.*\)$/, '');
+  if (others.length) {
+    nameLine += ` — also found in ${others.join(', ')}`;
+  }
+  document.getElementById('revealName').textContent = nameLine;
+
+  updateBadges();
+  document.getElementById('nextBtn').style.display = 'block';
+}
+
+function updateBadges() {
+  document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
+  const streakEl = document.getElementById('streakBadge');
+  if (streak >= 5) {
+    streakEl.textContent = `🔥 ${streak} streak`;
+    streakEl.classList.add('hot');
+  } else {
+    streakEl.textContent = `${streak} streak`;
+    streakEl.classList.remove('hot');
+  }
+}
+
+function resetAll() {
+  correct = 0; total = 0; streak = 0;
+  queue = [];
+  updateBadges();
+  nextCard();
+}
+
+// Keyboard: A/B/C/D to answer, Enter or Space for next.
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && answered) {
+    e.preventDefault();
+    nextCard();
+    return;
+  }
+  if (answered) return;
+  const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
+  if (idx === -1) return;
+  const btn = document.querySelector(`.option-btn[data-idx="${idx}"]`);
+  if (btn && !btn.disabled) btn.click();
+});
+
+updateBadges();
+nextCard();
+</script>
+
+</body>
+</html>
