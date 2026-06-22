@@ -6,25 +6,32 @@
   <title>Map Quiz — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.04); }
+      100% { transform: scale(1); }
+    }
+
     .map-page { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
 
-    .map-header { margin-bottom: 1.25rem; }
-    .map-header h1 { font-size: 1.8rem; margin-bottom: 0.2rem; }
+    .map-header { margin-bottom: 1rem; }
+    .map-header h1 { font-size: 1.8rem; margin-bottom: 0.1rem; }
 
     /* Region selector */
     .region-tabs {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
-      margin-bottom: 1.25rem;
+      margin-bottom: 1rem;
     }
 
     .region-tab {
-      padding: 0.45rem 1rem;
-      border: 1.5px solid var(--border);
+      padding: 0.55rem 1.1rem;
+      border: 2px solid var(--border);
       border-radius: 99px;
       background: white;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
+      font-weight: 500;
       cursor: pointer;
       font-family: var(--font-sans);
       color: var(--ink-light);
@@ -37,83 +44,86 @@
       border-color: var(--ink);
     }
 
-    /* Score / prompt bar */
-    .quiz-bar {
+    .region-tab:hover:not(.active) {
+      border-color: var(--ink-light);
+      color: var(--ink);
+    }
+
+    /* Country prompt — big */
+    .prompt-box {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 0.85rem;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 1rem;
       flex-wrap: wrap;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
     }
 
-    .prompt-box {
-      background: white;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.75rem 1.25rem;
-      flex: 1;
-      min-width: 200px;
-    }
+    .prompt-left { flex: 1; min-width: 160px; }
 
     .prompt-label {
-      font-size: 0.7rem;
-      font-weight: 600;
+      font-size: 0.75rem;
+      font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
       color: var(--ink-light);
-      margin-bottom: 0.2rem;
+      margin-bottom: 0.35rem;
     }
 
     .prompt-country {
       font-family: var(--font-serif);
-      font-size: 1.5rem;
+      font-size: clamp(2rem, 5vw, 2.8rem);
       font-weight: 600;
       color: var(--ink);
+      line-height: 1.1;
     }
 
     .score-box {
       display: flex;
-      gap: 1rem;
+      gap: 1.25rem;
       align-items: center;
     }
 
-    .score-item {
-      text-align: center;
-    }
+    .score-item { text-align: center; }
 
     .score-num {
       font-family: var(--font-serif);
-      font-size: 1.5rem;
+      font-size: 2rem;
       font-weight: 600;
       display: block;
       line-height: 1;
     }
 
     .score-label {
-      font-size: 0.68rem;
+      font-size: 0.72rem;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       color: var(--ink-light);
+      font-weight: 600;
     }
 
     .score-num.correct { color: var(--green); }
-    .score-num.wrong { color: var(--red); }
+    .score-num.wrong   { color: var(--red); }
 
     /* Feedback bar */
     .feedback-bar {
-      min-height: 2rem;
+      min-height: 2.4rem;
       margin-bottom: 0.75rem;
-      font-size: 0.9rem;
-      font-weight: 500;
-      padding: 0.4rem 0;
+      font-size: 1.05rem;
+      font-weight: 600;
+      padding: 0.3rem 0;
     }
 
     /* Map container */
     .map-container {
       background: #E8F4F8;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      border-radius: 12px;
       overflow: hidden;
       position: relative;
     }
@@ -134,11 +144,9 @@
     }
 
     .country:hover { fill: #C4A040; }
-    .country.correct-flash { fill: #2A5C3F !important; }
+    .country.correct-flash { fill: #2A5C3F !important; animation: pop 0.3s ease; }
     .country.wrong-flash { fill: #8B2020 !important; }
     .country.highlight-target { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
-
-    /* After answering, show correct location */
     .country.show-correct { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
 
     .btn-row {
@@ -146,6 +154,10 @@
       gap: 0.75rem;
       margin-top: 1rem;
       flex-wrap: wrap;
+    }
+
+    @media (max-width: 600px) {
+      .prompt-country { font-size: 1.8rem; }
     }
   </style>
 </head>
@@ -161,29 +173,28 @@
 <div class="map-page">
   <div class="map-header">
     <h1>Map Quiz</h1>
-    <p>Find the country on the map.</p>
   </div>
 
   <div class="region-tabs">
-    <button class="region-tab active" onclick="loadRegion('americas')">Americas</button>
-    <button class="region-tab" onclick="loadRegion('europe')">Europe</button>
-    <button class="region-tab" onclick="loadRegion('asia')">Asia</button>
-    <button class="region-tab" onclick="loadRegion('africa')">Africa</button>
+    <button class="region-tab active" onclick="loadRegion('americas')">🌎 Americas</button>
+    <button class="region-tab" onclick="loadRegion('europe')">🌍 Europe</button>
+    <button class="region-tab" onclick="loadRegion('asia')">🌏 Asia</button>
+    <button class="region-tab" onclick="loadRegion('africa')">🌍 Africa</button>
   </div>
 
-  <div class="quiz-bar">
-    <div class="prompt-box">
-      <div class="prompt-label">Find this country</div>
+  <div class="prompt-box">
+    <div class="prompt-left">
+      <div class="prompt-label">Click this country on the map →</div>
       <div class="prompt-country" id="promptCountry">Loading…</div>
     </div>
     <div class="score-box">
       <div class="score-item">
         <span class="score-num correct" id="scoreCorrect">0</span>
-        <span class="score-label">Correct</span>
+        <span class="score-label">✓ Correct</span>
       </div>
       <div class="score-item">
         <span class="score-num wrong" id="scoreWrong">0</span>
-        <span class="score-label">Missed</span>
+        <span class="score-label">✗ Missed</span>
       </div>
     </div>
   </div>
@@ -368,14 +379,15 @@ function handleCountryClick(countryId) {
 
   if (countryId === currentCountry.id) {
     scoreCorrect++;
-    fb.innerHTML = `<span class="feedback-correct">✓ Correct! That's ${currentCountry.name}.</span>`;
+    fb.innerHTML = `<span class="feedback-correct">🎉 Yes! That's ${currentCountry.name}!</span>`;
     if (correctEl) correctEl.classList.add('correct-flash');
     updateScoreDisplay();
     waitingForNext = true;
-    setTimeout(nextQuestion, 1200);
+    setTimeout(nextQuestion, 1300);
   } else {
     scoreWrong++;
-    fb.innerHTML = `<span class="feedback-wrong">✗ That's ${getCountryName(countryId) || 'not it'}. ${currentCountry.name} is shown in green.</span>`;
+    const wrongName = getCountryName(countryId);
+    fb.innerHTML = `<span class="feedback-wrong">✗ ${wrongName ? `That's ${wrongName}.` : 'Not quite!'} ${currentCountry.name} is highlighted in green — click to continue.</span>`;
     if (correctEl) correctEl.classList.add('show-correct');
     const wrongEl = document.getElementById(countryId);
     if (wrongEl) {

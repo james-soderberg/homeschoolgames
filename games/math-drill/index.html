@@ -6,30 +6,73 @@
   <title>Math Drill — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
-    .math-page {
-      max-width: 620px;
-      margin: 0 auto;
-      padding: 2rem 1.5rem;
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.07); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-9px); }
+      40%     { transform: translateX(9px); }
+      60%     { transform: translateX(-6px); }
+      80%     { transform: translateX(6px); }
     }
 
-    .math-page h1 { margin-bottom: 0.25rem; }
-    .math-page > p { margin-bottom: 1.5rem; }
+    .math-page {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
 
-    /* Difficulty selector */
+    /* Top bar */
+    .math-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .math-top h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .streak-badge {
+      background: var(--cream-dark);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      padding: 0.45rem 1.1rem;
+      font-weight: 700;
+      font-size: 1rem;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .streak-badge.hot {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: var(--ink);
+    }
+
+    /* Difficulty tabs */
     .diff-tabs {
       display: flex;
       gap: 0.5rem;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
     }
 
     .diff-tab {
       flex: 1;
-      padding: 0.5rem;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
+      padding: 0.75rem;
+      border: 2px solid var(--border);
+      border-radius: 10px;
       background: white;
-      font-size: 0.85rem;
-      font-weight: 500;
+      font-size: 1rem;
+      font-weight: 600;
       cursor: pointer;
       font-family: var(--font-sans);
       color: var(--ink-light);
@@ -43,49 +86,17 @@
       border-color: var(--ink);
     }
 
-    /* Score row */
-    .score-row {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 1.5rem;
+    .diff-tab:hover:not(.active) {
+      border-color: var(--ink-light);
+      color: var(--ink);
     }
-
-    .score-tile {
-      flex: 1;
-      background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 0.75rem;
-      text-align: center;
-      box-shadow: var(--shadow);
-    }
-
-    .score-tile .num {
-      font-family: var(--font-serif);
-      font-size: 2rem;
-      font-weight: 600;
-      line-height: 1;
-      display: block;
-    }
-
-    .score-tile .lbl {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--ink-light);
-      margin-top: 0.2rem;
-    }
-
-    .score-tile .num.c { color: var(--green); }
-    .score-tile .num.w { color: var(--red); }
-    .score-tile .num.s { color: var(--gold); }
 
     /* Progress bar */
     .progress-bar-wrap {
-      height: 4px;
+      height: 6px;
       background: var(--border);
       border-radius: 99px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       overflow: hidden;
     }
 
@@ -96,16 +107,16 @@
       transition: width 0.3s;
     }
 
-    /* Problem display */
+    /* Problem card */
     .problem-card {
       background: white;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2.5rem 2rem;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 2.25rem 1.5rem;
       text-align: center;
-      margin-bottom: 1.25rem;
-      box-shadow: var(--shadow);
-      min-height: 130px;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
+      min-height: 120px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -113,113 +124,138 @@
 
     .problem-text {
       font-family: var(--font-serif);
-      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-size: clamp(2.6rem, 10vw, 4rem);
       font-weight: 600;
       color: var(--ink);
       letter-spacing: 0.04em;
     }
 
-    /* Answer choices */
+    /* Feedback */
+    .feedback {
+      min-height: 2.4rem;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Answer grid — big buttons */
     .answer-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1.25rem;
+      gap: 0.85rem;
+      margin-bottom: 1rem;
     }
 
     .answer-btn {
       background: white;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.1rem;
+      border: 2.5px solid var(--border);
+      border-radius: 14px;
+      padding: 0;
       font-family: var(--font-serif);
-      font-size: 1.6rem;
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(26,23,20,0.07);
+      min-height: 100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.15rem;
+    }
+
+    .answer-btn .key-hint {
+      font-family: var(--font-sans);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--ink-light);
+      text-transform: uppercase;
+    }
+
+    .answer-btn .answer-val {
+      font-size: 2.2rem;
       font-weight: 600;
       color: var(--ink);
-      cursor: pointer;
-      transition: all 0.12s;
-      box-shadow: var(--shadow);
+      line-height: 1.1;
     }
 
     .answer-btn:hover:not(:disabled) {
       border-color: var(--gold);
       background: #FFFDF4;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
     }
 
     .answer-btn.correct {
       background: #EAF4EE;
       border-color: var(--green);
-      color: var(--green);
+      animation: pop 0.3s ease;
     }
+
+    .answer-btn.correct .answer-val,
+    .answer-btn.correct .key-hint { color: var(--green); }
 
     .answer-btn.wrong {
       background: #FAE8E8;
       border-color: var(--red);
-      color: var(--red);
+      animation: shake 0.4s ease;
     }
+
+    .answer-btn.wrong .answer-val,
+    .answer-btn.wrong .key-hint { color: var(--red); }
 
     .answer-btn.reveal-correct {
       background: #EAF4EE;
       border-color: var(--green);
-      color: var(--green);
     }
+
+    .answer-btn.reveal-correct .answer-val,
+    .answer-btn.reveal-correct .key-hint { color: var(--green); }
 
     .answer-btn:disabled { cursor: default; transform: none; }
 
-    /* Feedback */
-    .feedback {
-      min-height: 1.8rem;
-      text-align: center;
-      font-size: 0.95rem;
-      font-weight: 500;
-      margin-bottom: 0.75rem;
+    /* Next button — large */
+    #nextBtn {
+      display: block;
+      width: 100%;
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      border-radius: 12px;
+      padding: 1.1rem;
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-bottom: 1rem;
+      transition: background 0.15s;
     }
 
-    /* Streak message */
-    .streak-msg {
-      text-align: center;
-      font-family: var(--font-serif);
-      font-style: italic;
-      color: var(--gold);
-      font-size: 1rem;
-      min-height: 1.4rem;
-      margin-bottom: 0.5rem;
-    }
+    #nextBtn:hover { background: #b08e30; }
 
-    /* Control row */
+    /* Controls */
     .control-row {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      justify-content: center;
+      margin-top: 0.25rem;
     }
 
-    /* Operation badges */
-    .op-row {
-      display: flex;
-      gap: 0.4rem;
-      flex-wrap: wrap;
-      margin-bottom: 1.25rem;
-    }
-
-    .op-toggle {
-      padding: 0.3rem 0.75rem;
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      background: white;
-      font-size: 0.8rem;
+    .reset-link {
+      background: none;
+      border: none;
+      color: var(--ink-light);
+      font-size: 0.85rem;
       cursor: pointer;
       font-family: var(--font-sans);
-      color: var(--ink-light);
-      transition: all 0.15s;
+      text-decoration: underline;
+      padding: 0.3rem 0.5rem;
     }
 
-    .op-toggle.active {
-      background: var(--cream-dark);
-      border-color: var(--ink-light);
-      color: var(--ink);
+    .reset-link:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      .answer-btn { min-height: 80px; }
+      .answer-btn .answer-val { font-size: 1.8rem; }
     }
   </style>
 </head>
@@ -233,62 +269,36 @@
 </header>
 
 <div class="math-page">
-  <h1>Math Drill</h1>
-  <p>Click the correct answer. Works through all four operations at your chosen difficulty.</p>
 
-  <!-- Difficulty -->
+  <div class="math-top">
+    <h1>Math Drill</h1>
+    <div class="streak-badge" id="streakBadge">0 in a row</div>
+  </div>
+
   <div class="diff-tabs">
     <button class="diff-tab active" onclick="setDiff(1,this)">Easy</button>
     <button class="diff-tab" onclick="setDiff(2,this)">Medium</button>
     <button class="diff-tab" onclick="setDiff(3,this)">Hard</button>
   </div>
 
-  <!-- Operation toggles -->
-  <div class="op-row">
-    <button class="op-toggle active" id="op-add" onclick="toggleOp('add',this)">+ Addition</button>
-    <button class="op-toggle active" id="op-sub" onclick="toggleOp('sub',this)">− Subtraction</button>
-    <button class="op-toggle active" id="op-mul" onclick="toggleOp('mul',this)">× Multiplication</button>
-    <button class="op-toggle active" id="op-div" onclick="toggleOp('div',this)">÷ Division</button>
-  </div>
-
-  <!-- Scores -->
-  <div class="score-row">
-    <div class="score-tile">
-      <span class="num c" id="numCorrect">0</span>
-      <span class="lbl">Correct</span>
-    </div>
-    <div class="score-tile">
-      <span class="num w" id="numWrong">0</span>
-      <span class="lbl">Wrong</span>
-    </div>
-    <div class="score-tile">
-      <span class="num s" id="numStreak">0</span>
-      <span class="lbl">Streak</span>
-    </div>
-  </div>
-
-  <!-- Progress (out of 20 per set) -->
   <div class="progress-bar-wrap">
     <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
   </div>
 
-  <!-- Problem -->
   <div class="problem-card">
     <div class="problem-text" id="problemText">Loading…</div>
   </div>
 
-  <!-- Feedback -->
-  <div class="streak-msg" id="streakMsg"></div>
   <div class="feedback" id="feedback"></div>
 
-  <!-- Answers -->
   <div class="answer-grid" id="answerGrid"></div>
 
-  <!-- Controls -->
+  <button id="nextBtn" onclick="nextProblem()" style="display:none">Next Question →</button>
+
   <div class="control-row">
-    <button class="btn btn-outline btn-sm" onclick="resetAll()">Reset</button>
-    <button class="btn btn-sm" id="nextBtn" onclick="nextProblem()" style="display:none">Next →</button>
+    <button class="reset-link" onclick="resetAll()">Start Over</button>
   </div>
+
 </div>
 
 <footer class="site-footer">
@@ -300,25 +310,24 @@
 // MATH DRILL
 // ============================================================
 
-let difficulty = 1; // 1=easy, 2=medium, 3=hard
-let activeOps = new Set(['add','sub','mul','div']);
+let difficulty = 1;
+const activeOps = new Set(['add','sub','mul','div']);
 
 let correct = 0;
 let wrong = 0;
 let streak = 0;
-let bestStreak = 0;
-let setCount = 0; // problems shown this set
+let setCount = 0;
 const SET_SIZE = 20;
-
 let currentAnswer = 0;
 let answered = false;
 
-// ---- Difficulty ranges ----
 const RANGES = {
-  1: { add: [1,12,1,12], sub: [1,12,1,12], mul: [1,10,1,10], div: [1,10,1,10] },
-  2: { add: [10,99,1,50], sub: [10,99,1,50], mul: [2,15,2,15], div: [2,12,2,12] },
-  3: { add: [50,999,50,999], sub: [100,999,1,999], mul: [6,25,6,25], div: [2,20,2,20] },
+  1: { add:[1,12,1,12], sub:[1,12,1,12], mul:[1,10,1,10], div:[1,10,1,10] },
+  2: { add:[10,99,1,50], sub:[10,99,1,50], mul:[2,15,2,15], div:[2,12,2,12] },
+  3: { add:[50,999,50,999], sub:[100,999,1,999], mul:[6,25,6,25], div:[2,20,2,20] },
 };
+
+const KEYS = ['A','B','C','D'];
 
 function randInt(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -326,66 +335,47 @@ function randInt(min, max) {
 
 function generateProblem() {
   const ops = [...activeOps];
-  if (ops.length === 0) return { text: '?', answer: 0 };
-
   const op = ops[Math.floor(Math.random() * ops.length)];
   const r = RANGES[difficulty][op];
-
   let a, b, answer, symbol;
 
   if (op === 'add') {
-    a = randInt(r[0], r[1]);
-    b = randInt(r[2], r[3]);
-    answer = a + b;
-    symbol = '+';
+    a = randInt(r[0], r[1]); b = randInt(r[2], r[3]);
+    answer = a + b; symbol = '+';
   } else if (op === 'sub') {
-    a = randInt(r[0], r[1]);
-    b = randInt(r[2], Math.min(r[3], a)); // ensure non-negative
-    answer = a - b;
-    symbol = '−';
+    a = randInt(r[0], r[1]); b = randInt(r[2], Math.min(r[3], a));
+    answer = a - b; symbol = '−';
   } else if (op === 'mul') {
-    a = randInt(r[0], r[1]);
-    b = randInt(r[2], r[3]);
-    answer = a * b;
-    symbol = '×';
-  } else { // div
-    // Generate clean division: pick b and answer, then a = b * answer
+    a = randInt(r[0], r[1]); b = randInt(r[2], r[3]);
+    answer = a * b; symbol = '×';
+  } else {
     b = randInt(r[0], r[1]);
-    const quotient = randInt(r[2], r[3]);
-    a = b * quotient;
-    answer = quotient;
-    symbol = '÷';
+    const q = randInt(r[2], r[3]);
+    a = b * q; answer = q; symbol = '÷';
   }
 
-  return { text: `${a} ${symbol} ${b} = ?`, answer, a, b, op };
+  return { text: `${a} ${symbol} ${b} = ?`, answer };
 }
 
-function generateChoices(answer, op) {
+function generateChoices(answer) {
   const choices = new Set([answer]);
-
-  const offsets = difficulty === 1
-    ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    : difficulty === 2
-    ? [2, 3, 5, 7, 10, 12, 15, 20]
-    : [5, 10, 15, 20, 25, 30, 50];
-
+  const offsets = difficulty === 1 ? [1,2,3,4,5,6,7,8,9,10]
+                : difficulty === 2 ? [2,3,5,7,10,12,15,20]
+                : [5,10,15,20,25,30,50];
   let attempts = 0;
   while (choices.size < 4 && attempts < 50) {
-    const offset = offsets[Math.floor(Math.random() * offsets.length)];
+    const off = offsets[Math.floor(Math.random() * offsets.length)];
     const sign = Math.random() > 0.5 ? 1 : -1;
-    const candidate = answer + sign * offset;
-    if (candidate > 0 && candidate !== answer) choices.add(candidate);
+    const c = answer + sign * off;
+    if (c > 0 && c !== answer) choices.add(c);
     attempts++;
   }
-
-  // If still not 4, fill with sequential nearby
   let extra = 1;
   while (choices.size < 4) {
     if (!choices.has(answer + extra)) choices.add(answer + extra);
     if (!choices.has(answer - extra) && answer - extra > 0) choices.add(answer - extra);
     extra++;
   }
-
   return shuffle([...choices]).slice(0, 4);
 }
 
@@ -397,31 +387,38 @@ function shuffle(arr) {
   return arr;
 }
 
+let choiceValues = [];
+
 function nextProblem() {
   answered = false;
   document.getElementById('feedback').textContent = '';
   document.getElementById('nextBtn').style.display = 'none';
-  document.getElementById('streakMsg').textContent = '';
-
-  if (setCount >= SET_SIZE) {
-    // Start fresh set
-    setCount = 0;
-  }
+  if (setCount >= SET_SIZE) setCount = 0;
 
   const problem = generateProblem();
   currentAnswer = problem.answer;
-
   document.getElementById('problemText').textContent = problem.text;
 
-  const choices = generateChoices(problem.answer, problem.op);
+  choiceValues = generateChoices(problem.answer);
   const grid = document.getElementById('answerGrid');
   grid.innerHTML = '';
 
-  choices.forEach(choice => {
+  choiceValues.forEach((choice, i) => {
     const btn = document.createElement('button');
     btn.className = 'answer-btn';
-    btn.textContent = choice;
-    btn.addEventListener('click', () => handleAnswer(choice, choices, btn));
+    btn.dataset.idx = i;
+
+    const keyEl = document.createElement('span');
+    keyEl.className = 'key-hint';
+    keyEl.textContent = KEYS[i];
+
+    const valEl = document.createElement('span');
+    valEl.className = 'answer-val';
+    valEl.textContent = choice;
+
+    btn.appendChild(keyEl);
+    btn.appendChild(valEl);
+    btn.addEventListener('click', () => handleAnswer(choice, btn));
     grid.appendChild(btn);
   });
 
@@ -429,7 +426,7 @@ function nextProblem() {
   updateProgress();
 }
 
-function handleAnswer(chosen, choices, clickedBtn) {
+function handleAnswer(chosen, clickedBtn) {
   if (answered) return;
   answered = true;
 
@@ -441,71 +438,67 @@ function handleAnswer(chosen, choices, clickedBtn) {
   if (isCorrect) {
     correct++;
     streak++;
-    if (streak > bestStreak) bestStreak = streak;
     clickedBtn.classList.add('correct');
-    document.getElementById('feedback').innerHTML =
-      `<span class="feedback-correct">✓ Correct!</span>`;
-    if (streak >= 5) {
-      document.getElementById('streakMsg').textContent =
-        streak >= 10 ? `🔥 ${streak} in a row!` : `${streak} streak!`;
-    }
-    // Auto-advance after short pause
-    setTimeout(nextProblem, 800);
+    const msg = streak >= 10 ? `🔥 ${streak} in a row!`
+              : streak >= 5  ? `⭐ ${streak} in a row!`
+              :                `✓ Correct!`;
+    document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
+    updateStreakBadge();
+    setTimeout(nextProblem, 700);
   } else {
     wrong++;
     streak = 0;
     clickedBtn.classList.add('wrong');
-    // Reveal correct
     allBtns.forEach(b => {
-      if (parseInt(b.textContent) === currentAnswer) b.classList.add('reveal-correct');
+      if (parseInt(b.querySelector('.answer-val').textContent) === currentAnswer) {
+        b.classList.add('reveal-correct');
+      }
     });
     document.getElementById('feedback').innerHTML =
-      `<span class="feedback-wrong">✗ The answer was ${currentAnswer}.</span>`;
-    document.getElementById('nextBtn').style.display = 'inline-block';
+      `<span style="color:var(--red)">✗ The answer was ${currentAnswer}</span>`;
+    updateStreakBadge();
+    document.getElementById('nextBtn').style.display = 'block';
   }
-
-  updateScores();
 }
 
-function updateScores() {
-  document.getElementById('numCorrect').textContent = correct;
-  document.getElementById('numWrong').textContent = wrong;
-  document.getElementById('numStreak').textContent = streak;
+function updateStreakBadge() {
+  const el = document.getElementById('streakBadge');
+  if (streak >= 5) {
+    el.textContent = `🔥 ${streak} in a row!`;
+    el.classList.add('hot');
+  } else {
+    el.textContent = `${streak} in a row`;
+    el.classList.remove('hot');
+  }
 }
 
 function updateProgress() {
-  const pct = (setCount / SET_SIZE) * 100;
-  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressFill').style.width = (setCount / SET_SIZE * 100) + '%';
 }
 
 function setDiff(d, btn) {
   difficulty = d;
   document.querySelectorAll('.diff-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  nextProblem();
-}
-
-function toggleOp(op, btn) {
-  if (activeOps.has(op)) {
-    // Don't allow removing the last one
-    if (activeOps.size === 1) return;
-    activeOps.delete(op);
-    btn.classList.remove('active');
-  } else {
-    activeOps.add(op);
-    btn.classList.add('active');
-  }
-  nextProblem();
+  resetAll();
 }
 
 function resetAll() {
   correct = 0; wrong = 0; streak = 0; setCount = 0;
-  updateScores();
+  updateStreakBadge();
   document.getElementById('progressFill').style.width = '0%';
   nextProblem();
 }
 
-// Init
+// Keyboard shortcuts A/B/C/D
+document.addEventListener('keydown', e => {
+  if (answered) return;
+  const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
+  if (idx === -1) return;
+  const btn = document.querySelector(`.answer-btn[data-idx="${idx}"]`);
+  if (btn && !btn.disabled) btn.click();
+});
+
 nextProblem();
 </script>
 

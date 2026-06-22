@@ -16,82 +16,116 @@
 
     /* ---- Setup screen ---- */
     .setup-screen {
-      max-width: 520px;
+      max-width: 480px;
       margin: 3rem auto;
       padding: 0 1.5rem;
       text-align: center;
     }
+    .setup-icon { font-size: 4rem; margin-bottom: 0.5rem; line-height: 1; }
     .setup-screen h1 {
       font-family: var(--font-serif);
-      font-size: 2.8rem;
+      font-size: 3rem;
       letter-spacing: 0.06em;
-      margin-bottom: 0.3rem;
+      margin-bottom: 0.4rem;
     }
-    .setup-screen .tagline {
+    .setup-tagline {
       font-family: var(--font-serif);
       font-style: italic;
       color: var(--ink-light);
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .setup-how {
+      font-size: 0.9rem;
+      color: var(--ink-light);
+      line-height: 1.65;
       margin-bottom: 2rem;
+      max-width: 360px;
+      margin-left: auto;
+      margin-right: auto;
     }
-    .setup-card {
+    .play-solo-btn {
+      display: block;
+      width: 100%;
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      border-radius: 14px;
+      padding: 1.1rem 1.5rem;
+      font-size: 1.25rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-bottom: 0.85rem;
+      transition: background 0.15s;
+    }
+    .play-solo-btn:hover { background: #b08e30; }
+    .friends-btn {
+      display: block;
+      width: 100%;
       background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 2rem;
-      box-shadow: var(--shadow);
-      text-align: left;
+      color: var(--ink);
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.15s;
     }
-    .setup-card label {
+    .friends-btn:hover { border-color: var(--ink-light); }
+
+    /* Friends setup panel (hidden by default) */
+    .friends-setup {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: left;
+      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
+    }
+    .friends-setup label {
       display: block;
       font-size: 0.8rem;
-      font-weight: 600;
+      font-weight: 700;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       color: var(--ink-light);
       margin-bottom: 0.4rem;
-      margin-top: 1.2rem;
+      margin-top: 1rem;
     }
-    .setup-card label:first-of-type { margin-top: 0; }
-    .setup-card select,
-    .setup-card input[type="text"] {
+    .friends-setup label:first-of-type { margin-top: 0; }
+    .friends-setup select,
+    .friends-setup input[type="text"] {
       width: 100%;
-      padding: 0.55rem 0.8rem;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      padding: 0.6rem 0.85rem;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
       background: var(--cream);
       font-family: var(--font-sans);
-      font-size: 0.9rem;
+      font-size: 0.95rem;
       color: var(--ink);
       appearance: none;
     }
-    .player-names { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.3rem; }
-    .mode-toggle { display: flex; gap: 0.5rem; margin-top: 0.3rem; }
-    .mode-toggle button {
-      flex: 1;
-      padding: 0.55rem;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--cream);
-      font-size: 0.875rem;
-      cursor: pointer;
-      font-family: var(--font-sans);
-      color: var(--ink-light);
-      transition: all 0.15s;
-    }
-    .mode-toggle button.active {
+    .player-names { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.4rem; }
+    .start-friends-btn {
+      display: block;
+      width: 100%;
       background: var(--ink);
       color: var(--cream);
-      border-color: var(--ink);
+      border: none;
+      border-radius: 10px;
+      padding: 0.9rem;
+      font-size: 1rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-top: 1.25rem;
+      transition: background 0.15s;
     }
-    .setup-rules {
-      margin-top: 1.5rem;
-      padding-top: 1.25rem;
-      border-top: 1px solid var(--border);
-      font-size: 0.82rem;
-      color: var(--ink-light);
-      line-height: 1.65;
-    }
-    .setup-rules strong { color: var(--ink); }
+    .start-friends-btn:hover { background: var(--ink-light); }
 
     /* ---- SOLO game screen ---- */
     .solo-screen {
@@ -394,43 +428,28 @@
 
   <!-- ===================== SETUP SCREEN ===================== -->
   <div class="setup-screen" id="setupScreen">
+    <div class="setup-icon">🃏</div>
     <h1>Circa</h1>
-    <p class="tagline">A history card game</p>
+    <p class="setup-tagline">A history card game</p>
+    <p class="setup-how">A history card is revealed in the center. Pick the card from your hand that is <strong>closest in date</strong> to it. Get it right to keep your streak going!</p>
 
-    <div class="setup-card">
-      <label>Mode</label>
-      <div class="mode-toggle">
-        <button class="active" onclick="setMode('solo')" id="modeSolo">Solo</button>
-        <button onclick="setMode('pass')" id="modePass">Pass &amp; Play</button>
-      </div>
+    <button class="play-solo-btn" onclick="quickStartSolo()">Play Solo →</button>
+    <button class="friends-btn" onclick="showFriendsSetup()">Play with Friends</button>
 
-      <div id="playerSetup">
-        <label>Number of players</label>
-        <select id="playerCount" onchange="updatePlayerNames()">
-          <option value="1" selected>1 player</option>
-          <option value="2">2 players</option>
-          <option value="3">3 players</option>
-          <option value="4">4 players</option>
-          <option value="5">5 players</option>
-          <option value="6">6 players</option>
-        </select>
-        <label>Player names</label>
-        <div class="player-names" id="playerNames"></div>
-      </div>
-
-      <label>Cards in hand</label>
-      <select id="handSize">
-        <option value="4">4 cards</option>
-        <option value="5" selected>5 cards</option>
-        <option value="6">6 cards</option>
+    <div class="friends-setup" id="friendsSetup" style="display:none">
+      <label>Number of players</label>
+      <select id="playerCount" onchange="updatePlayerNames()">
+        <option value="2" selected>2 players</option>
+        <option value="3">3 players</option>
+        <option value="4">4 players</option>
+        <option value="5">5 players</option>
+        <option value="6">6 players</option>
       </select>
 
-      <div class="setup-rules" id="setupRules">
-        <strong>Solo:</strong> A center card is revealed. Pick the card from your hand that is closest in date to it. Get it right to keep your streak going — wrong ends the streak. How far can you go?
-      </div>
+      <label>Player names <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div class="player-names" id="playerNames"></div>
 
-      <br>
-      <button class="btn btn-gold" onclick="startGame()" style="width:100%;padding:0.75rem;">Start Game</button>
+      <button class="start-friends-btn" onclick="startFriendsGame()">Start Game →</button>
     </div>
   </div>
 
@@ -761,20 +780,6 @@ let mode = 'solo';
 
 function setMode(m) {
   mode = m;
-  document.getElementById('modeSolo').classList.toggle('active', m === 'solo');
-  document.getElementById('modePass').classList.toggle('active', m === 'pass');
-
-  const rules = document.getElementById('setupRules');
-  if (m === 'solo') {
-    document.getElementById('playerCount').value = '1';
-    rules.innerHTML = '<strong>Solo:</strong> A center card is revealed. Pick the card from your hand that is closest in date to it. Get it right to keep your streak going — wrong ends the streak. How far can you go?';
-  } else {
-    if (parseInt(document.getElementById('playerCount').value) < 2) {
-      document.getElementById('playerCount').value = '2';
-    }
-    rules.innerHTML = '<strong>Pass &amp; Play:</strong> Each round a hidden target year is revealed. Every player secretly picks the card from their hand closest to it. Reveal together — closest wins the round and keeps all played cards as points.';
-  }
-  updatePlayerNames();
 }
 
 function updatePlayerNames() {
@@ -1295,6 +1300,30 @@ function showEndScreen() {
     row.innerHTML = `<div class="pos">${i === 0 ? '★' : i+1}</div><div class="name">${s.name}</div><div class="wins">${s.wins} cards</div>`;
     container.appendChild(row);
   });
+}
+
+// ============================================================
+// Simplified setup helpers
+// ============================================================
+
+function quickStartSolo() {
+  mode = 'solo';
+  handSize = 5;
+  document.getElementById('setupScreen').style.display = 'none';
+  startSoloGame();
+}
+
+function showFriendsSetup() {
+  const fs = document.getElementById('friendsSetup');
+  fs.style.display = fs.style.display === 'none' ? 'block' : 'none';
+  if (fs.style.display === 'block') updatePlayerNames();
+}
+
+function startFriendsGame() {
+  mode = 'pass';
+  handSize = 5;
+  document.getElementById('setupScreen').style.display = 'none';
+  startPassGame();
 }
 
 // Init

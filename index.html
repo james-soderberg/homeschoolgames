@@ -3,152 +3,118 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HomeschoolGames — Educational Games for Homeschoolers</title>
+  <title>HomeschoolGames — Learn by Playing</title>
   <link rel="stylesheet" href="assets/css/site.css">
   <style>
     .hero {
-      max-width: 700px;
-      margin: 4rem auto 3rem;
+      max-width: 640px;
+      margin: 3rem auto 2.5rem;
       text-align: center;
       padding: 0 1.5rem;
     }
 
-    .hero-eyebrow {
-      font-family: var(--font-sans);
-      font-size: 0.8rem;
-      font-weight: 600;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--gold);
+    .hero h1 {
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
       margin-bottom: 0.75rem;
     }
 
-    .hero h1 {
-      margin-bottom: 1rem;
-    }
-
     .hero p {
-      font-size: 1.05rem;
-      max-width: 480px;
+      font-size: 1.1rem;
+      color: var(--ink-light);
       margin: 0 auto;
-      line-height: 1.7;
+      max-width: 400px;
     }
 
-    /* ---- Game Grid ---- */
     .games-section {
-      max-width: 900px;
+      max-width: 980px;
       margin: 0 auto;
       padding: 0 1.5rem 4rem;
     }
 
-    .section-label {
-      font-family: var(--font-sans);
-      font-size: 0.75rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: var(--ink-light);
-      margin-bottom: 1.25rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 1px solid var(--border);
-    }
-
     .game-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.5rem;
     }
 
     .game-card {
       background: white;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.75rem 1.5rem;
-      box-shadow: var(--shadow);
+      border: 2.5px solid var(--border);
+      border-radius: 14px;
+      padding: 2rem 1.75rem 1.75rem;
+      box-shadow: 0 2px 10px rgba(26,23,20,0.07);
       text-decoration: none;
       color: var(--ink);
-      display: block;
-      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
-      position: relative;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
     }
 
     .game-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 28px rgba(196,160,64,0.2);
       border-color: var(--gold);
-      box-shadow: 0 3px 12px rgba(196,160,64,0.15);
-      transform: translateY(-2px);
       text-decoration: none;
       color: var(--ink);
     }
 
     .game-card-icon {
-      font-size: 2rem;
-      margin-bottom: 0.75rem;
+      font-size: 4rem;
+      margin-bottom: 1rem;
       display: block;
+      line-height: 1;
     }
 
     .game-card h3 {
-      font-family: var(--font-serif);
-      font-size: 1.3rem;
-      margin-bottom: 0.35rem;
+      font-size: 1.6rem;
+      margin-bottom: 0.5rem;
     }
 
-    .game-card p {
-      font-size: 0.875rem;
-      line-height: 1.55;
+    .subject-pill {
+      display: inline-block;
+      padding: 0.2rem 0.85rem;
+      border-radius: 99px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
       margin-bottom: 1rem;
     }
 
-    .game-card .badge {
-      margin-right: 0.3rem;
-    }
+    .pill-history { background: #FFF3D0; color: #7A5C00; }
+    .pill-geo     { background: #D4EEF5; color: #1A5C6B; }
+    .pill-math    { background: #E4F2E8; color: #2A5C3F; }
 
-    .game-card-play {
-      margin-top: 1.25rem;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--gold);
-      letter-spacing: 0.04em;
-    }
-
-    .game-card:hover .game-card-play {
-      text-decoration: underline;
-    }
-
-    /* Coming soon state */
-    .game-card.coming-soon {
-      opacity: 0.55;
-      cursor: default;
-      pointer-events: none;
-    }
-
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 3rem 0;
-    }
-
-    .about-strip {
-      max-width: 900px;
-      margin: 0 auto 3rem;
-      padding: 0 1.5rem;
-    }
-
-    .about-strip-inner {
-      background: var(--cream-dark);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1.5rem 2rem;
-      display: flex;
-      align-items: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .about-strip-inner p {
+    .game-card-desc {
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: var(--ink-light);
+      margin-bottom: 1.5rem;
       flex: 1;
-      min-width: 200px;
-      font-size: 0.875rem;
-      margin: 0;
+    }
+
+    .play-btn {
+      display: block;
+      background: var(--gold);
+      color: var(--ink);
+      text-align: center;
+      padding: 0.9rem 1rem;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 1.05rem;
+      transition: background 0.15s;
+      text-decoration: none;
+    }
+
+    .game-card:hover .play-btn {
+      background: #b08e30;
+      text-decoration: none;
+    }
+
+    @media (max-width: 600px) {
+      .hero { margin: 1.75rem auto 1.5rem; }
+      .games-section { padding: 0 1rem 3rem; }
+      .game-grid { gap: 1rem; }
     }
   </style>
 </head>
@@ -156,64 +122,42 @@
 
   <header class="site-header">
     <a href="index.html" class="site-logo">Homeschool<span>Games</span></a>
-    <nav class="site-nav">
-      <a href="games/circa/index.html">Circa</a>
-      <a href="games/map-quiz/index.html">Map Quiz</a>
-      <a href="games/math-drill/index.html">Math Drill</a>
-    </nav>
   </header>
 
   <div class="hero">
-    <p class="hero-eyebrow">Educational Games</p>
-    <h1>Learn by playing.</h1>
-    <p>Simple, focused games built for homeschoolers. No ads, no accounts, no distractions — just learning.</p>
+    <h1>Learn by Playing</h1>
+    <p>Simple games for history, geography, and math. No sign-in, no ads — just play.</p>
   </div>
 
   <section class="games-section">
-    <p class="section-label">Available now</p>
     <div class="game-grid">
 
       <a href="games/circa/index.html" class="game-card">
         <span class="game-card-icon">🃏</span>
         <h3>Circa</h3>
-        <p>A history card game. Play an event card, guess its date, and see who comes closest. Covers world history from ancient times to the modern era.</p>
-        <div>
-          <span class="badge">History</span>
-          <span class="badge">1–6 players</span>
-        </div>
-        <p class="game-card-play">Play now →</p>
+        <span class="subject-pill pill-history">History</span>
+        <p class="game-card-desc">Pick the history card from your hand that is closest in date to the center card. How many can you get right in a row?</p>
+        <span class="play-btn">Play Circa →</span>
       </a>
 
       <a href="games/map-quiz/index.html" class="game-card">
         <span class="game-card-icon">🗺️</span>
         <h3>Map Quiz</h3>
-        <p>You're given a country name — click where it is on the map. Four regions to explore: the Americas, Europe, Asia, and Africa.</p>
-        <div>
-          <span class="badge">Geography</span>
-          <span class="badge">Solo</span>
-        </div>
-        <p class="game-card-play">Play now →</p>
+        <span class="subject-pill pill-geo">Geography</span>
+        <p class="game-card-desc">You'll see a country name — click it on the map! Explore the Americas, Europe, Asia, and Africa.</p>
+        <span class="play-btn">Play Map Quiz →</span>
       </a>
 
       <a href="games/math-drill/index.html" class="game-card">
         <span class="game-card-icon">✖️</span>
         <h3>Math Drill</h3>
-        <p>Four answer choices, one correct one. Addition, subtraction, multiplication, and division across three difficulty levels.</p>
-        <div>
-          <span class="badge">Math</span>
-          <span class="badge">Solo</span>
-        </div>
-        <p class="game-card-play">Play now →</p>
+        <span class="subject-pill pill-math">Math</span>
+        <p class="game-card-desc">Addition, subtraction, multiplication, division — four answer choices, pick the right one. Easy, Medium, or Hard!</p>
+        <span class="play-btn">Play Math Drill →</span>
       </a>
 
     </div>
   </section>
-
-  <div class="about-strip">
-    <div class="about-strip-inner">
-      <p>Built for homeschool families. Every game runs entirely in your browser — no login, no tracking, no internet required after the first load.</p>
-    </div>
-  </div>
 
   <footer class="site-footer">
     homeschoolgames.app
