@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flag Frenzy — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <style>
+    @keyframes pop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.07); }
+      100% { transform: scale(1); }
+    }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20%     { transform: translateX(-9px); }
+      40%     { transform: translateX(9px); }
+      60%     { transform: translateX(-6px); }
+      80%     { transform: translateX(6px); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .quiz-page {
+      max-width: 580px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .quiz-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.25rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .quiz-top h1 { margin: 0; font-size: 1.8rem; }
+
+    .stat-group { display: flex; gap: 0.5rem; }
+    .stat-badge {
+      background: var(--cream-dark);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      padding: 0.45rem 1rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      white-space: nowrap;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+    }
+    .stat-badge.hot { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+
+    .flag-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem 1.5rem 1.5rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .cat-pill {
+      display: inline-block;
+      padding: 0.18rem 0.75rem;
+      border-radius: 99px;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      font-family: var(--font-sans);
+    }
+    .cat-Africa   { background: #FFF3D0; color: #7A5C00; }
+    .cat-Americas { background: #E4F2E8; color: #2A5C3F; }
+    .cat-Asia     { background: #FAE0E0; color: #8B2020; }
+    .cat-Europe   { background: #D4EEF5; color: #1A5C6B; }
+    .cat-Oceania  { background: #E4DAF2; color: #4A2C6B; }
+
+    .flag-glyph {
+      font-size: clamp(4.5rem, 22vw, 7rem);
+      line-height: 1.1;
+      margin-bottom: 0.6rem;
+      /* keep flags crisp on systems that render emoji flags */
+      font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+    }
+
+    .flag-blurb {
+      font-size: 1rem;
+      color: var(--ink-light);
+      line-height: 1.5;
+      max-width: 42ch;
+      margin: 0 auto;
+      font-style: italic;
+    }
+
+    .reveal-name {
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--gold);
+      margin-top: 1rem;
+    }
+
+    .prompt {
+      text-align: center;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink-light);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.9rem;
+    }
+
+    .feedback {
+      min-height: 1.9rem;
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.6rem;
+    }
+
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+    .option-btn {
+      background: white;
+      border: 2.5px solid var(--border);
+      border-radius: 12px;
+      padding: 0.9rem 0.75rem;
+      font-family: var(--font-serif);
+      cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(26,23,20,0.07);
+      min-height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+    .option-btn .key-hint {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--ink-light);
+      background: var(--cream-dark);
+      border-radius: 5px;
+      padding: 0.1rem 0.4rem;
+      flex-shrink: 0;
+    }
+    .option-btn .option-val { font-size: 1.3rem; font-weight: 600; color: var(--ink); line-height: 1.15; }
+    .option-btn:hover:not(:disabled) { border-color: var(--gold); background: #FFFDF4; transform: translateY(-2px); }
+    .option-btn.correct { background: #EAF4EE; border-color: var(--green); animation: pop 0.3s ease; }
+    .option-btn.correct .option-val, .option-btn.correct .key-hint { color: var(--green); }
+    .option-btn.wrong { background: #FAE8E8; border-color: var(--red); animation: shake 0.4s ease; }
+    .option-btn.wrong .option-val, .option-btn.wrong .key-hint { color: var(--red); }
+    .option-btn.reveal-correct { background: #EAF4EE; border-color: var(--green); }
+    .option-btn.reveal-correct .option-val, .option-btn.reveal-correct .key-hint { color: var(--green); }
+    .option-btn:disabled { cursor: default; transform: none; }
+
+    #nextBtn {
+      display: block;
+      width: 100%;
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      border-radius: 12px;
+      padding: 1.05rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
+      cursor: pointer;
+      margin-bottom: 1rem;
+      transition: background 0.15s;
+    }
+    #nextBtn:hover { background: #b08e30; }
+
+    .control-row { display: flex; justify-content: center; margin-top: 0.25rem; }
+    .reset-link {
+      background: none; border: none; color: var(--ink-light);
+      font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans);
+      text-decoration: underline; padding: 0.3rem 0.5rem;
+    }
+    .reset-link:hover { color: var(--ink); }
+
+    @media (max-width: 480px) {
+      .option-grid { grid-template-columns: 1fr; }
+      .option-btn { min-height: 56px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← All Games</a>
+  </nav>
+</header>
+
+<div class="quiz-page">
+
+  <div class="quiz-top">
+    <h1>Flag Frenzy</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="scoreBadge">0 / 0</div>
+      <div class="stat-badge" id="streakBadge">0 streak</div>
+    </div>
+  </div>
+
+  <div class="flag-card">
+    <span class="cat-pill" id="catPill">Continent</span>
+    <div class="flag-glyph" id="flagGlyph">🏳️</div>
+    <div class="flag-blurb" id="flagBlurb"></div>
+    <div class="reveal-name" id="revealName"></div>
+  </div>
+
+  <div class="prompt">Which country flies this flag?</div>
+
+  <div class="feedback" id="feedback"></div>
+
+  <div class="option-grid" id="optionGrid"></div>
+
+  <button id="nextBtn" onclick="nextCard()" style="display:none">Next Flag →</button>
+
+  <div class="control-row">
+    <button class="reset-link" onclick="resetAll()">Start Over</button>
+  </div>
+
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script>
+// ============================================================
+// FLAG FRENZY — name the country from its flag
+// ============================================================
+
+const DECK = [
+  // AFRICA
+  {country:"Egypt", flag:"🇪🇬", continent:"Africa", blurb:"Pyramids rise from its desert; the Nile runs through it.", tier:"gimme"},
+  {country:"Nigeria", flag:"🇳🇬", continent:"Africa", blurb:"Africa's most populous nation; green and white bands.", tier:"medium"},
+  {country:"Kenya", flag:"🇰🇪", continent:"Africa", blurb:"A Maasai shield and spears at its center; home of the Rift Valley.", tier:"medium"},
+  {country:"South Africa", flag:"🇿🇦", continent:"Africa", blurb:"Six colors in a Y-shape; Table Mountain overlooks Cape Town.", tier:"medium"},
+  {country:"Morocco", flag:"🇲🇦", continent:"Africa", blurb:"A green star on deep red; a gateway between Africa and Europe.", tier:"niche"},
+  {country:"Ethiopia", flag:"🇪🇹", continent:"Africa", blurb:"Never colonized; the birthplace of coffee.", tier:"niche"},
+  {country:"Ghana", flag:"🇬🇭", continent:"Africa", blurb:"A lone black star on red, gold, and green.", tier:"niche"},
+  {country:"Tanzania", flag:"🇹🇿", continent:"Africa", blurb:"A diagonal black stripe; Mount Kilimanjaro towers here.", tier:"niche"},
+
+  // AMERICAS
+  {country:"United States", flag:"🇺🇸", continent:"Americas", blurb:"Fifty stars and thirteen stripes.", tier:"gimme"},
+  {country:"Canada", flag:"🇨🇦", continent:"Americas", blurb:"A single red maple leaf on white.", tier:"gimme"},
+  {country:"Brazil", flag:"🇧🇷", continent:"Americas", blurb:"“Ordem e Progresso” on a green field.", tier:"gimme"},
+  {country:"Mexico", flag:"🇲🇽", continent:"Americas", blurb:"An eagle devouring a serpent on a cactus.", tier:"medium"},
+  {country:"Argentina", flag:"🇦🇷", continent:"Americas", blurb:"A golden Sun of May on sky blue and white.", tier:"medium"},
+  {country:"Peru", flag:"🇵🇪", continent:"Americas", blurb:"Red and white bands; heart of the old Inca empire.", tier:"niche"},
+  {country:"Chile", flag:"🇨🇱", continent:"Americas", blurb:"A lone white star; a long ribbon of land down the Pacific.", tier:"niche"},
+  {country:"Cuba", flag:"🇨🇺", continent:"Americas", blurb:"A single star in a red triangle; a Caribbean island.", tier:"niche"},
+
+  // ASIA
+  {country:"Japan", flag:"🇯🇵", continent:"Asia", blurb:"A red sun on a white field.", tier:"gimme"},
+  {country:"China", flag:"🇨🇳", continent:"Asia", blurb:"Five gold stars on red.", tier:"gimme"},
+  {country:"India", flag:"🇮🇳", continent:"Asia", blurb:"A blue wheel between saffron and green.", tier:"gimme"},
+  {country:"South Korea", flag:"🇰🇷", continent:"Asia", blurb:"A red-and-blue yin-yang with black trigrams.", tier:"medium"},
+  {country:"Israel", flag:"🇮🇱", continent:"Asia", blurb:"A blue Star of David between two stripes.", tier:"medium"},
+  {country:"Saudi Arabia", flag:"🇸🇦", continent:"Asia", blurb:"Arabic script above a sword on green.", tier:"niche"},
+  {country:"Thailand", flag:"🇹🇭", continent:"Asia", blurb:"Five bands of red, white, and blue.", tier:"niche"},
+  {country:"Vietnam", flag:"🇻🇳", continent:"Asia", blurb:"A single gold star on red.", tier:"niche"},
+
+  // EUROPE
+  {country:"France", flag:"🇫🇷", continent:"Europe", blurb:"Blue, white, and red — the tricolore.", tier:"gimme"},
+  {country:"United Kingdom", flag:"🇬🇧", continent:"Europe", blurb:"The Union Jack.", tier:"gimme"},
+  {country:"Germany", flag:"🇩🇪", continent:"Europe", blurb:"Black, red, and gold horizontal bands.", tier:"gimme"},
+  {country:"Italy", flag:"🇮🇹", continent:"Europe", blurb:"Green, white, and red; birthplace of Rome.", tier:"gimme"},
+  {country:"Spain", flag:"🇪🇸", continent:"Europe", blurb:"Red and yellow bands with a royal crest.", tier:"medium"},
+  {country:"Greece", flag:"🇬🇷", continent:"Europe", blurb:"Blue and white stripes with a cross in the corner.", tier:"medium"},
+  {country:"Switzerland", flag:"🇨🇭", continent:"Europe", blurb:"A white cross on a square red field.", tier:"niche"},
+  {country:"Sweden", flag:"🇸🇪", continent:"Europe", blurb:"A yellow cross on blue.", tier:"niche"},
+  {country:"Netherlands", flag:"🇳🇱", continent:"Europe", blurb:"Red, white, and blue horizontal bands.", tier:"niche"},
+  {country:"Ireland", flag:"🇮🇪", continent:"Europe", blurb:"Green, white, and orange.", tier:"niche"},
+
+  // OCEANIA
+  {country:"Australia", flag:"🇦🇺", continent:"Oceania", blurb:"The Southern Cross and a Union Jack canton.", tier:"medium"},
+  {country:"New Zealand", flag:"🇳🇿", continent:"Oceania", blurb:"A red Southern Cross and a Union Jack canton.", tier:"niche"},
+  {country:"Fiji", flag:"🇫🇯", continent:"Oceania", blurb:"A light blue field with a shield; Pacific islands.", tier:"niche"},
+  {country:"Papua New Guinea", flag:"🇵🇬", continent:"Oceania", blurb:"A bird of paradise and the Southern Cross.", tier:"niche"},
+];
+
+const KEYS = ['A','B','C','D'];
+
+let correct = 0, total = 0, streak = 0;
+let answered = false, currentCard = null, queue = [];
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function drawCard() {
+  if (queue.length === 0) queue = shuffle(DECK);
+  return queue.pop();
+}
+
+function buildOptions(card) {
+  // Distractors are other countries from the SAME continent (more plausible).
+  let pool = DECK.filter(c => c.continent === card.continent && c.country !== card.country)
+                 .map(c => c.country);
+  // Safety net if a continent is thin.
+  if (pool.length < 3) {
+    pool = pool.concat(DECK.filter(c => c.country !== card.country).map(c => c.country));
+  }
+  pool = [...new Set(pool)];
+  const distractors = shuffle(pool).slice(0, 3);
+  return shuffle([card.country, ...distractors]);
+}
+
+function nextCard() {
+  answered = false;
+  currentCard = drawCard();
+  const options = buildOptions(currentCard);
+
+  const pill = document.getElementById('catPill');
+  pill.textContent = currentCard.continent;
+  pill.className = 'cat-pill cat-' + currentCard.continent;
+
+  document.getElementById('flagGlyph').textContent = currentCard.flag;
+  document.getElementById('flagBlurb').textContent = currentCard.blurb;
+  document.getElementById('revealName').textContent = '';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  const grid = document.getElementById('optionGrid');
+  grid.innerHTML = '';
+  options.forEach((country, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.dataset.idx = i;
+    btn.dataset.country = country;
+
+    const keyEl = document.createElement('span');
+    keyEl.className = 'key-hint';
+    keyEl.textContent = KEYS[i];
+
+    const valEl = document.createElement('span');
+    valEl.className = 'option-val';
+    valEl.textContent = country;
+
+    btn.appendChild(keyEl);
+    btn.appendChild(valEl);
+    btn.addEventListener('click', () => handleAnswer(country, btn));
+    grid.appendChild(btn);
+  });
+}
+
+function handleAnswer(chosen, clickedBtn) {
+  if (answered) return;
+  answered = true;
+  total++;
+
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const isCorrect = chosen === currentCard.country;
+
+  if (isCorrect) {
+    correct++; streak++;
+    clickedBtn.classList.add('correct');
+    const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
+              : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
+              :                `✓ Correct!`;
+    document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
+  } else {
+    streak = 0;
+    clickedBtn.classList.add('wrong');
+    allBtns.forEach(b => {
+      if (b.dataset.country === currentCard.country) b.classList.add('reveal-correct');
+    });
+    document.getElementById('feedback').innerHTML =
+      `<span style="color:var(--red)">✗ This is ${currentCard.country}</span>`;
+  }
+
+  document.getElementById('revealName').textContent =
+    `${currentCard.flag} ${currentCard.country} — ${currentCard.continent}`;
+
+  updateBadges();
+  document.getElementById('nextBtn').style.display = 'block';
+}
+
+function updateBadges() {
+  document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
+  const streakEl = document.getElementById('streakBadge');
+  if (streak >= 5) {
+    streakEl.textContent = `🔥 ${streak} streak`;
+    streakEl.classList.add('hot');
+  } else {
+    streakEl.textContent = `${streak} streak`;
+    streakEl.classList.remove('hot');
+  }
+}
+
+function resetAll() {
+  correct = 0; total = 0; streak = 0; queue = [];
+  updateBadges();
+  nextCard();
+}
+
+document.addEventListener('keydown', e => {
+  if ((e.key === 'Enter' || e.key === ' ') && answered) { e.preventDefault(); nextCard(); return; }
+  if (answered) return;
+  const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
+  if (idx === -1) return;
+  const btn = document.querySelector(`.option-btn[data-idx="${idx}"]`);
+  if (btn && !btn.disabled) btn.click();
+});
+
+updateBadges();
+nextCard();
+</script>
+
+</body>
+</html>
