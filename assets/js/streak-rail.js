@@ -69,6 +69,13 @@
     if (m.nodeType === 1) return m;
     return null;
   }
+  function resolveAll(m) {
+    if (!m) return [];
+    if (typeof m === 'string') return Array.prototype.slice.call(document.querySelectorAll(m));
+    if (m.nodeType === 1) return [m];
+    if (typeof m.length === 'number') return Array.prototype.slice.call(m);
+    return [];
+  }
 
   // ---- shared edge-glow overlay (one for the page) ----
   var edgeEl = null;
@@ -153,6 +160,10 @@
     this.value = 0;
     this._recordFired = false;
     this.mount = resolveMount(opts.mount);
+    // extra board-only mounts (e.g. menu/end screens that show the leaderboard
+    // without the live fire counter)
+    this.extraBoards = resolveAll(opts.boardMount);
+    this.extraBoards.forEach(function (el) { el.classList.add('hsg-board'); });
     this._modalOpen = false;
     if (this.mount) this._build();
     this.renderBoard();
@@ -268,7 +279,8 @@
   };
 
   Rail.prototype.renderBoard = function (highlightTs) {
-    if (!this.boardEl) return;
+    var targets = (this.boardEl ? [this.boardEl] : []).concat(this.extraBoards || []);
+    if (!targets.length) return;
     var list = load(this.gameId);
     var self = this;
     var inner;
@@ -295,9 +307,11 @@
           '<button type="button" class="hsg-board-clear">Clear</button></div>' +
         '<ol class="hsg-board-list">' + rows + '</ol>';
     }
-    this.boardEl.innerHTML = inner;
-    var clearBtn = this.boardEl.querySelector('.hsg-board-clear');
-    if (clearBtn) clearBtn.addEventListener('click', function () { self.clear(); });
+    targets.forEach(function (el) {
+      el.innerHTML = inner;
+      var clearBtn = el.querySelector('.hsg-board-clear');
+      if (clearBtn) clearBtn.addEventListener('click', function () { self.clear(); });
+    });
   };
 
   window.HSGStreak = {

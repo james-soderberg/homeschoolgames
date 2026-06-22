@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circa — History Card Game</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
-  <link rel="stylesheet" href="../../assets/css/leaderboard.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     :root {
       --card-bg:     #FBF6E8;
@@ -131,9 +131,7 @@
     /* ---- SOLO game screen ---- */
     .solo-screen {
       display: none;
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 1.5rem;
+      padding: 1.5rem 0;
     }
 
     /* Solo header bar */
@@ -472,11 +470,12 @@
 
   <!-- ===================== SOLO SCREEN ===================== -->
   <div class="solo-screen" id="soloScreen">
+   <div class="game-layout">
+    <div class="game-main">
 
     <div class="solo-header">
       <h2>Circa <span style="font-size:1rem;color:var(--ink-light);font-family:var(--font-sans);font-weight:400;">— Solo</span></h2>
       <div class="solo-stats">
-        <div class="stat-pill streak">Streak <span class="stat-val" id="soloStreak">0</span></div>
         <div class="stat-pill best">Best <span class="stat-val" id="soloBest">0</span></div>
         <div class="stat-pill">Round <span class="stat-val" id="soloRound">1</span></div>
         <button class="btn btn-outline btn-sm" onclick="location.reload()">Quit</button>
@@ -499,6 +498,9 @@
     <!-- Action bar -->
     <div class="action-bar" id="soloActionBar"></div>
 
+    </div><!-- /.game-main -->
+    <aside class="hsg-rail" id="streakRail"></aside>
+   </div><!-- /.game-layout -->
   </div>
 
   <!-- ===================== PASS-AND-PLAY GAME SCREEN ===================== -->
@@ -547,7 +549,7 @@
     <a href="../../index.html">homeschoolgames.app</a>
   </footer>
 
-<script src="../../assets/js/leaderboard.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // CIRCA — Full deck
@@ -835,6 +837,7 @@ let soloAwaitingNext = false;
 
 function startSoloGame() {
   soloStreak = 0;
+  if (typeof rail !== 'undefined') rail.reset();
   soloRoundNum = 0;
   soloDeck = shuffle([...DECK]);
   soloHand = [];
@@ -989,6 +992,7 @@ function soloPickCard(pickedIdx) {
 
   if (isCorrect) {
     soloStreak++;
+    rail.hit();
     const newHigh = soloStreak > getHighScore();
     if (newHigh) setHighScore(soloStreak);
     updateSoloStats();
@@ -1040,13 +1044,12 @@ function soloPickCard(pickedIdx) {
       streakNote.textContent = `Streak of ${prevStreak} ended.`;
       bar.appendChild(streakNote);
     }
-    // A streak just ended — offer the leaderboard if it's good enough.
-    board.submit(prevStreak);
+    // A streak just ended — flare the fire down and offer the leaderboard.
+    rail.end();
   }
 }
 
 function updateSoloStats() {
-  document.getElementById('soloStreak').textContent = soloStreak;
   document.getElementById('soloBest').textContent = getHighScore();
 }
 
@@ -1055,8 +1058,8 @@ function soloEndGame(reason) {
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
 
-  // The run is over — offer the leaderboard with this game's streak.
-  board.submit(soloStreak);
+  // The run is over — flare down and offer the leaderboard with this streak.
+  rail.end();
 
   const hs = getHighScore();
   document.getElementById('endSubtitle').textContent =
@@ -1344,10 +1347,12 @@ function startFriendsGame() {
   startPassGame();
 }
 
-// Init
-const board = HSGLeaderboard.init({
-  gameId: 'circa', gameName: 'Circa', minStreak: 5,
-  mount: document.querySelectorAll('.circa-leaderboard')
+// Init — fire counter on the solo screen, leaderboard mirrored on the
+// setup and end screens via the boardMount selector.
+const rail = HSGStreak.init({
+  gameId: 'circa', gameName: 'Circa', minStreak: 1,
+  mount: document.getElementById('streakRail'),
+  boardMount: '.circa-leaderboard'
 });
 
 updatePlayerNames();
