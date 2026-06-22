@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Map Quiz — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
-  <link rel="stylesheet" href="../../assets/css/leaderboard.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     @keyframes pop {
       0%   { transform: scale(1); }
@@ -172,7 +172,8 @@
   </nav>
 </header>
 
-<div class="map-page">
+<div class="game-layout game-layout-wide">
+<div class="map-page game-main">
   <div class="map-header">
     <h1>Map Quiz</h1>
   </div>
@@ -190,10 +191,6 @@
       <div class="prompt-country" id="promptCountry">Loading…</div>
     </div>
     <div class="score-box">
-      <div class="score-item">
-        <span class="score-num streak" id="scoreStreak">0</span>
-        <span class="score-label">🔥 Streak</span>
-      </div>
       <div class="score-item">
         <span class="score-num correct" id="scoreCorrect">0</span>
         <span class="score-label">✓ Correct</span>
@@ -213,14 +210,16 @@
     <button class="btn btn-outline btn-sm" onclick="resetScores()">Reset Scores</button>
   </div>
 
-  <div id="leaderboard"></div>
-</div>
+</div><!-- /.map-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/leaderboard.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/map-data.js"></script>
 <script>
 // ============================================================
@@ -352,7 +351,7 @@ function loadRegion(region) {
 }
 
 function resetQueue() {
-  if (typeof board !== 'undefined') board.submit(streak); // streak ends on reset / region switch
+  if (typeof rail !== 'undefined') rail.end(); // streak ends on reset / region switch
   queue = shuffle([...REGIONS[currentRegion].countries]);
   scoreCorrect = 0;
   scoreWrong = 0;
@@ -396,6 +395,7 @@ function handleCountryClick(countryId) {
   if (countryId === currentCountry.id) {
     scoreCorrect++;
     streak++;
+    rail.hit();
     fb.innerHTML = `<span class="feedback-correct">🎉 Yes! That's ${currentCountry.name}!</span>`;
     if (correctEl) correctEl.classList.add('correct-flash');
     updateScoreDisplay();
@@ -416,8 +416,8 @@ function handleCountryClick(countryId) {
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1800);
-    // A streak just ended — offer the leaderboard if it's good enough.
-    if (endedStreak) board.submit(endedStreak);
+    // A streak just ended — flare down and offer the leaderboard if it qualifies.
+    if (endedStreak) rail.end();
   }
 }
 
@@ -427,7 +427,6 @@ function getCountryName(id) {
 }
 
 function updateScoreDisplay() {
-  document.getElementById('scoreStreak').textContent = streak;
   document.getElementById('scoreCorrect').textContent = scoreCorrect;
   document.getElementById('scoreWrong').textContent = scoreWrong;
 }
@@ -443,9 +442,9 @@ function shuffle(arr) {
 // ============================================================
 // Init
 // ============================================================
-const board = HSGLeaderboard.init({
-  gameId: 'map-quiz', gameName: 'Map Quiz', minStreak: 5,
-  mount: document.getElementById('leaderboard')
+const rail = HSGStreak.init({
+  gameId: 'map-quiz', gameName: 'Map Quiz', minStreak: 1,
+  mount: document.getElementById('streakRail')
 });
 
 loadRegion('americas');

@@ -33,6 +33,12 @@
   gap: 1rem;
 }
 
+/* wide variant: for map-style games — the main fills, rail sits to its right,
+   no phantom spacer (the wide main doesn't need viewport-centering) */
+.game-layout-wide { max-width: 1300px; justify-content: flex-start; }
+.game-layout-wide::before { display: none; }
+.game-layout-wide > .game-main { flex: 1 1 auto; max-width: none; }
+
 /* ======================= FIRE COUNTER ======================= */
 .hsg-streak {
   position: relative;
