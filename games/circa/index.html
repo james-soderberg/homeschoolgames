@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Circa — History Card Game</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/leaderboard.css">
   <style>
     :root {
       --card-bg:     #FBF6E8;
@@ -458,6 +459,8 @@
 
       <button class="start-friends-btn" onclick="startFriendsGame()">Start Game →</button>
     </div>
+
+    <div class="circa-leaderboard"></div>
   </div>
 
   <!-- ===================== PASS SCREEN ===================== -->
@@ -536,12 +539,15 @@
     <button class="btn btn-gold" onclick="location.reload()" style="margin-top:0.5rem">Play Again</button>
     <br><br>
     <a href="../../index.html" class="btn btn-outline">All Games</a>
+
+    <div class="circa-leaderboard"></div>
   </div>
 
   <footer class="site-footer">
     <a href="../../index.html">homeschoolgames.app</a>
   </footer>
 
+<script src="../../assets/js/leaderboard.js"></script>
 <script>
 // ============================================================
 // CIRCA — Full deck
@@ -1034,6 +1040,8 @@ function soloPickCard(pickedIdx) {
       streakNote.textContent = `Streak of ${prevStreak} ended.`;
       bar.appendChild(streakNote);
     }
+    // A streak just ended — offer the leaderboard if it's good enough.
+    board.submit(prevStreak);
   }
 }
 
@@ -1046,6 +1054,9 @@ function soloEndGame(reason) {
   document.getElementById('soloScreen').style.display = 'none';
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
+
+  // The run is over — offer the leaderboard with this game's streak.
+  board.submit(soloStreak);
 
   const hs = getHighScore();
   document.getElementById('endSubtitle').textContent =
@@ -1334,6 +1345,11 @@ function startFriendsGame() {
 }
 
 // Init
+const board = HSGLeaderboard.init({
+  gameId: 'circa', gameName: 'Circa', minStreak: 5,
+  mount: document.querySelectorAll('.circa-leaderboard')
+});
+
 updatePlayerNames();
 </script>
 

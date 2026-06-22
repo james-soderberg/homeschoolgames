@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Math Drill — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     @keyframes pop {
       0%   { transform: scale(1); }
@@ -268,11 +269,11 @@
   </nav>
 </header>
 
-<div class="math-page">
+<div class="game-layout">
+<div class="math-page game-main">
 
   <div class="math-top">
     <h1>Math Drill</h1>
-    <div class="streak-badge" id="streakBadge">0 in a row</div>
   </div>
 
   <div class="diff-tabs">
@@ -299,12 +300,16 @@
     <button class="reset-link" onclick="resetAll()">Start Over</button>
   </div>
 
-</div>
+</div><!-- /.math-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // MATH DRILL
@@ -438,15 +443,16 @@ function handleAnswer(chosen, clickedBtn) {
   if (isCorrect) {
     correct++;
     streak++;
+    rail.hit();
     clickedBtn.classList.add('correct');
     const msg = streak >= 10 ? `🔥 ${streak} in a row!`
               : streak >= 5  ? `⭐ ${streak} in a row!`
               :                `✓ Correct!`;
     document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
-    updateStreakBadge();
     setTimeout(nextProblem, 700);
   } else {
     wrong++;
+    const endedStreak = streak;
     streak = 0;
     clickedBtn.classList.add('wrong');
     allBtns.forEach(b => {
@@ -456,19 +462,9 @@ function handleAnswer(chosen, clickedBtn) {
     });
     document.getElementById('feedback').innerHTML =
       `<span style="color:var(--red)">✗ The answer was ${currentAnswer}</span>`;
-    updateStreakBadge();
     document.getElementById('nextBtn').style.display = 'block';
-  }
-}
-
-function updateStreakBadge() {
-  const el = document.getElementById('streakBadge');
-  if (streak >= 5) {
-    el.textContent = `🔥 ${streak} in a row!`;
-    el.classList.add('hot');
-  } else {
-    el.textContent = `${streak} in a row`;
-    el.classList.remove('hot');
+    // A streak just ended — flare down and offer the leaderboard if it qualifies.
+    if (endedStreak) rail.end();
   }
 }
 
@@ -484,8 +480,8 @@ function setDiff(d, btn) {
 }
 
 function resetAll() {
+  if (typeof rail !== 'undefined') rail.end(); // records if they reset mid-streak
   correct = 0; wrong = 0; streak = 0; setCount = 0;
-  updateStreakBadge();
   document.getElementById('progressFill').style.width = '0%';
   nextProblem();
 }
@@ -497,6 +493,11 @@ document.addEventListener('keydown', e => {
   if (idx === -1) return;
   const btn = document.querySelector(`.answer-btn[data-idx="${idx}"]`);
   if (btn && !btn.disabled) btn.click();
+});
+
+const rail = HSGStreak.init({
+  gameId: 'math-drill', gameName: 'Math Drill', minStreak: 1,
+  mount: document.getElementById('streakRail')
 });
 
 nextProblem();

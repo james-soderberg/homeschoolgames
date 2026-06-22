@@ -1,0 +1,350 @@
+/* =========================================================
+   HomeschoolGames — Fire Streak Rail
+   A live, animated streak counter ("on fire") + a Streak
+   Leaderboard, pinned to the right of the game. Heats up by
+   level: ember → orange → on fire → blazing → blue inferno.
+   Relies on palette vars from site.css.
+   ========================================================= */
+
+/* ---- two-column game + rail layout ---- */
+.game-layout {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+  justify-content: center;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+/* phantom spacer mirrors the rail so the MAIN column stays centered in the viewport */
+.game-layout::before {
+  content: "";
+  flex: 0 0 250px;
+}
+.game-layout > .game-main { flex: 0 1 580px; max-width: 580px; min-width: 0; margin: 0 !important; }
+
+.hsg-rail {
+  width: 250px;
+  flex: 0 0 250px;
+  position: sticky;
+  top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ======================= FIRE COUNTER ======================= */
+.hsg-streak {
+  position: relative;
+  border-radius: 18px;
+  padding: 1.4rem 1rem 1.2rem;
+  text-align: center;
+  border: 2.5px solid var(--border);
+  background: #FBF7EF;
+  overflow: hidden;
+  transition: border-color .35s, background .35s, box-shadow .35s;
+  --heat: #9b9385;
+}
+.hsg-streak::before {            /* heat haze that fills from the bottom */
+  content: '';
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 0%;
+  background: linear-gradient(to top, color-mix(in srgb, var(--heat) 30%, transparent), transparent);
+  transition: height .4s ease;
+  pointer-events: none;
+}
+.hsg-streak .flame {
+  font-size: 2.8rem;
+  line-height: 1;
+  display: block;
+  margin-bottom: 0.15rem;
+  filter: grayscale(0.6) opacity(0.55);
+  transition: filter .35s, transform .2s;
+  transform-origin: center bottom;
+}
+.hsg-streak .count {
+  position: relative;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 3.6rem;
+  line-height: 1;
+  color: var(--heat);
+  transition: color .35s;
+}
+.hsg-streak .streak-label {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--heat);
+  transition: color .35s;
+}
+.hsg-streak .streak-best {
+  display: block;
+  margin-top: 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--ink-light);
+}
+
+/* ---- heat levels ---- */
+.hsg-streak[data-level="1"] { --heat: #E0A53B; border-color: #E6C778; }
+.hsg-streak[data-level="2"] { --heat: #E07B2B; border-color: #E8A461; }
+.hsg-streak[data-level="3"] { --heat: #E0531B; border-color: #E78A52; background: #FFF6EC; }
+.hsg-streak[data-level="4"] { --heat: #D62828; border-color: #E76A4A; background: #FFF0E8; }
+.hsg-streak[data-level="5"] { --heat: #2E8FE0; border-color: #74C0F2; background: #EEF7FF; }
+
+.hsg-streak[data-level="1"] .flame,
+.hsg-streak[data-level="2"] .flame { filter: none; }
+.hsg-streak[data-level="3"] .flame { filter: drop-shadow(0 0 8px rgba(224,83,27,.6)); }
+.hsg-streak[data-level="4"] .flame { filter: drop-shadow(0 0 12px rgba(214,40,40,.75)); }
+.hsg-streak[data-level="5"] .flame { filter: hue-rotate(160deg) saturate(1.4) drop-shadow(0 0 14px rgba(46,143,224,.85)); }
+
+/* fill the heat haze higher as it climbs */
+.hsg-streak[data-level="1"]::before { height: 18%; }
+.hsg-streak[data-level="2"]::before { height: 34%; }
+.hsg-streak[data-level="3"]::before { height: 55%; }
+.hsg-streak[data-level="4"]::before { height: 78%; }
+.hsg-streak[data-level="5"]::before { height: 100%; }
+
+/* flame flickers once you're truly on fire */
+@keyframes hsg-flicker {
+  0%,100% { transform: scale(1) rotate(-3deg); }
+  25%     { transform: scale(1.07) rotate(2deg); }
+  50%     { transform: scale(0.97) rotate(-1deg); }
+  75%     { transform: scale(1.05) rotate(3deg); }
+}
+.hsg-streak[data-level="3"] .flame,
+.hsg-streak[data-level="4"] .flame,
+.hsg-streak[data-level="5"] .flame { animation: hsg-flicker .55s ease-in-out infinite; }
+
+/* blazing/inferno get a pulsing halo */
+@keyframes hsg-halo {
+  0%,100% { box-shadow: 0 0 0 rgba(214,40,40,0); }
+  50%     { box-shadow: 0 0 26px rgba(214,40,40,.45); }
+}
+@keyframes hsg-halo-blue {
+  0%,100% { box-shadow: 0 0 0 rgba(46,143,224,0); }
+  50%     { box-shadow: 0 0 30px rgba(46,143,224,.55); }
+}
+.hsg-streak[data-level="4"] { animation: hsg-halo 1.6s ease-in-out infinite; }
+.hsg-streak[data-level="5"] { animation: hsg-halo-blue 1.4s ease-in-out infinite; }
+
+/* count pop on each correct answer */
+@keyframes hsg-bump {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}
+.hsg-streak.bump .count { animation: hsg-bump .42s cubic-bezier(.34,1.56,.64,1); }
+.hsg-streak.bump .flame { transform: scale(1.3) translateY(-3px); }
+
+/* floating +1 */
+.hsg-plusone {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--heat);
+  pointer-events: none;
+  animation: hsg-floatup .9s ease-out forwards;
+}
+@keyframes hsg-floatup {
+  0%   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -56px) scale(1.5); }
+}
+
+/* ======================= LEADERBOARD ======================= */
+.hsg-board {
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  padding: 1rem 0.9rem 0.8rem;
+  box-shadow: 0 2px 10px rgba(26,23,20,0.07);
+}
+.hsg-board-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.6rem;
+}
+.hsg-board-head h2 {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+  line-height: 1.15;
+}
+.hsg-board-clear {
+  background: none; border: none; color: var(--ink-light);
+  font-size: 0.7rem; cursor: pointer; text-decoration: underline;
+  font-family: var(--font-sans); padding: 0;
+}
+.hsg-board-clear:hover { color: var(--red); }
+.hsg-board-list { list-style: none; margin: 0; padding: 0; }
+.hsg-board-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.4rem 0.3rem;
+  border-radius: 8px;
+}
+.hsg-board-row:not(:last-child) { border-bottom: 1px solid var(--cream-dark); }
+.hsg-board-rank {
+  width: 1.5rem; text-align: center;
+  font-family: var(--font-serif); font-weight: 700; font-size: 0.95rem;
+  color: var(--ink-light); flex-shrink: 0;
+}
+.hsg-board-name {
+  flex: 1; font-weight: 600; font-size: 0.92rem; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.hsg-board-score {
+  font-family: var(--font-serif); font-weight: 700; font-size: 1rem;
+  color: #E0531B; white-space: nowrap;
+}
+.hsg-board-row.is-new { background: #FFF0DA; animation: hsg-rowglow 1.6s ease; }
+@keyframes hsg-rowglow { 0% { background: #FBD98A; } 100% { background: #FFF0DA; } }
+.hsg-board-empty {
+  text-align: center; color: var(--ink-light);
+  padding: 0.75rem 0.4rem; font-size: 0.85rem; line-height: 1.5;
+}
+
+/* ======================= RECORD TOAST ======================= */
+.hsg-toast {
+  position: fixed;
+  top: 20px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  background: linear-gradient(95deg, #E0531B, #E0A53B);
+  color: white;
+  font-family: var(--font-sans);
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  font-size: 1.05rem;
+  padding: 0.85rem 1.5rem;
+  border-radius: 99px;
+  box-shadow: 0 10px 30px rgba(224,83,27,.5);
+  white-space: nowrap;
+  animation: hsg-toastin .4s cubic-bezier(.34,1.56,.64,1), hsg-toastout .4s ease 2.4s forwards;
+}
+@keyframes hsg-toastin {
+  from { opacity: 0; transform: translate(-50%, -24px) scale(.8); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes hsg-toastout {
+  to { opacity: 0; transform: translate(-50%, -24px) scale(.9); }
+}
+
+/* ======================= CONFETTI ======================= */
+.hsg-confetti {
+  position: fixed; inset: 0; pointer-events: none; z-index: 1090; overflow: hidden;
+}
+.hsg-confetti i {
+  position: absolute; top: -16px; width: 10px; height: 14px; border-radius: 2px;
+  animation: hsg-fall linear forwards;
+}
+@keyframes hsg-fall {
+  to { transform: translateY(105vh) rotate(720deg); opacity: 0.9; }
+}
+
+/* ======================= EDGE GLOW ======================= */
+.hsg-edge-glow {
+  position: fixed; inset: 0; pointer-events: none; z-index: 30;
+  opacity: 0; transition: opacity .5s;
+  box-shadow: inset 0 0 100px 30px rgba(224,83,27,0);
+}
+.hsg-edge-glow.on {
+  opacity: 1;
+  box-shadow: inset 0 0 110px 36px rgba(224,83,27,.4);
+  animation: hsg-edgepulse 2.2s ease-in-out infinite;
+}
+.hsg-edge-glow.blue {
+  box-shadow: inset 0 0 130px 46px rgba(46,143,224,.5);
+}
+@keyframes hsg-edgepulse {
+  0%,100% { filter: brightness(1); }
+  50%     { filter: brightness(1.35); }
+}
+
+/* ======================= NAME MODAL ======================= */
+.hsg-overlay {
+  position: fixed; inset: 0; background: rgba(26,23,20,0.55);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1200; padding: 1rem; animation: hsg-fade .2s ease;
+}
+@keyframes hsg-fade { from { opacity: 0; } to { opacity: 1; } }
+.hsg-modal {
+  background: white; border-radius: 20px; padding: 1.9rem 1.6rem 1.5rem;
+  max-width: 390px; width: 100%; text-align: center;
+  box-shadow: 0 24px 56px rgba(0,0,0,0.3);
+  animation: hsg-pop .3s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes hsg-pop { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+.hsg-modal .big-flame { font-size: 3.2rem; line-height: 1; animation: hsg-flicker .55s ease-in-out infinite; display: inline-block; }
+.hsg-modal h3 {
+  font-family: var(--font-serif); font-size: 1.8rem; font-weight: 600; margin: 0.3rem 0 0.3rem;
+}
+.hsg-modal .sub { color: var(--ink-light); margin: 0 0 1.1rem; font-size: 0.98rem; line-height: 1.5; }
+.hsg-modal .sub strong { color: #E0531B; font-size: 1.15em; }
+.hsg-modal input {
+  width: 100%; padding: 0.85rem 1rem; border: 2px solid var(--border);
+  border-radius: 10px; font-size: 1.15rem; font-family: var(--font-sans);
+  text-align: center; color: var(--ink);
+}
+.hsg-modal input:focus { outline: none; border-color: #E0531B; }
+.hsg-modal .note { font-size: 0.78rem; color: var(--ink-light); margin: 0.55rem 0 1.1rem; }
+.hsg-modal .actions { display: flex; gap: 0.6rem; }
+.hsg-modal .actions button {
+  flex: 1; padding: 0.85rem; border-radius: 10px; font-weight: 700;
+  font-family: var(--font-sans); font-size: 1rem; cursor: pointer;
+  border: 2px solid var(--border); transition: background .15s;
+}
+.hsg-modal .skip { background: white; color: var(--ink-light); }
+.hsg-modal .skip:hover { background: var(--cream-dark); }
+.hsg-modal .save {
+  background: linear-gradient(95deg, #E0531B, #E0A53B);
+  border-color: #E0531B; color: white;
+}
+.hsg-modal .save:hover { filter: brightness(1.08); }
+
+/* ======================= RESPONSIVE ======================= */
+@media (max-width: 1000px) {
+  .game-layout { flex-direction: column; align-items: center; max-width: 600px; }
+  .game-layout::before { display: none; }      /* drop the spacer when stacked */
+  .game-layout > .game-main { flex: none; width: 100%; margin: 0 auto !important; }
+  .hsg-rail {
+    position: static;
+    width: 100%;
+    flex: none;
+    flex-direction: column-reverse; /* leaderboard below, fire counter sits as a fixed badge */
+  }
+  /* fire counter floats so it's always visible while playing */
+  .hsg-rail .hsg-streak {
+    position: fixed;
+    right: 12px; bottom: 12px;
+    width: 116px;
+    padding: 0.7rem 0.5rem 0.6rem;
+    z-index: 60;
+    box-shadow: 0 8px 22px rgba(26,23,20,0.25);
+  }
+  .hsg-rail .hsg-streak .flame { font-size: 1.7rem; }
+  .hsg-rail .hsg-streak .count { font-size: 2.2rem; }
+  .hsg-rail .hsg-streak .streak-best { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hsg-streak .flame, .hsg-streak, .hsg-streak.bump .count,
+  .hsg-edge-glow.on, .hsg-toast, .hsg-confetti i, .hsg-modal .big-flame {
+    animation: none !important;
+  }
+}

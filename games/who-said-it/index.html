@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Who Said It? — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     @keyframes pop {
       0%   { transform: scale(1); }
@@ -209,13 +210,13 @@
   </nav>
 </header>
 
-<div class="quiz-page">
+<div class="game-layout">
+<div class="quiz-page game-main">
 
   <div class="quiz-top">
     <h1>Who Said It?</h1>
     <div class="stat-group">
       <div class="stat-badge" id="scoreBadge">0 / 0</div>
-      <div class="stat-badge" id="streakBadge">0 streak</div>
     </div>
   </div>
 
@@ -238,12 +239,16 @@
     <button class="reset-link" onclick="resetAll()">Start Over</button>
   </div>
 
-</div>
+</div><!-- /.quiz-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // WHO SAID IT? — match the quote to the speaker
@@ -364,6 +369,7 @@ function handleAnswer(chosen, clickedBtn) {
   if (answered) return;
   answered = true;
   total++;
+  let endedStreak = 0;
 
   const allBtns = document.querySelectorAll('.option-btn');
   allBtns.forEach(b => b.disabled = true);
@@ -372,12 +378,14 @@ function handleAnswer(chosen, clickedBtn) {
 
   if (isCorrect) {
     correct++; streak++;
+    rail.hit();
     clickedBtn.classList.add('correct');
     const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
               : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
               :                `✓ Correct!`;
     document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
   } else {
+    endedStreak = streak;
     streak = 0;
     clickedBtn.classList.add('wrong');
     allBtns.forEach(b => {
@@ -392,21 +400,17 @@ function handleAnswer(chosen, clickedBtn) {
 
   updateBadges();
   document.getElementById('nextBtn').style.display = 'block';
+
+  // A streak just ended — flare down and offer the leaderboard if it qualifies.
+  if (endedStreak) rail.end();
 }
 
 function updateBadges() {
   document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
-  const streakEl = document.getElementById('streakBadge');
-  if (streak >= 5) {
-    streakEl.textContent = `🔥 ${streak} streak`;
-    streakEl.classList.add('hot');
-  } else {
-    streakEl.textContent = `${streak} streak`;
-    streakEl.classList.remove('hot');
-  }
 }
 
 function resetAll() {
+  rail.end(); // records if they reset mid-streak, then flares down
   correct = 0; total = 0; streak = 0; queue = [];
   updateBadges();
   nextCard();
@@ -419,6 +423,11 @@ document.addEventListener('keydown', e => {
   if (idx === -1) return;
   const btn = document.querySelector(`.option-btn[data-idx="${idx}"]`);
   if (btn && !btn.disabled) btn.click();
+});
+
+const rail = HSGStreak.init({
+  gameId: 'who-said-it', gameName: 'Who Said It?', minStreak: 1,
+  mount: document.getElementById('streakRail')
 });
 
 updateBadges();
