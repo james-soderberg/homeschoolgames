@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeschoolGames — Educational Games for Homeschoolers</title>
+  <link rel="stylesheet" href="assets/css/site.css">
+  <style>
+    .hero {
+      max-width: 700px;
+      margin: 4rem auto 3rem;
+      text-align: center;
+      padding: 0 1.5rem;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 0.75rem;
+    }
+
+    .hero h1 {
+      margin-bottom: 1rem;
+    }
+
+    .hero p {
+      font-size: 1.05rem;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ---- Game Grid ---- */
+    .games-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem 4rem;
+    }
+
+    .section-label {
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .game-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .game-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem 1.5rem;
+      box-shadow: var(--shadow);
+      text-decoration: none;
+      color: var(--ink);
+      display: block;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+      position: relative;
+    }
+
+    .game-card:hover {
+      border-color: var(--gold);
+      box-shadow: 0 3px 12px rgba(196,160,64,0.15);
+      transform: translateY(-2px);
+      text-decoration: none;
+      color: var(--ink);
+    }
+
+    .game-card-icon {
+      font-size: 2rem;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .game-card h3 {
+      font-family: var(--font-serif);
+      font-size: 1.3rem;
+      margin-bottom: 0.35rem;
+    }
+
+    .game-card p {
+      font-size: 0.875rem;
+      line-height: 1.55;
+      margin-bottom: 1rem;
+    }
+
+    .game-card .badge {
+      margin-right: 0.3rem;
+    }
+
+    .game-card-play {
+      margin-top: 1.25rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--gold);
+      letter-spacing: 0.04em;
+    }
+
+    .game-card:hover .game-card-play {
+      text-decoration: underline;
+    }
+
+    /* Coming soon state */
+    .game-card.coming-soon {
+      opacity: 0.55;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 3rem 0;
+    }
+
+    .about-strip {
+      max-width: 900px;
+      margin: 0 auto 3rem;
+      padding: 0 1.5rem;
+    }
+
+    .about-strip-inner {
+      background: var(--cream-dark);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .about-strip-inner p {
+      flex: 1;
+      min-width: 200px;
+      font-size: 0.875rem;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="index.html" class="site-logo">Homeschool<span>Games</span></a>
+    <nav class="site-nav">
+      <a href="games/circa/index.html">Circa</a>
+      <a href="games/map-quiz/index.html">Map Quiz</a>
+      <a href="games/math-drill/index.html">Math Drill</a>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <p class="hero-eyebrow">Educational Games</p>
+    <h1>Learn by playing.</h1>
+    <p>Simple, focused games built for homeschoolers. No ads, no accounts, no distractions — just learning.</p>
+  </div>
+
+  <section class="games-section">
+    <p class="section-label">Available now</p>
+    <div class="game-grid">
+
+      <a href="games/circa/index.html" class="game-card">
+        <span class="game-card-icon">🃏</span>
+        <h3>Circa</h3>
+        <p>A history card game. Play an event card, guess its date, and see who comes closest. Covers world history from ancient times to the modern era.</p>
+        <div>
+          <span class="badge">History</span>
+          <span class="badge">1–6 players</span>
+        </div>
+        <p class="game-card-play">Play now →</p>
+      </a>
+
+      <a href="games/map-quiz/index.html" class="game-card">
+        <span class="game-card-icon">🗺️</span>
+        <h3>Map Quiz</h3>
+        <p>You're given a country name — click where it is on the map. Four regions to explore: the Americas, Europe, Asia, and Africa.</p>
+        <div>
+          <span class="badge">Geography</span>
+          <span class="badge">Solo</span>
+        </div>
+        <p class="game-card-play">Play now →</p>
+      </a>
+
+      <a href="games/math-drill/index.html" class="game-card">
+        <span class="game-card-icon">✖️</span>
+        <h3>Math Drill</h3>
+        <p>Four answer choices, one correct one. Addition, subtraction, multiplication, and division across three difficulty levels.</p>
+        <div>
+          <span class="badge">Math</span>
+          <span class="badge">Solo</span>
+        </div>
+        <p class="game-card-play">Play now →</p>
+      </a>
+
+    </div>
+  </section>
+
+  <div class="about-strip">
+    <div class="about-strip-inner">
+      <p>Built for homeschool families. Every game runs entirely in your browser — no login, no tracking, no internet required after the first load.</p>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    homeschoolgames.app
+  </footer>
+
+</body>
+</html>

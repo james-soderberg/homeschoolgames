@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Math Drill — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <style>
+    .math-page {
+      max-width: 620px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .math-page h1 { margin-bottom: 0.25rem; }
+    .math-page > p { margin-bottom: 1.5rem; }
+
+    /* Difficulty selector */
+    .diff-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .diff-tab {
+      flex: 1;
+      padding: 0.5rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: white;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      color: var(--ink-light);
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .diff-tab.active {
+      background: var(--ink);
+      color: var(--cream);
+      border-color: var(--ink);
+    }
+
+    /* Score row */
+    .score-row {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .score-tile {
+      flex: 1;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+
+    .score-tile .num {
+      font-family: var(--font-serif);
+      font-size: 2rem;
+      font-weight: 600;
+      line-height: 1;
+      display: block;
+    }
+
+    .score-tile .lbl {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-light);
+      margin-top: 0.2rem;
+    }
+
+    .score-tile .num.c { color: var(--green); }
+    .score-tile .num.w { color: var(--red); }
+    .score-tile .num.s { color: var(--gold); }
+
+    /* Progress bar */
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--border);
+      border-radius: 99px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--gold);
+      border-radius: 99px;
+      transition: width 0.3s;
+    }
+
+    /* Problem display */
+    .problem-card {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem 2rem;
+      text-align: center;
+      margin-bottom: 1.25rem;
+      box-shadow: var(--shadow);
+      min-height: 130px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .problem-text {
+      font-family: var(--font-serif);
+      font-size: clamp(2rem, 8vw, 3.2rem);
+      font-weight: 600;
+      color: var(--ink);
+      letter-spacing: 0.04em;
+    }
+
+    /* Answer choices */
+    .answer-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .answer-btn {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem;
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: var(--ink);
+      cursor: pointer;
+      transition: all 0.12s;
+      box-shadow: var(--shadow);
+    }
+
+    .answer-btn:hover:not(:disabled) {
+      border-color: var(--gold);
+      background: #FFFDF4;
+      transform: translateY(-1px);
+    }
+
+    .answer-btn.correct {
+      background: #EAF4EE;
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .answer-btn.wrong {
+      background: #FAE8E8;
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .answer-btn.reveal-correct {
+      background: #EAF4EE;
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .answer-btn:disabled { cursor: default; transform: none; }
+
+    /* Feedback */
+    .feedback {
+      min-height: 1.8rem;
+      text-align: center;
+      font-size: 0.95rem;
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Streak message */
+    .streak-msg {
+      text-align: center;
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--gold);
+      font-size: 1rem;
+      min-height: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Control row */
+    .control-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    /* Operation badges */
+    .op-row {
+      display: flex;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+
+    .op-toggle {
+      padding: 0.3rem 0.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      background: white;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      color: var(--ink-light);
+      transition: all 0.15s;
+    }
+
+    .op-toggle.active {
+      background: var(--cream-dark);
+      border-color: var(--ink-light);
+      color: var(--ink);
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← All Games</a>
+  </nav>
+</header>
+
+<div class="math-page">
+  <h1>Math Drill</h1>
+  <p>Click the correct answer. Works through all four operations at your chosen difficulty.</p>
+
+  <!-- Difficulty -->
+  <div class="diff-tabs">
+    <button class="diff-tab active" onclick="setDiff(1,this)">Easy</button>
+    <button class="diff-tab" onclick="setDiff(2,this)">Medium</button>
+    <button class="diff-tab" onclick="setDiff(3,this)">Hard</button>
+  </div>
+
+  <!-- Operation toggles -->
+  <div class="op-row">
+    <button class="op-toggle active" id="op-add" onclick="toggleOp('add',this)">+ Addition</button>
+    <button class="op-toggle active" id="op-sub" onclick="toggleOp('sub',this)">− Subtraction</button>
+    <button class="op-toggle active" id="op-mul" onclick="toggleOp('mul',this)">× Multiplication</button>
+    <button class="op-toggle active" id="op-div" onclick="toggleOp('div',this)">÷ Division</button>
+  </div>
+
+  <!-- Scores -->
+  <div class="score-row">
+    <div class="score-tile">
+      <span class="num c" id="numCorrect">0</span>
+      <span class="lbl">Correct</span>
+    </div>
+    <div class="score-tile">
+      <span class="num w" id="numWrong">0</span>
+      <span class="lbl">Wrong</span>
+    </div>
+    <div class="score-tile">
+      <span class="num s" id="numStreak">0</span>
+      <span class="lbl">Streak</span>
+    </div>
+  </div>
+
+  <!-- Progress (out of 20 per set) -->
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+  </div>
+
+  <!-- Problem -->
+  <div class="problem-card">
+    <div class="problem-text" id="problemText">Loading…</div>
+  </div>
+
+  <!-- Feedback -->
+  <div class="streak-msg" id="streakMsg"></div>
+  <div class="feedback" id="feedback"></div>
+
+  <!-- Answers -->
+  <div class="answer-grid" id="answerGrid"></div>
+
+  <!-- Controls -->
+  <div class="control-row">
+    <button class="btn btn-outline btn-sm" onclick="resetAll()">Reset</button>
+    <button class="btn btn-sm" id="nextBtn" onclick="nextProblem()" style="display:none">Next →</button>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script>
+// ============================================================
+// MATH DRILL
+// ============================================================
+
+let difficulty = 1; // 1=easy, 2=medium, 3=hard
+let activeOps = new Set(['add','sub','mul','div']);
+
+let correct = 0;
+let wrong = 0;
+let streak = 0;
+let bestStreak = 0;
+let setCount = 0; // problems shown this set
+const SET_SIZE = 20;
+
+let currentAnswer = 0;
+let answered = false;
+
+// ---- Difficulty ranges ----
+const RANGES = {
+  1: { add: [1,12,1,12], sub: [1,12,1,12], mul: [1,10,1,10], div: [1,10,1,10] },
+  2: { add: [10,99,1,50], sub: [10,99,1,50], mul: [2,15,2,15], div: [2,12,2,12] },
+  3: { add: [50,999,50,999], sub: [100,999,1,999], mul: [6,25,6,25], div: [2,20,2,20] },
+};
+
+function randInt(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function generateProblem() {
+  const ops = [...activeOps];
+  if (ops.length === 0) return { text: '?', answer: 0 };
+
+  const op = ops[Math.floor(Math.random() * ops.length)];
+  const r = RANGES[difficulty][op];
+
+  let a, b, answer, symbol;
+
+  if (op === 'add') {
+    a = randInt(r[0], r[1]);
+    b = randInt(r[2], r[3]);
+    answer = a + b;
+    symbol = '+';
+  } else if (op === 'sub') {
+    a = randInt(r[0], r[1]);
+    b = randInt(r[2], Math.min(r[3], a)); // ensure non-negative
+    answer = a - b;
+    symbol = '−';
+  } else if (op === 'mul') {
+    a = randInt(r[0], r[1]);
+    b = randInt(r[2], r[3]);
+    answer = a * b;
+    symbol = '×';
+  } else { // div
+    // Generate clean division: pick b and answer, then a = b * answer
+    b = randInt(r[0], r[1]);
+    const quotient = randInt(r[2], r[3]);
+    a = b * quotient;
+    answer = quotient;
+    symbol = '÷';
+  }
+
+  return { text: `${a} ${symbol} ${b} = ?`, answer, a, b, op };
+}
+
+function generateChoices(answer, op) {
+  const choices = new Set([answer]);
+
+  const offsets = difficulty === 1
+    ? [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    : difficulty === 2
+    ? [2, 3, 5, 7, 10, 12, 15, 20]
+    : [5, 10, 15, 20, 25, 30, 50];
+
+  let attempts = 0;
+  while (choices.size < 4 && attempts < 50) {
+    const offset = offsets[Math.floor(Math.random() * offsets.length)];
+    const sign = Math.random() > 0.5 ? 1 : -1;
+    const candidate = answer + sign * offset;
+    if (candidate > 0 && candidate !== answer) choices.add(candidate);
+    attempts++;
+  }
+
+  // If still not 4, fill with sequential nearby
+  let extra = 1;
+  while (choices.size < 4) {
+    if (!choices.has(answer + extra)) choices.add(answer + extra);
+    if (!choices.has(answer - extra) && answer - extra > 0) choices.add(answer - extra);
+    extra++;
+  }
+
+  return shuffle([...choices]).slice(0, 4);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function nextProblem() {
+  answered = false;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('streakMsg').textContent = '';
+
+  if (setCount >= SET_SIZE) {
+    // Start fresh set
+    setCount = 0;
+  }
+
+  const problem = generateProblem();
+  currentAnswer = problem.answer;
+
+  document.getElementById('problemText').textContent = problem.text;
+
+  const choices = generateChoices(problem.answer, problem.op);
+  const grid = document.getElementById('answerGrid');
+  grid.innerHTML = '';
+
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'answer-btn';
+    btn.textContent = choice;
+    btn.addEventListener('click', () => handleAnswer(choice, choices, btn));
+    grid.appendChild(btn);
+  });
+
+  setCount++;
+  updateProgress();
+}
+
+function handleAnswer(chosen, choices, clickedBtn) {
+  if (answered) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.answer-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const isCorrect = chosen === currentAnswer;
+
+  if (isCorrect) {
+    correct++;
+    streak++;
+    if (streak > bestStreak) bestStreak = streak;
+    clickedBtn.classList.add('correct');
+    document.getElementById('feedback').innerHTML =
+      `<span class="feedback-correct">✓ Correct!</span>`;
+    if (streak >= 5) {
+      document.getElementById('streakMsg').textContent =
+        streak >= 10 ? `🔥 ${streak} in a row!` : `${streak} streak!`;
+    }
+    // Auto-advance after short pause
+    setTimeout(nextProblem, 800);
+  } else {
+    wrong++;
+    streak = 0;
+    clickedBtn.classList.add('wrong');
+    // Reveal correct
+    allBtns.forEach(b => {
+      if (parseInt(b.textContent) === currentAnswer) b.classList.add('reveal-correct');
+    });
+    document.getElementById('feedback').innerHTML =
+      `<span class="feedback-wrong">✗ The answer was ${currentAnswer}.</span>`;
+    document.getElementById('nextBtn').style.display = 'inline-block';
+  }
+
+  updateScores();
+}
+
+function updateScores() {
+  document.getElementById('numCorrect').textContent = correct;
+  document.getElementById('numWrong').textContent = wrong;
+  document.getElementById('numStreak').textContent = streak;
+}
+
+function updateProgress() {
+  const pct = (setCount / SET_SIZE) * 100;
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+function setDiff(d, btn) {
+  difficulty = d;
+  document.querySelectorAll('.diff-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  nextProblem();
+}
+
+function toggleOp(op, btn) {
+  if (activeOps.has(op)) {
+    // Don't allow removing the last one
+    if (activeOps.size === 1) return;
+    activeOps.delete(op);
+    btn.classList.remove('active');
+  } else {
+    activeOps.add(op);
+    btn.classList.add('active');
+  }
+  nextProblem();
+}
+
+function resetAll() {
+  correct = 0; wrong = 0; streak = 0; setCount = 0;
+  updateScores();
+  document.getElementById('progressFill').style.width = '0%';
+  nextProblem();
+}
+
+// Init
+nextProblem();
+</script>
+
+</body>
+</html>

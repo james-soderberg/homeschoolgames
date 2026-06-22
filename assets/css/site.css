@@ -1,0 +1,200 @@
+/* =========================================
+   HomeschoolGames.app — Shared Styles
+   Palette: warm cream, ink, gold accent
+   ========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --cream:       #F7F3EC;
+  --cream-dark:  #EDE7DA;
+  --ink:         #1A1714;
+  --ink-light:   #4A453F;
+  --gold:        #C4A040;
+  --gold-light:  #E8D08A;
+  --red:         #8B2020;
+  --green:       #2A5C3F;
+  --border:      #D4C9B5;
+
+  --font-serif:  'Cormorant Garamond', Georgia, serif;
+  --font-sans:   'Inter', system-ui, sans-serif;
+
+  --radius:      6px;
+  --shadow:      0 1px 4px rgba(26,23,20,0.10);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: 16px; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ---- Typography ---- */
+h1, h2, h3 {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+h1 { font-size: clamp(2rem, 5vw, 3rem); }
+h2 { font-size: clamp(1.4rem, 3vw, 1.8rem); }
+h3 { font-size: 1.2rem; }
+
+p { color: var(--ink-light); }
+
+a { color: var(--gold); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ---- Site Header ---- */
+.site-header {
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--cream);
+}
+
+.site-logo {
+  font-family: var(--font-serif);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.site-logo span {
+  color: var(--gold);
+}
+
+.site-nav a {
+  font-size: 0.875rem;
+  color: var(--ink-light);
+  margin-left: 1.5rem;
+  text-decoration: none;
+  font-family: var(--font-sans);
+}
+
+.site-nav a:hover { color: var(--ink); }
+
+/* ---- Breadcrumb ---- */
+.breadcrumb {
+  padding: 0.75rem 2rem;
+  font-size: 0.8rem;
+  color: var(--ink-light);
+  border-bottom: 1px solid var(--border);
+  background: var(--cream-dark);
+}
+
+.breadcrumb a { color: var(--ink-light); text-decoration: none; }
+.breadcrumb a:hover { color: var(--gold); }
+.breadcrumb span { margin: 0 0.4rem; }
+
+/* ---- Buttons ---- */
+.btn {
+  display: inline-block;
+  padding: 0.6rem 1.4rem;
+  border-radius: var(--radius);
+  border: 1.5px solid var(--ink);
+  background: var(--ink);
+  color: var(--cream);
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-decoration: none;
+}
+
+.btn:hover { background: var(--ink-light); border-color: var(--ink-light); text-decoration: none; color: var(--cream); }
+
+.btn-outline {
+  background: transparent;
+  color: var(--ink);
+}
+
+.btn-outline:hover { background: var(--ink); color: var(--cream); }
+
+.btn-gold {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--ink);
+}
+
+.btn-gold:hover { background: #b08e30; border-color: #b08e30; color: var(--ink); }
+
+.btn-sm {
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+}
+
+/* ---- Cards ---- */
+.card {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+/* ---- Badge ---- */
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  background: var(--cream-dark);
+  color: var(--ink-light);
+  border: 1px solid var(--border);
+}
+
+/* ---- Game page container ---- */
+.game-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.game-page-wide {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+/* ---- Feedback messages ---- */
+.feedback-correct {
+  color: var(--green);
+  font-weight: 600;
+}
+
+.feedback-wrong {
+  color: var(--red);
+  font-weight: 600;
+}
+
+/* ---- Footer ---- */
+.site-footer {
+  margin-top: 4rem;
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--ink-light);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .site-header { padding: 0.75rem 1rem; }
+  .site-nav { display: none; }
+  .game-page, .game-page-wide { padding: 1rem; }
+}

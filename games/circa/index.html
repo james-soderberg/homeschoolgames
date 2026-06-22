@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Circa — History Card Game</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <style>
+    :root {
+      --card-bg:     #FBF6E8;
+      --card-border: #C4A040;
+      --card-text:   #2A2318;
+      --card-sub:    #6B5E42;
+      --card-rule:   linear-gradient(90deg, transparent 0%, #C4A040 30%, #C4A040 70%, transparent 100%);
+    }
+
+    /* ---- Setup screen ---- */
+    .setup-screen {
+      max-width: 520px;
+      margin: 3rem auto;
+      padding: 0 1.5rem;
+      text-align: center;
+    }
+    .setup-screen h1 {
+      font-family: var(--font-serif);
+      font-size: 2.8rem;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.3rem;
+    }
+    .setup-screen .tagline {
+      font-family: var(--font-serif);
+      font-style: italic;
+      color: var(--ink-light);
+      margin-bottom: 2rem;
+    }
+    .setup-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      box-shadow: var(--shadow);
+      text-align: left;
+    }
+    .setup-card label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 0.4rem;
+      margin-top: 1.2rem;
+    }
+    .setup-card label:first-of-type { margin-top: 0; }
+    .setup-card select,
+    .setup-card input[type="text"] {
+      width: 100%;
+      padding: 0.55rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--cream);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      color: var(--ink);
+      appearance: none;
+    }
+    .player-names { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.3rem; }
+    .mode-toggle { display: flex; gap: 0.5rem; margin-top: 0.3rem; }
+    .mode-toggle button {
+      flex: 1;
+      padding: 0.55rem;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--cream);
+      font-size: 0.875rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      color: var(--ink-light);
+      transition: all 0.15s;
+    }
+    .mode-toggle button.active {
+      background: var(--ink);
+      color: var(--cream);
+      border-color: var(--ink);
+    }
+    .setup-rules {
+      margin-top: 1.5rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--border);
+      font-size: 0.82rem;
+      color: var(--ink-light);
+      line-height: 1.65;
+    }
+    .setup-rules strong { color: var(--ink); }
+
+    /* ---- SOLO game screen ---- */
+    .solo-screen {
+      display: none;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 1.5rem;
+    }
+
+    /* Solo header bar */
+    .solo-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .solo-header h2 {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+    }
+    .solo-stats {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .stat-pill {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 0.3rem 1rem;
+      font-size: 0.82rem;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+    .stat-pill .stat-val {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-left: 0.3rem;
+    }
+    .stat-pill.streak { border-color: var(--gold); }
+    .stat-pill.streak .stat-val { color: var(--gold); }
+    .stat-pill.best { background: var(--cream-dark); }
+    .stat-pill.best .stat-val { color: var(--ink); }
+
+    /* Center card — the target */
+    .center-card-wrap {
+      text-align: center;
+      margin-bottom: 1.5rem;
+    }
+    .center-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 0.6rem;
+    }
+    .circa-card.center {
+      display: inline-flex;
+      max-width: 260px;
+      cursor: default;
+      border-width: 2.5px;
+      box-shadow: 0 4px 16px rgba(196,160,64,0.2);
+    }
+    .circa-card.center:hover { transform: none; box-shadow: 0 4px 16px rgba(196,160,64,0.2); }
+
+    /* Instruction / feedback line */
+    .solo-instruction {
+      text-align: center;
+      margin-bottom: 1rem;
+      min-height: 1.8rem;
+      font-size: 0.95rem;
+      font-weight: 500;
+    }
+
+    /* Hand grid */
+    .hand-label-solo {
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 0.75rem;
+    }
+    .hand-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      gap: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ---- Circa card (shared) ---- */
+    .circa-card {
+      background: var(--card-bg);
+      border: 2px solid var(--card-border);
+      border-radius: 8px;
+      padding: 0.85rem 0.9rem 0.75rem;
+      cursor: pointer;
+      transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+      position: relative;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.10);
+      min-height: 130px;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+    .circa-card:hover:not(.disabled):not(.no-hover) {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 18px rgba(196,160,64,0.25);
+      border-color: #8B6A20;
+    }
+    .circa-card.selected {
+      border-color: var(--ink);
+      box-shadow: 0 4px 14px rgba(26,23,20,0.2);
+      transform: translateY(-3px);
+    }
+    .circa-card.correct-card {
+      border-color: #2A5C3F;
+      background: #F0FAF3;
+      box-shadow: 0 4px 14px rgba(42,92,63,0.2);
+    }
+    .circa-card.wrong-card {
+      border-color: #8B2020;
+      background: #FDF0F0;
+    }
+    .circa-card.show-best {
+      border-color: #2A5C3F;
+      background: #F0FAF3;
+      box-shadow: 0 4px 14px rgba(42,92,63,0.15);
+    }
+    .circa-card.disabled { cursor: default; opacity: 0.5; }
+    .circa-card.no-hover { cursor: default; }
+
+    .card-title {
+      font-family: var(--font-serif);
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--card-text);
+      line-height: 1.25;
+      margin-bottom: 0.4rem;
+    }
+    .card-rule {
+      height: 1px;
+      background: var(--card-rule);
+      margin: 0.4rem 0;
+    }
+    .card-desc {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 0.78rem;
+      color: var(--card-sub);
+      line-height: 1.45;
+      flex: 1;
+    }
+    .card-year-tag {
+      margin-top: 0.5rem;
+      font-family: var(--font-serif);
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--card-border);
+      text-align: right;
+    }
+
+    /* Card back (year-revealed face) */
+    .card-back-year {
+      font-family: var(--font-serif);
+      font-size: 2.2rem;
+      font-weight: 600;
+      color: var(--card-text);
+      text-align: center;
+      margin-top: 0.4rem;
+    }
+    .card-back-era {
+      font-family: var(--font-serif);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      color: var(--card-border);
+      text-align: center;
+    }
+    .card-back-approx {
+      font-family: var(--font-serif);
+      font-style: italic;
+      font-size: 0.65rem;
+      color: var(--card-border);
+      text-align: center;
+    }
+    .card-back-brand {
+      font-family: var(--font-serif);
+      font-size: 0.7rem;
+      letter-spacing: 0.15em;
+      color: var(--card-sub);
+      text-align: center;
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+    }
+
+    /* Card face/back visibility */
+    .circa-card.face-down .card-title,
+    .circa-card.face-down .card-rule,
+    .circa-card.face-down .card-desc { display: none; }
+    .circa-card:not(.face-down) .card-back-year,
+    .circa-card:not(.face-down) .card-back-era,
+    .circa-card:not(.face-down) .card-back-approx,
+    .circa-card:not(.face-down) .card-back-brand { display: none; }
+
+    /* Result overlay on hand cards after answer */
+    .card-result-badge {
+      display: none;
+      position: absolute;
+      top: 0.4rem;
+      right: 0.4rem;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.15rem 0.45rem;
+      border-radius: 99px;
+    }
+    .circa-card.correct-card .card-result-badge,
+    .circa-card.show-best .card-result-badge,
+    .circa-card.wrong-card .card-result-badge { display: inline-block; }
+    .circa-card.correct-card .card-result-badge { background: #2A5C3F; color: white; }
+    .circa-card.show-best .card-result-badge { background: #2A5C3F; color: white; }
+    .circa-card.wrong-card .card-result-badge { background: #8B2020; color: white; }
+
+    /* Action bar */
+    .action-bar { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+
+    /* ---- PASS-AND-PLAY game screen (unchanged) ---- */
+    .game-screen { display: none; max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    .game-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .game-header h2 { font-family: var(--font-serif); font-size: 1.6rem; }
+    .score-bar { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .score-pill {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 0.3rem 0.9rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+    }
+    .target-area {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .target-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.5rem; }
+    .target-year { font-family: var(--font-serif); font-size: 3.5rem; font-weight: 600; color: var(--ink); line-height: 1; }
+    .target-era { font-family: var(--font-serif); font-size: 1rem; color: var(--gold); font-weight: 600; margin-top: 0.2rem; }
+    .target-hidden { font-family: var(--font-serif); font-size: 2rem; letter-spacing: 0.3em; color: var(--border); }
+    .hand-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.75rem; }
+    .reveal-area { display: none; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
+    .reveal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+    .reveal-entry { text-align: center; }
+    .reveal-entry .player-name { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.4rem; }
+    .reveal-entry.winner .player-name { color: var(--green); }
+    .reveal-entry.winner .circa-card { border-color: var(--green); }
+    .diff-badge { margin-top: 0.4rem; font-size: 0.75rem; font-weight: 600; color: var(--ink-light); }
+    .diff-badge.winner { color: var(--green); }
+    .round-result { display: none; padding: 1rem 1.5rem; background: var(--cream-dark); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; }
+    .pass-screen { display: none; max-width: 420px; margin: 4rem auto; padding: 0 1.5rem; text-align: center; }
+    .pass-screen h2 { font-size: 1.8rem; margin-bottom: 0.75rem; }
+    .pass-screen p { margin-bottom: 1.5rem; }
+    .solo-hint { font-size: 0.8rem; color: var(--ink-light); margin-top: 0.4rem; font-style: italic; }
+
+    /* ---- End screen ---- */
+    .end-screen { display: none; max-width: 520px; margin: 3rem auto; padding: 0 1.5rem; text-align: center; }
+    .end-screen h2 { font-size: 2.2rem; margin-bottom: 0.5rem; }
+    .final-scores { background: white; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin: 1.5rem 0; box-shadow: var(--shadow); }
+    .final-row { display: flex; justify-content: space-between; align-items: center; padding: 0.9rem 1.25rem; border-bottom: 1px solid var(--border); }
+    .final-row:last-child { border-bottom: none; }
+    .final-row.top { background: #FFFDF4; }
+    .final-row .pos { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--gold); width: 2rem; }
+    .final-row .name { font-weight: 500; flex: 1; }
+    .final-row .wins { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+    <nav class="site-nav">
+      <a href="../../index.html">← All Games</a>
+    </nav>
+  </header>
+
+  <!-- ===================== SETUP SCREEN ===================== -->
+  <div class="setup-screen" id="setupScreen">
+    <h1>Circa</h1>
+    <p class="tagline">A history card game</p>
+
+    <div class="setup-card">
+      <label>Mode</label>
+      <div class="mode-toggle">
+        <button class="active" onclick="setMode('solo')" id="modeSolo">Solo</button>
+        <button onclick="setMode('pass')" id="modePass">Pass &amp; Play</button>
+      </div>
+
+      <div id="playerSetup">
+        <label>Number of players</label>
+        <select id="playerCount" onchange="updatePlayerNames()">
+          <option value="1" selected>1 player</option>
+          <option value="2">2 players</option>
+          <option value="3">3 players</option>
+          <option value="4">4 players</option>
+          <option value="5">5 players</option>
+          <option value="6">6 players</option>
+        </select>
+        <label>Player names</label>
+        <div class="player-names" id="playerNames"></div>
+      </div>
+
+      <label>Cards in hand</label>
+      <select id="handSize">
+        <option value="4">4 cards</option>
+        <option value="5" selected>5 cards</option>
+        <option value="6">6 cards</option>
+      </select>
+
+      <div class="setup-rules" id="setupRules">
+        <strong>Solo:</strong> A center card is revealed. Pick the card from your hand that is closest in date to it. Get it right to keep your streak going — wrong ends the streak. How far can you go?
+      </div>
+
+      <br>
+      <button class="btn btn-gold" onclick="startGame()" style="width:100%;padding:0.75rem;">Start Game</button>
+    </div>
+  </div>
+
+  <!-- ===================== PASS SCREEN ===================== -->
+  <div class="pass-screen" id="passScreen">
+    <h2 id="passTitle">Pass the device</h2>
+    <p id="passMsg">Hand the device to the next player.</p>
+    <button class="btn" onclick="dismissPass()">I'm ready →</button>
+  </div>
+
+  <!-- ===================== SOLO SCREEN ===================== -->
+  <div class="solo-screen" id="soloScreen">
+
+    <div class="solo-header">
+      <h2>Circa <span style="font-size:1rem;color:var(--ink-light);font-family:var(--font-sans);font-weight:400;">— Solo</span></h2>
+      <div class="solo-stats">
+        <div class="stat-pill streak">Streak <span class="stat-val" id="soloStreak">0</span></div>
+        <div class="stat-pill best">Best <span class="stat-val" id="soloBest">0</span></div>
+        <div class="stat-pill">Round <span class="stat-val" id="soloRound">1</span></div>
+        <button class="btn btn-outline btn-sm" onclick="location.reload()">Quit</button>
+      </div>
+    </div>
+
+    <!-- Center card -->
+    <div class="center-card-wrap">
+      <p class="center-label">Center card — find the closest in your hand</p>
+      <div id="centerCardEl"></div>
+    </div>
+
+    <!-- Feedback -->
+    <div class="solo-instruction" id="soloInstruction">Pick the card from your hand that is closest in date.</div>
+
+    <!-- Hand -->
+    <p class="hand-label-solo">Your hand</p>
+    <div class="hand-grid" id="soloHandGrid"></div>
+
+    <!-- Action bar -->
+    <div class="action-bar" id="soloActionBar"></div>
+
+  </div>
+
+  <!-- ===================== PASS-AND-PLAY GAME SCREEN ===================== -->
+  <div class="game-screen" id="gameScreen">
+
+    <div class="game-header">
+      <h2>Round <span id="roundNum">1</span></h2>
+      <div class="score-bar" id="scoreBar"></div>
+      <button class="btn btn-outline btn-sm" onclick="if(confirm('End game?')) showEndScreen()">End Game</button>
+    </div>
+
+    <div class="target-area">
+      <p class="target-label">Target Year</p>
+      <div id="targetDisplay" class="target-hidden">? ? ? ?</div>
+    </div>
+
+    <div class="round-result" id="roundResult"></div>
+
+    <div class="reveal-area" id="revealArea">
+      <p class="target-label">Revealed Cards</p>
+      <div class="reveal-grid" id="revealGrid"></div>
+    </div>
+
+    <div id="handSection">
+      <p class="hand-label" id="handLabel">Your hand — pick one card to play</p>
+      <p class="solo-hint" id="soloHint"></p>
+      <div class="hand-grid" id="handGrid"></div>
+      <div class="action-bar" id="actionBar"></div>
+    </div>
+
+  </div>
+
+  <!-- ===================== END SCREEN ===================== -->
+  <div class="end-screen" id="endScreen">
+    <h2 id="endTitle">Game Over</h2>
+    <p style="color:var(--ink-light)" id="endSubtitle">Final scores</p>
+    <div class="final-scores" id="finalScores"></div>
+    <button class="btn btn-gold" onclick="location.reload()" style="margin-top:0.5rem">Play Again</button>
+    <br><br>
+    <a href="../../index.html" class="btn btn-outline">All Games</a>
+  </div>
+
+  <footer class="site-footer">
+    <a href="../../index.html">homeschoolgames.app</a>
+  </footer>
+
+<script>
+// ============================================================
+// CIRCA — Full deck
+// ============================================================
+const DECK = [
+  { title: "Homo sapiens emerge", desc: "Modern humans first appear in Africa, distinct from earlier hominid species.", year: -300000, approx: true },
+  { title: "Cave paintings at Lascaux", desc: "Artists in southern France cover cave walls with vivid animals and symbols.", year: -15000, approx: true },
+  { title: "Last Ice Age ends", desc: "Glaciers retreat across the Northern Hemisphere, reshaping coastlines and enabling new migrations.", year: -10000, approx: true },
+  { title: "Agriculture begins", desc: "Humans in the Fertile Crescent begin deliberately cultivating wheat and barley.", year: -9500, approx: true },
+  { title: "Jericho founded", desc: "One of the earliest known permanently settled towns takes shape in the Jordan Valley.", year: -8500, approx: true },
+  { title: "Çatalhöyük thrives", desc: "A densely populated Neolithic settlement in Anatolia houses thousands without streets or public squares.", year: -7500, approx: true },
+  { title: "Pottery invented", desc: "Fired clay vessels appear independently in multiple regions, transforming food storage and cooking.", year: -7000, approx: true },
+  { title: "Copper smelting begins", desc: "Metalworkers in the Near East learn to smelt copper, opening the Chalcolithic Age.", year: -5000, approx: true },
+  { title: "Indus Valley civilization", desc: "Sophisticated urban centers with planned streets and drainage systems flourish in the Indian subcontinent.", year: -2600, approx: true },
+  { title: "Stonehenge constructed", desc: "Massive standing stones are arranged on Salisbury Plain in a pattern aligned with the solstices.", year: -2500, approx: true },
+  { title: "Bronze Age begins", desc: "The combination of copper and tin to make bronze spreads across Eurasia, transforming tools and weapons.", year: -3300, approx: true },
+  { title: "Wheel invented", desc: "The potter's wheel and wheeled vehicles appear in Mesopotamia and the Eurasian steppe.", year: -3500, approx: true },
+  { title: "Writing invented in Mesopotamia", desc: "Sumerian scribes develop cuneiform, the earliest known writing system, to record trade and administration.", year: -3200, approx: true },
+  { title: "Egypt unified", desc: "Upper and Lower Egypt are brought together under a single pharaoh, founding the First Dynasty.", year: -3100, approx: true },
+  { title: "Great Pyramid built", desc: "Pharaoh Khufu's tomb rises at Giza as one of the largest structures ever built by human hands.", year: -2560, approx: true },
+  { title: "Hammurabi's Code", desc: "The Babylonian king inscribes one of history's earliest comprehensive legal codes on a stone stele.", year: -1754 },
+  { title: "Moses leads the Exodus", desc: "According to the Hebrew scriptures, Moses leads the Israelites out of Egypt toward the Promised Land.", year: -1250, approx: true },
+  { title: "Trojan War", desc: "Greek city-states lay siege to Troy in a conflict later immortalized in Homer's Iliad.", year: -1200, approx: true },
+  { title: "Iron Age begins", desc: "Iron-smelting technology spreads across the Old World, replacing bronze as the dominant metal.", year: -1200, approx: true },
+  { title: "Olmec civilization rises", desc: "The Olmec build monumental earthworks and colossal stone heads along Mexico's Gulf Coast.", year: -1200, approx: true },
+  { title: "Homer composes the Iliad", desc: "The epic poems attributed to Homer are set down, shaping Greek identity and literature for centuries.", year: -750, approx: true },
+  { title: "Rome founded", desc: "According to Roman tradition, Romulus establishes the city on the banks of the Tiber River.", year: -753 },
+  { title: "Buddha born", desc: "Siddhartha Gautama is born in Lumbini, in what is now Nepal, the future founder of Buddhism.", year: -563, approx: true },
+  { title: "Confucius born", desc: "Kong Qiu — later known as Confucius — is born in the state of Lu, in present-day Shandong, China.", year: -551 },
+  { title: "Persian Empire founded", desc: "Cyrus the Great unites the Medes and Persians, creating the largest empire the world had yet seen.", year: -550 },
+  { title: "Democracy in Athens", desc: "Cleisthenes introduces sweeping reforms that give Athenian male citizens direct political power.", year: -507 },
+  { title: "Battle of Marathon", desc: "A smaller Athenian force defeats the Persian invasion, securing Greek independence.", year: -490 },
+  { title: "Socrates born", desc: "The philosopher Socrates is born in Athens; his method of questioning will transform Western thought.", year: -470, approx: true },
+  { title: "Parthenon completed", desc: "The iconic marble temple to Athena is finished on the Acropolis of Athens.", year: -432 },
+  { title: "Alexander the Great conquers Persia", desc: "Alexander of Macedon defeats Darius III and sweeps eastward, building an empire from Greece to India.", year: -330, approx: true },
+  { title: "Chandragupta founds Maurya Empire", desc: "Chandragupta Maurya unifies much of the Indian subcontinent under the first great pan-Indian empire.", year: -321 },
+  { title: "Euclid writes Elements", desc: "The Greek mathematician lays out the foundations of geometry in a systematic work studied for two millennia.", year: -300, approx: true },
+  { title: "Qin Shi Huang unifies China", desc: "The king of Qin conquers the warring states and declares himself First Emperor of a unified China.", year: -221 },
+  { title: "Hannibal crosses the Alps", desc: "The Carthaginian general leads his army, including war elephants, over the Alps to invade Roman Italy.", year: -218 },
+  { title: "Julius Caesar assassinated", desc: "Senators led by Brutus and Cassius stab Caesar on the Ides of March, ending his dictatorship.", year: -44 },
+  { title: "Jesus of Nazareth born", desc: "Jesus, whose life and teachings become the foundation of Christianity, is born in Judea.", year: -4, approx: true },
+  { title: "Augustus becomes first Roman Emperor", desc: "Octavian takes the title Augustus, transforming the Roman Republic into an empire.", year: -27 },
+  { title: "Jesus crucified", desc: "Jesus is executed by Roman crucifixion; his followers proclaim his resurrection and establish the early church.", year: 30, approx: true },
+  { title: "Vesuvius erupts, buries Pompeii", desc: "Mount Vesuvius erupts catastrophically, entombing the Roman city of Pompeii in ash and preserving it.", year: 79 },
+  { title: "Colosseum opens in Rome", desc: "The massive amphitheater is inaugurated with a hundred days of games, seating up to 80,000 spectators.", year: 80 },
+  { title: "Constantine legalizes Christianity", desc: "Emperor Constantine issues the Edict of Milan, granting religious tolerance throughout the Roman Empire.", year: 313 },
+  { title: "Council of Nicaea", desc: "Christian bishops from across the empire convene to settle doctrinal disputes and establish core creeds.", year: 325 },
+  { title: "Rome sacked by Visigoths", desc: "Alaric's Visigoths breach Rome's walls for the first time in 800 years, shocking the ancient world.", year: 410 },
+  { title: "Western Roman Empire falls", desc: "The last Western emperor, Romulus Augustulus, is deposed by the Germanic chieftain Odoacer.", year: 476 },
+  { title: "Muhammad born", desc: "Muhammad ibn Abdullah is born in Mecca, the future prophet and founder of Islam.", year: 570, approx: true },
+  { title: "Muhammad receives first revelation", desc: "According to Islamic tradition, the angel Gabriel delivers God's first revelation to Muhammad in a cave near Mecca.", year: 610 },
+  { title: "Hijra: Muhammad flees to Medina", desc: "Muhammad and his followers emigrate from Mecca to Medina, marking the start of the Islamic calendar.", year: 622 },
+  { title: "Islamic conquests begin", desc: "Arab armies sweep out of Arabia, rapidly conquering Persia, the Levant, and Egypt within a generation.", year: 632, approx: true },
+  { title: "Battle of Tours", desc: "Frankish forces under Charles Martel halt the Umayyad advance into Western Europe near Poitiers.", year: 732 },
+  { title: "Charlemagne crowned emperor", desc: "Pope Leo III crowns Charlemagne Holy Roman Emperor on Christmas Day, uniting much of Western Europe.", year: 800 },
+  { title: "Vikings raid Lindisfarne", desc: "Norse raiders attack the island monastery of Lindisfarne, marking the beginning of the Viking Age in Britain.", year: 793 },
+  { title: "Alfred the Great defeats the Danes", desc: "King Alfred of Wessex halts Danish expansion in England and begins unifying the Anglo-Saxon kingdoms.", year: 878 },
+  { title: "Song Dynasty founded in China", desc: "Zhao Kuangyin unifies China's fractured states and establishes a dynasty renowned for culture and commerce.", year: 960 },
+  { title: "Cahokia at its peak", desc: "The largest pre-Columbian city north of Mexico flourishes near present-day St. Louis, home to tens of thousands.", year: 1050, approx: true },
+  { title: "Battle of Hastings", desc: "William the Conqueror defeats King Harold, bringing Norman rule to England and reshaping its language and culture.", year: 1066 },
+  { title: "First Crusade launched", desc: "Pope Urban II calls for a Christian military expedition to reclaim Jerusalem from Muslim rule.", year: 1095 },
+  { title: "Jerusalem captured by Crusaders", desc: "Crusading armies storm Jerusalem and massacre much of its population, establishing the Crusader States.", year: 1099 },
+  { title: "Genghis Khan unites the Mongols", desc: "Temüjin is proclaimed Genghis Khan, ruler of all Mongol tribes, and begins building the largest land empire in history.", year: 1206 },
+  { title: "Magna Carta signed", desc: "English barons force King John to sign the Magna Carta, establishing that the king is subject to the rule of law.", year: 1215 },
+  { title: "Mongols sack Baghdad", desc: "Hulagu Khan destroys the Abbasid Caliphate's capital, killing the caliph and destroying its great library.", year: 1258 },
+  { title: "Marco Polo reaches China", desc: "The Venetian merchant arrives at the court of Kublai Khan, beginning years of travel through Asia.", year: 1275, approx: true },
+  { title: "Black Death reaches Europe", desc: "Bubonic plague sweeps across Europe, killing roughly a third of the continent's population within years.", year: 1347 },
+  { title: "Hundred Years' War begins", desc: "England and France enter a prolonged conflict over the French throne that will span more than a century.", year: 1337 },
+  { title: "Joan of Arc leads French forces", desc: "A teenage peasant girl rallies the French army at Orléans, turning the tide of the Hundred Years' War.", year: 1429 },
+  { title: "Constantinople falls to the Ottomans", desc: "Sultan Mehmed II captures the Byzantine capital, ending the Eastern Roman Empire after more than a thousand years.", year: 1453 },
+  { title: "Mali Empire under Mansa Musa", desc: "Mali's ruler makes a famous pilgrimage to Mecca, displaying such wealth that he disrupts gold markets across the Mediterranean.", year: 1324 },
+  { title: "Axum at its height", desc: "The Kingdom of Axum in the Horn of Africa dominates Red Sea trade and adopts Christianity as its state religion.", year: 350, approx: true },
+  { title: "Gutenberg prints the Bible", desc: "Johannes Gutenberg uses movable type to print the Bible, revolutionizing the spread of information in Europe.", year: 1455 },
+  { title: "Columbus reaches the Americas", desc: "Christopher Columbus makes landfall in the Caribbean, initiating sustained contact between Europe and the Americas.", year: 1492 },
+  { title: "Vasco da Gama reaches India", desc: "The Portuguese navigator sails around Africa's southern tip, establishing a sea route from Europe to India.", year: 1498 },
+  { title: "Aztec Empire at its height", desc: "The Triple Alliance dominates central Mexico, with Tenochtitlan growing into one of the world's largest cities.", year: 1500, approx: true },
+  { title: "Michelangelo paints the Sistine Chapel", desc: "Michelangelo spends four years lying on scaffolding to paint his famous ceiling for Pope Julius II.", year: 1512 },
+  { title: "Martin Luther posts his 95 Theses", desc: "The German monk publicly challenges papal indulgences, igniting the Protestant Reformation.", year: 1517 },
+  { title: "Magellan's crew circumnavigates the globe", desc: "Ferdinand Magellan's expedition, completed by Elcano after Magellan's death, is the first to sail around the world.", year: 1522 },
+  { title: "Cortés conquers the Aztecs", desc: "Spanish conquistador Hernán Cortés, aided by indigenous allies and disease, defeats the Aztec Empire.", year: 1521 },
+  { title: "Copernicus publishes heliocentric model", desc: "Nicolaus Copernicus proposes that the Earth orbits the Sun, challenging centuries of accepted astronomy.", year: 1543 },
+  { title: "Spanish Inquisition established", desc: "The Spanish crown establishes a tribunal to enforce Catholic orthodoxy, targeting converts suspected of heresy.", year: 1478 },
+  { title: "Mughal Empire founded", desc: "Babur defeats the Sultan of Delhi at the First Battle of Panipat, founding the Mughal dynasty in India.", year: 1526 },
+  { title: "Council of Trent begins", desc: "The Catholic Church convenes a council to respond to the Protestant Reformation and define Catholic doctrine.", year: 1545 },
+  { title: "Shakespeare born", desc: "William Shakespeare is baptized in Stratford-upon-Avon; he will become the most celebrated writer in the English language.", year: 1564 },
+  { title: "Spanish Armada defeated", desc: "England repels the massive Spanish naval invasion, preserving Protestant rule and shifting European power.", year: 1588 },
+  { title: "Galileo faces the Inquisition", desc: "Galileo Galilei is tried by the Inquisition for defending heliocentrism and forced to recant.", year: 1633 },
+  { title: "Taj Mahal completed", desc: "Emperor Shah Jahan completes the white marble mausoleum in Agra as a monument to his late wife.", year: 1653 },
+  { title: "Thirty Years' War ends", desc: "The Peace of Westphalia concludes a devastating European conflict and establishes the modern nation-state system.", year: 1648 },
+  { title: "English Civil War", desc: "Parliament and Royalists clash in England; King Charles I is executed, and Oliver Cromwell rules as Lord Protector.", year: 1642 },
+  { title: "Newton publishes Principia", desc: "Isaac Newton sets out the laws of motion and universal gravitation, foundational to modern physics.", year: 1687 },
+  { title: "Glorious Revolution in England", desc: "William of Orange is invited to rule England, limiting royal power and strengthening parliamentary government.", year: 1688 },
+  { title: "Peter the Great modernizes Russia", desc: "Tsar Peter I visits Western Europe and initiates sweeping reforms to transform Russia into a modern European power.", year: 1697 },
+  { title: "Act of Union creates Great Britain", desc: "England and Scotland unite under a single parliament, forming the Kingdom of Great Britain.", year: 1707 },
+  { title: "Hatshepsut rules Egypt", desc: "Egypt's most famous female pharaoh governs as king for over two decades, commissioning major building projects.", year: -1473, approx: true },
+  { title: "Seven Years' War", desc: "A global conflict involving European powers fights across five continents, reshaping colonial empires.", year: 1756 },
+  { title: "American Revolution begins", desc: "Colonists in British North America take up arms against imperial rule, beginning the fight for independence.", year: 1775 },
+  { title: "Declaration of Independence signed", desc: "American colonial delegates formally declare independence from Britain, asserting that all men are created equal.", year: 1776 },
+  { title: "French Revolution begins", desc: "The storming of the Bastille marks the outbreak of a revolution that will topple the French monarchy.", year: 1789 },
+  { title: "Napoleon becomes First Consul", desc: "Napoleon Bonaparte seizes power in France through a coup and begins consolidating authority.", year: 1799 },
+  { title: "Haitian Revolution", desc: "Enslaved people in Saint-Domingue revolt against French colonial rule in the only successful slave revolution in history.", year: 1791 },
+  { title: "Constitution of the United States ratified", desc: "The U.S. Constitution is ratified, establishing the framework for the federal government.", year: 1788 },
+  { title: "Napoleon defeated at Waterloo", desc: "A coalition of European powers defeats Napoleon at the Battle of Waterloo, ending his rule permanently.", year: 1815 },
+  { title: "Latin American independence movements", desc: "Simón Bolívar and José de San Martín lead campaigns that liberate most of Spanish South America.", year: 1820, approx: true },
+  { title: "First steam locomotive", desc: "George Stephenson's locomotive hauls coal in northeast England, pioneering the age of rail travel.", year: 1825 },
+  { title: "Trail of Tears", desc: "The U.S. government forcibly relocates tens of thousands of Native Americans from their ancestral lands to territory west of the Mississippi.", year: 1838 },
+  { title: "Meiji Restoration in Japan", desc: "Emperor Meiji is restored to power, launching Japan's rapid transformation into a modern industrial state.", year: 1868 },
+  { title: "Charles Darwin publishes On the Origin of Species", desc: "Darwin's book presents evidence for natural selection as a mechanism driving changes in species over time.", year: 1859 },
+  { title: "U.S. Civil War begins", desc: "Confederate forces attack Fort Sumter, beginning the bloodiest conflict in American history over slavery and union.", year: 1861 },
+  { title: "Emancipation Proclamation issued", desc: "President Lincoln declares enslaved people in Confederate states to be free, reframing the Civil War's purpose.", year: 1863 },
+  { title: "Suez Canal opens", desc: "The artificial waterway connecting the Mediterranean and Red Seas opens, dramatically cutting shipping routes.", year: 1869 },
+  { title: "Telephone invented", desc: "Alexander Graham Bell patents the telephone, enabling voice communication over long distances for the first time.", year: 1876 },
+  { title: "Berlin Conference divides Africa", desc: "European powers meet to formalize the partition of Africa among themselves, with no African representation.", year: 1884 },
+  { title: "Florence Nightingale reforms nursing", desc: "During the Crimean War, Nightingale drastically reduces soldier mortality by introducing sanitary practices in field hospitals.", year: 1854 },
+  { title: "Hypatia of Alexandria", desc: "The philosopher and mathematician Hypatia teaches and writes in Alexandria, one of antiquity's most celebrated scholars.", year: 400, approx: true },
+  { title: "Wu Zetian rules China", desc: "Wu Zetian becomes the only woman in Chinese history to assume the title of Empress Regnant and rules the Tang Empire.", year: 690 },
+  { title: "First powered airplane flight", desc: "Orville and Wilbur Wright achieve the first successful powered airplane flight at Kitty Hawk, North Carolina.", year: 1903 },
+  { title: "Russian Revolution", desc: "The Bolsheviks overthrow Russia's provisional government, establishing the world's first communist state.", year: 1917 },
+  { title: "World War I begins", desc: "The assassination of Archduke Franz Ferdinand triggers alliances that drag Europe into a catastrophic global war.", year: 1914 },
+  { title: "World War I ends", desc: "An armistice halts fighting on the Western Front, ending the war that killed over 17 million people.", year: 1918 },
+  { title: "Treaty of Versailles", desc: "The peace treaty ending World War I imposes heavy penalties on Germany, sowing seeds of future conflict.", year: 1919 },
+  { title: "Women gain the vote in the U.S.", desc: "The 19th Amendment is ratified, prohibiting states from denying citizens the right to vote on the basis of sex.", year: 1920 },
+  { title: "Amelia Earhart crosses the Atlantic", desc: "Earhart becomes the first woman to fly solo nonstop across the Atlantic Ocean.", year: 1932 },
+  { title: "Great Depression begins", desc: "The U.S. stock market crashes catastrophically, triggering a global economic depression lasting a decade.", year: 1929 },
+  { title: "Hitler becomes Chancellor of Germany", desc: "Adolf Hitler is appointed Chancellor, beginning the Nazi rise to total power in Germany.", year: 1933 },
+  { title: "World War II begins", desc: "Germany invades Poland; Britain and France declare war, initiating the deadliest conflict in human history.", year: 1939 },
+  { title: "Pearl Harbor attacked", desc: "Japan launches a surprise aerial attack on the U.S. naval base at Pearl Harbor, bringing America into World War II.", year: 1941 },
+  { title: "D-Day landings", desc: "Allied forces launch the largest seaborne invasion in history on the beaches of Normandy, turning the tide in Europe.", year: 1944 },
+  { title: "World War II ends", desc: "Germany surrenders in May and Japan in September, ending a war that killed over 70 million people worldwide.", year: 1945 },
+  { title: "Atomic bomb dropped on Hiroshima", desc: "The United States drops the world's first atomic bomb on Hiroshima, killing an estimated 70,000–80,000 people instantly.", year: 1945 },
+  { title: "United Nations founded", desc: "Fifty-one nations sign the UN Charter in San Francisco, creating an international body to preserve peace.", year: 1945 },
+  { title: "Indian independence", desc: "India gains independence from British rule; the subcontinent is simultaneously partitioned into India and Pakistan.", year: 1947 },
+  { title: "State of Israel established", desc: "Jewish leaders declare the State of Israel, immediately triggering war with neighboring Arab states.", year: 1948 },
+  { title: "People's Republic of China proclaimed", desc: "Mao Zedong proclaims the founding of the PRC after the Communist Party defeats Nationalist forces.", year: 1949 },
+  { title: "Korean War begins", desc: "North Korea invades South Korea, drawing in the United States and ultimately China in a three-year conflict.", year: 1950 },
+  { title: "Brown v. Board of Education", desc: "The U.S. Supreme Court unanimously rules that racial segregation in public schools is unconstitutional.", year: 1954 },
+  { title: "Sputnik launched", desc: "The Soviet Union launches the world's first artificial satellite, triggering the space race with the United States.", year: 1957 },
+  { title: "Cuban Missile Crisis", desc: "The U.S. and Soviet Union come to the brink of nuclear war over Soviet missiles in Cuba before negotiating a resolution.", year: 1962 },
+  { title: "Kennedy assassinated", desc: "President John F. Kennedy is shot and killed in Dallas, Texas, shocking the nation.", year: 1963 },
+  { title: "Martin Luther King Jr.'s 'I Have a Dream' speech", desc: "King delivers his landmark address to 250,000 people in Washington, D.C., calling for racial equality.", year: 1963 },
+  { title: "Civil Rights Act passed", desc: "U.S. Congress passes landmark legislation outlawing discrimination based on race, color, religion, sex, or national origin.", year: 1964 },
+  { title: "Apollo 11 lands on the Moon", desc: "Neil Armstrong and Buzz Aldrin become the first humans to walk on the Moon, fulfilling Kennedy's challenge.", year: 1969 },
+  { title: "Vietnam War ends", desc: "North Vietnamese forces capture Saigon, ending the Vietnam War and reunifying the country under communist rule.", year: 1975 },
+  { title: "Iranian Revolution", desc: "The Shah of Iran is overthrown, and Ayatollah Khomeini establishes an Islamic Republic.", year: 1979 },
+  { title: "Berlin Wall falls", desc: "East Germany opens its borders; jubilant crowds tear down the Wall, heralding the end of the Cold War.", year: 1989 },
+  { title: "Tiananmen Square protests", desc: "Pro-democracy protesters occupy Beijing's Tiananmen Square before the Chinese military violently suppresses the movement.", year: 1989 },
+  { title: "Soviet Union dissolves", desc: "The USSR officially ceases to exist, breaking into fifteen independent states and ending the Cold War era.", year: 1991 },
+  { title: "Nelson Mandela elected president", desc: "After 27 years in prison, Mandela is elected South Africa's first Black president in its first fully democratic election.", year: 1994 },
+  { title: "Rwandan Genocide", desc: "In 100 days, extremist Hutu militias massacre approximately 800,000 Tutsi and moderate Hutu in Rwanda.", year: 1994 },
+  { title: "World Wide Web goes public", desc: "Tim Berners-Lee releases the World Wide Web to the public, transforming global communication and commerce.", year: 1991 },
+  { title: "Dolly the sheep cloned", desc: "Scottish scientists announce the successful cloning of a sheep from an adult cell, a first in history.", year: 1996 },
+  { title: "Hong Kong returned to China", desc: "Britain transfers sovereignty over Hong Kong to the People's Republic of China after 156 years of colonial rule.", year: 1997 },
+  { title: "September 11 attacks", desc: "Al-Qaeda terrorists hijack four airplanes and kill nearly 3,000 people in attacks on the U.S., triggering the War on Terror.", year: 2001 },
+  { title: "Iraq War begins", desc: "A U.S.-led coalition invades Iraq, toppling Saddam Hussein's government.", year: 2003 },
+  { title: "Indian Ocean tsunami", desc: "A massive undersea earthquake triggers a tsunami that kills over 230,000 people across fourteen countries.", year: 2004 },
+  { title: "Barack Obama elected president", desc: "Obama becomes the first African American president of the United States.", year: 2008 },
+  { title: "Arab Spring begins", desc: "Pro-democracy protests sweep across the Arab world, toppling governments in Tunisia, Egypt, Libya, and Yemen.", year: 2010 },
+  { title: "Osama bin Laden killed", desc: "U.S. Navy SEALs raid a compound in Pakistan and kill al-Qaeda leader Osama bin Laden.", year: 2011 },
+  { title: "Same-sex marriage legalized in U.S.", desc: "The Supreme Court rules in Obergefell v. Hodges that the Constitution guarantees same-sex couples the right to marry.", year: 2015 },
+  { title: "COVID-19 pandemic begins", desc: "A novel coronavirus spreads from China across the globe, triggering the worst pandemic in a century.", year: 2020 },
+  { title: "Mayan civilization flourishes", desc: "Maya city-states across Mesoamerica reach their Classic Period peak, building pyramids and developing writing.", year: 600, approx: true },
+  { title: "Teotihuacan built", desc: "A massive planned city rises in central Mexico, featuring the Pyramid of the Sun and influencing cultures for centuries.", year: 100, approx: true },
+  { title: "Great Zimbabwe constructed", desc: "Bantu-speaking peoples build massive stone enclosures in southern Africa as a center of trade and royal power.", year: 1300, approx: true },
+  { title: "Songhai Empire rises", desc: "The Songhai Empire expands in West Africa, becoming one of the largest empires in African history.", year: 1464, approx: true },
+  { title: "Trans-Saharan trade routes flourish", desc: "Gold, salt, and enslaved people move across the Sahara linking West Africa to North Africa and the Mediterranean.", year: 800, approx: true },
+  { title: "Ashoka converts to Buddhism", desc: "After a bloody conquest, Mauryan Emperor Ashoka embraces Buddhism and spreads its principles across his empire.", year: -260, approx: true },
+  { title: "Silk Road opens", desc: "Trade routes linking China to Central Asia and the Mediterranean begin carrying silk, spices, and ideas.", year: -130, approx: true },
+  { title: "Han Dynasty established", desc: "Liu Bang defeats his rivals and founds the Han Dynasty, one of China's most celebrated imperial periods.", year: -206 },
+  { title: "Printing invented in China", desc: "Chinese craftsmen develop woodblock printing, enabling the reproduction of texts centuries before Gutenberg.", year: 600, approx: true },
+  { title: "Genghis Khan dies", desc: "The founder of the Mongol Empire dies on campaign; his successors divide and expand the world's largest land empire.", year: 1227 },
+  { title: "Black Ships arrive in Japan", desc: "Commodore Matthew Perry's U.S. Navy squadron forces Japan to open its ports, ending two centuries of isolation.", year: 1853 },
+  { title: "Boxer Rebellion in China", desc: "Chinese nationalists besiege foreign embassies in Beijing; an international coalition suppresses the uprising.", year: 1900 },
+  { title: "Gandhi leads Salt March", desc: "Mohandas Gandhi marches 240 miles to the sea to make salt in defiance of British colonial law, galvanizing Indian independence.", year: 1930 },
+  { title: "Partition of India and Pakistan", desc: "The end of British rule splits the subcontinent into two nations, triggering one of history's largest mass migrations.", year: 1947 },
+  { title: "Korean War armistice signed", desc: "After three years of fighting, an armistice halts combat on the Korean Peninsula, leaving the country divided.", year: 1953 },
+];
+
+// ============================================================
+// High score — persists via localStorage
+// ============================================================
+const HS_KEY = 'circa_solo_highscore';
+
+function getHighScore() {
+  const v = localStorage.getItem(HS_KEY);
+  return v ? parseInt(v, 10) : 0;
+}
+
+function setHighScore(n) {
+  localStorage.setItem(HS_KEY, String(n));
+}
+
+// ============================================================
+// Shared helpers
+// ============================================================
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function fmtYear(card) {
+  return `${Math.abs(card.year)} ${card.year < 0 ? 'BC' : 'AD'}${card.approx ? ' (approx.)' : ''}`;
+}
+
+// Build a card DOM element (front face only, used throughout)
+function makeCardFront(card, extraClass = '') {
+  const el = document.createElement('div');
+  el.className = 'circa-card' + (extraClass ? ' ' + extraClass : '');
+
+  const title = document.createElement('div');
+  title.className = 'card-title';
+  title.textContent = card.title;
+  el.appendChild(title);
+
+  const rule = document.createElement('div');
+  rule.className = 'card-rule';
+  el.appendChild(rule);
+
+  const desc = document.createElement('div');
+  desc.className = 'card-desc';
+  desc.textContent = card.desc;
+  el.appendChild(desc);
+
+  return el;
+}
+
+// Build a card element showing the year on it (used after reveal)
+function makeCardWithYear(card, extraClass = '') {
+  const el = makeCardFront(card, extraClass);
+  const yt = document.createElement('div');
+  yt.className = 'card-year-tag';
+  yt.textContent = fmtYear(card);
+  el.appendChild(yt);
+  return el;
+}
+
+// ============================================================
+// Setup
+// ============================================================
+let mode = 'solo';
+
+function setMode(m) {
+  mode = m;
+  document.getElementById('modeSolo').classList.toggle('active', m === 'solo');
+  document.getElementById('modePass').classList.toggle('active', m === 'pass');
+
+  const rules = document.getElementById('setupRules');
+  if (m === 'solo') {
+    document.getElementById('playerCount').value = '1';
+    rules.innerHTML = '<strong>Solo:</strong> A center card is revealed. Pick the card from your hand that is closest in date to it. Get it right to keep your streak going — wrong ends the streak. How far can you go?';
+  } else {
+    if (parseInt(document.getElementById('playerCount').value) < 2) {
+      document.getElementById('playerCount').value = '2';
+    }
+    rules.innerHTML = '<strong>Pass &amp; Play:</strong> Each round a hidden target year is revealed. Every player secretly picks the card from their hand closest to it. Reveal together — closest wins the round and keeps all played cards as points.';
+  }
+  updatePlayerNames();
+}
+
+function updatePlayerNames() {
+  const n = parseInt(document.getElementById('playerCount').value);
+  const container = document.getElementById('playerNames');
+  container.innerHTML = '';
+  const defaults = ['Player 1','Player 2','Player 3','Player 4','Player 5','Player 6'];
+  for (let i = 0; i < n; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = defaults[i];
+    container.appendChild(inp);
+  }
+}
+
+function startGame() {
+  handSize = parseInt(document.getElementById('handSize').value);
+  document.getElementById('setupScreen').style.display = 'none';
+
+  if (mode === 'solo') {
+    startSoloGame();
+  } else {
+    startPassGame();
+  }
+}
+
+// ============================================================
+// ============================================================
+//  SOLO MODE
+// ============================================================
+// ============================================================
+
+let soloDeck = [];
+let soloHand = [];
+let soloCenterCard = null;
+let soloStreak = 0;
+let soloRoundNum = 0;
+let handSize = 5;
+let soloAwaitingNext = false;
+
+function startSoloGame() {
+  soloStreak = 0;
+  soloRoundNum = 0;
+  soloDeck = shuffle([...DECK]);
+  soloHand = [];
+
+  // Deal initial hand
+  for (let i = 0; i < handSize; i++) {
+    if (soloDeck.length) soloHand.push(soloDeck.pop());
+  }
+
+  document.getElementById('soloScreen').style.display = 'block';
+  updateSoloStats();
+  soloNextRound();
+}
+
+function soloNextRound() {
+  soloAwaitingNext = false;
+  soloRoundNum++;
+
+  // Refill hand to handSize if possible
+  while (soloHand.length < handSize && soloDeck.length > 0) {
+    soloHand.push(soloDeck.pop());
+  }
+
+  // If deck exhausted and hand too small to play, end
+  if (soloHand.length === 0 || soloDeck.length === 0) {
+    soloEndGame('Deck exhausted!');
+    return;
+  }
+
+  // Draw center card (from deck, not hand)
+  soloCenterCard = soloDeck.pop();
+
+  document.getElementById('soloRound').textContent = soloRoundNum;
+  document.getElementById('soloInstruction').textContent = 'Pick the card from your hand that is closest in date.';
+
+  renderCenterCard();
+  renderSoloHand(false);
+
+  // Clear action bar
+  document.getElementById('soloActionBar').innerHTML = '';
+}
+
+function renderCenterCard() {
+  const wrap = document.getElementById('centerCardEl');
+  wrap.innerHTML = '';
+  const el = makeCardFront(soloCenterCard, 'center no-hover');
+  wrap.appendChild(el);
+}
+
+function renderSoloHand(revealed) {
+  const grid = document.getElementById('soloHandGrid');
+  grid.innerHTML = '';
+
+  // Pre-compute the correct answer (closest card index in hand)
+  const bestIdx = findBestCardIndex(soloHand, soloCenterCard);
+
+  soloHand.forEach((card, i) => {
+    let extraClass = '';
+    if (revealed) {
+      if (i === bestIdx) {
+        extraClass = 'show-best no-hover';
+      } else {
+        extraClass = 'no-hover';
+      }
+    }
+
+    const el = makeCardFront(card, extraClass);
+
+    if (revealed) {
+      // Show the year on each card after reveal
+      const yt = document.createElement('div');
+      yt.className = 'card-year-tag';
+      yt.textContent = fmtYear(card);
+      el.appendChild(yt);
+
+      if (i === bestIdx) {
+        const badge = document.createElement('span');
+        badge.className = 'card-result-badge';
+        badge.textContent = 'Closest';
+        el.appendChild(badge);
+      }
+    } else {
+      el.addEventListener('click', () => soloPickCard(i));
+    }
+
+    grid.appendChild(el);
+  });
+}
+
+// Returns the index in `hand` of the card with the smallest |year - center.year|
+function findBestCardIndex(hand, center) {
+  let bestIdx = 0;
+  let bestDiff = Infinity;
+  hand.forEach((card, i) => {
+    const diff = Math.abs(card.year - center.year);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  });
+  return bestIdx;
+}
+
+function soloPickCard(pickedIdx) {
+  if (soloAwaitingNext) return;
+
+  const bestIdx = findBestCardIndex(soloHand, soloCenterCard);
+  const pickedCard = soloHand[pickedIdx];
+  const bestCard = soloHand[bestIdx];
+
+  const pickedDiff = Math.abs(pickedCard.year - soloCenterCard.year);
+  const bestDiff = Math.abs(bestCard.year - soloCenterCard.year);
+  const isCorrect = (pickedIdx === bestIdx);
+
+  // Reveal all cards with years, highlight best and picked
+  const grid = document.getElementById('soloHandGrid');
+  grid.innerHTML = '';
+
+  soloHand.forEach((card, i) => {
+    let extraClass = 'no-hover';
+    if (i === bestIdx) extraClass += ' show-best';
+    if (i === pickedIdx && !isCorrect) extraClass += ' wrong-card';
+
+    const el = makeCardFront(card, extraClass);
+
+    const yt = document.createElement('div');
+    yt.className = 'card-year-tag';
+    yt.textContent = fmtYear(card);
+    el.appendChild(yt);
+
+    const badge = document.createElement('span');
+    badge.className = 'card-result-badge';
+    if (i === bestIdx && isCorrect) {
+      badge.textContent = '✓ Correct';
+    } else if (i === bestIdx) {
+      badge.textContent = 'Closest';
+    } else if (i === pickedIdx) {
+      badge.textContent = '✗ Your pick';
+    }
+    el.appendChild(badge);
+
+    grid.appendChild(el);
+  });
+
+  // Also reveal center card year
+  const wrap = document.getElementById('centerCardEl');
+  wrap.innerHTML = '';
+  const centerEl = makeCardWithYear(soloCenterCard, 'center no-hover');
+  wrap.appendChild(centerEl);
+
+  const instruction = document.getElementById('soloInstruction');
+
+  if (isCorrect) {
+    soloStreak++;
+    const newHigh = soloStreak > getHighScore();
+    if (newHigh) setHighScore(soloStreak);
+    updateSoloStats();
+
+    // Remove played card from hand, replace next round
+    soloHand.splice(pickedIdx, 1);
+
+    instruction.innerHTML = `<span style="color:var(--green);font-weight:600;">✓ Correct!</span> ${pickedCard.title} (${fmtYear(pickedCard)}) was closest to ${soloCenterCard.title} (${fmtYear(soloCenterCard)}).`;
+
+    soloAwaitingNext = true;
+    const bar = document.getElementById('soloActionBar');
+    bar.innerHTML = '';
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-gold';
+    nextBtn.textContent = soloDeck.length > 0 ? 'Next round →' : 'See results →';
+    nextBtn.addEventListener('click', () => {
+      if (soloDeck.length === 0 && soloHand.length === 0) {
+        soloEndGame('You cleared the deck!');
+      } else {
+        soloNextRound();
+      }
+    });
+    bar.appendChild(nextBtn);
+
+  } else {
+    // Wrong — streak ends
+    const prevStreak = soloStreak;
+    soloStreak = 0;
+    updateSoloStats();
+
+    const yearDiff = Math.abs(pickedDiff - bestDiff);
+    instruction.innerHTML = `<span style="color:var(--red);font-weight:600;">✗ Not quite.</span> ${bestCard.title} (${fmtYear(bestCard)}) was closer — only ${bestDiff.toLocaleString()} years off vs. your ${pickedDiff.toLocaleString()} years. Streak reset.`;
+
+    soloAwaitingNext = true;
+    const bar = document.getElementById('soloActionBar');
+    bar.innerHTML = '';
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn';
+    nextBtn.textContent = 'Keep going →';
+    nextBtn.addEventListener('click', () => {
+      // Don't remove any card on a wrong answer — keep full hand, just draw new center
+      soloNextRound();
+    });
+    bar.appendChild(nextBtn);
+
+    if (prevStreak > 0) {
+      const streakNote = document.createElement('span');
+      streakNote.style.cssText = 'font-size:0.82rem;color:var(--ink-light);margin-left:0.75rem;';
+      streakNote.textContent = `Streak of ${prevStreak} ended.`;
+      bar.appendChild(streakNote);
+    }
+  }
+}
+
+function updateSoloStats() {
+  document.getElementById('soloStreak').textContent = soloStreak;
+  document.getElementById('soloBest').textContent = getHighScore();
+}
+
+function soloEndGame(reason) {
+  document.getElementById('soloScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'block';
+  document.getElementById('endTitle').textContent = reason || 'Game Over';
+
+  const hs = getHighScore();
+  document.getElementById('endSubtitle').textContent =
+    `Final streak: ${soloStreak}  •  Best ever: ${hs}`;
+
+  const container = document.getElementById('finalScores');
+  container.innerHTML = '';
+
+  const rows = [
+    { label: 'Streak this game', val: soloStreak },
+    { label: 'All-time best streak', val: hs },
+    { label: 'Rounds played', val: soloRoundNum },
+  ];
+
+  rows.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'final-row';
+    row.innerHTML = `<div class="name">${r.label}</div><div class="wins">${r.val}</div>`;
+    container.appendChild(row);
+  });
+}
+
+// ============================================================
+// ============================================================
+//  PASS-AND-PLAY MODE (unchanged logic)
+// ============================================================
+// ============================================================
+
+let players = [];
+let deck = [];
+let hands = [];
+let piles = [];
+let roundNum = 0;
+let targetCard = null;
+let currentPickerIndex = 0;
+let picks = [];
+let phase = 'pick';
+
+function startPassGame() {
+  const n = parseInt(document.getElementById('playerCount').value);
+  const nameInputs = document.querySelectorAll('#playerNames input');
+  players = [];
+  for (let i = 0; i < n; i++) {
+    const name = nameInputs[i]?.value.trim() || `Player ${i+1}`;
+    players.push({ name, id: i });
+  }
+
+  deck = shuffle([...DECK]);
+  hands = Array.from({ length: n }, () => []);
+  piles = Array.from({ length: n }, () => []);
+
+  for (let h = 0; h < handSize; h++) {
+    for (let i = 0; i < n; i++) {
+      if (deck.length > 0) hands[i].push(deck.pop());
+    }
+  }
+
+  document.getElementById('gameScreen').style.display = 'block';
+  startRound();
+}
+
+function startRound() {
+  phase = 'pick';
+  picks = [];
+  currentPickerIndex = 0;
+
+  if (deck.length === 0) { showEndScreen(); return; }
+  targetCard = deck.pop();
+  roundNum++;
+
+  document.getElementById('roundNum').textContent = roundNum;
+  document.getElementById('targetDisplay').innerHTML = '<span class="target-hidden">? ? ? ?</span>';
+  document.getElementById('revealArea').style.display = 'none';
+  document.getElementById('roundResult').style.display = 'none';
+
+  updateScoreBar();
+
+  if (mode === 'pass' && players.length > 1) {
+    showPassScreen(players[0].name, 'Your turn to pick a card.');
+  } else {
+    renderHand(0);
+  }
+}
+
+function showPassScreen(playerName, msg) {
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('passScreen').style.display = 'block';
+  document.getElementById('passTitle').textContent = `${playerName}'s turn`;
+  document.getElementById('passMsg').textContent = msg;
+}
+
+function dismissPass() {
+  document.getElementById('passScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+  renderHand(currentPickerIndex);
+}
+
+function renderHand(playerIndex) {
+  const player = players[playerIndex];
+  const hand = hands[playerIndex];
+
+  document.getElementById('handLabel').textContent =
+    mode === 'pass' ? `${player.name} — pick one card to play` : `All players pick — then reveal`;
+  document.getElementById('soloHint').textContent =
+    mode !== 'pass' && players.length > 1 ? 'Pick in secret, then compare after everyone has chosen.' : '';
+
+  const grid = document.getElementById('handGrid');
+  grid.innerHTML = '';
+
+  hand.forEach((card, i) => {
+    const el = makeCardFront(card, '');
+    el.addEventListener('click', () => selectCard(playerIndex, i));
+    grid.appendChild(el);
+  });
+
+  const bar = document.getElementById('actionBar');
+  bar.innerHTML = '';
+
+  const playBtn = document.createElement('button');
+  playBtn.className = 'btn btn-gold';
+  playBtn.textContent = 'Play selected card';
+  playBtn.disabled = true;
+  playBtn.id = 'playBtn';
+  playBtn.addEventListener('click', () => confirmPick(playerIndex));
+  bar.appendChild(playBtn);
+}
+
+let selectedCardIndex = -1;
+
+function selectCard(playerIndex, cardIndex) {
+  selectedCardIndex = cardIndex;
+  document.getElementById('handGrid').querySelectorAll('.circa-card').forEach((el, i) => {
+    el.classList.toggle('selected', i === cardIndex);
+  });
+  const btn = document.getElementById('playBtn');
+  if (btn) btn.disabled = false;
+}
+
+function confirmPick(playerIndex) {
+  if (selectedCardIndex < 0) return;
+  const card = hands[playerIndex][selectedCardIndex];
+  picks.push({ playerIndex, card, cardIndex: selectedCardIndex });
+  selectedCardIndex = -1;
+
+  if (mode === 'pass') {
+    const nextIndex = currentPickerIndex + 1;
+    if (nextIndex < players.length) {
+      currentPickerIndex = nextIndex;
+      showPassScreen(players[nextIndex].name, 'Your turn to pick a card.');
+    } else {
+      revealRound();
+    }
+  } else {
+    if (picks.length < players.length) {
+      currentPickerIndex++;
+      renderHand(currentPickerIndex);
+    } else {
+      revealRound();
+    }
+  }
+}
+
+function revealRound() {
+  phase = 'reveal';
+  document.getElementById('handSection').style.display = 'block';
+  document.getElementById('handGrid').innerHTML = '';
+  document.getElementById('actionBar').innerHTML = '';
+
+  const tYear = targetCard.year;
+  document.getElementById('targetDisplay').innerHTML =
+    `<div class="target-year">${Math.abs(tYear)}</div>
+     <div class="target-era">${tYear < 0 ? 'BC' : 'AD'}${targetCard.approx ? ' <small style="color:var(--gold-light)">approx.</small>' : ''}</div>`;
+
+  let bestDiff = Infinity;
+  let winnerIdx = -1;
+  picks.forEach(p => {
+    const diff = Math.abs(p.card.year - tYear);
+    if (diff < bestDiff) { bestDiff = diff; winnerIdx = p.playerIndex; }
+  });
+
+  const revealArea = document.getElementById('revealArea');
+  revealArea.style.display = 'block';
+  const grid = document.getElementById('revealGrid');
+  grid.innerHTML = '';
+
+  picks.forEach(p => {
+    const diff = Math.abs(p.card.year - tYear);
+    const isWinner = p.playerIndex === winnerIdx;
+    const entry = document.createElement('div');
+    entry.className = 'reveal-entry' + (isWinner ? ' winner' : '');
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'player-name';
+    nameEl.textContent = players[p.playerIndex].name;
+    entry.appendChild(nameEl);
+
+    // Show card back (year)
+    const cardEl = document.createElement('div');
+    cardEl.className = 'circa-card face-down' + (isWinner ? '' : ' disabled');
+    const yr = document.createElement('div'); yr.className = 'card-back-year'; yr.textContent = Math.abs(p.card.year); cardEl.appendChild(yr);
+    const era = document.createElement('div'); era.className = 'card-back-era'; era.textContent = p.card.year < 0 ? 'BC' : 'AD'; cardEl.appendChild(era);
+    if (p.card.approx) { const ap = document.createElement('div'); ap.className = 'card-back-approx'; ap.textContent = 'approx.'; cardEl.appendChild(ap); }
+    const brand = document.createElement('div'); brand.className = 'card-back-brand'; brand.textContent = 'Circa'; cardEl.appendChild(brand);
+    entry.appendChild(cardEl);
+
+    const diffEl = document.createElement('div');
+    diffEl.className = 'diff-badge' + (isWinner ? ' winner' : '');
+    diffEl.textContent = diff === 0 ? 'Exact!' : `Off by ${diff.toLocaleString()} yrs`;
+    entry.appendChild(diffEl);
+
+    grid.appendChild(entry);
+  });
+
+  picks.forEach(p => { piles[winnerIdx].push(p.card); });
+  piles[winnerIdx].push(targetCard);
+  picks.forEach(p => { hands[p.playerIndex].splice(p.cardIndex, 1); });
+
+  const resultEl = document.getElementById('roundResult');
+  resultEl.style.display = 'block';
+  resultEl.textContent = `${players[winnerIdx].name} wins round ${roundNum} (+${picks.length + 1} cards)`;
+
+  updateScoreBar();
+
+  const handsEmpty = hands.every(h => h.length === 0);
+  const bar = document.getElementById('actionBar');
+  bar.innerHTML = '';
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-gold';
+  nextBtn.textContent = handsEmpty ? 'See final scores →' : 'Next round →';
+  nextBtn.addEventListener('click', handsEmpty ? showEndScreen : startRound);
+  bar.appendChild(nextBtn);
+  document.getElementById('handLabel').textContent = 'Results';
+  document.getElementById('soloHint').textContent = '';
+}
+
+function updateScoreBar() {
+  const bar = document.getElementById('scoreBar');
+  bar.innerHTML = '';
+  players.forEach((p, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'score-pill';
+    pill.textContent = `${p.name}: ${piles[i].length}`;
+    bar.appendChild(pill);
+  });
+}
+
+function showEndScreen() {
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'block';
+
+  const scores = players.map((p, i) => ({ name: p.name, wins: piles[i].length }));
+  scores.sort((a, b) => b.wins - a.wins);
+
+  const container = document.getElementById('finalScores');
+  container.innerHTML = '';
+  scores.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'final-row' + (i === 0 ? ' top' : '');
+    row.innerHTML = `<div class="pos">${i === 0 ? '★' : i+1}</div><div class="name">${s.name}</div><div class="wins">${s.wins} cards</div>`;
+    container.appendChild(row);
+  });
+}
+
+// Init
+updatePlayerNames();
+</script>
+
+</body>
+</html>

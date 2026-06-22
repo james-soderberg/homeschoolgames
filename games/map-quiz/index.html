@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Map Quiz — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <style>
+    .map-page { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+
+    .map-header { margin-bottom: 1.25rem; }
+    .map-header h1 { font-size: 1.8rem; margin-bottom: 0.2rem; }
+
+    /* Region selector */
+    .region-tabs {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+
+    .region-tab {
+      padding: 0.45rem 1rem;
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      background: white;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      color: var(--ink-light);
+      transition: all 0.15s;
+    }
+
+    .region-tab.active {
+      background: var(--ink);
+      color: var(--cream);
+      border-color: var(--ink);
+    }
+
+    /* Score / prompt bar */
+    .quiz-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .prompt-box {
+      background: white;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem 1.25rem;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .prompt-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-bottom: 0.2rem;
+    }
+
+    .prompt-country {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .score-box {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .score-item {
+      text-align: center;
+    }
+
+    .score-num {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: block;
+      line-height: 1;
+    }
+
+    .score-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--ink-light);
+    }
+
+    .score-num.correct { color: var(--green); }
+    .score-num.wrong { color: var(--red); }
+
+    /* Feedback bar */
+    .feedback-bar {
+      min-height: 2rem;
+      margin-bottom: 0.75rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 0.4rem 0;
+    }
+
+    /* Map container */
+    .map-container {
+      background: #E8F4F8;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .map-container svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* Country paths */
+    .country {
+      fill: #D4C9B5;
+      stroke: #9A8E7A;
+      stroke-width: 0.5;
+      cursor: pointer;
+      transition: fill 0.15s;
+    }
+
+    .country:hover { fill: #C4A040; }
+    .country.correct-flash { fill: #2A5C3F !important; }
+    .country.wrong-flash { fill: #8B2020 !important; }
+    .country.highlight-target { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
+
+    /* After answering, show correct location */
+    .country.show-correct { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
+
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← All Games</a>
+  </nav>
+</header>
+
+<div class="map-page">
+  <div class="map-header">
+    <h1>Map Quiz</h1>
+    <p>Find the country on the map.</p>
+  </div>
+
+  <div class="region-tabs">
+    <button class="region-tab active" onclick="loadRegion('americas')">Americas</button>
+    <button class="region-tab" onclick="loadRegion('europe')">Europe</button>
+    <button class="region-tab" onclick="loadRegion('asia')">Asia</button>
+    <button class="region-tab" onclick="loadRegion('africa')">Africa</button>
+  </div>
+
+  <div class="quiz-bar">
+    <div class="prompt-box">
+      <div class="prompt-label">Find this country</div>
+      <div class="prompt-country" id="promptCountry">Loading…</div>
+    </div>
+    <div class="score-box">
+      <div class="score-item">
+        <span class="score-num correct" id="scoreCorrect">0</span>
+        <span class="score-label">Correct</span>
+      </div>
+      <div class="score-item">
+        <span class="score-num wrong" id="scoreWrong">0</span>
+        <span class="score-label">Missed</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="feedback-bar" id="feedbackBar"></div>
+
+  <div class="map-container" id="mapContainer"></div>
+
+  <div class="btn-row">
+    <button class="btn btn-outline btn-sm" onclick="resetScores()">Reset Scores</button>
+  </div>
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script>
+// ============================================================
+// MAP DATA — country lists per region
+// Each country has: id (matches SVG path id), name
+// ============================================================
+
+const REGIONS = {
+  americas: {
+    label: 'Americas',
+    countries: [
+      {id:'CA',name:'Canada'},{id:'US',name:'United States'},{id:'MX',name:'Mexico'},
+      {id:'GT',name:'Guatemala'},{id:'BZ',name:'Belize'},{id:'HN',name:'Honduras'},
+      {id:'SV',name:'El Salvador'},{id:'NI',name:'Nicaragua'},{id:'CR',name:'Costa Rica'},
+      {id:'PA',name:'Panama'},{id:'CU',name:'Cuba'},{id:'HT',name:'Haiti'},
+      {id:'DO',name:'Dominican Republic'},{id:'JM',name:'Jamaica'},
+      {id:'CO',name:'Colombia'},{id:'VE',name:'Venezuela'},{id:'GY',name:'Guyana'},
+      {id:'SR',name:'Suriname'},{id:'BR',name:'Brazil'},{id:'EC',name:'Ecuador'},
+      {id:'PE',name:'Peru'},{id:'BO',name:'Bolivia'},{id:'CL',name:'Chile'},
+      {id:'AR',name:'Argentina'},{id:'PY',name:'Paraguay'},{id:'UY',name:'Uruguay'},
+    ]
+  },
+  europe: {
+    label: 'Europe',
+    countries: [
+      {id:'IS',name:'Iceland'},{id:'IE',name:'Ireland'},{id:'GB',name:'United Kingdom'},
+      {id:'PT',name:'Portugal'},{id:'ES',name:'Spain'},{id:'FR',name:'France'},
+      {id:'BE',name:'Belgium'},{id:'NL',name:'Netherlands'},{id:'LU',name:'Luxembourg'},
+      {id:'DE',name:'Germany'},{id:'CH',name:'Switzerland'},{id:'AT',name:'Austria'},
+      {id:'IT',name:'Italy'},{id:'DK',name:'Denmark'},{id:'NO',name:'Norway'},
+      {id:'SE',name:'Sweden'},{id:'FI',name:'Finland'},{id:'PL',name:'Poland'},
+      {id:'CZ',name:'Czech Republic'},{id:'SK',name:'Slovakia'},{id:'HU',name:'Hungary'},
+      {id:'RO',name:'Romania'},{id:'BG',name:'Bulgaria'},{id:'GR',name:'Greece'},
+      {id:'HR',name:'Croatia'},{id:'SI',name:'Slovenia'},{id:'BA',name:'Bosnia'},
+      {id:'RS',name:'Serbia'},{id:'ME',name:'Montenegro'},{id:'MK',name:'North Macedonia'},
+      {id:'AL',name:'Albania'},{id:'EE',name:'Estonia'},{id:'LV',name:'Latvia'},
+      {id:'LT',name:'Lithuania'},{id:'BY',name:'Belarus'},{id:'UA',name:'Ukraine'},
+      {id:'MD',name:'Moldova'},{id:'RU',name:'Russia'},
+    ]
+  },
+  asia: {
+    label: 'Asia',
+    countries: [
+      {id:'TR',name:'Turkey'},{id:'SY',name:'Syria'},{id:'LB',name:'Lebanon'},
+      {id:'IL',name:'Israel'},{id:'JO',name:'Jordan'},{id:'IQ',name:'Iraq'},
+      {id:'IR',name:'Iran'},{id:'SA',name:'Saudi Arabia'},{id:'YE',name:'Yemen'},
+      {id:'OM',name:'Oman'},{id:'AE',name:'United Arab Emirates'},{id:'QA',name:'Qatar'},
+      {id:'KW',name:'Kuwait'},{id:'AF',name:'Afghanistan'},{id:'PK',name:'Pakistan'},
+      {id:'IN',name:'India'},{id:'NP',name:'Nepal'},{id:'BD',name:'Bangladesh'},
+      {id:'LK',name:'Sri Lanka'},{id:'MM',name:'Myanmar'},{id:'TH',name:'Thailand'},
+      {id:'LA',name:'Laos'},{id:'VN',name:'Vietnam'},{id:'KH',name:'Cambodia'},
+      {id:'MY',name:'Malaysia'},{id:'ID',name:'Indonesia'},{id:'PH',name:'Philippines'},
+      {id:'CN',name:'China'},{id:'MN',name:'Mongolia'},{id:'KR',name:'South Korea'},
+      {id:'KP',name:'North Korea'},{id:'JP',name:'Japan'},{id:'KZ',name:'Kazakhstan'},
+      {id:'UZ',name:'Uzbekistan'},{id:'TM',name:'Turkmenistan'},{id:'AZ',name:'Azerbaijan'},
+      {id:'GE',name:'Georgia'},{id:'AM',name:'Armenia'},
+    ]
+  },
+  africa: {
+    label: 'Africa',
+    countries: [
+      {id:'MA',name:'Morocco'},{id:'DZ',name:'Algeria'},{id:'TN',name:'Tunisia'},
+      {id:'LY',name:'Libya'},{id:'EG',name:'Egypt'},{id:'MR',name:'Mauritania'},
+      {id:'ML',name:'Mali'},{id:'NE',name:'Niger'},{id:'TD',name:'Chad'},
+      {id:'SD',name:'Sudan'},{id:'ER',name:'Eritrea'},{id:'ET',name:'Ethiopia'},
+      {id:'DJ',name:'Djibouti'},{id:'SO',name:'Somalia'},{id:'SN',name:'Senegal'},
+      {id:'GM',name:'Gambia'},{id:'GW',name:'Guinea-Bissau'},{id:'GN',name:'Guinea'},
+      {id:'SL',name:'Sierra Leone'},{id:'LR',name:'Liberia'},{id:'CI',name:"Côte d'Ivoire"},
+      {id:'GH',name:'Ghana'},{id:'TG',name:'Togo'},{id:'BJ',name:'Benin'},
+      {id:'NG',name:'Nigeria'},{id:'CM',name:'Cameroon'},{id:'CF',name:'Central African Republic'},
+      {id:'SS',name:'South Sudan'},{id:'UG',name:'Uganda'},{id:'KE',name:'Kenya'},
+      {id:'RW',name:'Rwanda'},{id:'BI',name:'Burundi'},{id:'TZ',name:'Tanzania'},
+      {id:'GA',name:'Gabon'},{id:'CG',name:'Republic of the Congo'},
+      {id:'CD',name:'DR Congo'},{id:'AO',name:'Angola'},{id:'ZM',name:'Zambia'},
+      {id:'MW',name:'Malawi'},{id:'MZ',name:'Mozambique'},{id:'ZW',name:'Zimbabwe'},
+      {id:'BW',name:'Botswana'},{id:'NA',name:'Namibia'},{id:'ZA',name:'South Africa'},
+      {id:'SZ',name:'Eswatini'},{id:'LS',name:'Lesotho'},{id:'MG',name:'Madagascar'},
+    ]
+  }
+};
+
+// ============================================================
+// SVG MAP DATA — simplified path data per region
+// Using Natural Earth simplified coordinates
+// ============================================================
+
+// We'll use an inline SVG approach with country shapes
+// These are simplified but recognizable outlines
+
+const MAP_SVG = {
+  americas: buildAmericasSVG(),
+  europe: buildEuropeSVG(),
+  asia: buildAsiaSVG(),
+  africa: buildAfricaSVG(),
+};
+
+// ---- State ----
+let currentRegion = 'americas';
+let queue = [];
+let currentCountry = null;
+let scoreCorrect = 0;
+let scoreWrong = 0;
+let waitingForNext = false;
+
+function loadRegion(region) {
+  currentRegion = region;
+  document.querySelectorAll('.region-tab').forEach(t => {
+    t.classList.toggle('active', t.textContent.trim().toLowerCase().startsWith(region.charAt(0).toUpperCase() + region.slice(1, 3)));
+  });
+  // fix active for africa
+  document.querySelectorAll('.region-tab').forEach(t => {
+    const labels = { americas:'Americas', europe:'Europe', asia:'Asia', africa:'Africa' };
+    t.classList.toggle('active', t.textContent.trim() === labels[region]);
+  });
+
+  // Render map
+  document.getElementById('mapContainer').innerHTML = MAP_SVG[region];
+
+  // Attach click handlers
+  document.querySelectorAll('#mapContainer .country').forEach(path => {
+    path.addEventListener('click', () => handleCountryClick(path.id));
+  });
+
+  // Reset queue & start
+  resetQueue();
+}
+
+function resetQueue() {
+  queue = shuffle([...REGIONS[currentRegion].countries]);
+  scoreCorrect = 0;
+  scoreWrong = 0;
+  updateScoreDisplay();
+  nextQuestion();
+}
+
+function resetScores() {
+  loadRegion(currentRegion);
+}
+
+function nextQuestion() {
+  waitingForNext = false;
+  // Clear feedback
+  document.getElementById('feedbackBar').textContent = '';
+  // Clear highlights
+  document.querySelectorAll('#mapContainer .country').forEach(el => {
+    el.classList.remove('correct-flash', 'wrong-flash', 'show-correct');
+  });
+
+  if (queue.length === 0) {
+    queue = shuffle([...REGIONS[currentRegion].countries]);
+  }
+
+  currentCountry = queue.pop();
+  document.getElementById('promptCountry').textContent = currentCountry.name;
+}
+
+function handleCountryClick(countryId) {
+  if (waitingForNext) {
+    nextQuestion();
+    return;
+  }
+  if (!currentCountry) return;
+
+  const fb = document.getElementById('feedbackBar');
+  const correctEl = document.getElementById(currentCountry.id);
+
+  if (countryId === currentCountry.id) {
+    scoreCorrect++;
+    fb.innerHTML = `<span class="feedback-correct">✓ Correct! That's ${currentCountry.name}.</span>`;
+    if (correctEl) correctEl.classList.add('correct-flash');
+    updateScoreDisplay();
+    waitingForNext = true;
+    setTimeout(nextQuestion, 1200);
+  } else {
+    scoreWrong++;
+    fb.innerHTML = `<span class="feedback-wrong">✗ That's ${getCountryName(countryId) || 'not it'}. ${currentCountry.name} is shown in green.</span>`;
+    if (correctEl) correctEl.classList.add('show-correct');
+    const wrongEl = document.getElementById(countryId);
+    if (wrongEl) {
+      wrongEl.classList.add('wrong-flash');
+      setTimeout(() => wrongEl.classList.remove('wrong-flash'), 800);
+    }
+    updateScoreDisplay();
+    waitingForNext = true;
+  }
+}
+
+function getCountryName(id) {
+  const all = Object.values(REGIONS).flatMap(r => r.countries);
+  return all.find(c => c.id === id)?.name || null;
+}
+
+function updateScoreDisplay() {
+  document.getElementById('scoreCorrect').textContent = scoreCorrect;
+  document.getElementById('scoreWrong').textContent = scoreWrong;
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ============================================================
+// SVG MAP BUILDERS
+// Using simplified Natural Earth-inspired path data
+// Each country is a <path> with id = ISO 2-letter code
+// ============================================================
+
+function buildAmericasSVG() {
+  return `<svg viewBox="0 0 620 900" xmlns="http://www.w3.org/2000/svg">
+  <rect width="620" height="900" fill="#E8F4F8"/>
+  <!-- CANADA -->
+  <path id="CA" class="country" d="M40,30 L580,30 L580,200 L520,210 L480,190 L440,210 L400,200 L360,220 L320,210 L280,230 L240,215 L200,230 L160,215 L120,230 L80,215 L40,230 Z"/>
+  <!-- UNITED STATES (contiguous) -->
+  <path id="US" class="country" d="M60,235 L540,235 L540,390 L480,395 L440,380 L380,400 L340,390 L300,405 L240,395 L180,400 L120,390 L80,395 L60,380 Z"/>
+  <!-- MEXICO -->
+  <path id="MX" class="country" d="M80,400 L320,400 L340,410 L360,440 L340,480 L300,500 L260,490 L220,510 L180,500 L150,480 L120,460 L100,440 Z"/>
+  <!-- BELIZE -->
+  <path id="BZ" class="country" d="M330,450 L350,450 L350,480 L330,480 Z"/>
+  <!-- GUATEMALA -->
+  <path id="GT" class="country" d="M280,480 L330,480 L330,510 L300,520 L270,510 Z"/>
+  <!-- EL SALVADOR -->
+  <path id="SV" class="country" d="M270,510 L300,510 L300,530 L270,530 Z"/>
+  <!-- HONDURAS -->
+  <path id="HN" class="country" d="M300,490 L360,490 L365,520 L330,530 L300,520 Z"/>
+  <!-- NICARAGUA -->
+  <path id="NI" class="country" d="M300,530 L360,530 L365,565 L330,575 L295,565 Z"/>
+  <!-- COSTA RICA -->
+  <path id="CR" class="country" d="M310,570 L355,565 L358,595 L320,600 Z"/>
+  <!-- PANAMA -->
+  <path id="PA" class="country" d="M325,595 L385,590 L395,615 L355,620 L325,610 Z"/>
+  <!-- CUBA -->
+  <path id="CU" class="country" d="M300,420 L400,415 L420,435 L380,450 L300,445 Z"/>
+  <!-- HAITI -->
+  <path id="HT" class="country" d="M395,435 L430,432 L432,455 L395,458 Z"/>
+  <!-- DOMINICAN REPUBLIC -->
+  <path id="DO" class="country" d="M432,432 L465,430 L468,455 L432,458 Z"/>
+  <!-- JAMAICA -->
+  <path id="JM" class="country" d="M360,455 L395,453 L395,470 L360,470 Z"/>
+  <!-- COLOMBIA -->
+  <path id="CO" class="country" d="M380,610 L470,600 L490,640 L480,680 L440,700 L390,690 L370,660 L360,630 Z"/>
+  <!-- VENEZUELA -->
+  <path id="VE" class="country" d="M470,600 L550,595 L565,625 L555,660 L500,670 L470,650 L460,625 Z"/>
+  <!-- GUYANA -->
+  <path id="GY" class="country" d="M550,595 L580,590 L585,640 L555,645 L545,620 Z"/>
+  <!-- SURINAME -->
+  <path id="SR" class="country" d="M580,590 L610,587 L613,635 L582,638 Z"/>
+  <!-- BRAZIL -->
+  <path id="BR" class="country" d="M390,690 L560,645 L590,660 L600,760 L560,820 L480,840 L400,820 L350,780 L340,730 L360,690 Z"/>
+  <!-- ECUADOR -->
+  <path id="EC" class="country" d="M340,670 L390,665 L395,710 L350,720 Z"/>
+  <!-- PERU -->
+  <path id="PE" class="country" d="M340,720 L420,710 L430,780 L390,820 L340,810 Z"/>
+  <!-- BOLIVIA -->
+  <path id="BO" class="country" d="M400,760 L460,750 L470,810 L430,840 L390,830 Z"/>
+  <!-- CHILE -->
+  <path id="CL" class="country" d="M310,780 L355,775 L360,880 L310,880 Z"/>
+  <!-- ARGENTINA -->
+  <path id="AR" class="country" d="M355,790 L450,785 L455,870 L400,885 L355,870 Z"/>
+  <!-- PARAGUAY -->
+  <path id="PY" class="country" d="M440,790 L480,785 L485,820 L440,825 Z"/>
+  <!-- URUGUAY -->
+  <path id="UY" class="country" d="M455,840 L490,835 L495,865 L455,868 Z"/>
+</svg>`;
+}
+
+function buildEuropeSVG() {
+  return `<svg viewBox="0 0 700 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="700" height="600" fill="#E8F4F8"/>
+  <!-- ICELAND -->
+  <path id="IS" class="country" d="M40,40 L120,35 L130,65 L110,80 L60,80 L40,60 Z"/>
+  <!-- NORWAY -->
+  <path id="NO" class="country" d="M290,40 L370,30 L390,80 L350,120 L310,140 L280,120 L275,80 Z"/>
+  <!-- SWEDEN -->
+  <path id="SE" class="country" d="M360,50 L420,45 L430,180 L390,200 L350,180 L340,130 L350,90 Z"/>
+  <!-- FINLAND -->
+  <path id="FI" class="country" d="M420,40 L490,35 L500,150 L450,170 L420,145 L415,90 Z"/>
+  <!-- RUSSIA (European part, simplified) -->
+  <path id="RU" class="country" d="M490,30 L700,20 L700,250 L600,260 L520,230 L490,180 L480,120 Z"/>
+  <!-- ESTONIA -->
+  <path id="EE" class="country" d="M460,170 L510,165 L515,190 L460,195 Z"/>
+  <!-- LATVIA -->
+  <path id="LV" class="country" d="M455,195 L515,190 L518,215 L455,220 Z"/>
+  <!-- LITHUANIA -->
+  <path id="LT" class="country" d="M450,220 L505,215 L508,245 L450,248 Z"/>
+  <!-- BELARUS -->
+  <path id="BY" class="country" d="M490,240 L580,230 L585,290 L490,295 Z"/>
+  <!-- UKRAINE -->
+  <path id="UA" class="country" d="M490,295 L625,280 L635,345 L560,360 L490,350 Z"/>
+  <!-- MOLDOVA -->
+  <path id="MD" class="country" d="M570,340 L600,335 L605,365 L568,368 Z"/>
+  <!-- POLAND -->
+  <path id="PL" class="country" d="M420,240 L490,238 L492,305 L420,308 Z"/>
+  <!-- GERMANY -->
+  <path id="DE" class="country" d="M350,240 L420,238 L422,315 L380,325 L350,315 Z"/>
+  <!-- CZECH REPUBLIC -->
+  <path id="CZ" class="country" d="M380,308 L440,305 L442,335 L380,338 Z"/>
+  <!-- SLOVAKIA -->
+  <path id="SK" class="country" d="M440,308 L495,305 L497,330 L440,333 Z"/>
+  <!-- AUSTRIA -->
+  <path id="AT" class="country" d="M360,335 L440,332 L442,358 L360,360 Z"/>
+  <!-- HUNGARY -->
+  <path id="HU" class="country" d="M440,332 L510,328 L512,358 L440,360 Z"/>
+  <!-- ROMANIA -->
+  <path id="RO" class="country" d="M510,300 L580,295 L585,360 L510,365 Z"/>
+  <!-- DENMARK -->
+  <path id="DK" class="country" d="M355,185 L390,180 L395,215 L375,225 L355,215 Z"/>
+  <!-- NETHERLANDS -->
+  <path id="NL" class="country" d="M310,250 L355,245 L358,275 L310,278 Z"/>
+  <!-- BELGIUM -->
+  <path id="BE" class="country" d="M310,278 L360,275 L362,305 L310,308 Z"/>
+  <!-- LUXEMBOURG -->
+  <path id="LU" class="country" d="M345,300 L368,298 L370,318 L345,320 Z"/>
+  <!-- FRANCE -->
+  <path id="FR" class="country" d="M270,280 L355,275 L365,375 L310,400 L255,380 L240,330 Z"/>
+  <!-- SWITZERLAND -->
+  <path id="CH" class="country" d="M345,360 L400,355 L403,385 L345,388 Z"/>
+  <!-- PORTUGAL -->
+  <path id="PT" class="country" d="M175,360 L210,355 L213,430 L175,435 Z"/>
+  <!-- SPAIN -->
+  <path id="ES" class="country" d="M195,330 L310,325 L315,420 L240,435 L195,420 Z"/>
+  <!-- ITALY -->
+  <path id="IT" class="country" d="M375,375 L440,365 L460,430 L440,490 L415,500 L390,470 L380,420 Z"/>
+  <!-- SLOVENIA -->
+  <path id="SI" class="country" d="M410,358 L445,355 L447,378 L410,380 Z"/>
+  <!-- CROATIA -->
+  <path id="HR" class="country" d="M410,378 L460,372 L465,415 L415,420 Z"/>
+  <!-- BOSNIA -->
+  <path id="BA" class="country" d="M440,390 L480,385 L482,420 L440,423 Z"/>
+  <!-- SERBIA -->
+  <path id="RS" class="country" d="M470,360 L515,355 L518,400 L468,405 Z"/>
+  <!-- MONTENEGRO -->
+  <path id="ME" class="country" d="M458,418 L490,414 L492,440 L458,443 Z"/>
+  <!-- NORTH MACEDONIA -->
+  <path id="MK" class="country" d="M490,408 L530,404 L532,430 L490,433 Z"/>
+  <!-- ALBANIA -->
+  <path id="AL" class="country" d="M460,440 L495,436 L498,470 L460,473 Z"/>
+  <!-- BULGARIA -->
+  <path id="BG" class="country" d="M515,360 L580,355 L582,405 L515,408 Z"/>
+  <!-- GREECE -->
+  <path id="GR" class="country" d="M490,435 L555,428 L558,490 L520,510 L490,490 Z"/>
+  <!-- IRELAND -->
+  <path id="IE" class="country" d="M185,185 L230,178 L232,225 L185,230 Z"/>
+  <!-- UNITED KINGDOM -->
+  <path id="GB" class="country" d="M230,155 L295,148 L300,270 L265,280 L230,265 L225,210 Z"/>
+</svg>`;
+}
+
+function buildAsiaSVG() {
+  return `<svg viewBox="0 0 800 600" xmlns="http://www.w3.org/2000/svg">
+  <rect width="800" height="600" fill="#E8F4F8"/>
+  <!-- TURKEY -->
+  <path id="TR" class="country" d="M200,130 L360,120 L375,155 L340,175 L200,178 Z"/>
+  <!-- GEORGIA -->
+  <path id="GE" class="country" d="M330,100 L390,95 L393,125 L330,128 Z"/>
+  <!-- ARMENIA -->
+  <path id="AM" class="country" d="M355,125 L395,122 L397,148 L355,150 Z"/>
+  <!-- AZERBAIJAN -->
+  <path id="AZ" class="country" d="M390,115 L430,110 L433,150 L388,153 Z"/>
+  <!-- SYRIA -->
+  <path id="SY" class="country" d="M285,175 L360,170 L363,215 L285,218 Z"/>
+  <!-- LEBANON -->
+  <path id="LB" class="country" d="M275,195 L298,192 L300,218 L275,220 Z"/>
+  <!-- ISRAEL -->
+  <path id="IL" class="country" d="M258,210 L285,207 L287,255 L258,258 Z"/>
+  <!-- JORDAN -->
+  <path id="JO" class="country" d="M285,215 L345,210 L347,270 L285,273 Z"/>
+  <!-- IRAQ -->
+  <path id="IQ" class="country" d="M330,155 L430,148 L440,230 L380,250 L330,240 Z"/>
+  <!-- IRAN -->
+  <path id="IR" class="country" d="M395,130 L560,118 L570,240 L490,260 L395,252 Z"/>
+  <!-- KUWAIT -->
+  <path id="KW" class="country" d="M388,235 L420,230 L422,255 L388,258 Z"/>
+  <!-- SAUDI ARABIA -->
+  <path id="SA" class="country" d="M270,250 L445,238 L455,340 L390,380 L290,375 L265,325 Z"/>
+  <!-- QATAR -->
+  <path id="QA" class="country" d="M420,290 L445,287 L447,318 L420,320 Z"/>
+  <!-- UAE -->
+  <path id="AE" class="country" d="M440,295 L490,288 L495,325 L440,328 Z"/>
+  <!-- OMAN -->
+  <path id="OM" class="country" d="M460,290 L530,275 L545,360 L480,380 L455,345 Z"/>
+  <!-- YEMEN -->
+  <path id="YE" class="country" d="M310,360 L475,348 L478,410 L380,425 L305,415 Z"/>
+  <!-- AFGHANISTAN -->
+  <path id="AF" class="country" d="M530,120 L640,108 L650,190 L580,210 L530,200 Z"/>
+  <!-- PAKISTAN -->
+  <path id="PK" class="country" d="M560,170 L680,158 L688,270 L610,285 L555,265 Z"/>
+  <!-- INDIA -->
+  <path id="IN" class="country" d="M600,250 L700,238 L710,370 L660,430 L590,440 L560,380 L565,300 Z"/>
+  <!-- NEPAL -->
+  <path id="NP" class="country" d="M660,238 L720,230 L723,262 L660,265 Z"/>
+  <!-- BANGLADESH -->
+  <path id="BD" class="country" d="M698,258 L740,253 L743,300 L698,303 Z"/>
+  <!-- SRI LANKA -->
+  <path id="LK" class="country" d="M643,420 L668,416 L670,450 L643,453 Z"/>
+  <!-- MYANMAR -->
+  <path id="MM" class="country" d="M690,255 L740,248 L745,360 L700,375 Z"/>
+  <!-- THAILAND -->
+  <path id="TH" class="country" d="M718,290 L760,283 L763,390 L728,400 Z"/>
+  <!-- LAOS -->
+  <path id="LA" class="country" d="M742,258 L775,253 L778,330 L742,333 Z"/>
+  <!-- VIETNAM -->
+  <path id="VN" class="country" d="M755,260 L790,255 L793,390 L755,393 Z"/>
+  <!-- CAMBODIA -->
+  <path id="KH" class="country" d="M736,360 L778,355 L780,400 L736,403 Z"/>
+  <!-- MALAYSIA (peninsula) -->
+  <path id="MY" class="country" d="M726,385 L762,380 L764,430 L726,433 Z"/>
+  <!-- INDONESIA (Java area, simplified) -->
+  <path id="ID" class="country" d="M710,440 L800,430 L800,470 L710,475 Z"/>
+  <!-- PHILIPPINES -->
+  <path id="PH" class="country" d="M762,290 L795,283 L798,380 L762,383 Z"/>
+  <!-- CHINA -->
+  <path id="CN" class="country" d="M590,100 L770,88 L775,255 L700,262 L618,270 L585,200 Z"/>
+  <!-- MONGOLIA -->
+  <path id="MN" class="country" d="M580,60 L750,48 L753,102 L580,108 Z"/>
+  <!-- NORTH KOREA -->
+  <path id="KP" class="country" d="M730,170 L768,165 L770,210 L730,213 Z"/>
+  <!-- SOUTH KOREA -->
+  <path id="KR" class="country" d="M752,208 L785,204 L787,245 L752,248 Z"/>
+  <!-- JAPAN -->
+  <path id="JP" class="country" d="M768,140 L800,133 L800,280 L768,283 Z"/>
+  <!-- KAZAKHSTAN -->
+  <path id="KZ" class="country" d="M430,50 L600,40 L608,118 L530,125 L428,120 Z"/>
+  <!-- UZBEKISTAN -->
+  <path id="UZ" class="country" d="M478,120 L560,112 L563,158 L478,162 Z"/>
+  <!-- TURKMENISTAN -->
+  <path id="TM" class="country" d="M435,140 L530,132 L533,178 L435,182 Z"/>
+</svg>`;
+}
+
+function buildAfricaSVG() {
+  return `<svg viewBox="0 0 620 780" xmlns="http://www.w3.org/2000/svg">
+  <rect width="620" height="780" fill="#E8F4F8"/>
+  <!-- MOROCCO -->
+  <path id="MA" class="country" d="M40,40 L200,35 L205,110 L150,130 L40,125 Z"/>
+  <!-- ALGERIA -->
+  <path id="DZ" class="country" d="M198,35 L380,28 L385,200 L198,205 Z"/>
+  <!-- TUNISIA -->
+  <path id="TN" class="country" d="M278,30 L330,27 L333,100 L278,103 Z"/>
+  <!-- LIBYA -->
+  <path id="LY" class="country" d="M330,30 L510,22 L515,195 L330,200 Z"/>
+  <!-- EGYPT -->
+  <path id="EG" class="country" d="M510,20 L600,15 L605,195 L510,198 Z"/>
+  <!-- MAURITANIA -->
+  <path id="MR" class="country" d="M38,120 L200,115 L203,250 L38,253 Z"/>
+  <!-- MALI -->
+  <path id="ML" class="country" d="M198,120 L340,115 L343,280 L198,283 Z"/>
+  <!-- NIGER -->
+  <path id="NE" class="country" d="M338,115 L510,108 L513,270 L338,273 Z"/>
+  <!-- CHAD -->
+  <path id="TD" class="country" d="M390,108 L510,102 L513,275 L390,278 Z"/>
+  <!-- SUDAN -->
+  <path id="SD" class="country" d="M480,120 L600,112 L603,310 L480,313 Z"/>
+  <!-- ERITREA -->
+  <path id="ER" class="country" d="M555,210 L600,205 L602,250 L555,253 Z"/>
+  <!-- ETHIOPIA -->
+  <path id="ET" class="country" d="M505,245 L600,237 L603,330 L540,340 L505,330 Z"/>
+  <!-- DJIBOUTI -->
+  <path id="DJ" class="country" d="M578,245 L605,241 L607,268 L578,270 Z"/>
+  <!-- SOMALIA -->
+  <path id="SO" class="country" d="M560,265 L605,258 L608,370 L565,380 Z"/>
+  <!-- SENEGAL -->
+  <path id="SN" class="country" d="M35,250 L115,245 L117,290 L35,292 Z"/>
+  <!-- GAMBIA -->
+  <path id="GM" class="country" d="M48,265 L105,262 L107,278 L48,280 Z"/>
+  <!-- GUINEA-BISSAU -->
+  <path id="GW" class="country" d="M48,285 L98,280 L100,310 L48,313 Z"/>
+  <!-- GUINEA -->
+  <path id="GN" class="country" d="M80,285 L150,278 L153,335 L80,338 Z"/>
+  <!-- SIERRA LEONE -->
+  <path id="SL" class="country" d="M68,330 L120,325 L122,370 L68,373 Z"/>
+  <!-- LIBERIA -->
+  <path id="LR" class="country" d="M105,340 L165,333 L167,385 L105,388 Z"/>
+  <!-- CÔTE D'IVOIRE -->
+  <path id="CI" class="country" d="M140,300 L220,293 L223,370 L140,373 Z"/>
+  <!-- GHANA -->
+  <path id="GH" class="country" d="M218,278 L278,272 L280,370 L218,373 Z"/>
+  <!-- TOGO -->
+  <path id="TG" class="country" d="M270,260 L310,255 L312,370 L270,373 Z"/>
+  <!-- BENIN -->
+  <path id="BJ" class="country" d="M305,248 L350,243 L352,370 L305,373 Z"/>
+  <!-- NIGERIA -->
+  <path id="NG" class="country" d="M330,240 L460,232 L463,375 L330,378 Z"/>
+  <!-- CAMEROON -->
+  <path id="CM" class="country" d="M380,280 L460,273 L463,395 L380,398 Z"/>
+  <!-- CENTRAL AFRICAN REPUBLIC -->
+  <path id="CF" class="country" d="M390,280 L530,272 L533,360 L390,363 Z"/>
+  <!-- SOUTH SUDAN -->
+  <path id="SS" class="country" d="M470,300 L570,293 L573,385 L470,388 Z"/>
+  <!-- UGANDA -->
+  <path id="UG" class="country" d="M530,355 L580,350 L582,400 L530,403 Z"/>
+  <!-- KENYA -->
+  <path id="KE" class="country" d="M545,340 L605,333 L607,430 L545,433 Z"/>
+  <!-- RWANDA -->
+  <path id="RW" class="country" d="M523,390 L555,386 L557,415 L523,418 Z"/>
+  <!-- BURUNDI -->
+  <path id="BI" class="country" d="M523,415 L553,411 L555,440 L523,443 Z"/>
+  <!-- TANZANIA -->
+  <path id="TZ" class="country" d="M510,415 L605,408 L608,515 L510,518 Z"/>
+  <!-- GABON -->
+  <path id="GA" class="country" d="M375,385 L438,378 L440,450 L375,453 Z"/>
+  <!-- REPUBLIC OF CONGO -->
+  <path id="CG" class="country" d="M385,385 L475,378 L478,460 L385,463 Z"/>
+  <!-- DR CONGO -->
+  <path id="CD" class="country" d="M415,360 L580,350 L583,510 L415,513 Z"/>
+  <!-- ANGOLA -->
+  <path id="AO" class="country" d="M385,465 L510,458 L513,565 L385,568 Z"/>
+  <!-- ZAMBIA -->
+  <path id="ZM" class="country" d="M460,505 L580,498 L582,585 L460,588 Z"/>
+  <!-- MALAWI -->
+  <path id="MW" class="country" d="M560,490 L595,486 L597,570 L560,573 Z"/>
+  <!-- MOZAMBIQUE -->
+  <path id="MZ" class="country" d="M535,510 L600,503 L603,640 L535,643 Z"/>
+  <!-- ZIMBABWE -->
+  <path id="ZW" class="country" d="M478,565 L555,558 L558,628 L478,631 Z"/>
+  <!-- BOTSWANA -->
+  <path id="BW" class="country" d="M430,580 L505,573 L508,655 L430,658 Z"/>
+  <!-- NAMIBIA -->
+  <path id="NA" class="country" d="M370,545 L458,538 L460,660 L370,663 Z"/>
+  <!-- SOUTH AFRICA -->
+  <path id="ZA" class="country" d="M385,645 L570,638 L573,740 L445,755 L385,740 Z"/>
+  <!-- ESWATINI -->
+  <path id="SZ" class="country" d="M540,625 L570,621 L572,650 L540,653 Z"/>
+  <!-- LESOTHO -->
+  <path id="LS" class="country" d="M470,690 L510,685 L512,715 L470,718 Z"/>
+  <!-- MADAGASCAR -->
+  <path id="MG" class="country" d="M582,480 L615,474 L617,620 L582,623 Z"/>
+</svg>`;
+}
+
+// ============================================================
+// Init
+// ============================================================
+loadRegion('americas');
+</script>
+
+</body>
+</html>
