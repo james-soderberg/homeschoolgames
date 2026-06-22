@@ -6,116 +6,286 @@
   <title>HomeschoolGames — Learn by Playing</title>
   <link rel="stylesheet" href="assets/css/site.css">
   <style>
-    .hero {
-      max-width: 640px;
-      margin: 3rem auto 2.5rem;
+    /* ============ Playful intro splash ============ */
+    .splash {
+      position: relative;
+      min-height: calc(100vh - 58px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
-      padding: 0 1.5rem;
+      padding: 1.5rem;
+      overflow: hidden;
     }
 
-    .hero h1 {
-      font-size: clamp(2.4rem, 6vw, 3.6rem);
-      margin-bottom: 0.75rem;
+    /* soft floating colour blobs in the background */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(8px);
+      opacity: 0.5;
+      z-index: 0;
+      animation: drift 14s ease-in-out infinite;
+    }
+    .blob-1 { width: 220px; height: 220px; background: #D4EEF5; top: 8%;  left: 6%;  animation-delay: 0s; }
+    .blob-2 { width: 180px; height: 180px; background: #FFE3C2; top: 12%; right: 8%; animation-delay: -3s; }
+    .blob-3 { width: 240px; height: 240px; background: #E4DAF2; bottom: 6%; left: 12%; animation-delay: -6s; }
+    .blob-4 { width: 160px; height: 160px; background: #DDF1E2; bottom: 12%; right: 10%; animation-delay: -9s; }
+
+    @keyframes drift {
+      0%,100% { transform: translate(0,0) scale(1); }
+      33%     { transform: translate(20px,-26px) scale(1.08); }
+      66%     { transform: translate(-18px,16px) scale(0.95); }
     }
 
-    .hero p {
-      font-size: 1.1rem;
+    /* floating subject emoji scattered around */
+    .floatie {
+      position: absolute;
+      font-size: 2.4rem;
+      z-index: 1;
+      opacity: 0.9;
+      animation: bob 5s ease-in-out infinite;
+      filter: drop-shadow(0 4px 6px rgba(26,23,20,0.12));
+    }
+    .floatie:nth-child(odd) { animation-duration: 6.5s; }
+    .f1 { top: 16%; left: 14%; animation-delay: -0.5s; }
+    .f2 { top: 22%; right: 16%; animation-delay: -1.5s; }
+    .f3 { bottom: 24%; left: 18%; animation-delay: -2.5s; }
+    .f4 { bottom: 20%; right: 14%; animation-delay: -3.5s; }
+    .f5 { top: 46%; left: 7%;  animation-delay: -1s; }
+    .f6 { top: 50%; right: 7%; animation-delay: -2s; }
+
+    @keyframes bob {
+      0%,100% { transform: translateY(0) rotate(-6deg); }
+      50%     { transform: translateY(-16px) rotate(6deg); }
+    }
+
+    /* central mascot: a globe with orbiting subject icons */
+    .mascot {
+      position: relative;
+      width: 250px;
+      height: 250px;
+      margin-bottom: 1.5rem;
+      z-index: 2;
+      animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    .mascot .core {
+      position: absolute;
+      inset: 0;
+      margin: auto;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fff7e0, var(--gold-light) 55%, #e7b94e);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 5rem;
+      box-shadow: 0 10px 30px rgba(196,160,64,0.35);
+      animation: floaty 4s ease-in-out infinite;
+    }
+    .orbit {
+      position: absolute;
+      inset: 0;
+      animation: spin 18s linear infinite;
+    }
+    .orbit.reverse { animation-direction: reverse; animation-duration: 24s; }
+    .orbit .chip {
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #fff;
+      border: 2.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.8rem;
+      box-shadow: 0 4px 10px rgba(26,23,20,0.12);
+      animation: counterspin 18s linear infinite;
+    }
+    .orbit.reverse .chip { animation: counterspin-rev 24s linear infinite; }
+    .orbit .chip.b { top: auto; bottom: -6px; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes counterspin { to { transform: translateX(-50%) rotate(-360deg); } }
+    @keyframes counterspin-rev { to { transform: translateX(-50%) rotate(360deg); } }
+    @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
+
+    .splash-title {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-serif);
+      font-weight: 600;
+      font-size: clamp(2.8rem, 9vw, 5rem);
+      line-height: 1.05;
+      margin: 0 0 0.6rem;
+      animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1) 0.1s both;
+    }
+    .splash-title .pop {
+      background: linear-gradient(90deg, #E0853B, var(--gold) 45%, #7A9C5C 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .splash-tagline {
+      position: relative;
+      z-index: 2;
+      font-size: clamp(1.05rem, 3vw, 1.4rem);
       color: var(--ink-light);
-      margin: 0 auto;
-      max-width: 400px;
+      margin: 0 0 2rem;
+      max-width: 30ch;
+      animation: popIn 0.6s ease 0.25s both;
     }
 
+    .start-btn {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: var(--gold);
+      color: var(--ink);
+      border: none;
+      border-radius: 99px;
+      padding: 1.1rem 2.6rem;
+      font-family: var(--font-sans);
+      font-size: 1.25rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 0 #a07f2c, 0 12px 22px rgba(196,160,64,0.4);
+      transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
+      animation: popIn 0.6s ease 0.4s both, pulse 2.2s ease-in-out 1.4s infinite;
+    }
+    .start-btn:hover { background: #d0ab48; }
+    .start-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #a07f2c, 0 4px 12px rgba(196,160,64,0.4); }
+
+    @keyframes pulse {
+      0%,100% { transform: scale(1); }
+      50%     { transform: scale(1.05); }
+    }
+
+    .scroll-cue {
+      position: absolute;
+      bottom: 1.2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      font-size: 1.6rem;
+      color: var(--gold);
+      animation: bounceDown 1.6s ease-in-out infinite;
+      cursor: pointer;
+      line-height: 1;
+    }
+    @keyframes bounceDown {
+      0%,100% { transform: translate(-50%, 0); }
+      50%     { transform: translate(-50%, 8px); }
+    }
+
+    /* ============ Games section ============ */
     .games-section {
       max-width: 980px;
       margin: 0 auto;
-      padding: 0 1.5rem 4rem;
+      padding: 3rem 1.5rem 4rem;
+    }
+    .games-heading {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .games-heading h2 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      margin-bottom: 0.4rem;
+    }
+    .games-heading p {
+      color: var(--ink-light);
     }
 
     .game-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1.5rem;
+      /* fixed 3-up so 6 games read as a tidy 3 × 2 — never a lopsided 4 + 2 */
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.75rem;
+      max-width: 760px;
+      margin: 0 auto;
     }
 
-    .game-card {
-      background: white;
-      border: 2.5px solid var(--border);
-      border-radius: 14px;
-      padding: 2rem 1.75rem 1.75rem;
-      box-shadow: 0 2px 10px rgba(26,23,20,0.07);
+    @media (max-width: 760px) {
+      .game-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 420px) {
+      .game-grid { grid-template-columns: 1fr; }
+    }
+
+    /* floating, tap-me tiles — just an icon and a name */
+    .game-tile {
+      position: relative;
+      border-radius: 22px;
+      padding: 2.5rem 1.25rem;
       text-decoration: none;
       color: var(--ink);
       display: flex;
       flex-direction: column;
-      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      align-items: center;
+      gap: 0.9rem;
+      border: 2.5px solid rgba(26,23,20,0.06);
+      box-shadow: 0 12px 24px rgba(26,23,20,0.10);
+      animation: float 4.5s ease-in-out infinite;
+      transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
     }
-
-    .game-card:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 10px 28px rgba(196,160,64,0.2);
+    .game-tile:hover,
+    .game-tile:focus-visible {
+      transform: translateY(-10px) scale(1.04);
+      box-shadow: 0 22px 38px rgba(26,23,20,0.20);
       border-color: var(--gold);
-      text-decoration: none;
       color: var(--ink);
+      text-decoration: none;
+      animation-play-state: paused;
+      outline: none;
     }
 
-    .game-card-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
-      display: block;
+    @keyframes float {
+      0%,100% { transform: translateY(0); }
+      50%     { transform: translateY(-10px); }
+    }
+
+    .tile-icon {
+      font-size: 4.8rem;
       line-height: 1;
+      filter: drop-shadow(0 5px 6px rgba(26,23,20,0.15));
+      transition: transform 0.2s;
     }
+    .game-tile:hover .tile-icon { transform: scale(1.14) rotate(8deg); }
 
-    .game-card h3 {
-      font-size: 1.6rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .subject-pill {
-      display: inline-block;
-      padding: 0.2rem 0.85rem;
-      border-radius: 99px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.07em;
-      margin-bottom: 1rem;
-    }
-
-    .pill-history { background: #FFF3D0; color: #7A5C00; }
-    .pill-geo     { background: #D4EEF5; color: #1A5C6B; }
-    .pill-math    { background: #E4F2E8; color: #2A5C3F; }
-    .pill-bible   { background: #E4DAF2; color: #4A2C6B; }
-
-    .game-card-desc {
-      font-size: 0.95rem;
-      line-height: 1.65;
-      color: var(--ink-light);
-      margin-bottom: 1.5rem;
-      flex: 1;
-    }
-
-    .play-btn {
-      display: block;
-      background: var(--gold);
-      color: var(--ink);
+    .tile-name {
+      font-family: var(--font-serif);
+      font-weight: 600;
+      font-size: 1.55rem;
       text-align: center;
-      padding: 0.9rem 1rem;
-      border-radius: 10px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      transition: background 0.15s;
-      text-decoration: none;
     }
 
-    .game-card:hover .play-btn {
-      background: #b08e30;
-      text-decoration: none;
-    }
+    /* staggered float + soft subject colours */
+    .game-tile:nth-child(1) { animation-delay:  0s;   background: #FFF6DD; }
+    .game-tile:nth-child(2) { animation-delay: -0.6s; background: #E1F2F7; }
+    .game-tile:nth-child(3) { animation-delay: -1.2s; background: #E7F4EC; }
+    .game-tile:nth-child(4) { animation-delay: -1.8s; background: #EEE6F8; }
+    .game-tile:nth-child(5) { animation-delay: -2.4s; background: #E1F2F7; }
+    .game-tile:nth-child(6) { animation-delay: -3.0s; background: #FFF6DD; }
 
     @media (max-width: 600px) {
-      .hero { margin: 1.75rem auto 1.5rem; }
-      .games-section { padding: 0 1rem 3rem; }
+      .games-section { padding: 2.5rem 1rem 3rem; }
       .game-grid { gap: 1rem; }
+      .floatie { font-size: 1.8rem; }
+      .mascot { width: 210px; height: 210px; }
+    }
+
+    /* Be kind to motion-sensitive kids */
+    @media (prefers-reduced-motion: reduce) {
+      .blob, .floatie, .orbit, .core, .start-btn, .scroll-cue, .game-tile { animation: none !important; }
     }
   </style>
 </head>
@@ -125,60 +295,78 @@
     <a href="index.html" class="site-logo">Homeschool<span>Games</span></a>
   </header>
 
-  <div class="hero">
-    <h1>Learn by Playing</h1>
-    <p>Simple games for history, geography, and math. No sign-in, no ads — just play.</p>
-  </div>
+  <!-- ============ Fun intro splash ============ -->
+  <section class="splash">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+    <div class="blob blob-4"></div>
 
-  <section class="games-section">
+    <span class="floatie f1">📚</span>
+    <span class="floatie f2">⭐</span>
+    <span class="floatie f3">🔢</span>
+    <span class="floatie f4">🗺️</span>
+    <span class="floatie f5">✏️</span>
+    <span class="floatie f6">🎨</span>
+
+    <div class="mascot">
+      <div class="core">🌍</div>
+      <div class="orbit">
+        <div class="chip">📖</div>
+        <div class="chip b">➕</div>
+      </div>
+      <div class="orbit reverse">
+        <div class="chip">🚩</div>
+        <div class="chip b">🎙️</div>
+      </div>
+    </div>
+
+    <h1 class="splash-title">Homeschool <span class="pop">Games</span></h1>
+    <p class="splash-tagline">Pick a game, press play, and learn something cool!</p>
+    <button class="start-btn" onclick="document.getElementById('games').scrollIntoView({behavior:'smooth'})">
+      Let's Play! <span aria-hidden="true">▸</span>
+    </button>
+
+    <span class="scroll-cue" onclick="document.getElementById('games').scrollIntoView({behavior:'smooth'})" aria-hidden="true">⌄</span>
+  </section>
+
+  <!-- ============ Games ============ -->
+  <section class="games-section" id="games">
+    <div class="games-heading">
+      <h2>Choose Your Game</h2>
+      <p>No sign-in, no ads — just play.</p>
+    </div>
+
     <div class="game-grid">
 
-      <a href="games/circa/index.html" class="game-card">
-        <span class="game-card-icon">🃏</span>
-        <h3>Circa</h3>
-        <span class="subject-pill pill-history">History</span>
-        <p class="game-card-desc">Pick the history card from your hand that is closest in date to the center card. How many can you get right in a row?</p>
-        <span class="play-btn">Play Circa →</span>
+      <a href="games/circa/index.html" class="game-tile">
+        <span class="tile-icon">🃏</span>
+        <span class="tile-name">Circa</span>
       </a>
 
-      <a href="games/map-quiz/index.html" class="game-card">
-        <span class="game-card-icon">🗺️</span>
-        <h3>Map Quiz</h3>
-        <span class="subject-pill pill-geo">Geography</span>
-        <p class="game-card-desc">You'll see a country name — click it on the map! Explore the Americas, Europe, Asia, and Africa.</p>
-        <span class="play-btn">Play Map Quiz →</span>
+      <a href="games/map-quiz/index.html" class="game-tile">
+        <span class="tile-icon">🗺️</span>
+        <span class="tile-name">Map Quiz</span>
       </a>
 
-      <a href="games/math-drill/index.html" class="game-card">
-        <span class="game-card-icon">✖️</span>
-        <h3>Math Drill</h3>
-        <span class="subject-pill pill-math">Math</span>
-        <p class="game-card-desc">Addition, subtraction, multiplication, division — four answer choices, pick the right one. Easy, Medium, or Hard!</p>
-        <span class="play-btn">Play Math Drill →</span>
+      <a href="games/math-drill/index.html" class="game-tile">
+        <span class="tile-icon">✖️</span>
+        <span class="tile-name">Math Drill</span>
       </a>
 
-      <a href="games/bible-quiz/index.html" class="game-card">
-        <span class="game-card-icon">📖</span>
-        <h3>Bible Quiz</h3>
-        <span class="subject-pill pill-bible">Bible</span>
-        <p class="game-card-desc">Read a verse and a clue, then name the book of the Bible it comes from. Four choices — build your score and streak!</p>
-        <span class="play-btn">Play Bible Quiz →</span>
+      <a href="games/bible-quiz/index.html" class="game-tile">
+        <span class="tile-icon">📖</span>
+        <span class="tile-name">Bible Quiz</span>
       </a>
 
-      <a href="games/flag-frenzy/index.html" class="game-card">
-        <span class="game-card-icon">🚩</span>
-        <h3>Flag Frenzy</h3>
-        <span class="subject-pill pill-geo">Geography</span>
-        <p class="game-card-desc">See a flag, name the country. From Egypt to Fiji — four choices, build your score and streak!</p>
-        <span class="play-btn">Play Flag Frenzy →</span>
+      <a href="games/flag-frenzy/index.html" class="game-tile">
+        <span class="tile-icon">🚩</span>
+        <span class="tile-name">Flag Frenzy</span>
       </a>
 
-      <a href="games/who-said-it/index.html" class="game-card">
-        <span class="game-card-icon">🎙️</span>
-        <h3>Who Said It?</h3>
-        <span class="subject-pill pill-history">History</span>
-        <p class="game-card-desc">Read a famous quote and pick the person who said it. From ancient Rome to the moon landing!</p>
-        <span class="play-btn">Play Who Said It? →</span>
+      <a href="games/who-said-it/index.html" class="game-tile">
+        <span class="tile-icon">🎙️</span>
+        <span class="tile-name">Who Said It?</span>
       </a>
 
     </div>

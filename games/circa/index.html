@@ -216,9 +216,16 @@
     }
     .hand-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+      /* fixed 3-up so a 6-card hand reads as a tidy 3 × 2 — never a lopsided 4 + 1/4 + 2 */
+      grid-template-columns: repeat(3, 1fr);
       gap: 0.85rem;
       margin-bottom: 1.25rem;
+    }
+    @media (max-width: 620px) {
+      .hand-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 380px) {
+      .hand-grid { grid-template-columns: 1fr; }
     }
 
     /* ---- Circa card (shared) ---- */
@@ -817,7 +824,7 @@ let soloHand = [];
 let soloCenterCard = null;
 let soloStreak = 0;
 let soloRoundNum = 0;
-let handSize = 5;
+let handSize = 6;
 let soloAwaitingNext = false;
 
 function startSoloGame() {
@@ -1308,7 +1315,7 @@ function showEndScreen() {
 
 function quickStartSolo() {
   mode = 'solo';
-  handSize = 5;
+  handSize = 6;
   document.getElementById('setupScreen').style.display = 'none';
   startSoloGame();
 }
@@ -1321,7 +1328,7 @@ function showFriendsSetup() {
 
 function startFriendsGame() {
   mode = 'pass';
-  handSize = 5;
+  handSize = 6;
   document.getElementById('setupScreen').style.display = 'none';
   startPassGame();
 }
