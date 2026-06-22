@@ -326,6 +326,7 @@ let scoreCorrect = 0;
 let scoreWrong = 0;
 let streak = 0;
 let waitingForNext = false;
+let advanceTimer = null;
 
 function loadRegion(region) {
   currentRegion = region;
@@ -365,6 +366,7 @@ function resetScores() {
 }
 
 function nextQuestion() {
+  clearTimeout(advanceTimer);
   waitingForNext = false;
   // Clear feedback
   document.getElementById('feedbackBar').textContent = '';
@@ -398,13 +400,13 @@ function handleCountryClick(countryId) {
     if (correctEl) correctEl.classList.add('correct-flash');
     updateScoreDisplay();
     waitingForNext = true;
-    setTimeout(nextQuestion, 1300);
+    advanceTimer = setTimeout(nextQuestion, 1000);
   } else {
     scoreWrong++;
     const endedStreak = streak;
     streak = 0;
     const wrongName = getCountryName(countryId);
-    fb.innerHTML = `<span class="feedback-wrong">✗ ${wrongName ? `That's ${wrongName}.` : 'Not quite!'} ${currentCountry.name} is highlighted in green — click to continue.</span>`;
+    fb.innerHTML = `<span class="feedback-wrong">✗ ${wrongName ? `That's ${wrongName}.` : 'Not quite!'} ${currentCountry.name} is highlighted in green.</span>`;
     if (correctEl) correctEl.classList.add('show-correct');
     const wrongEl = document.getElementById(countryId);
     if (wrongEl) {
@@ -413,6 +415,7 @@ function handleCountryClick(countryId) {
     }
     updateScoreDisplay();
     waitingForNext = true;
+    advanceTimer = setTimeout(nextQuestion, 1800);
     // A streak just ended — offer the leaderboard if it's good enough.
     if (endedStreak) board.submit(endedStreak);
   }
