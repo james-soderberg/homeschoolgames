@@ -207,7 +207,7 @@
 
     .game-grid {
       display: grid;
-      /* fixed 3-up so 6 games read as a tidy 3 × 2 — never a lopsided 4 + 2 */
+      /* fixed 3-up grid; tiles wrap row by row */
       grid-template-columns: repeat(3, 1fr);
       gap: 1.75rem;
       max-width: 760px;
@@ -275,6 +275,61 @@
     .game-tile:nth-child(4) { animation-delay: -1.8s; background: #EEE6F8; }
     .game-tile:nth-child(5) { animation-delay: -2.4s; background: #E1F2F7; }
     .game-tile:nth-child(6) { animation-delay: -3.0s; background: #FFF6DD; }
+    .game-tile:nth-child(7) { animation-delay: -3.6s; background: #F3E2E2; }
+
+    /* featured "Most Popular" tile */
+    .game-tile--featured {
+      border-color: var(--gold) !important;
+      box-shadow: 0 12px 30px rgba(196,160,64,0.30);
+    }
+    .popular-badge {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(95deg, #E0531B, #E0A53B);
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: 0.34rem 0.85rem;
+      border-radius: 99px;
+      white-space: nowrap;
+      box-shadow: 0 5px 14px rgba(224,83,27,0.45);
+      animation: popPulse 1.8s ease-in-out infinite;
+      z-index: 3;
+    }
+    @keyframes popPulse {
+      0%,100% { transform: translateX(-50%) scale(1); }
+      50%     { transform: translateX(-50%) scale(1.09); }
+    }
+
+    /* "New" tile badge */
+    .new-badge {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(95deg, #2E8FE0, #7A9C5C);
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 0.64rem;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+      padding: 0.34rem 0.85rem;
+      border-radius: 99px;
+      white-space: nowrap;
+      box-shadow: 0 5px 14px rgba(46,143,224,0.45);
+      animation: popPulse 1.8s ease-in-out infinite;
+      z-index: 3;
+    }
+    .game-tile--new {
+      border-color: #2E8FE0 !important;
+      box-shadow: 0 12px 30px rgba(46,143,224,0.25);
+    }
 
     @media (max-width: 600px) {
       .games-section { padding: 2.5rem 1rem 3rem; }
@@ -285,7 +340,7 @@
 
     /* Be kind to motion-sensitive kids */
     @media (prefers-reduced-motion: reduce) {
-      .blob, .floatie, .orbit, .core, .start-btn, .scroll-cue, .game-tile { animation: none !important; }
+      .blob, .floatie, .orbit, .core, .start-btn, .scroll-cue, .game-tile, .popular-badge { animation: none !important; }
     }
   </style>
 </head>
@@ -339,8 +394,9 @@
 
     <div class="game-grid">
 
-      <a href="games/circa/index.html" class="game-tile">
-        <span class="tile-icon">🃏</span>
+      <a href="games/circa/index.html" class="game-tile game-tile--featured">
+        <span class="popular-badge">★ Most Popular</span>
+        <span class="tile-icon">🏛️</span>
         <span class="tile-name">Circa</span>
       </a>
 
@@ -367,6 +423,12 @@
       <a href="games/who-said-it/index.html" class="game-tile">
         <span class="tile-icon">🎙️</span>
         <span class="tile-name">Who Said It?</span>
+      </a>
+
+      <a href="games/dragon-siege/index.html" class="game-tile game-tile--new">
+        <span class="new-badge">✦ New</span>
+        <span class="tile-icon">🐉</span>
+        <span class="tile-name">Dragon Siege</span>
       </a>
 
     </div>

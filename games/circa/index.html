@@ -266,6 +266,97 @@
       background: #F0FAF3;
       box-shadow: 0 4px 14px rgba(42,92,63,0.15);
     }
+
+    /* ---- Flip reveal + "closest" pop & glow ---- */
+    .hand-grid, .center-card-wrap { perspective: 1200px; }
+    @keyframes cardFlip {
+      0%   { transform: rotateY(0deg); }
+      50%  { transform: rotateY(90deg); }
+      100% { transform: rotateY(0deg); }
+    }
+    .circa-card.flipping { animation: cardFlip 0.7s ease both; backface-visibility: hidden; }
+    @keyframes cardRevealPop {
+      0%   { transform: scale(1); }
+      45%  { transform: scale(1.08); }
+      100% { transform: scale(1); }
+    }
+    .circa-card.revealed-pop { animation: cardRevealPop 0.5s cubic-bezier(.34,1.56,.64,1); }
+    .circa-card.show-best.revealed-pop {
+      box-shadow: 0 0 0 3px rgba(42,92,63,0.25), 0 8px 24px rgba(42,92,63,0.38);
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .circa-card.flipping, .circa-card.revealed-pop { animation: none !important; }
+    }
+
+    /* Reveal "showdown": your pick floats up beside the center card */
+    .showdown {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      min-height: 150px;
+    }
+    .showdown-slot { display: flex; align-items: center; justify-content: center; }
+    .showdown-gap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 0;
+      overflow: hidden;
+      transition: width 0.4s ease, padding 0.4s ease;
+    }
+    .showdown.revealing .showdown-gap { width: 96px; padding: 0 0.4rem; }
+    .year-diff {
+      text-align: center;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.45s ease, transform 0.45s ease;
+    }
+    .year-diff.show { opacity: 1; transform: translateY(0); }
+    .year-diff .num {
+      display: block;
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 1.7rem;
+      color: var(--ink);
+      line-height: 1;
+    }
+    .year-diff .label {
+      display: block;
+      font-size: 0.6rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+      margin-top: 0.25rem;
+    }
+    .circa-card.in-showdown { z-index: 5; box-shadow: 0 12px 28px rgba(26,23,20,0.22); }
+    .circa-card.dimmed { opacity: 0.4; transition: opacity 0.3s; }
+    /* equal-size cards while comparing */
+    .showdown.revealing .circa-card { width: 200px; max-width: none; min-height: 165px; }
+    @media (prefers-reduced-motion: reduce) {
+      .circa-card.in-showdown { transition: none !important; }
+      .showdown-gap, .year-diff { transition: none !important; }
+    }
+
+    /* Punchy "how far off" verdict line */
+    .round-verdict {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      line-height: 1.1;
+      margin-bottom: 0.25rem;
+      animation: verdictPop 0.4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes verdictPop {
+      0%   { opacity: 0; transform: scale(0.6); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .round-verdict { animation: none !important; }
+    }
     .circa-card.disabled { cursor: default; opacity: 0.5; }
     .circa-card.no-hover { cursor: default; }
 
@@ -298,6 +389,22 @@
       color: var(--card-border);
       text-align: right;
     }
+
+    /* When a card flips, hide its blurb and show the date big & clear */
+    .circa-card.revealed-date .card-desc { display: none; }
+    .card-big-date {
+      font-family: var(--font-serif);
+      font-weight: 700;
+      font-size: 1.8rem;
+      text-align: center;
+      line-height: 1.15;
+      margin: auto 0;
+      padding: 0.6rem 0;
+      color: var(--card-text);
+    }
+    .circa-card.center .card-big-date { font-size: 2.2rem; }
+    .circa-card.show-best .card-big-date { color: #2A5C3F; }
+    .circa-card.wrong-card .card-big-date { color: #8B2020; }
 
     /* Card back (year-revealed face) */
     .card-back-year {
@@ -346,12 +453,16 @@
     .card-result-badge {
       display: none;
       position: absolute;
-      top: 0.4rem;
-      right: 0.4rem;
-      font-size: 0.68rem;
+      top: -11px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.66rem;
       font-weight: 700;
-      padding: 0.15rem 0.45rem;
+      padding: 0.18rem 0.6rem;
       border-radius: 99px;
+      white-space: nowrap;
+      z-index: 4;
+      box-shadow: 0 2px 6px rgba(26,23,20,0.2);
     }
     .circa-card.correct-card .card-result-badge,
     .circa-card.show-best .card-result-badge,
@@ -361,7 +472,20 @@
     .circa-card.wrong-card .card-result-badge { background: #8B2020; color: white; }
 
     /* Action bar */
-    .action-bar { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .action-bar {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 1.75rem;
+    }
+    .btn-next {
+      padding: 1rem 2.8rem;
+      font-size: 1.2rem;
+      font-weight: 700;
+      border-radius: 12px;
+    }
 
     /* ---- PASS-AND-PLAY game screen (unchanged) ---- */
     .game-screen { display: none; max-width: 900px; margin: 0 auto; padding: 1.5rem; }
@@ -434,7 +558,7 @@
 
   <!-- ===================== SETUP SCREEN ===================== -->
   <div class="setup-screen" id="setupScreen">
-    <div class="setup-icon">🃏</div>
+    <div class="setup-icon">🏛️</div>
     <h1>Circa</h1>
     <p class="setup-tagline">A history card game</p>
     <p class="setup-how">A history card is revealed in the center. Pick the card from your hand that is <strong>closest in date</strong> to it. Get it right to keep your streak going!</p>
@@ -484,8 +608,12 @@
 
     <!-- Center card -->
     <div class="center-card-wrap">
-      <p class="center-label">Center card — find the closest in your hand</p>
-      <div id="centerCardEl"></div>
+      <p class="center-label" id="centerLabel">Center card — find the closest in your hand</p>
+      <div class="showdown" id="showdown">
+        <div class="showdown-slot" id="centerSlot"><div id="centerCardEl"></div></div>
+        <div class="showdown-gap" id="showdownGap"></div>
+        <div class="showdown-slot" id="pickSlot"></div>
+      </div>
     </div>
 
     <!-- Feedback -->
@@ -756,6 +884,20 @@ function fmtYear(card) {
   return `${Math.abs(card.year)} ${card.year < 0 ? 'BC' : 'AD'}${card.approx ? ' (approx.)' : ''}`;
 }
 
+// Punchy reaction based on how many years the player's pick was off.
+function roundCommentary(diff, won) {
+  if (won) {
+    if (diff <= 50)   return '🎯 BULLSEYE!';
+    if (diff <= 300)  return '🔥 NAILED IT!';
+    if (diff <= 2000) return '✨ NICE ONE!';
+    return '✅ CLOSEST WINS!';
+  }
+  if (diff <= 100)    return '😅 SO CLOSE!';
+  if (diff <= 1000)   return '😬 NOT QUITE…';
+  if (diff <= 10000)  return '🥴 WAY OFF!';
+  return '💀 NOT EVEN CLOSE!';
+}
+
 // Build a card DOM element (front face only, used throughout)
 function makeCardFront(card, extraClass = '') {
   const el = document.createElement('div');
@@ -873,6 +1015,7 @@ function soloNextRound() {
   document.getElementById('soloRound').textContent = soloRoundNum;
   document.getElementById('soloInstruction').textContent = 'Pick the card from your hand that is closest in date.';
 
+  resetShowdown();
   renderCenterCard();
   renderSoloHand(false);
 
@@ -941,8 +1084,20 @@ function findBestCardIndex(hand, center) {
   return bestIdx;
 }
 
+function resetShowdown() {
+  const showdown = document.getElementById('showdown');
+  if (showdown) showdown.classList.remove('revealing');
+  const pickSlot = document.getElementById('pickSlot');
+  if (pickSlot) pickSlot.innerHTML = '';
+  const gap = document.getElementById('showdownGap');
+  if (gap) gap.innerHTML = '';
+  const label = document.getElementById('centerLabel');
+  if (label) label.textContent = 'Center card — find the closest in your hand';
+}
+
 function soloPickCard(pickedIdx) {
   if (soloAwaitingNext) return;
+  soloAwaitingNext = true; // lock further picks during the reveal
 
   const bestIdx = findBestCardIndex(soloHand, soloCenterCard);
   const pickedCard = soloHand[pickedIdx];
@@ -952,100 +1107,160 @@ function soloPickCard(pickedIdx) {
   const bestDiff = Math.abs(bestCard.year - soloCenterCard.year);
   const isCorrect = (pickedIdx === bestIdx);
 
-  // Reveal all cards with years, highlight best and picked
   const grid = document.getElementById('soloHandGrid');
-  grid.innerHTML = '';
+  const cardEls = [...grid.children];
+  cardEls.forEach(el => { el.style.pointerEvents = 'none'; el.classList.add('no-hover'); });
 
-  soloHand.forEach((card, i) => {
-    let extraClass = 'no-hover';
-    if (i === bestIdx) extraClass += ' show-best';
-    if (i === pickedIdx && !isCorrect) extraClass += ' wrong-card';
+  const pickedEl = cardEls[pickedIdx];
+  const centerEl = document.getElementById('centerCardEl').firstElementChild;
+  const showdown = document.getElementById('showdown');
+  const pickSlot = document.getElementById('pickSlot');
+  const gapEl = document.getElementById('showdownGap');
 
-    const el = makeCardFront(card, extraClass);
+  document.getElementById('centerLabel').textContent = 'Showdown!';
 
-    const yt = document.createElement('div');
-    yt.className = 'card-year-tag';
-    yt.textContent = fmtYear(card);
-    el.appendChild(yt);
-
-    const badge = document.createElement('span');
-    badge.className = 'card-result-badge';
-    if (i === bestIdx && isCorrect) {
-      badge.textContent = '✓ Correct';
-    } else if (i === bestIdx) {
+  // Dim the hand; if wrong, leave the closest card lit and badge it (no flip / no date).
+  cardEls.forEach(el => { if (el !== pickedEl) el.classList.add('dimmed'); });
+  if (!isCorrect) {
+    const bestEl = cardEls[bestIdx];
+    if (bestEl) {
+      bestEl.classList.remove('dimmed');
+      bestEl.classList.add('show-best');
+      const badge = document.createElement('span');
+      badge.className = 'card-result-badge';
       badge.textContent = 'Closest';
-    } else if (i === pickedIdx) {
-      badge.textContent = '✗ Your pick';
+      bestEl.appendChild(badge);
+      setTimeout(() => bestEl.classList.add('revealed-pop'), 160);
     }
-    el.appendChild(badge);
+  }
 
-    grid.appendChild(el);
-  });
+  // ---- Step 1: float the picked card up beside the center (FLIP technique) ----
+  if (pickedEl) {
+    const first = pickedEl.getBoundingClientRect();
+    // placeholder keeps the hand grid from reflowing while the card travels
+    const ph = document.createElement('div');
+    ph.style.visibility = 'hidden';
+    ph.style.minHeight = first.height + 'px';
+    grid.insertBefore(ph, pickedEl);
 
-  // Also reveal center card year
-  const wrap = document.getElementById('centerCardEl');
-  wrap.innerHTML = '';
-  const centerEl = makeCardWithYear(soloCenterCard, 'center no-hover');
-  wrap.appendChild(centerEl);
+    pickSlot.appendChild(pickedEl);
+    pickedEl.classList.add('in-showdown');
+    showdown.classList.add('revealing'); // CSS sizes both cards equally (200px)
 
-  const instruction = document.getElementById('soloInstruction');
+    const last = pickedEl.getBoundingClientRect();
+    const dx = first.left - last.left;
+    const dy = first.top - last.top;
+    pickedEl.style.transition = 'none';
+    pickedEl.style.transform = `translate(${dx}px, ${dy}px)`;
+    void pickedEl.offsetWidth; // commit the inverted start
+    pickedEl.style.transition = 'transform 0.7s cubic-bezier(.34,1.4,.5,1)';
+    pickedEl.style.transform = 'translate(0, 0)';
+  }
 
-  if (isCorrect) {
-    soloStreak++;
-    rail.hit();
-    const newHigh = soloStreak > getHighScore();
-    if (newHigh) setHighScore(soloStreak);
-    updateSoloStats();
+  // ---- Step 2: once it lands, flip both cards to reveal their dates ----
+  const flipBoth = () => {
+    if (pickedEl) {
+      pickedEl.style.transition = '';
+      pickedEl.style.transform = '';
+      pickedEl.classList.add('flipping');
+      setTimeout(() => {
+        pickedEl.classList.add(isCorrect ? 'show-best' : 'wrong-card', 'revealed-date');
+        const d = document.createElement('div');
+        d.className = 'card-big-date';
+        d.textContent = fmtYear(pickedCard);
+        pickedEl.appendChild(d);
+        const badge = document.createElement('span');
+        badge.className = 'card-result-badge';
+        badge.textContent = isCorrect ? '✓ Correct' : '✗ Your pick';
+        pickedEl.appendChild(badge);
+      }, 350);
+      setTimeout(() => {
+        pickedEl.classList.remove('flipping');
+        if (isCorrect) pickedEl.classList.add('revealed-pop');
+      }, 720);
+    }
+    if (centerEl) {
+      centerEl.classList.add('flipping');
+      setTimeout(() => {
+        centerEl.classList.add('revealed-date');
+        const d = document.createElement('div');
+        d.className = 'card-big-date';
+        d.textContent = fmtYear(soloCenterCard);
+        centerEl.appendChild(d);
+      }, 350);
+      setTimeout(() => centerEl.classList.remove('flipping'), 720);
+    }
+    setTimeout(finishReveal, 820);
+  };
 
-    // Remove played card from hand, replace next round
-    soloHand.splice(pickedIdx, 1);
+  // ---- Step 3: show the years-apart between the cards, then verdict + Next ----
+  const finishReveal = () => {
+    gapEl.innerHTML =
+      `<div class="year-diff"><span class="num">${pickedDiff.toLocaleString()}</span>` +
+      `<span class="label">years apart</span></div>`;
+    requestAnimationFrame(() => {
+      const yd = gapEl.querySelector('.year-diff');
+      if (yd) yd.classList.add('show');
+    });
 
-    instruction.innerHTML = `<span style="color:var(--green);font-weight:600;">✓ Correct!</span> ${pickedCard.title} (${fmtYear(pickedCard)}) was closest to ${soloCenterCard.title} (${fmtYear(soloCenterCard)}).`;
-
-    soloAwaitingNext = true;
+    const instruction = document.getElementById('soloInstruction');
     const bar = document.getElementById('soloActionBar');
     bar.innerHTML = '';
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn btn-gold';
-    nextBtn.textContent = soloDeck.length > 0 ? 'Next round →' : 'See results →';
-    nextBtn.addEventListener('click', () => {
-      if (soloDeck.length === 0 && soloHand.length === 0) {
-        soloEndGame('You cleared the deck!');
-      } else {
-        soloNextRound();
+
+    if (isCorrect) {
+      soloStreak++;
+      rail.hit();
+      if (soloStreak > getHighScore()) setHighScore(soloStreak);
+      updateSoloStats();
+      soloHand.splice(pickedIdx, 1); // played card leaves the hand
+
+      instruction.innerHTML = `<div class="round-verdict" style="color:var(--green)">${roundCommentary(pickedDiff, true)}</div><span style="color:var(--green);font-weight:600;">✓ Correct!</span> Your card was the closest.`;
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn btn-gold btn-next';
+      nextBtn.textContent = soloDeck.length > 0 ? 'Next round →' : 'See results →';
+      nextBtn.addEventListener('click', () => {
+        if (soloDeck.length === 0 && soloHand.length === 0) soloEndGame('You cleared the deck!');
+        else soloNextRound();
+      });
+      bar.appendChild(nextBtn);
+    } else {
+      const prevStreak = soloStreak;
+      soloStreak = 0;
+      updateSoloStats();
+
+      instruction.innerHTML = `<div class="round-verdict" style="color:var(--red)">${roundCommentary(pickedDiff, false)}</div>`;
+
+      const nextBtn = document.createElement('button');
+      nextBtn.className = 'btn btn-gold btn-next';
+      nextBtn.textContent = 'Keep going →';
+      nextBtn.addEventListener('click', () => soloNextRound());
+      bar.appendChild(nextBtn);
+
+      if (prevStreak > 0) {
+        const streakNote = document.createElement('span');
+        streakNote.style.cssText = 'font-size:0.82rem;color:var(--ink-light);margin-left:0.75rem;';
+        streakNote.textContent = `Streak of ${prevStreak} ended.`;
+        bar.appendChild(streakNote);
       }
-    });
-    bar.appendChild(nextBtn);
-
-  } else {
-    // Wrong — streak ends
-    const prevStreak = soloStreak;
-    soloStreak = 0;
-    updateSoloStats();
-
-    const yearDiff = Math.abs(pickedDiff - bestDiff);
-    instruction.innerHTML = `<span style="color:var(--red);font-weight:600;">✗ Not quite.</span> ${bestCard.title} (${fmtYear(bestCard)}) was closer — only ${bestDiff.toLocaleString()} years off vs. your ${pickedDiff.toLocaleString()} years. Streak reset.`;
-
-    soloAwaitingNext = true;
-    const bar = document.getElementById('soloActionBar');
-    bar.innerHTML = '';
-    const nextBtn = document.createElement('button');
-    nextBtn.className = 'btn';
-    nextBtn.textContent = 'Keep going →';
-    nextBtn.addEventListener('click', () => {
-      // Don't remove any card on a wrong answer — keep full hand, just draw new center
-      soloNextRound();
-    });
-    bar.appendChild(nextBtn);
-
-    if (prevStreak > 0) {
-      const streakNote = document.createElement('span');
-      streakNote.style.cssText = 'font-size:0.82rem;color:var(--ink-light);margin-left:0.75rem;';
-      streakNote.textContent = `Streak of ${prevStreak} ended.`;
-      bar.appendChild(streakNote);
+      rail.end(); // flare the fire down + offer the leaderboard
     }
-    // A streak just ended — flare the fire down and offer the leaderboard.
-    rail.end();
+  };
+
+  // Kick off the flip once the float lands (with a safety fallback).
+  if (pickedEl) {
+    let started = false;
+    const onEnd = (e) => {
+      if (e && e.propertyName && e.propertyName !== 'transform') return;
+      if (started) return;
+      started = true;
+      pickedEl.removeEventListener('transitionend', onEnd);
+      flipBoth();
+    };
+    pickedEl.addEventListener('transitionend', onEnd);
+    setTimeout(onEnd, 880);
+  } else {
+    flipBoth();
   }
 }
 
