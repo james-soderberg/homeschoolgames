@@ -18,16 +18,8 @@
   // base walking speed (px/sec) per difficulty tier index
   const TIER_SPEED = [26, 34, 44, 56];
 
-  const TERRAINS = [
-    { key:'canyon',  sky:'linear-gradient(#cfeaf5,#e8f4f8)', abyss:'linear-gradient(#7a6650,#2a2018 60%,#140f0a)',
-      block:'linear-gradient(#9b7a4f,#7a5e3a)', plat:'#7a6a4a', deco:'canyon' },
-    { key:'volcano', sky:'linear-gradient(#39202e,#7a3b2e)', abyss:'linear-gradient(#ffb24a,#ff5a00 40%,#7a1500)',
-      block:'linear-gradient(#4a3a30,#2c211b)', plat:'#3a2c22', deco:'volcano' },
-    { key:'city',    sky:'linear-gradient(#bfe0f5,#eaf5fb)', abyss:'linear-gradient(#9fb0c0,#5a6a78)',
-      block:'linear-gradient(#d8b25a,#b5903a)', plat:'#caa24a', deco:'city', rope:true },
-    { key:'sky',     sky:'linear-gradient(#6fb7ef,#bfe3f7)', abyss:'linear-gradient(rgba(255,255,255,.5),rgba(255,255,255,0))',
-      block:'linear-gradient(#eee,#cfcfcf)', plat:'#dcdcdc', deco:'sky', rope:true },
-  ];
+  // Each level is a wooden drawbridge over a different vista (built in buildScene).
+  const TERRAINS = [{ key:'canyon' }, { key:'volcano' }, { key:'city' }, { key:'sky' }];
 
   const style = document.createElement('style');
   style.textContent = `
@@ -42,16 +34,45 @@
 
     .br-stage { position:relative; height:400px; border:2px solid var(--border); border-radius:14px;
       overflow:hidden; box-shadow:0 2px 10px rgba(26,23,20,.1); }
-    .br-world { position:absolute; inset:0; will-change:transform; }
-    .br-sky { position:absolute; inset:0; }
-    .br-abyss { position:absolute; left:0; right:0; bottom:0; height:${GROUND_BOTTOM}%; }
-    .br-deco { position:absolute; inset:0; pointer-events:none; }
+    .br-bg { position:absolute; inset:0; overflow:hidden; }            /* fixed cinematic backdrop */
+    .br-bg .layer { position:absolute; left:0; right:0; }
+    .br-world { position:absolute; inset:0; will-change:transform; }   /* scrolls with the runner */
 
-    .br-block { position:absolute; height:14px; width:${W}px; border-radius:3px; box-shadow:0 3px 4px rgba(0,0,0,.28); }
+    /* wooden drawbridge plank */
+    .br-block { position:absolute; height:16px; border-radius:2px;
+      background:
+        repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0, rgba(0,0,0,0) 3px, rgba(0,0,0,0) 11px, rgba(0,0,0,.10) 12px),
+        linear-gradient(#b48a52, #8a6638);
+      border-top:1px solid #cda06a; border-bottom:1px solid #5e451f;
+      box-shadow:0 4px 5px rgba(0,0,0,.35), inset 0 -2px 3px rgba(0,0,0,.22); }
+    .br-block::before, .br-block::after { content:''; position:absolute; top:5px; width:4px; height:4px;
+      border-radius:50%; background:#3a2c18; box-shadow:0 1px 0 rgba(255,255,255,.2); }
+    .br-block::before { left:4px; } .br-block::after { right:4px; }
     .br-block.new { animation:brDrop .28s cubic-bezier(.3,1.5,.5,1); }
-    @keyframes brDrop { from{ transform:translateY(-34px); opacity:.2; } to{ transform:none; opacity:1; } }
-    .br-rope { position:absolute; height:3px; background:#6b5436; box-shadow:0 1px 0 rgba(0,0,0,.3); }
-    .br-plat { position:absolute; height:40px; border-radius:4px 4px 0 0; }
+    @keyframes brDrop { from{ transform:translateY(-34px) rotate(-8deg); opacity:.2; } to{ transform:none; opacity:1; } }
+
+    /* rope side-rail + posts */
+    .br-rail { position:absolute; height:4px; border-radius:99px;
+      background:repeating-linear-gradient(90deg,#7a5e36 0,#7a5e36 5px,#9a7a4a 5px,#9a7a4a 10px); }
+    .br-post { position:absolute; width:4px; background:#6b5028; border-radius:2px; }
+
+    /* stone gatehouse towers */
+    .br-tower { position:absolute; border-radius:3px 3px 0 0;
+      background:
+        repeating-linear-gradient(0deg, rgba(0,0,0,.12) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 16px, rgba(0,0,0,.12) 18px),
+        repeating-linear-gradient(90deg, rgba(0,0,0,.10) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0) 24px, rgba(0,0,0,.10) 26px),
+        linear-gradient(#9a9183,#6a6256);
+      border:2px solid #57503f; box-shadow:0 6px 14px rgba(0,0,0,.35); }
+    .br-merlon { position:absolute; top:-10px; height:12px; width:100%;
+      background:repeating-linear-gradient(90deg,#8a8174 0,#8a8174 12px,transparent 12px,transparent 20px); }
+    .br-chain { position:absolute; height:5px; transform-origin:left center; border-radius:99px;
+      background:repeating-linear-gradient(90deg,#2e2e2e 0,#2e2e2e 4px,#6b6b6b 4px,#6b6b6b 8px); }
+    .br-flag { position:absolute; width:0; height:0; border-left:18px solid var(--gold);
+      border-top:8px solid transparent; border-bottom:8px solid transparent; }
+    .br-flagpole { position:absolute; width:3px; background:#4a4036; }
+    .br-slab { position:absolute; height:16px; border-radius:2px;
+      background:linear-gradient(#8f8678,#615a4d); border-top:3px solid #a89e8b;
+      box-shadow:0 4px 6px rgba(0,0,0,.3); }
 
     .br-char { position:absolute; width:42px; height:64px; transform:translateX(-50%);
       transition:transform .25s; }
@@ -146,12 +167,10 @@
           <div class="br-leadbar"><i></i></div>
         </div>
         <div class="br-stage">
+          <div class="br-bg"></div>
           <div class="br-world">
-            <div class="br-sky"></div>
-            <div class="br-abyss"></div>
-            <div class="br-deco"></div>
-            <div class="br-blocks"></div>
             <div class="br-plats"></div>
+            <div class="br-blocks"></div>
           </div>
           <div class="br-char">${CHAR_SVG}</div>
           <div class="br-prompt" style="display:none"></div>
@@ -163,8 +182,8 @@
       </div>`;
 
     const $ = s => mount.querySelector(s);
-    const stage = $('.br-stage'), world = $('.br-world'), sky = $('.br-sky'), abyss = $('.br-abyss'),
-      deco = $('.br-deco'), blocksEl = $('.br-blocks'), platsEl = $('.br-plats'), charEl = $('.br-char'),
+    const stage = $('.br-stage'), world = $('.br-world'), bg = $('.br-bg'),
+      blocksEl = $('.br-blocks'), platsEl = $('.br-plats'), charEl = $('.br-char'),
       promptEl = $('.br-prompt'), dangerEl = $('.br-danger'), cdEl = $('.br-countdown'),
       startEl = $('.br-start'), answersEl = $('.br-answers'),
       levelEl = $('[data-level]'), distEl = $('[data-dist]'), leadbar = $('.br-leadbar'), leadFill = $('.br-leadbar > i');
@@ -203,7 +222,7 @@
       charScreenX = Math.max(120, (stage.clientWidth || 700) * 0.3);
       charEl.className = 'br-char';
       charEl.style.setProperty('--wd', (22 / speed).toFixed(2) + 's');
-      paintTerrain();
+      buildScene();
       renderBlocks(false);
       placeChar();
       levelEl.textContent = 'Level ' + level;
@@ -224,62 +243,140 @@
       tick();
     }
 
-    function paintTerrain() {
-      sky.style.background = terrain.sky;
-      abyss.style.background = terrain.abyss;
-      deco.innerHTML = '';
-      if (terrain.deco === 'volcano') {
-        deco.innerHTML = `<div style="position:absolute;left:0;right:0;bottom:${GROUND_BOTTOM}%;height:8px;background:linear-gradient(90deg,#ffd24a,#ff7a00);filter:blur(3px);opacity:.7"></div>`;
-      } else if (terrain.deco === 'city') {
-        let b = '';
+    // Cinematic, fixed-to-stage backdrop the drawbridge overlooks.
+    function buildScene() {
+      const G = GROUND_BOTTOM;            // ground-line, % from bottom
+      const ridge = (bottom, h, color, op, pts) =>
+        `<div class="layer" style="bottom:${bottom}%;height:${h}px;background:${color};opacity:${op};clip-path:polygon(${pts})"></div>`;
+      let html = '';
+      if (terrain.key === 'canyon') {
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#9cc7e6 0%,#cfe3ec 45%,#f3e3bf 72%)"></div>`;
+        html += `<div class="layer" style="top:8%;left:74%;width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,#fff6d8,#ffe39a);box-shadow:0 0 50px 18px rgba(255,227,154,.6)"></div>`;
+        html += ridge(`${G - 6}`, 130, '#c79a63', .55, '0 100%,12% 30%,24% 60%,40% 18%,55% 55%,70% 25%,85% 60%,100% 35%,100% 100%');
+        html += ridge(`${G - 2}`, 90, '#a9743f', .8, '0 100%,15% 45%,30% 70%,50% 35%,68% 65%,82% 40%,100% 60%,100% 100%');
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#7a5a3c,#3a2616 55%,#160d06)"></div>`;
+        html += `<div class="layer" style="bottom:5%;height:5px;background:linear-gradient(90deg,transparent,#bfe0ef88,transparent);filter:blur(2px)"></div>`;
+      } else if (terrain.key === 'volcano') {
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#3a1f2e 0%,#6e2f25 60%,#a23a1e 100%)"></div>`;
+        html += `<div class="layer" style="bottom:${G - 4}%;left:8%;width:340px;height:200px;background:#2a1a16;clip-path:polygon(0 100%,38% 8%,46% 14%,62% 8%,100% 100%)"></div>`;
+        html += `<div class="layer" style="bottom:${G + 32}%;left:30%;width:120px;height:60px;background:radial-gradient(circle at 50% 100%,#ffe07a,#ff7a1e 55%,transparent 75%);filter:blur(2px)"></div>`;
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#ff9a3c,#ff5a00 35%,#7a1500 80%,#2a0a00)"></div>`;
+        let emb = '';
+        for (let i = 0; i < 16; i++) emb += `<div style="position:absolute;bottom:${G + (i*53%55)}%;left:${(i*61%100)}%;width:3px;height:3px;border-radius:50%;background:#ffce6a;box-shadow:0 0 6px 2px rgba(255,150,40,.7)"></div>`;
+        html += `<div class="layer" style="inset:0">${emb}</div>`;
+      } else if (terrain.key === 'city') {
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#f6c98a 0%,#d98a8a 40%,#5b6a93 100%)"></div>`;
+        html += `<div class="layer" style="top:14%;left:12%;width:60px;height:60px;border-radius:50%;background:radial-gradient(circle,#fff3d8,#ffba6e);opacity:.9"></div>`;
+        let far = '', near = '';
+        for (let i = 0; i < 12; i++) {
+          const h = 90 + (i * 53 % 130), w = 34 + (i * 17 % 26);
+          far += `<div style="position:absolute;bottom:${G}%;left:${i*90}px;width:${w}px;height:${h}px;background:#41506e;opacity:.6"></div>`;
+        }
         for (let i = 0; i < 9; i++) {
-          const h = 30 + (i * 37 % 60), w = 26 + (i * 13 % 20), l = i * 110 + 20;
-          b += `<div style="position:absolute;bottom:${GROUND_BOTTOM}%;left:${l}px;width:${w}px;height:${h+40}%;background:#9aa7b3;opacity:.55;border-radius:3px 3px 0 0"></div>`;
+          const h = 130 + (i * 71 % 170), w = 46 + (i * 23 % 30), l = i * 150 + 30;
+          let win = '';
+          for (let r = 0; r < Math.floor(h / 22); r++) for (let c = 0; c < Math.floor(w / 16); c++)
+            if ((r * 7 + c * 3 + i) % 3) win += `<span style="position:absolute;left:${6 + c*16}px;bottom:${10 + r*22}px;width:7px;height:10px;background:#ffe9a8;opacity:.85"></span>`;
+          near += `<div style="position:absolute;bottom:${G}%;left:${l}px;width:${w}px;height:${h}px;background:#2c3550">${win}</div>`;
         }
-        deco.innerHTML = b;
-      } else if (terrain.deco === 'sky') {
-        let c = '';
-        for (let i = 0; i < 7; i++) {
-          const t = 8 + (i * 29 % 50), l = i * 150 + 30, s = 40 + (i * 17 % 50);
-          c += `<div style="position:absolute;top:${t}%;left:${l}px;width:${s+30}px;height:${s*0.5}px;background:rgba(255,255,255,.85);border-radius:99px;filter:blur(1px)"></div>`;
+        html += `<div class="layer" style="inset:0">${far}</div><div class="layer" style="inset:0">${near}</div>`;
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#3a4258,#202738 60%,#11151f)"></div>`;
+      } else { // sky
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#5aa6e8 0%,#9fd0f2 60%,#d8eefb 100%)"></div>`;
+        html += `<div class="layer" style="top:10%;left:70%;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#fffbe8,#ffe9a0);box-shadow:0 0 60px 22px rgba(255,233,160,.5)"></div>`;
+        let clouds = '';
+        for (let i = 0; i < 9; i++) {
+          const t = 12 + (i * 29 % 55), l = i * 160 + 20, s = 60 + (i * 19 % 70);
+          clouds += `<div style="position:absolute;top:${t}%;left:${l}px;width:${s+40}px;height:${s*0.5}px;background:rgba(255,255,255,.92);border-radius:99px;box-shadow:24px 8px 0 -6px rgba(255,255,255,.9),-24px 10px 0 -8px rgba(255,255,255,.85);filter:blur(.5px)"></div>`;
         }
-        deco.innerHTML = c;
+        html += `<div class="layer" style="inset:0">${clouds}</div>`;
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(rgba(216,238,251,.7),rgba(216,238,251,0))"></div>`;
       }
+      bg.innerHTML = html;
     }
 
+    // The drawbridge itself (scrolls with the world).
     function renderBlocks(animateLast) {
+      const deckTop = `calc(${GROUND_BOTTOM}% )`;     // plank top sits on the ground line
       blocksEl.innerHTML = '';
-      // rope line for tightrope terrains
-      if (terrain.rope) {
-        const rope = document.createElement('div');
-        rope.className = 'br-rope';
-        rope.style.left = START_PLAT + 'px';
-        rope.style.width = (target * W) + 'px';
-        rope.style.bottom = `calc(${GROUND_BOTTOM}% - 3px)`;
-        blocksEl.appendChild(rope);
-      }
+
+      // planks
       for (let i = 0; i < builtBlocks; i++) {
         const blk = document.createElement('div');
         blk.className = 'br-block' + (animateLast && i === builtBlocks - 1 ? ' new' : '');
-        blk.style.left = (START_PLAT + i * W + 3) + 'px';
-        blk.style.width = (terrain.rope ? W - 10 : W - 6) + 'px';
-        const h = terrain.rope ? 9 : 14;
-        blk.style.height = h + 'px';
-        blk.style.bottom = `calc(${GROUND_BOTTOM}% - ${h}px)`;
-        blk.style.background = terrain.block;
+        blk.style.left = (START_PLAT + i * W + 2) + 'px';
+        blk.style.width = (W - 4) + 'px';
+        blk.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
         blocksEl.appendChild(blk);
       }
-      // platforms: start + finish (top sits on the ground line)
+      // rope side-rail + posts along the built span
+      if (builtBlocks > 0) {
+        const span = builtBlocks * W;
+        const rail = document.createElement('div');
+        rail.className = 'br-rail';
+        rail.style.left = START_PLAT + 'px';
+        rail.style.width = span + 'px';
+        rail.style.bottom = `calc(${GROUND_BOTTOM}% + 20px)`;
+        blocksEl.appendChild(rail);
+        for (let i = 0; i <= builtBlocks; i += 2) {
+          const post = document.createElement('div');
+          post.className = 'br-post';
+          post.style.left = (START_PLAT + i * W) + 'px';
+          post.style.bottom = `${GROUND_BOTTOM}%`;
+          post.style.height = '22px';
+          blocksEl.appendChild(post);
+        }
+      }
+
+      // towers (start gatehouse + finish) and chains/flag
       platsEl.innerHTML = '';
-      [[0, START_PLAT], [finishX(), 220]].forEach(([x, w]) => {
-        const p = document.createElement('div');
-        p.className = 'br-plat';
-        p.style.left = x + 'px'; p.style.width = w + 'px';
-        p.style.height = '46px';
-        p.style.bottom = `calc(${GROUND_BOTTOM}% - 46px)`;
-        p.style.background = terrain.plat;
-        platsEl.appendChild(p);
+      const towerH = 150, towerDrop = 60;
+      const tower = (x, w) => {
+        const t = document.createElement('div');
+        t.className = 'br-tower';
+        t.style.left = x + 'px'; t.style.width = w + 'px';
+        t.style.height = towerH + 'px';
+        t.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px)`;
+        t.innerHTML = '<div class="br-merlon"></div>';
+        platsEl.appendChild(t);
+        return t;
+      };
+      tower(-40, START_PLAT + 40);                 // start gatehouse (off left edge)
+      tower(finishX(), 200);                        // finish tower
+
+      // walkable stone threshold slabs at deck level (so the runner stands on a surface)
+      [[-40, START_PLAT + 44], [finishX() - 4, 204]].forEach(([x, w]) => {
+        const slab = document.createElement('div');
+        slab.className = 'br-slab';
+        slab.style.left = x + 'px'; slab.style.width = w + 'px';
+        slab.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
+        platsEl.appendChild(slab);
       });
+
+      // short drawbridge hinge chains from the gatehouse top down to the deck
+      const topY = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px - 16px)`;
+      [-7, 1].forEach(off => {
+        const ch = document.createElement('div');
+        ch.className = 'br-chain';
+        ch.style.left = (START_PLAT - 16 + off) + 'px';
+        ch.style.bottom = topY;
+        ch.style.width = '78px';
+        ch.style.transform = 'rotate(72deg)';
+        platsEl.appendChild(ch);
+      });
+
+      // finish flag on the far tower
+      const pole = document.createElement('div');
+      pole.className = 'br-flagpole';
+      pole.style.left = (finishX() + 24) + 'px';
+      pole.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px - 6px)`;
+      pole.style.height = '34px';
+      platsEl.appendChild(pole);
+      const flag = document.createElement('div');
+      flag.className = 'br-flag';
+      flag.style.left = (finishX() + 27) + 'px';
+      flag.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px + 12px)`;
+      platsEl.appendChild(flag);
     }
 
     function placeChar() {
@@ -401,6 +498,18 @@
       _debug: () => ({ level, target, builtBlocks, runnerX: Math.round(runnerX), running, over, coasting,
         totalCorrect, totalQ, streak, bestStreak, answer: q && q.answer, tier: tiers[tierIdx] && tiers[tierIdx].key }),
       _tick: (ms) => loop((lastTs || 0) + ms),
+      // static visual preview of a level's scene (no countdown/loop) — for screenshots
+      _preview: (n, blocks) => {
+        running = false; cancelAnimationFrame(raf);
+        startEl.style.display = 'none'; promptEl.style.display = 'none'; answersEl.innerHTML = '';
+        level = n; terrain = TERRAINS[(n - 1) % TERRAINS.length];
+        target = 11 + n * 2; builtBlocks = Math.min(blocks || 7, target);
+        runnerX = START_PLAT + (builtBlocks - 2) * W;
+        charScreenX = Math.max(120, (stage.clientWidth || 700) * 0.3);
+        charEl.className = 'br-char walk';
+        buildScene(); renderBlocks(false); placeChar();
+        levelEl.textContent = 'Level ' + n;
+      },
     };
   }
 
