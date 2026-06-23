@@ -136,6 +136,14 @@
       height: auto;
     }
 
+    /* Neighbouring filler land — fills gaps, not part of the quiz */
+    .country-bg {
+      fill: #E2E0D2;
+      stroke: #B8AE98;
+      stroke-width: 0.4;
+      pointer-events: none;
+    }
+
     /* Country paths */
     .country {
       fill: #D4C9B5;
@@ -310,6 +318,12 @@ const REGIONS = {
 function buildRegionSVG(region) {
   const data = window.HSG_MAP_DATA[region];
   let svg = `<svg viewBox="${data.viewBox}" xmlns="http://www.w3.org/2000/svg">`;
+  // Background filler: neighbouring non-quiz land so the continent reads whole
+  // (no gaps). Non-interactive.
+  for (const d of data.bg || []) {
+    svg += `<path class="country-bg" d="${d}"></path>`;
+  }
+  // Interactive quiz countries on top.
   for (const [id, d] of Object.entries(data.paths)) {
     svg += `<path id="${id}" class="country" d="${d}"></path>`;
   }
