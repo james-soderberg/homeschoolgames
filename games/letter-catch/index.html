@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letter Catch — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .catch-page { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    .catch-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+    }
+    .catch-top h1 { margin: 0; font-size: 1.7rem; }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border);
+      border-radius: 99px; padding: 0.4rem 0.85rem; font-weight: 700;
+      font-size: 0.86rem; font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
+    }
+    .hearts { letter-spacing: 0.06em; }
+    .hearts .spent { filter: grayscale(1) opacity(0.4); }
+
+    /* the word the player is assembling */
+    .word-rail {
+      display: flex; align-items: center; justify-content: center;
+      gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap;
+    }
+    .word-slots { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center; }
+    .slot {
+      min-width: 1.5rem; height: 2.4rem; padding: 0 0.35rem;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.5rem;
+      border-bottom: 4px solid var(--border); color: var(--ink-light);
+      text-transform: lowercase; transition: color .15s, border-color .15s, transform .15s;
+    }
+    .slot.done { color: var(--green); border-color: var(--green); }
+    .slot.next { color: var(--red); border-color: var(--gold); transform: translateY(-3px); }
+    .slot.next::after { content: ''; }
+    .hear-btn {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .hear-btn:hover { background: #e3dccb; }
+
+    .stage {
+      position: relative; width: 100%;
+      border-radius: 16px; overflow: hidden;
+      border: 2.5px solid var(--border);
+      box-shadow: 0 8px 26px rgba(26,23,20,0.18);
+      background: #eef6fb;
+      touch-action: none;
+    }
+    #catchCanvas { display: block; width: 100%; height: 100%; }
+
+    .bf-overlay {
+      position: absolute; inset: 0; z-index: 12;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 1.5rem; background: rgba(20,28,38,0.84);
+      backdrop-filter: blur(2px); color: #fdf7ec;
+    }
+    .bf-overlay.hidden { display: none; }
+    .bf-overlay h2 { font-family: var(--font-serif); color:#fff; font-size: 2rem; margin: 0 0 0.3rem; }
+    .bf-overlay p { color:#e7ddcf; margin: 0 0 1.2rem; max-width: 34ch; line-height: 1.5; }
+    .bf-overlay .crest { font-size: 2.8rem; margin-bottom: 0.35rem; }
+    .level-row { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 300px; }
+    .level-btn {
+      display: flex; align-items: center; gap: 0.7rem; background: rgba(255,253,244,0.96);
+      border: 2.5px solid var(--border); border-radius: 12px; padding: 0.65rem 1rem;
+      cursor: pointer; font-family: var(--font-sans); text-align: left; color: var(--ink);
+      transition: transform .12s, border-color .12s, background .12s;
+    }
+    .level-btn:hover { transform: translateY(-2px); border-color: var(--gold); background:#fff; }
+    .level-btn .l-icon { font-size: 1.7rem; }
+    .level-btn .l-name { font-weight: 800; display: block; }
+    .level-btn .l-desc { font-size: 0.78rem; color: var(--ink-light); display: block; }
+
+    .hint { text-align: center; font-size: 0.85rem; color: var(--ink-light); margin-top: 0.8rem; line-height: 1.5; }
+    .hint kbd { font-family:'Courier New',monospace; background: var(--cream-dark); border:1px solid var(--border); border-radius:4px; padding:0.05rem 0.35rem; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.5rem; }
+    .reset-link { background:none; border:none; color:var(--ink-light); font-size:0.85rem; cursor:pointer;
+      font-family:var(--font-sans); text-decoration:underline; padding:0.3rem 0.5rem; }
+    .reset-link:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../subjects/spelling.html">← Spelling</a>
+  </nav>
+</header>
+
+<div class="game-layout">
+<div class="catch-page game-main">
+
+  <div class="catch-top">
+    <h1>Letter Catch</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="scoreBadge">⭐ 0</div>
+      <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️</div>
+    </div>
+  </div>
+
+  <div class="word-rail">
+    <button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button>
+    <div class="word-slots" id="wordSlots"></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="catchCanvas"></canvas>
+    <div class="bf-overlay" id="startOverlay">
+      <div class="crest">🪣</div>
+      <h2>Letter Catch</h2>
+      <p>Slide the basket to catch each letter <strong>in order</strong> and spell the word — dodge the wrong ones! Pick a level:</p>
+      <div class="level-row">
+        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Sprout</span><span class="l-desc">Short words • gentle</span></span></button>
+        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Scout</span><span class="l-desc">Longer words • quicker</span></span></button>
+        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Scholar</span><span class="l-desc">Tricky words • fast</span></span></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">Move the basket with your <strong>mouse / finger</strong> or <kbd>←</kbd> <kbd>→</kbd>. Catch the <span style="color:var(--red);font-weight:700">red</span> letter next.</p>
+
+  <div class="control-row"><button class="reset-link" onclick="quitToMenu()">Change Level</button></div>
+
+</div><!-- /.catch-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
+
+<footer class="site-footer"><a href="../../index.html">homeschoolgames.app</a></footer>
+
+<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/spelling-words.js"></script>
+<script>
+// ============================================================
+// LETTER CATCH — catch falling letters in order to spell the word.
+// ============================================================
+const LEVELS = {
+  easy:   { fall:[70,120],  spawn:[0.95,0.7], needRatio:0.5 },
+  medium: { fall:[95,150],  spawn:[0.8,0.55], needRatio:0.42 },
+  hard:   { fall:[120,185], spawn:[0.7,0.45], needRatio:0.36 }
+};
+const MAX_MISTAKES = 3;
+const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+
+const stage    = document.getElementById('stage');
+const canvas   = document.getElementById('catchCanvas');
+const ctx      = canvas.getContext('2d');
+const wordSlots= document.getElementById('wordSlots');
+const scoreBadge = document.getElementById('scoreBadge');
+const heartsBadge= document.getElementById('heartsBadge');
+const startOverlay = document.getElementById('startOverlay');
+
+let W=560, H=460, dpr=1;
+function setupCanvas(){
+  const r = stage.getBoundingClientRect();
+  W = Math.max(300, r.width);
+  H = Math.round(Math.min(480, Math.max(360, W*0.78)));
+  stage.style.height = H+'px';
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ setupCanvas(); });
+
+const rand=(a,b)=>a+Math.random()*(b-a);
+const lerp=(a,b,t)=>a+(b-a)*t;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+let level='easy', cfg=LEVELS.easy;
+let word='', typed=0, score=0, mistakes=0, bestStreak=0;
+let tiles=[], basketX=280, basketTargetX=280;
+let running=false, lastTs=0, rafId=null, spawnAcc=0, sinceNeeded=0, shakeT=0, flashT=0;
+let nextId=1;
+
+const rail = HSGStreak.init({ gameId:'letter-catch', gameName:'Letter Catch', minStreak:2,
+  mount: document.getElementById('streakRail') });
+
+const BASKET_W = ()=> Math.max(70, W*0.16);
+const BASKET_Y = ()=> H-44;
+const TILE = ()=> Math.max(34, W*0.075);
+
+// ---- words / speech ----
+function speak(w){
+  try{
+    if (HSGSound.muted) return;
+    if (!window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(w);
+    u.rate = 0.85; u.pitch = 1.05;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function newWord(){
+  word = HSGSpellWords.pick(level).toLowerCase();
+  typed = 0;
+  tiles = [];
+  sinceNeeded = 0;
+  renderSlots();
+  speak(word);
+}
+function renderSlots(){
+  wordSlots.innerHTML='';
+  for (let i=0;i<word.length;i++){
+    const s=document.createElement('span');
+    s.className='slot'+(i<typed?' done':(i===typed?' next':''));
+    s.textContent = word[i];
+    wordSlots.appendChild(s);
+  }
+}
+
+// ---- lifecycle ----
+function startGame(lv){
+  level=lv; cfg=LEVELS[lv];
+  score=0; mistakes=0; bestStreak=0;
+  basketX=basketTargetX=W/2;
+  shakeT=0; flashT=0; spawnAcc=0;
+  rail.reset();
+  setupCanvas();
+  updateHud();
+  startOverlay.classList.add('hidden');
+  newWord();
+  running=true; lastTs=0;
+  rafId=requestAnimationFrame(tick);
+}
+function quitToMenu(){
+  running=false; if(rafId) cancelAnimationFrame(rafId);
+  rail.value=bestStreak; rail.end();
+  tiles=[]; ctx.clearRect(0,0,W,H);
+  startOverlay.classList.remove('hidden');
+}
+function gameOver(){
+  running=false; if(rafId) cancelAnimationFrame(rafId);
+  rail.value=bestStreak; rail.end();
+  HSGSound.finish(false);
+  HSGfx.showSummary({
+    title:'Game Over', correct:score, total:score+mistakes, best:bestStreak,
+    onPlayAgain:()=>startGame(level), allGamesHref:'../../all-games.html'
+  });
+}
+
+// ---- spawning ----
+function spawnTile(forceNeeded){
+  const need = word[typed] || 'a';
+  let ch;
+  if (forceNeeded || Math.random() < cfg.needRatio){ ch = need; sinceNeeded = 0; }
+  else {
+    // a decoy: often another letter from the word, sometimes random
+    if (Math.random()<0.5 && word.length>1){ ch = word[Math.floor(Math.random()*word.length)]; }
+    else ch = ALPHA[Math.floor(Math.random()*26)];
+    if (ch===need && Math.random()<0.6) ch = ALPHA[Math.floor(Math.random()*26)];
+  }
+  const t = TILE();
+  tiles.push({ id:nextId++, ch, x:rand(t, W-t), y:-t, vy:rand(cfg.fall[0],cfg.fall[1]), size:t });
+}
+
+// ---- core catch resolution (testable) ----
+function resolveCatch(ch){
+  if (!running) return 'none';
+  if (ch === word[typed]){
+    typed++;
+    renderSlots();
+    if (typed>=word.length){ wordComplete(); return 'complete'; }
+    HSGSound.tick();
+    return 'correct';
+  } else {
+    mistakeMade();
+    return 'wrong';
+  }
+}
+function wordComplete(){
+  score++;
+  rail.hit();
+  if (rail.value>bestStreak) bestStreak=rail.value;
+  HSGSound.correct();
+  if (HSGfx.milestone(rail.value)) HSGSound.streak(rail.value);
+  else HSGfx.confetti({count:24});
+  flashT=0.35;
+  updateHud();
+  setTimeout(()=>{ if(running) newWord(); }, 420);
+  tiles=[]; // clear the field for the next word
+}
+function mistakeMade(){
+  mistakes++;
+  rail.reset();
+  HSGSound.wrong();
+  HSGfx.shake(); shakeT=0.35;
+  updateHud();
+  if (mistakes>=MAX_MISTAKES) gameOver();
+}
+function updateHud(){
+  scoreBadge.textContent='⭐ '+score;
+  let h=''; for(let i=0;i<MAX_MISTAKES;i++) h += i<(MAX_MISTAKES-mistakes)?'❤️':'<span class="spent">🤍</span>';
+  heartsBadge.innerHTML=h;
+}
+
+// ---- loop ----
+function tick(ts){
+  if(!running) return;
+  if(!lastTs) lastTs=ts;
+  let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05) dt=0.05;
+
+  // basket easing toward target
+  basketX += (basketTargetX-basketX)*Math.min(1, dt*16);
+  basketX = clamp(basketX, BASKET_W()/2, W-BASKET_W()/2);
+
+  // spawning
+  spawnAcc += dt; sinceNeeded += dt;
+  const interval = lerp(cfg.spawn[0], cfg.spawn[1], clamp(score/20,0,1));
+  if (spawnAcc>=interval){ spawnAcc=0; spawnTile(false); }
+  if (sinceNeeded>1.5 && !tiles.some(t=>t.ch===word[typed])) spawnTile(true);
+
+  // move + catch
+  const by=BASKET_Y(), bw=BASKET_W();
+  for (let i=tiles.length-1;i>=0;i--){
+    const t=tiles[i];
+    t.y += t.vy*dt;
+    if (t.y + t.size*0.5 >= by-6 && t.y < by+10 && Math.abs(t.x-basketX) <= bw/2){
+      tiles.splice(i,1);
+      resolveCatch(t.ch);
+      continue;
+    }
+    if (t.y - t.size > H){ tiles.splice(i,1); }
+  }
+
+  if (shakeT>0) shakeT=Math.max(0,shakeT-dt);
+  if (flashT>0) flashT=Math.max(0,flashT-dt);
+  render();
+  rafId=requestAnimationFrame(tick);
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if (shakeT>0) ctx.translate(rand(-5,5),rand(-3,3));
+
+  // sky bands
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#eaf5fb'); g.addColorStop(1,'#dcecf5');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // soft clouds
+  ctx.fillStyle='rgba(255,255,255,0.55)';
+  for(const c of [[W*0.2,H*0.2,30],[W*0.7,H*0.16,38],[W*0.5,H*0.32,26]]){
+    ctx.beginPath(); ctx.ellipse(c[0],c[1],c[2],c[2]*0.6,0,0,6.28); ctx.fill();
+  }
+  // ground strip
+  ctx.fillStyle='#cfe3d4'; ctx.fillRect(0,H-26,W,26);
+
+  // falling tiles
+  for (const t of tiles) drawTile(t);
+
+  // basket
+  drawBasket(basketX, BASKET_Y());
+
+  ctx.restore();
+  if (flashT>0){ ctx.fillStyle='rgba(120,210,140,'+(flashT*0.5)+')'; ctx.fillRect(0,0,W,H); }
+}
+function drawTile(t){
+  const s=t.size, x=t.x-s/2, y=t.y-s/2;
+  ctx.save();
+  ctx.fillStyle='rgba(26,23,20,0.12)'; roundRect(x+2,y+3,s,s,9); ctx.fill();
+  ctx.fillStyle='#FFFDF4'; ctx.strokeStyle='#C4A040'; ctx.lineWidth=2.5;
+  roundRect(x,y,s,s,9); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#1A1714'; ctx.font='700 '+Math.round(s*0.6)+"px 'Courier New', monospace";
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(t.ch, t.x, t.y+1);
+  ctx.restore();
+}
+function drawBasket(cx, cy){
+  const w=BASKET_W(), h=34;
+  ctx.save();
+  // bowl
+  ctx.fillStyle='#a9743b';
+  ctx.beginPath();
+  ctx.moveTo(cx-w/2, cy);
+  ctx.lineTo(cx+w/2, cy);
+  ctx.lineTo(cx+w/2-10, cy+h);
+  ctx.lineTo(cx-w/2+10, cy+h);
+  ctx.closePath(); ctx.fill();
+  // rim
+  ctx.fillStyle='#caa24a'; roundRect(cx-w/2-4, cy-8, w+8, 12, 6); ctx.fill();
+  // weave lines
+  ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=2;
+  for(let i=1;i<4;i++){ const yy=cy+i*h/4; ctx.beginPath(); ctx.moveTo(cx-w/2+i*2, yy); ctx.lineTo(cx+w/2-i*2, yy); ctx.stroke(); }
+  ctx.restore();
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+// ---- input ----
+function pointerX(e){
+  const r=canvas.getBoundingClientRect();
+  const px=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
+  return clamp(px*(W/r.width), 0, W);
+}
+stage.addEventListener('mousemove', e=>{ if(running) basketTargetX=pointerX(e); });
+stage.addEventListener('touchmove', e=>{ if(running){ basketTargetX=pointerX(e); e.preventDefault(); } }, {passive:false});
+stage.addEventListener('touchstart', e=>{ if(running) basketTargetX=pointerX(e); }, {passive:true});
+document.addEventListener('keydown', e=>{
+  if(!running) return;
+  if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a'){ basketTargetX=clamp(basketTargetX-W*0.12, 0, W); e.preventDefault(); }
+  else if(e.key==='ArrowRight'||e.key.toLowerCase()==='d'){ basketTargetX=clamp(basketTargetX+W*0.12, 0, W); e.preventDefault(); }
+});
+document.getElementById('hearBtn').addEventListener('click', ()=>{ if(word) speak(word); });
+document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', ()=>startGame(b.dataset.level)));
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && running) lastTs=0; });
+
+setupCanvas();
+updateHud();
+// gentle idle render behind the start overlay
+(function idle(){ if(!running){ render(); requestAnimationFrame(idle); } })();
+</script>
+
+</body>
+</html>
