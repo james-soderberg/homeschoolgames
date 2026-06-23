@@ -6,187 +6,6 @@
   <title>HomeschoolGames — Learn by Playing</title>
   <link rel="stylesheet" href="assets/css/site.css">
   <style>
-    /* ============ Playful intro splash ============ */
-    .splash {
-      position: relative;
-      min-height: calc(100vh - 58px);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 1.5rem;
-      overflow: hidden;
-    }
-
-    /* soft floating colour blobs in the background */
-    .blob {
-      position: absolute;
-      border-radius: 50%;
-      filter: blur(8px);
-      opacity: 0.5;
-      z-index: 0;
-      animation: drift 14s ease-in-out infinite;
-    }
-    .blob-1 { width: 220px; height: 220px; background: #D4EEF5; top: 8%;  left: 6%;  animation-delay: 0s; }
-    .blob-2 { width: 180px; height: 180px; background: #FFE3C2; top: 12%; right: 8%; animation-delay: -3s; }
-    .blob-3 { width: 240px; height: 240px; background: #E4DAF2; bottom: 6%; left: 12%; animation-delay: -6s; }
-    .blob-4 { width: 160px; height: 160px; background: #DDF1E2; bottom: 12%; right: 10%; animation-delay: -9s; }
-
-    @keyframes drift {
-      0%,100% { transform: translate(0,0) scale(1); }
-      33%     { transform: translate(20px,-26px) scale(1.08); }
-      66%     { transform: translate(-18px,16px) scale(0.95); }
-    }
-
-    /* floating subject emoji scattered around */
-    .floatie {
-      position: absolute;
-      font-size: 2.4rem;
-      z-index: 1;
-      opacity: 0.9;
-      animation: bob 5s ease-in-out infinite;
-      filter: drop-shadow(0 4px 6px rgba(26,23,20,0.12));
-    }
-    .floatie:nth-child(odd) { animation-duration: 6.5s; }
-    .f1 { top: 16%; left: 14%; animation-delay: -0.5s; }
-    .f2 { top: 22%; right: 16%; animation-delay: -1.5s; }
-    .f3 { bottom: 24%; left: 18%; animation-delay: -2.5s; }
-    .f4 { bottom: 20%; right: 14%; animation-delay: -3.5s; }
-    .f5 { top: 46%; left: 7%;  animation-delay: -1s; }
-    .f6 { top: 50%; right: 7%; animation-delay: -2s; }
-
-    @keyframes bob {
-      0%,100% { transform: translateY(0) rotate(-6deg); }
-      50%     { transform: translateY(-16px) rotate(6deg); }
-    }
-
-    /* central mascot: a globe with orbiting subject icons */
-    .mascot {
-      position: relative;
-      width: 250px;
-      height: 250px;
-      margin-bottom: 1.5rem;
-      z-index: 2;
-      animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1) both;
-    }
-    .mascot .core {
-      position: absolute;
-      inset: 0;
-      margin: auto;
-      width: 140px;
-      height: 140px;
-      border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fff7e0, var(--gold-light) 55%, #e7b94e);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 5rem;
-      box-shadow: 0 10px 30px rgba(196,160,64,0.35);
-      animation: floaty 4s ease-in-out infinite;
-    }
-    .orbit {
-      position: absolute;
-      inset: 0;
-      animation: spin 18s linear infinite;
-    }
-    .orbit.reverse { animation-direction: reverse; animation-duration: 24s; }
-    .orbit .chip {
-      position: absolute;
-      top: -6px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      background: #fff;
-      border: 2.5px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.8rem;
-      box-shadow: 0 4px 10px rgba(26,23,20,0.12);
-      animation: counterspin 18s linear infinite;
-    }
-    .orbit.reverse .chip { animation: counterspin-rev 24s linear infinite; }
-    .orbit .chip.b { top: auto; bottom: -6px; }
-
-    @keyframes spin { to { transform: rotate(360deg); } }
-    @keyframes counterspin { to { transform: translateX(-50%) rotate(-360deg); } }
-    @keyframes counterspin-rev { to { transform: translateX(-50%) rotate(360deg); } }
-    @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    @keyframes popIn { from { opacity: 0; transform: scale(0.4); } to { opacity: 1; transform: scale(1); } }
-
-    .splash-title {
-      position: relative;
-      z-index: 2;
-      font-family: var(--font-serif);
-      font-weight: 600;
-      font-size: clamp(2.8rem, 9vw, 5rem);
-      line-height: 1.05;
-      margin: 0 0 0.6rem;
-      animation: popIn 0.6s cubic-bezier(.34,1.56,.64,1) 0.1s both;
-    }
-    .splash-title .pop {
-      background: linear-gradient(90deg, #E0853B, var(--gold) 45%, #7A9C5C 90%);
-      -webkit-background-clip: text;
-      background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .splash-tagline {
-      position: relative;
-      z-index: 2;
-      font-size: clamp(1.05rem, 3vw, 1.4rem);
-      color: var(--ink-light);
-      margin: 0 0 2rem;
-      max-width: 30ch;
-      animation: popIn 0.6s ease 0.25s both;
-    }
-
-    .start-btn {
-      position: relative;
-      z-index: 2;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--gold);
-      color: var(--ink);
-      border: none;
-      border-radius: 99px;
-      padding: 1.1rem 2.6rem;
-      font-family: var(--font-sans);
-      font-size: 1.25rem;
-      font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 8px 0 #a07f2c, 0 12px 22px rgba(196,160,64,0.4);
-      transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
-      animation: popIn 0.6s ease 0.4s both, pulse 2.2s ease-in-out 1.4s infinite;
-    }
-    .start-btn:hover { background: #d0ab48; }
-    .start-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #a07f2c, 0 4px 12px rgba(196,160,64,0.4); }
-
-    @keyframes pulse {
-      0%,100% { transform: scale(1); }
-      50%     { transform: scale(1.05); }
-    }
-
-    .scroll-cue {
-      position: absolute;
-      bottom: 1.2rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 2;
-      font-size: 1.6rem;
-      color: var(--gold);
-      animation: bounceDown 1.6s ease-in-out infinite;
-      cursor: pointer;
-      line-height: 1;
-    }
-    @keyframes bounceDown {
-      0%,100% { transform: translate(-50%, 0); }
-      50%     { transform: translate(-50%, 8px); }
-    }
-
     /* ============ Games section ============ */
     .games-section {
       max-width: 980px;
@@ -197,12 +16,22 @@
       text-align: center;
       margin-bottom: 2rem;
     }
-    .games-heading h2 {
-      font-size: clamp(1.8rem, 4vw, 2.4rem);
-      margin-bottom: 0.4rem;
+    .games-heading h1 {
+      font-family: var(--font-serif);
+      font-weight: 600;
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+      line-height: 1.05;
+      margin: 0 0 0.5rem;
+    }
+    .games-heading h1 .pop {
+      background: linear-gradient(90deg, #E0853B, var(--gold) 45%, #7A9C5C 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
     .games-heading p {
       color: var(--ink-light);
+      font-size: clamp(1rem, 2.6vw, 1.2rem);
     }
 
     .game-grid {
@@ -336,13 +165,11 @@
     @media (max-width: 600px) {
       .games-section { padding: 2.5rem 1rem 3rem; }
       .game-grid { gap: 1rem; }
-      .floatie { font-size: 1.8rem; }
-      .mascot { width: 210px; height: 210px; }
     }
 
     /* Be kind to motion-sensitive kids */
     @media (prefers-reduced-motion: reduce) {
-      .blob, .floatie, .orbit, .core, .start-btn, .scroll-cue, .game-tile, .popular-badge { animation: none !important; }
+      .game-tile, .popular-badge, .new-badge { animation: none !important; }
     }
   </style>
 </head>
@@ -352,46 +179,11 @@
     <a href="index.html" class="site-logo">Homeschool<span>Games</span></a>
   </header>
 
-  <!-- ============ Fun intro splash ============ -->
-  <section class="splash">
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
-    <div class="blob blob-3"></div>
-    <div class="blob blob-4"></div>
-
-    <span class="floatie f1">📚</span>
-    <span class="floatie f2">⭐</span>
-    <span class="floatie f3">🔢</span>
-    <span class="floatie f4">🗺️</span>
-    <span class="floatie f5">✏️</span>
-    <span class="floatie f6">🎨</span>
-
-    <div class="mascot">
-      <div class="core">🌍</div>
-      <div class="orbit">
-        <div class="chip">📖</div>
-        <div class="chip b">➕</div>
-      </div>
-      <div class="orbit reverse">
-        <div class="chip">🚩</div>
-        <div class="chip b">🎙️</div>
-      </div>
-    </div>
-
-    <h1 class="splash-title">Homeschool <span class="pop">Games</span></h1>
-    <p class="splash-tagline">Pick a game, press play, and learn something cool!</p>
-    <button class="start-btn" onclick="document.getElementById('games').scrollIntoView({behavior:'smooth'})">
-      Let's Play! <span aria-hidden="true">▸</span>
-    </button>
-
-    <span class="scroll-cue" onclick="document.getElementById('games').scrollIntoView({behavior:'smooth'})" aria-hidden="true">⌄</span>
-  </section>
-
   <!-- ============ Games ============ -->
   <section class="games-section" id="games">
     <div class="games-heading">
-      <h2>Choose Your Game</h2>
-      <p>No sign-in, no ads — just play.</p>
+      <h1>Homeschool <span class="pop">Games</span></h1>
+      <p>Pick a game, press play, and learn something cool — no sign-in, no ads.</p>
     </div>
 
     <div class="game-grid">
