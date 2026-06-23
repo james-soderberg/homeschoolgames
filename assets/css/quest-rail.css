@@ -1,0 +1,157 @@
+/* =========================================================
+   HomeschoolGames — Quest Rail (Noah's Ark scene)
+   A big, animated "build vs. flood" scene for the right rail.
+   Layout/board/modal classes come from streak-rail.css.
+   ========================================================= */
+
+/* ---- wider rail; it may push the question column off-centre ---- */
+.game-layout--quest { max-width: 1260px; gap: 2.75rem; }
+.game-layout--quest::before { display: none; }   /* drop the centring spacer */
+.game-layout--quest .hsg-rail { width: 560px; flex: 0 0 560px; }
+
+@media (max-width: 1240px) {
+  .game-layout--quest { flex-direction: column; align-items: center; gap: 1.5rem; max-width: 660px; }
+  .game-layout--quest .game-main { width: 100%; margin: 0 auto !important; }
+  .game-layout--quest .hsg-rail { position: static; width: 100%; flex: none; max-width: 560px; }
+}
+
+/* ---- scene shell ---- */
+.quest-scene {
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(26,23,20,0.12);
+  background: #e6eef2;
+}
+.ark-stage { position: relative; line-height: 0; }
+.ark-svg { display: block; width: 100%; height: auto; }
+
+/* ---- sky / sun ---- */
+.sun { opacity: 0; transition: opacity 0.6s ease; }
+.ark-svg.saved .sun { opacity: 1; }
+.sun .rays { animation: sunspin 18s linear infinite; transform-origin: 258px 56px; }
+@keyframes sunspin { to { transform: rotate(360deg); } }
+
+/* ---- clouds drift ---- */
+.cloud ellipse { fill: #fff; }
+.cloud { opacity: 0.92; }
+.clouds { transition: opacity 0.6s ease; }
+.ark-svg.saved .clouds { opacity: 0; }
+.c1 { animation: drift1 30s linear infinite; }
+.c2 { animation: drift2 41s linear infinite; opacity: 0.8; }
+.c3 { animation: drift3 49s linear infinite; opacity: 0.7; }
+@keyframes drift1 { from { transform: translate(-72px,36px); } to { transform: translate(360px,36px); } }
+@keyframes drift2 { from { transform: translate(360px,72px); } to { transform: translate(-72px,72px); } }
+@keyframes drift3 { from { transform: translate(-72px,20px); } to { transform: translate(360px,20px); } }
+
+/* ---- rain ---- */
+.rain { opacity: 0.3; transition: opacity 0.4s ease; }
+.ark-svg.saved .rain { opacity: 0 !important; }
+.rain .drop { animation: rainfall 0.55s linear infinite; }
+@keyframes rainfall { from { transform: translateY(0); } to { transform: translateY(26px); } }
+
+/* ---- rainbow (payoff) ---- */
+.rainbow { opacity: 0; transition: opacity 0.4s ease; }
+.rainbow path { stroke-dasharray: 520; stroke-dashoffset: 520; }
+.ark-svg.saved .rainbow { opacity: 0.9; }
+.ark-svg.saved .rainbow path { animation: drawarc 1.1s ease forwards; }
+.ark-svg.saved .rainbow path:nth-child(2) { animation-delay: 0.06s; }
+.ark-svg.saved .rainbow path:nth-child(3) { animation-delay: 0.12s; }
+.ark-svg.saved .rainbow path:nth-child(4) { animation-delay: 0.18s; }
+.ark-svg.saved .rainbow path:nth-child(5) { animation-delay: 0.24s; }
+.ark-svg.saved .rainbow path:nth-child(6) { animation-delay: 0.30s; }
+@keyframes drawarc { to { stroke-dashoffset: 0; } }
+
+/* ---- ark: bob + part reveal ---- */
+.ark { animation: arkbob 3.4s ease-in-out infinite; transform-origin: 160px 232px; }
+@keyframes arkbob {
+  0%,100% { transform: translateY(0) rotate(-1.1deg); }
+  50%     { transform: translateY(-2px) rotate(1.1deg); }
+}
+.ark-part {
+  opacity: 0;
+  transform: translateY(9px);
+  transform-box: fill-box;
+  transform-origin: center bottom;
+  transition: opacity 0.32s ease, transform 0.32s ease;
+}
+.ark-part.built { opacity: 1; transform: translateY(0); }
+.ark-part.pop { animation: arkpop 0.42s cubic-bezier(.34,1.56,.64,1); }
+@keyframes arkpop { 0% { transform: scale(0.55); } 100% { transform: scale(1); } }
+
+/* ---- animals board ---- */
+.ark-animals { opacity: 0; transform: translateX(-22px); transition: opacity 0.4s ease, transform 0.55s ease; }
+.ark-animals.aboard { opacity: 1; transform: translateX(0); }
+
+/* ---- ark lift/sink against a fixed sea ---- */
+.ark-lift { transition: transform 0.55s cubic-bezier(.34,1.4,.5,1); }
+
+/* ---- flowing waves (sea surface is fixed) ---- */
+.wave { animation: waveflow 5s linear infinite; }
+.wave2 { animation-duration: 7.5s; animation-direction: reverse; }
+@keyframes waveflow { from { transform: translateX(0); } to { transform: translateX(-44px); } }
+
+/* ---- flood-out splash ---- */
+.splash circle { opacity: 0; }
+.ark-svg.splashing .splash circle { animation: splashfly 0.65s ease-out forwards; }
+@keyframes splashfly {
+  0%   { opacity: 1; transform: translate(0,0); }
+  100% { opacity: 0; transform: translate(var(--sx,0), -36px); }
+}
+
+/* ---- builder hammer tap ---- */
+.builder { opacity: 0; }
+.builder.tapping { animation: builderfade 0.55s ease forwards; }
+.builder.tapping .hammer { animation: hammertap 0.42s ease; transform-origin: 0px -8px; }
+.builder.tapping .dust { animation: dustpuff 0.55s ease forwards; }
+@keyframes builderfade { 0%,75% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes hammertap { 0% { transform: rotate(-40deg); } 45% { transform: rotate(10deg); } 100% { transform: rotate(-40deg); } }
+@keyframes dustpuff { 0% { opacity: 0; transform: translateY(0) scale(0.4); } 40% { opacity: 0.9; } 100% { opacity: 0; transform: translateY(-7px) scale(1.3); } }
+
+/* ---- banner ---- */
+.ark-banner {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; text-align: center;
+  font-family: var(--font-serif); font-weight: 700; font-size: 1.5rem; line-height: 1;
+  color: #fff; text-shadow: 0 2px 8px rgba(0,0,0,0.45);
+  pointer-events: none; opacity: 0; transition: opacity 0.2s ease;
+}
+.ark-banner.show { opacity: 1; animation: bannerpop 0.4s cubic-bezier(.34,1.56,.64,1); }
+.ark-banner.win  { background: rgba(42,140,70,0.22); }
+.ark-banner.fail { background: rgba(30,80,140,0.4); }
+@keyframes bannerpop { 0% { transform: scale(0.7); } 100% { transform: scale(1); } }
+
+.quest-shake { animation: questshake 0.42s ease; }
+@keyframes questshake {
+  0%,100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); } 50% { transform: translateX(6px); } 75% { transform: translateX(-4px); }
+}
+
+/* ---- meters + status ---- */
+.quest-meters {
+  display: flex; justify-content: space-around; gap: 0.4rem;
+  padding: 0.6rem 0.4rem 0.2rem; background: #fff; line-height: 1.1;
+}
+.quest-meters .meter { font-family: var(--font-sans); font-size: 0.9rem; font-weight: 700; color: var(--ink-light); white-space: nowrap; }
+.quest-meters .meter b { font-family: var(--font-serif); font-size: 1.2rem; }
+.quest-meters .build b { color: #8a5630; }
+.quest-meters .flood b { color: #2a7fc0; }
+.quest-meters .arks  b { color: var(--gold); }
+
+.quest-status {
+  background: #fff; text-align: center;
+  font-family: var(--font-sans); font-size: 0.85rem; font-weight: 600;
+  color: var(--ink-light); padding: 0.15rem 0.6rem 0.7rem; min-height: 1.7rem;
+}
+.quest-status.good { color: var(--green); }
+.quest-status.bad  { color: var(--red); }
+
+@media (prefers-reduced-motion: reduce) {
+  .ark, .cloud, .rain .drop, .wave, .sun .rays,
+  .ark-part, .ark-animals, .ark-lift, .ark-banner,
+  .builder.tapping, .builder.tapping .hammer, .builder.tapping .dust,
+  .ark-svg.saved .rainbow path, .ark-svg.splashing .splash circle, .quest-shake {
+    animation: none !important;
+    transition: none !important;
+  }
+}

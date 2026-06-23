@@ -6,6 +6,7 @@
   <title>Bible Quiz — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <link rel="stylesheet" href="../../assets/css/quest-rail.css">
   <style>
     @keyframes pop {
       0%   { transform: scale(1); }
@@ -289,7 +290,7 @@
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-layout--quest">
 <div class="quiz-page game-main">
 
   <div class="quiz-top">
@@ -325,14 +326,14 @@
 
 </div><!-- /.quiz-page -->
 
-  <aside class="hsg-rail" id="streakRail"></aside>
+  <aside class="hsg-rail" id="questRail"></aside>
 </div><!-- /.game-layout -->
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/quest-rail.js"></script>
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script>
@@ -603,7 +604,7 @@ function handleAnswer(chosen, clickedBtn) {
     correct++;
     streak++;
     if (streak > bestStreak) bestStreak = streak;
-    rail.hit();
+    quest.correct();
     HSGSound.correct();
     clickedBtn.classList.add('correct');
     const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
@@ -614,6 +615,7 @@ function handleAnswer(chosen, clickedBtn) {
   } else {
     endedStreak = streak;
     streak = 0;
+    quest.wrong();
     HSGSound.wrong();
     clickedBtn.classList.add('wrong');
     // Reveal the one correct option in the grid.
@@ -633,9 +635,6 @@ function handleAnswer(chosen, clickedBtn) {
   document.getElementById('revealName').textContent = nameLine;
 
   updateBadges();
-
-  // A streak just ended — flare down and offer the leaderboard if it qualifies.
-  if (endedStreak) rail.end();
 
   // End after TARGET questions, but never mid-streak.
   pendingEnd = (total >= TARGET && streak === 0);
@@ -670,7 +669,7 @@ function updateBadges() {
 
 function startRound() {
   clearTimeout(advanceTimer);
-  rail.end();
+  quest.endRun();
   correct = 0; total = 0; streak = 0; bestStreak = 0; queue = [];
   answered = false; pendingEnd = false;
   syncFilterChips();
@@ -694,9 +693,10 @@ document.addEventListener('keydown', e => {
   if (btn && !btn.disabled) btn.click();
 });
 
-const rail = HSGStreak.init({
-  gameId: 'bible-quiz', gameName: 'Bible Quiz', minStreak: 1,
-  mount: document.getElementById('streakRail')
+const quest = HSGQuest.init({
+  gameId: 'bible-quiz', gameName: 'Bible Quiz',
+  theme: HSGQuest.themes.ark,
+  mount: document.getElementById('questRail')
 });
 
 buildFilters();

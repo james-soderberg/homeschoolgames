@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bridge Run — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .br-page { padding: 1.25rem 1rem 3rem; }
+    .br-page h1 { font-size: 1.8rem; margin: 0 0 0.2rem; }
+    .br-howto { color: var(--ink-light); font-size: 0.95rem; margin: 0 0 1rem; max-width: 60ch; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← All Games</a>
+  </nav>
+</header>
+
+<div class="game-layout game-layout-wide">
+<div class="br-page game-main">
+  <h1>Bridge Run</h1>
+  <p class="br-howto">Answer to cross the chasm. You step forward every time — a right answer lays the next
+    plank, a wrong one leaves a gap. Step past the bridge's end and you fall! Reach the far cliff to clear the level.</p>
+  <div id="bridgeMount"></div>
+</div><!-- /.br-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/bridge.js"></script>
+<script>
+// ---- Math question bank: difficulty scales with level ----
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+
+function makeQuestion(level) {
+  const ops = ['add', 'sub'];
+  if (level >= 3) ops.push('mul');
+  if (level >= 5) ops.push('div');
+  const op = ops[randInt(0, ops.length - 1)];
+  const mag = Math.min(12 + level * 5, 120);
+  let a, b, ans, sym;
+
+  if (op === 'add') { a = randInt(2, mag); b = randInt(2, mag); ans = a + b; sym = '+'; }
+  else if (op === 'sub') { a = randInt(2, mag); b = randInt(1, a); ans = a - b; sym = '−'; }
+  else if (op === 'mul') { const m = Math.min(4 + level, 15); a = randInt(2, m); b = randInt(2, m); ans = a * b; sym = '×'; }
+  else { const m = Math.min(3 + level, 12); b = randInt(2, m); ans = randInt(2, m); a = b * ans; sym = '÷'; }
+
+  const prompt = `${a} ${sym} ${b} = ?`;
+
+  const set = new Set([ans]);
+  let guard = 0;
+  while (set.size < 4 && guard++ < 60) {
+    const off = randInt(1, Math.max(5, Math.floor(ans * 0.3) + 3));
+    const v = ans + (Math.random() < 0.5 ? -off : off);
+    if (v >= 0 && v !== ans) set.add(v);
+  }
+  let extra = 1;
+  while (set.size < 4) { if (ans + extra !== ans) set.add(ans + extra); extra++; }
+
+  const choices = [...set];
+  for (let i = choices.length - 1; i > 0; i--) { const j = randInt(0, i); [choices[i], choices[j]] = [choices[j], choices[i]]; }
+  return { prompt, choices, answer: ans };
+}
+
+const rail = HSGStreak.init({
+  gameId: 'bridge-run', gameName: 'Bridge Run', minStreak: 1,
+  mount: document.getElementById('streakRail')
+});
+
+HSGBridge.init({
+  mount: document.getElementById('bridgeMount'),
+  rail,
+  makeQuestion,
+});
+</script>
+
+</body>
+</html>
