@@ -41,8 +41,15 @@ A **theme** supplies: `buildGoal`, `threatMax` (hidden lose threshold),
 - For a wide rail that pushes the question column off-centre, add
   `game-layout--quest` to the game's `.game-layout` div (see Bible Quiz).
 
-**Plan:** David vs. Goliath, the Storm chase, and the Time Machine should each be
-a new `HSGQuest.themes.*` (art + tuning), not new engines.
+**Plan:** David vs. Goliath and the Storm chase should each be a new
+`HSGQuest.themes.*` (art + tuning), not new engines.
+
+**Two engine modes now exist.** The default is the build-vs-threat model above.
+A theme can set **`mode: 'timeline'`** for a single-axis "move a pointer forward/
+backward along ordered stops" mechanic instead — `correct()` advances, `wrong()`
+retreats (floor 0), reaching the last stop banks a "trip." Used by the Time
+Machine (§2d). `init` accepts a `stops` array in this mode; `quest.position()`
+returns the current stop index.
 
 ---
 
@@ -51,9 +58,9 @@ a new `HSGQuest.themes.*` (art + tuning), not new engines.
 | Game | Mechanic | Status |
 |---|---|---|
 | Bible Quiz | **Noah's Ark** (build vs. flood) | **DONE** |
-| Bible Trivia (NEW game) | **David vs. Goliath** | **DESIGNED** |
+| Bible Trivia (NEW game) | **Chariot Chase (Exodus)** — full canvas arcade | **DONE** |
 | Flag Frenzy | **Around-the-World + Storm chase** | **DESIGNED** |
-| Who Said It? | **Time Machine** | **DESIGNED** (penalty/lose side TBD) |
+| Who Said It? | **Hall of Fame** (collect cartoon portraits) | **DONE** (replaced Time Machine) |
 | Math Drill | **Asteroid Math** (full arcade reskin — NOT quest-rail) | **DESIGNED** |
 | Circa | unchanged mechanic; getting period-selector + bigger deck | see §3 |
 
@@ -76,16 +83,36 @@ a new `HSGQuest.themes.*` (art + tuning), not new engines.
   reading + clicking Next).
 - Rail is wide (~560px) via `game-layout--quest`.
 
-### 2b. Bible Trivia (NEW game) → David vs. Goliath — DESIGNED
-A new general-Bible-trivia game (characters, events, numbers, OT/NT), same
-4-option format as the other quizzes. Rail shows Goliath looming, David below.
-- **Correct** → David winds the sling / gathers a smooth stone (charge meter, ~5
-  stones to a shot).
-- **Wrong** → Goliath takes a heavy step closer (and you drop a loaded stone).
-- **Payoff** → full charge = land the shot, Goliath topples; a bigger giant steps
-  up next round.
-- **Lose** → Goliath reaches David before you land a shot (streak/run resets).
-Needs: a trivia question deck + a `goliath` quest-rail theme.
+### 2b. Bible Trivia (NEW game) → Chariot Chase (Exodus) — DONE
+A **David-vs-Goliath quest-rail theme was built first and scrapped** — a passive
+side-rail charge meter felt lame bolted onto a plain quiz. Replaced with a full
+**standalone canvas arcade** (à la Dragon Siege), self-contained in
+`games/bible-trivia/index.html` (no quest-rail; uses `sfx.js` + `fx.js` only).
+
+The fantasy (historically framed): **Moses leads the Israelites on foot** while
+**Pharaoh's four spear-chariots** pursue across the desert. Same 4-option
+Bible-trivia deck (people, events, numbers, places, OT & NT).
+- **Correct** → the people *surge* ahead (speed lines, dust burst); you gain on the
+  army (`gap`↑) and advance toward the sea (`progress`↑).
+- **Wrong** → stumble + screen-shake; the army gains (`gap`↓).
+- **Dawdling** → a gentle passive `drain` shrinks `gap` while a question waits, so
+  reading slowly lets them creep closer (the chase pressure).
+- **Win** → `progress` hits 100 → the **Red Sea finale** (scripted, ~6.6s):
+  the sea parts → the Israelites cross → the **sea rises to engulf the whole
+  screen**, consuming Pharaoh's chariots → the waters recede to reveal the
+  **Israelites safe on the far shore** (no violence — the army just sinks/fades).
+  Victory overlay + confetti.
+- **Lose** → `gap` reaches 0 (army catches up) → a clean **"They caught you!"**
+  game-over (no violence), with Correct / Best Streak / % to the Sea.
+- Three pace presets (Stroll / Gallop / Full Flight) tune `drain`, `gain`, `loss`,
+  and `step`. Best streak persists in `localStorage['bible_trivia_chase_best']`.
+- Rendering: parallax desert (pyramids, dunes, scrolling ground); the fleeing crowd
+  (`drawWalker`/`drawIsraelites` — Moses with raised staff + a deterministic group);
+  Pharaoh's four chariots (`drawRig`/`drawArmy`, galloping horses + spoked wheels +
+  spear-bearing riders); a dust particle system; on-canvas 🌊/🐎 meters; and the
+  full-screen engulf finale. Scene sized like Dragon Siege (`min(72vh, 680px)`).
+- The scrapped goliath theme + its `.gv-*` CSS were removed from
+  `quest-rail.js` / `quest-rail.css`.
 
 ### 2c. Flag Frenzy → Around-the-World + Storm chase — DESIGNED
 Fly leg to leg; each correct lands you in the next country (passport/journey).
@@ -94,17 +121,56 @@ globe**: correct answers outrun it, wrong answers let it gain **and** turn the
 plane back a stop. If the storm catches you, the run ends. (Combines the
 "go-backwards" idea with the chase.)
 
-### 2d. Who Said It? → Time Machine — DESIGNED (penalty TBD)
-Each correct **charges the machine and jumps an era**, matching the quote periods
-(Ancient → Founding → Modern → present day); reach the present to "complete a
-trip." **Open question:** the penalty / lose side — e.g. wrong answers drain the
-power core / strand you in the wrong era / a paradox meter fills. Decide before
-building.
+### 2d. Who Said It? → Hall of Fame collection — DONE (redesigned)
+Self-contained in `games/who-said-it/index.html` (does **not** use quest-rail).
+**History:** first shipped as a "Time Machine" (timeline rail: forward on right,
+knocked back + paradox meter on wrong, paradox-full = timeline collapse). Playtest
+verdict: **visuals too busy + gameplay too shallow** (the time machine was paint on
+plain MC, knockback was frustrating + repetitive). Scrapped and redesigned around a
+**collection** hook instead.
 
-Full Who-Said-It idea menu (for reference): Carve the Monument, Wall of Fame,
-**Time Machine ✅**, Torch Relay, Unfurl the Scroll, Printing Press, Win the
-Debate (crowd meter), Build the Great Library, Light the Marquee, Mint the
-Collection.
+Current mechanic — **collect famous people into a Hall of Fame:**
+- Bare-bones quiz on the left (quote → 4 names). The right rail is a **gallery of
+  silhouette portraits**, one per person.
+- **Right answer → that person's silhouette fills in with their cartoon portrait**
+  and joins your Hall of Fame (cell pops + ✨, progress bar advances). The reveal
+  card under the quote shows their portrait + era either way, so you always *see*
+  who said it (learning reinforcement).
+- **Wrong answer → just reveals the answer**, no penalty, no collection. You only
+  earn a portrait by getting them right.
+- **No lose condition** (the user asked for bare-bones; the collection goal is the
+  drive). Quotes are drawn **preferring not-yet-collected people** so you make
+  progress; distractors are the 3 era-closest names (by birth year) for plausibility.
+- **Persists** in `localStorage['hsg_hof_who-said-it']` (a list of collected names),
+  so the Hall of Fame fills up across sessions. "Reset Hall of Fame" clears it.
+- **Complete the set (27 people)** → `HSGfx.showSummary` celebration.
+
+Portraits — **`assets/js/portrait.js`** (`HSGPortrait.svg(features)`):
+- A **parameterized cartoon-avatar renderer** (no image assets → no licensing
+  issues, fully offline). One SVG portrait built from a feature config: `skin`,
+  `hair`/`hairStyle`, `facial`/`facialColor`, `hat`, `glasses`, `clothes` (+ tie/
+  bowtie/shawl/scarf). Iconic cues make many recognizable: Lincoln = top hat + chin
+  beard; Einstein = wild white hair + mustache; Franklin = bald-top + oval glasses;
+  Gandhi = bald + round glasses + shawl; Caesar = laurel wreath; Curie = bun, etc.
+- The **silhouette** is the same SVG: a `.locked` cell recolors every `.fig` shape to
+  one dark fill via CSS (so distinctive headwear still pokes through the shadow) and
+  overlays a "?". Unlock = remove `.locked`; fills transition to full colour.
+- Per-person feature configs live in the **game's `PEOPLE` array** (also holds each
+  person's quote(s), era label, and birth year). Renderer is generic + reusable for
+  any future "collect the cast" game.
+- **27 people / 30 quotes** (Lincoln, Edison, MLK have two quotes each). Extending =
+  add a `PEOPLE` entry with a `face`. Art is good-but-stylized; the iconic figures
+  carry it, name plates cover the generic-looking ones. Easy to refine a face by
+  tweaking its config or adding a new `hairStyle`/`hat` part to `portrait.js`.
+
+Note: the old **`HSGQuest.themes.timeMachine`** (+ `.tm-*` CSS, + the `mode:'timeline'`
+engine path in quest-rail) is now **orphaned** — left in place, harmless, reusable if
+another game ever wants a timeline rail. Safe to delete if quest-rail gets trimmed.
+
+Full Who-Said-It idea menu (for reference): Carve the Monument, **Hall of Fame /
+Wall of Fame ✅ (built)**, Time Machine (built, then scrapped), Torch Relay, Unfurl
+the Scroll, Printing Press, Win the Debate (crowd meter), Build the Great Library,
+Light the Marquee, Mint the Collection.
 
 ### 2e. Math Drill → Asteroid Math — DESIGNED (its own game, not quest-rail)
 A full arcade reskin (like Dragon Siege), NOT the quest rail. Math problems ride
@@ -186,7 +252,8 @@ still has its original inline `const DECK`. Integration notes:
   row); games tagged `game-tile--new` / `game-tile--featured` get badges.
 
 ## 5. Open questions to resolve next
-- Who Said It? Time Machine **penalty/lose mechanic**.
+- Who Said It? Time Machine: optionally **expand the deck** so each era has 5+
+  distinct speakers and the journey can grow to ~8–10 stops (today: 6).
 - Circa period selector: final bucket list + multi-select vs single + whether the
   hand auto-shrinks for thin pools.
 - Whether to add `category`/`region` tags to the deck (cheap now, enables

@@ -156,7 +156,7 @@
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
   <nav class="site-nav">
-    <a href="../../index.html">← All Games</a>
+    <a href="../../subjects/typing.html">← Typing</a>
   </nav>
 </header>
 
@@ -214,6 +214,8 @@
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
 <script>
 // ============================================================
 // WORD RACER — type a passage to race; rivals adopt YOUR pace
@@ -402,6 +404,7 @@ function renderPassage() {
 }
 
 function startRace() {
+  if (window.HSGSound) HSGSound.tick();
   passage = pickPassage();
   chars = passage.split('');
   passageLen = chars.length;
@@ -554,6 +557,10 @@ function onKeyDown(e) {
     keyTimes.push(performance.now());
     combo++;
     if (combo >= 12 && playerCarEl) playerCarEl.classList.add('boost'); // clean typing = nitro
+    if (combo === 12) { // just hit nitro
+      if (window.HSGSound) HSGSound.streak(2);
+      if (window.HSGfx) HSGfx.banner('NITRO! 🔥', '#D62828');
+    }
     charSpans[index].classList.remove('current', 'err');
     charSpans[index].classList.add('done');
     index++;
@@ -562,6 +569,7 @@ function onKeyDown(e) {
     if (index >= passageLen) endRace();
   } else {
     errors++;
+    if (combo >= 3 && window.HSGSound) HSGSound.wrong(); // beep only when a real run is broken
     combo = 0;
     if (playerCarEl) playerCarEl.classList.remove('boost');
     const cs = charSpans[index];
@@ -593,6 +601,7 @@ function endRace() {
   if (isBest) { bestWpm = wpm; saveBest(); showBest(); }
 
   if (place === 1) confettiBurst();
+  if (window.HSGSound) HSGSound.finish(place === 1);
   showResults(place, racers, wpm, acc, isBest);
 }
 

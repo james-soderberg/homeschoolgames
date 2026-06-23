@@ -87,13 +87,19 @@
     this.gameId = opts.gameId;
     this.gameName = opts.gameName || 'this game';
     this.theme = opts.theme;
+    this.timeline = this.theme.mode === 'timeline';
+    this.stops = opts.stops || null;          // timeline mode: ordered era stops
     this.mount = resolveOne(opts.mount);
     this.extraBoards = resolveAll(opts.boardMount);
     this.extraBoards.forEach(function (el) { el.classList.add('hsg-board'); });
 
-    this.build = 0;
+    // In timeline mode the journey length is the number of stops (reaching the
+    // stop past the last one = arriving in the present); otherwise the theme sets it.
+    this.buildGoal = (this.timeline && this.stops) ? this.stops.length : this.theme.buildGoal;
+
+    this.build = 0;     // timeline mode: current stop index (0 = earliest era)
     this.threat = 0;
-    this.run = 0;       // builds completed this run
+    this.run = 0;       // builds completed / trips finished this run
     this.busy = false;
     this._modalOpen = false;
 
@@ -102,7 +108,7 @@
       this.mount.innerHTML = '<div class="quest-scene" id="questScene"></div><div class="hsg-board"></div>';
       this.sceneEl = this.mount.querySelector('.quest-scene');
       this.boardEl = this.mount.querySelector('.hsg-board');
-      this.theme.buildScene(this.sceneEl);
+      this.theme.buildScene(this.sceneEl, this.state());
     }
     this.render();
     this.renderBoard();
@@ -110,32 +116,59 @@
 
   Quest.prototype.state = function () {
     return { build: this.build, threat: this.threat, run: this.run,
-      buildGoal: this.theme.buildGoal, threatMax: this.theme.threatMax };
+      buildGoal: this.buildGoal, threatMax: this.theme.threatMax, stops: this.stops };
   };
 
   Quest.prototype.render = function () {
     if (this.sceneEl) this.theme.render(this.sceneEl, this.state());
   };
 
+  // timeline mode: which stop the traveller is on (0 = earliest era,
+  // === buildGoal during the brief "arrived in the present" window).
+  Quest.prototype.position = function () { return this.build; };
+
   Quest.prototype.correct = function () {
     if (this.busy) return;
     this.build++;
-    this.threat = Math.max(0, this.threat - 1); // a right answer lifts the ark out of the water
-    if (this.build >= this.theme.buildGoal) {
+    this.threat = Math.max(0, this.threat - 1); // right answer eases the threat / stabilizes the timeline
+    if (this.build >= this.buildGoal) {
       this.run++;
       this.threat = Math.max(0, this.threat - (this.theme.threatRelief || 0));
       this.busy = true;
       this.render();
       if (this.theme.onComplete) this.theme.onComplete(this.sceneEl, this.state());
       var self = this;
-      setTimeout(function () { self.build = 0; self.busy = false; self.render(); }, 5000);
-    } else {
-      this.render();
+      // timeline arrivals reset to the start of the journey quickly; build scenes linger.
+      setTimeout(function () { self.build = 0; self.busy = false; self.render(); }, this.timeline ? 1600 : 5000);
+      return 'arrived';
     }
+    this.render();
+    return 'forward';
   };
 
   Quest.prototype.wrong = function () {
     if (this.busy) return;
+    // timeline mode: a wrong answer knocks the traveller back one era AND fills the
+    // paradox meter; filling it completely collapses the timeline (game over).
+    if (this.timeline) {
+      this.build = Math.max(0, this.build - 1);
+      this.threat++;
+      if (this.threat >= this.theme.threatMax) {
+        this.busy = true;
+        this.render();
+        if (this.theme.onFail) this.theme.onFail(this.sceneEl, this.state());
+        this._bankRun();
+        var self = this;
+        setTimeout(function () {
+          self.build = 0; self.threat = 0; self.run = 0; self.busy = false;
+          self.render(); self.renderBoard();
+        }, 1900);
+        return 'collapse';
+      }
+      if (this.theme.onBack) this.theme.onBack(this.sceneEl, this.state());
+      this.render();
+      return 'back';
+    }
     this.threat++;
     if (this.threat >= this.theme.threatMax) {
       this.busy = true;
@@ -417,9 +450,235 @@
     }
   };
 
+  // ======================= Time Machine theme =======================
+  // A big, animated vertical "time corridor": earliest era at the bottom, the
+  // present (a glowing wormhole) at the top. A traveller pod rides the timeline.
+  // Right answers warp it forward (up) an era; wrong answers knock it back (down)
+  // AND fill the PARADOX gauge — fill it completely and the timeline collapses
+  // (game over). Reaching the top = a completed trip. Data-driven from the game's
+  // `stops` (each { label, year }), passed to HSGQuest.init.
+  var TM_W = 360, TM_H = 432, TM_AX = 156, TM_TOP = 78, TM_BOT = 384;
+  var TM_VX = TM_AX, TM_VY = 46;          // wormhole / vanishing point at the top
+  var TM_GX = 30;                          // paradox gauge x
+
+  function tmNodeY(i, n) { return TM_BOT - i * ((TM_BOT - TM_TOP) / n); }
+
+  function tmFlag(host, sel, cls, ms) {
+    var el = host.querySelector(sel); if (!el) return;
+    el.classList.remove(cls); void el.getBoundingClientRect(); el.classList.add(cls);
+    if (ms) setTimeout(function () { el.classList.remove(cls); }, ms);
+  }
+
+  // forward-jump "warp": streak the stars, surge the pod, flash the screen
+  function tmWarp(host) {
+    tmFlag(host, '.tm-svg', 'warp', 680);
+    tmFlag(host, '.tm-pod', 'jump', 720);
+    tmFlag(host, '.tm-flash', 'flash-on', 520);
+  }
+
+  var timeMachine = {
+    mode: 'timeline',
+    threatMax: 5,            // paradox cells; the 5th net wrong answer collapses the timeline
+    threatRelief: 2,         // completing a trip calms the paradox
+    emoji: '🚀',
+    unit: 'trip', unitPlural: 'trips',
+    scoreIcon: '🚀',
+    boardTitle: '🚀 Trips Through Time',
+    boardEmpty: 'Reach the present day to claim a spot!',
+
+    buildScene: function (host, st) {
+      var stops = (st && st.stops) || [];
+      var n = stops.length || 1;
+      var tmax = (st && st.threatMax) || this.threatMax;
+
+      // starfield — drifts down to sell the sense of travelling through time
+      var stars = '';
+      for (var s = 0; s < 54; s++) {
+        var sx = ((s * 67) % (TM_W - 20)) + 10, sy = ((s * 113) % (TM_H - 20)) + 10;
+        var sr = (s % 4 === 0) ? 1.8 : 1, dur = (2 + (s % 5) * 0.55).toFixed(2), dl = ((s * 0.17) % 2.6).toFixed(2);
+        stars += '<circle class="tm-star" cx="' + sx + '" cy="' + sy + '" r="' + sr + '" style="--d:' + dur + 's;--dl:-' + dl + 's"/>';
+      }
+      // speed lines streaking out of the wormhole
+      var lines = '';
+      for (var a = 0; a < 16; a++) {
+        var ang = (a * 360 / 16) * Math.PI / 180;
+        lines += '<line class="tm-speed" x1="' + (TM_VX + Math.cos(ang) * 26).toFixed(0) + '" y1="' + (TM_VY + Math.sin(ang) * 18).toFixed(0) +
+          '" x2="' + (TM_VX + Math.cos(ang) * 320).toFixed(0) + '" y2="' + (TM_VY + Math.sin(ang) * 240).toFixed(0) +
+          '" style="--dl:-' + ((a * 0.09) % 1.3).toFixed(2) + 's"/>';
+      }
+      // wormhole rings at the top vanishing point
+      var rings = '';
+      for (var v = 0; v < 7; v++) rings += '<ellipse class="tm-vring v' + v + '" cx="' + TM_VX + '" cy="' + TM_VY + '" rx="' + (16 + v * 17) + '" ry="' + (10 + v * 10) + '"/>';
+
+      // era waypoints from earliest (bottom) to the present (top)
+      var nodes = '', ticks = '';
+      for (var i = 0; i <= n; i++) {
+        var y = tmNodeY(i, n), present = (i === n);
+        nodes += '<g class="tm-node" data-i="' + i + '">' +
+            '<circle class="tm-node-glow" cx="' + TM_AX + '" cy="' + y.toFixed(1) + '" r="' + (present ? 15 : 11) + '"/>' +
+            '<circle class="tm-node-dot" cx="' + TM_AX + '" cy="' + y.toFixed(1) + '" r="' + (present ? 7 : 5) + '"/>' +
+          '</g>';
+        var label = present ? 'Present' : (stops[i].year || stops[i].label || '');
+        ticks += '<text class="tm-tick' + (present ? ' present' : '') + '" x="' + (TM_AX + 24) + '" y="' + (y + 4).toFixed(1) + '">' + esc(label) + '</text>';
+      }
+
+      // paradox gauge cell ticks
+      var cells = '';
+      for (var c = 1; c < tmax; c++) {
+        var cy = TM_BOT - c * ((TM_BOT - TM_TOP) / tmax);
+        cells += '<line class="tm-pdx-cell" x1="' + (TM_GX - 9) + '" y1="' + cy.toFixed(1) + '" x2="' + (TM_GX + 9) + '" y2="' + cy.toFixed(1) + '"/>';
+      }
+
+      // collapse cracks (hidden until the timeline shatters)
+      var cracks = '', ccx = TM_AX, ccy = 232;
+      for (var k = 0; k < 8; k++) {
+        var ka = k * (360 / 8) * Math.PI / 180, pts = ccx + ',' + ccy, px = ccx, py = ccy;
+        for (var kk = 1; kk <= 5; kk++) {
+          var rad = kk * 40, jit = (((k * 7 + kk * 13) % 9) - 4) * 7 * Math.PI / 180;
+          px = ccx + Math.cos(ka + jit) * rad; py = ccy + Math.sin(ka + jit) * rad * 0.95;
+          pts += ' ' + px.toFixed(0) + ',' + py.toFixed(0);
+        }
+        cracks += '<polyline class="tm-crack" points="' + pts + '" style="--cd:' + (k * 0.03).toFixed(2) + 's"/>';
+      }
+
+      // pod charge sparks
+      var sparks = '';
+      for (var p = 0; p < 9; p++) sparks += '<circle class="tm-spark" cx="' + TM_AX + '" cy="0" r="2.6" style="--sa:' + (p * 40) + 'deg"/>';
+
+      host.innerHTML =
+        '<div class="tm-stage">' +
+          '<svg class="tm-svg" viewBox="0 0 ' + TM_W + ' ' + TM_H + '" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs>' +
+              '<radialGradient id="tmsky" cx="0.5" cy="0.12" r="1"><stop offset="0" stop-color="#3a2f6e"/><stop offset="0.4" stop-color="#1d1840"/><stop offset="1" stop-color="#080614"/></radialGradient>' +
+              '<linearGradient id="tmbeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#7c5bd6" stop-opacity="0.1"/><stop offset="0.6" stop-color="#5bd6c0" stop-opacity="0.85"/><stop offset="1" stop-color="#ffd23f" stop-opacity="1"/></linearGradient>' +
+              '<radialGradient id="tmorb" cx="0.38" cy="0.32" r="0.85"><stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#7fe4ff"/><stop offset="1" stop-color="#2f7fd6"/></radialGradient>' +
+              '<radialGradient id="tmeye" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#fff7da"/><stop offset="0.5" stop-color="#ffd23f" stop-opacity="0.8"/><stop offset="1" stop-color="#ffd23f" stop-opacity="0"/></radialGradient>' +
+              '<linearGradient id="tmtrail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fe4ff" stop-opacity="0.9"/><stop offset="1" stop-color="#7fe4ff" stop-opacity="0"/></linearGradient>' +
+              '<linearGradient id="tmpdx" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#ffd23f"/><stop offset="0.5" stop-color="#ff8a3d"/><stop offset="1" stop-color="#ff3b5b"/></linearGradient>' +
+            '</defs>' +
+            '<rect class="tm-bg" x="0" y="0" width="' + TM_W + '" height="' + TM_H + '" fill="url(#tmsky)"/>' +
+            '<g class="tm-stars">' + stars + '</g>' +
+            '<g class="tm-speed-lines">' + lines + '</g>' +
+            '<g class="tm-vortex">' + rings + '<circle class="tm-eye" cx="' + TM_VX + '" cy="' + TM_VY + '" r="34" fill="url(#tmeye)"/></g>' +
+            // timeline rail + the lit, already-travelled portion
+            '<line class="tm-line" x1="' + TM_AX + '" y1="' + TM_TOP + '" x2="' + TM_AX + '" y2="' + TM_BOT + '"/>' +
+            '<line class="tm-line-lit" x1="' + TM_AX + '" y1="' + TM_BOT + '" x2="' + TM_AX + '" y2="' + TM_BOT + '"/>' +
+            '<g class="tm-nodes">' + nodes + '</g>' +
+            '<g class="tm-ticks">' + ticks + '</g>' +
+            // paradox gauge
+            '<g class="tm-pdx">' +
+              '<rect class="tm-pdx-track" x="' + (TM_GX - 10) + '" y="' + TM_TOP + '" width="20" height="' + (TM_BOT - TM_TOP) + '" rx="10"/>' +
+              '<rect class="tm-pdx-fill" x="' + (TM_GX - 10) + '" y="' + TM_BOT + '" width="20" height="0" rx="10" fill="url(#tmpdx)"/>' +
+              cells +
+              '<text class="tm-pdx-icon" x="' + TM_GX + '" y="' + (TM_TOP - 8) + '" text-anchor="middle">☢</text>' +
+              '<text class="tm-pdx-title" transform="rotate(-90 ' + (TM_GX - 20) + ' ' + ((TM_TOP + TM_BOT) / 2) + ')" x="' + (TM_GX - 20) + '" y="' + ((TM_TOP + TM_BOT) / 2) + '" text-anchor="middle">PARADOX</text>' +
+            '</g>' +
+            // traveller pod (moved by render via translateY)
+            '<g class="tm-pod" style="transform:translateY(' + TM_BOT + 'px)">' +
+              '<rect class="tm-trail" x="' + (TM_AX - 4) + '" y="6" width="8" height="74" rx="4" fill="url(#tmtrail)"/>' +
+              '<g class="tm-sparks">' + sparks + '</g>' +
+              '<circle class="tm-aura" cx="' + TM_AX + '" cy="0" r="30"/>' +
+              '<g class="tm-pod-ring"><ellipse cx="' + TM_AX + '" cy="0" rx="27" ry="11"/></g>' +
+              '<circle class="tm-orb" cx="' + TM_AX + '" cy="0" r="18" fill="url(#tmorb)"/>' +
+              '<text class="tm-trav" x="' + TM_AX + '" y="2" text-anchor="middle" font-size="23">🧑‍🚀</text>' +
+            '</g>' +
+            '<g class="tm-cracks">' + cracks + '</g>' +
+            '<rect class="tm-flash" x="0" y="0" width="' + TM_W + '" height="' + TM_H + '"/>' +
+          '</svg>' +
+          '<div class="tm-year"><span class="tm-year-lab">YEAR</span><span class="tm-year-val">' + esc(stops.length ? (stops[0].year || '') : '') + '</span></div>' +
+          '<div class="tm-banner"></div>' +
+        '</div>' +
+        '<div class="quest-meters">' +
+          '<span class="meter tm-era">📍 <b class="m-era">1</b>/' + n + '</span>' +
+          '<span class="meter tm-pdx-m">☢ <b class="m-pdx">0/' + tmax + '</b></span>' +
+          '<span class="meter tm-trips">🚀 <b class="m-trips">0</b></span>' +
+        '</div>' +
+        '<div class="quest-status">Right = jump forward in time · Wrong = paradox!</div>';
+      host._lastPos = 0;
+    },
+
+    render: function (host, st) {
+      var n = st.buildGoal, pos = st.build, arrived = pos >= n;
+      var y = tmNodeY(Math.min(pos, n), n);
+
+      var pod = host.querySelector('.tm-pod');
+      if (pod) pod.style.transform = 'translateY(' + y.toFixed(1) + 'px)';
+      var lit = host.querySelector('.tm-line-lit');
+      if (lit) lit.setAttribute('y2', y.toFixed(1));
+
+      host.querySelectorAll('.tm-node').forEach(function (nd) {
+        var i = parseInt(nd.dataset.i, 10);
+        nd.classList.toggle('reached', i <= pos);
+        nd.classList.toggle('current', i === Math.min(pos, n));
+      });
+
+      var yv = host.querySelector('.tm-year-val');
+      if (yv) yv.textContent = arrived ? 'Present' : ((st.stops && st.stops[pos] && st.stops[pos].year) || '');
+      var me = host.querySelector('.m-era'); if (me) me.textContent = Math.min(pos + 1, n);
+      var mt = host.querySelector('.m-trips'); if (mt) mt.textContent = st.run;
+
+      // paradox gauge
+      var tmax = st.threatMax || 1;
+      var frac = Math.max(0, Math.min(1, st.threat / tmax));
+      var fill = host.querySelector('.tm-pdx-fill');
+      if (fill) { var h = frac * (TM_BOT - TM_TOP); fill.setAttribute('height', h.toFixed(1)); fill.setAttribute('y', (TM_BOT - h).toFixed(1)); }
+      var mp = host.querySelector('.m-pdx'); if (mp) mp.textContent = st.threat + '/' + tmax;
+      var svg = host.querySelector('.tm-svg');
+      if (svg) { svg.classList.toggle('danger', frac >= 0.55); svg.classList.toggle('unstable', frac >= 0.78); }
+
+      // forward-jump warp
+      var prev = host._lastPos || 0;
+      if (pos > prev) tmWarp(host);
+      host._lastPos = pos;
+
+      var status = host.querySelector('.quest-status');
+      if (status && !host._banner) {
+        status.className = 'quest-status';
+        if (arrived) { status.textContent = 'You made it to the present!'; status.classList.add('good'); }
+        else if (frac >= 0.78) { status.textContent = '⚠ Timeline collapsing — answer right!'; status.classList.add('bad'); }
+        else if (pos >= n - 1) { status.textContent = 'One more jump to the present!'; }
+        else { status.textContent = 'Right = jump forward · Wrong = paradox!'; }
+      }
+    },
+
+    onComplete: function (host) {
+      host._banner = true;
+      var svg = host.querySelector('.tm-svg'); if (svg) svg.classList.add('arrived');
+      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '🎉 Present Day!'; banner.className = 'tm-banner win show'; }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Trip through time complete!'; status.className = 'quest-status good'; }
+      setTimeout(function () {
+        host._banner = false;
+        if (banner) banner.className = 'tm-banner';
+        if (svg) svg.classList.remove('arrived');
+      }, 1500);
+    },
+
+    onBack: function (host) {
+      host._banner = true;
+      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '⏪ Knocked back — paradox rising!'; banner.className = 'tm-banner fail show'; }
+      tmFlag(host, '.tm-svg', 'glitch', 480);
+      var stage = host.querySelector('.tm-stage'); if (stage) { stage.classList.add('quest-shake'); setTimeout(function () { stage.classList.remove('quest-shake'); }, 420); }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Swept back to an earlier era…'; status.className = 'quest-status bad'; }
+      setTimeout(function () { host._banner = false; if (banner) banner.className = 'tm-banner'; }, 1050);
+    },
+
+    onFail: function (host) {
+      host._banner = true;
+      var svg = host.querySelector('.tm-svg'); if (svg) { svg.classList.remove('danger', 'unstable'); svg.classList.add('collapsing'); }
+      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '💥 Timeline Collapsed!'; banner.className = 'tm-banner doom show'; }
+      var stage = host.querySelector('.tm-stage'); if (stage) { stage.classList.add('quest-shake'); setTimeout(function () { stage.classList.remove('quest-shake'); }, 600); }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Too many paradoxes — history unravels…'; status.className = 'quest-status bad'; }
+      setTimeout(function () {
+        host._banner = false;
+        if (banner) banner.className = 'tm-banner';
+        if (svg) svg.classList.remove('collapsing');
+      }, 1850);
+    }
+  };
+
   window.HSGQuest = {
     init: function (opts) { return new Quest(opts); },
-    themes: { ark: ark },
+    themes: { ark: ark, timeMachine: timeMachine },
     formatName: formatName
   };
 })();

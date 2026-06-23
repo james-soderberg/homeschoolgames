@@ -5,162 +5,72 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Who Said It? — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
-  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    @keyframes pop {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.07); }
-      100% { transform: scale(1); }
-    }
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      20%     { transform: translateX(-9px); }
-      40%     { transform: translateX(9px); }
-      60%     { transform: translateX(-6px); }
-      80%     { transform: translateX(6px); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.07); } 100% { transform: scale(1); } }
+    @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-9px); } 40% { transform: translateX(9px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes winPop { 0% { transform: scale(0.4) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+    @keyframes sparkle { 0% { transform: scale(0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
 
-    .quiz-page {
-      max-width: 580px;
-      margin: 0 auto;
-      padding: 1.5rem 1.25rem 3rem;
+    /* ---- two-column layout: quiz + hall of fame rail ---- */
+    .hof-layout {
+      display: flex; gap: 2.25rem; max-width: 1180px; margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem; align-items: flex-start;
     }
+    .quiz-page { flex: 1 1 0; min-width: 0; max-width: 600px; }
+    .hof-rail { flex: 0 0 430px; }
 
-    .quiz-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
+    .quiz-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 0.75rem; flex-wrap: wrap; }
     .quiz-top h1 { margin: 0; font-size: 1.8rem; }
-
-    .stat-group { display: flex; gap: 0.5rem; }
     .stat-badge {
-      background: var(--cream-dark);
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      padding: 0.45rem 1rem;
-      font-weight: 700;
-      font-size: 0.92rem;
-      font-family: var(--font-sans);
-      color: var(--ink);
-      white-space: nowrap;
-      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.45rem 1rem; font-weight: 700; font-size: 0.92rem; font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
     }
-    .stat-badge.hot { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+    .stat-badge b { color: var(--gold); }
 
     .quote-card {
-      background: white;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 1.75rem 1.5rem 1.5rem;
-      text-align: center;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
-      animation: fadeIn 0.3s ease;
+      background: white; border: 2px solid var(--border); border-radius: 14px;
+      padding: 1.75rem 1.5rem 1.5rem; text-align: center; margin-bottom: 1rem;
+      box-shadow: 0 2px 8px rgba(26,23,20,0.07); animation: fadeIn 0.3s ease;
     }
-
-    .cat-pill {
-      display: inline-block;
-      padding: 0.18rem 0.75rem;
-      border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      font-family: var(--font-sans);
-      background: var(--cream-dark);
-      color: var(--ink-light);
-      border: 1px solid var(--border);
-    }
-
     .quote-text {
-      font-family: var(--font-serif);
-      font-size: clamp(1.5rem, 5vw, 2.1rem);
-      font-weight: 600;
-      font-style: italic;
-      color: var(--ink);
-      line-height: 1.35;
-      margin-bottom: 0.9rem;
+      font-family: var(--font-serif); font-size: clamp(1.5rem, 4.5vw, 2.1rem); font-weight: 600; font-style: italic;
+      color: var(--ink); line-height: 1.35; margin-bottom: 0.9rem;
     }
     .quote-text::before { content: "\201C"; }
     .quote-text::after  { content: "\201D"; }
+    .quote-blurb { font-size: 1rem; color: var(--ink-light); line-height: 1.5; max-width: 42ch; margin: 0 auto; }
 
-    .quote-blurb {
-      font-size: 1rem;
-      color: var(--ink-light);
-      line-height: 1.5;
-      max-width: 42ch;
-      margin: 0 auto;
+    /* the reveal: who said it, with their portrait */
+    .reveal { display: none; margin-top: 1.1rem; flex-direction: column; align-items: center; gap: 0.5rem; animation: fadeIn 0.3s ease; }
+    .reveal.show { display: flex; }
+    .reveal-portrait {
+      width: 92px; height: 92px; border-radius: 14px; overflow: hidden;
+      border: 3px solid var(--border); box-shadow: 0 3px 10px rgba(26,23,20,0.16); background: #efe7d6;
     }
+    .reveal.win .reveal-portrait { border-color: var(--gold); animation: winPop 0.5s cubic-bezier(.34,1.56,.64,1); }
+    .reveal-portrait svg { display: block; width: 100%; }
+    .reveal-name { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600; color: var(--ink); }
+    .reveal-era { font-size: 0.85rem; color: var(--ink-light); font-family: var(--font-sans); }
+    .reveal-tag { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 700; }
+    .reveal-tag.win { color: var(--green); }
+    .reveal-tag.dup { color: var(--ink-light); }
+    .reveal-tag.miss { color: var(--red); }
 
-    .reveal-name {
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--gold);
-      margin-top: 1rem;
-    }
+    .prompt { text-align: center; font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600; color: var(--ink-light); letter-spacing: 0.02em; margin-bottom: 0.9rem; }
+    .feedback { min-height: 1.6rem; text-align: center; font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
 
-    .prompt {
-      text-align: center;
-      font-family: var(--font-sans);
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--ink-light);
-      letter-spacing: 0.02em;
-      margin-bottom: 0.9rem;
-    }
-
-    .feedback {
-      min-height: 1.9rem;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 0.6rem;
-    }
-
-    .option-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
+    .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
     .option-btn {
-      background: white;
-      border: 2.5px solid var(--border);
-      border-radius: 12px;
-      padding: 0.9rem 0.75rem;
-      font-family: var(--font-serif);
-      cursor: pointer;
-      transition: border-color 0.12s, background 0.12s, transform 0.1s;
-      box-shadow: 0 2px 6px rgba(26,23,20,0.07);
-      min-height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      text-align: center;
+      background: white; border: 2.5px solid var(--border); border-radius: 12px; padding: 0.9rem 0.75rem;
+      font-family: var(--font-serif); cursor: pointer; transition: border-color 0.12s, background 0.12s, transform 0.1s;
+      box-shadow: 0 2px 6px rgba(26,23,20,0.07); min-height: 62px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
     }
     .option-btn .key-hint {
-      font-family: var(--font-sans);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--ink-light);
-      background: var(--cream-dark);
-      border-radius: 5px;
-      padding: 0.1rem 0.4rem;
-      flex-shrink: 0;
+      font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; color: var(--ink-light);
+      background: var(--cream-dark); border-radius: 5px; padding: 0.1rem 0.4rem; flex-shrink: 0;
     }
-    .option-btn .option-val { font-size: 1.25rem; font-weight: 600; color: var(--ink); line-height: 1.15; }
+    .option-btn .option-val { font-size: 1.2rem; font-weight: 600; color: var(--ink); line-height: 1.15; }
     .option-btn:hover:not(:disabled) { border-color: var(--gold); background: #FFFDF4; transform: translateY(-2px); }
     .option-btn.correct { background: #EAF4EE; border-color: var(--green); animation: pop 0.3s ease; }
     .option-btn.correct .option-val, .option-btn.correct .key-hint { color: var(--green); }
@@ -171,49 +81,53 @@
     .option-btn:disabled { cursor: default; transform: none; }
 
     #nextBtn {
-      display: block;
-      width: 100%;
-      background: var(--gold);
-      color: var(--ink);
-      border: none;
-      border-radius: 12px;
-      padding: 1.05rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-      font-family: var(--font-sans);
-      cursor: pointer;
-      margin-bottom: 1rem;
-      transition: background 0.15s;
+      display: block; width: 100%; background: var(--gold); color: var(--ink); border: none; border-radius: 12px;
+      padding: 1.05rem; font-size: 1.1rem; font-weight: 700; font-family: var(--font-sans); cursor: pointer; margin-bottom: 1rem; transition: background 0.15s;
     }
     #nextBtn:hover { background: #b08e30; }
 
     .control-row { display: flex; justify-content: center; margin-top: 0.25rem; }
-    .reset-link {
-      background: none; border: none; color: var(--ink-light);
-      font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans);
-      text-decoration: underline; padding: 0.3rem 0.5rem;
-    }
+    .reset-link { background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem; }
     .reset-link:hover { color: var(--ink); }
 
-    /* Filter chips */
-    .filter-rows { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
-    .filter-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-    .filter-label {
-      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--ink-light); margin-right: 0.15rem; min-width: 3.2rem;
-    }
-    .chip {
-      padding: 0.32rem 0.8rem; border: 1.5px solid var(--border); border-radius: 99px;
-      background: #fff; font-size: 0.8rem; font-weight: 600; font-family: var(--font-sans);
-      color: var(--ink-light); cursor: pointer; transition: all 0.12s;
-    }
-    .chip.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-    .chip:hover:not(.active) { border-color: var(--ink-light); color: var(--ink); }
+    /* ---- Hall of Fame gallery ---- */
+    .hof-panel { background: #fff; border: 2px solid var(--border); border-radius: 16px; box-shadow: 0 4px 16px rgba(26,23,20,0.1); overflow: hidden; }
+    .hof-head { padding: 0.9rem 1rem 0.75rem; border-bottom: 1.5px solid var(--border); display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+    .hof-head h2 { margin: 0; font-size: 1.15rem; font-family: var(--font-serif); }
+    .hof-count { font-family: var(--font-sans); font-weight: 700; font-size: 0.9rem; color: var(--ink-light); }
+    .hof-count b { color: var(--gold); }
+    .hof-bar { height: 6px; background: var(--cream-dark); }
+    .hof-bar > i { display: block; height: 100%; width: 0; background: var(--gold); transition: width 0.5s ease; }
 
+    .hof-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; padding: 10px; }
+    .hof-cell { position: relative; border-radius: 9px; overflow: hidden; border: 2px solid var(--border); background: #efe7d6; text-align: center; }
+    .hof-cell .fig { transition: fill 0.55s ease; }
+    .hof-cell .hof-bg { transition: fill 0.55s ease; }
+    .hof-frame { line-height: 0; }
+    .hof-frame svg { display: block; width: 100%; }
+    .hof-name { font-family: var(--font-sans); font-size: 8.5px; font-weight: 700; color: var(--ink); padding: 2px 1px 3px; line-height: 1.05; min-height: 1.7em; }
+
+    /* locked = dark silhouette + ??? */
+    .hof-cell.locked .fig { fill: #353143 !important; stroke: #353143 !important; }
+    .hof-cell.locked .hof-bg { fill: #c9c2d4 !important; }
+    .hof-cell.locked .hof-name { color: #8c86a0; }
+    .hof-cell.locked .hof-q { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 2rem; font-weight: 700; color: rgba(255,255,255,0.7); }
+    .hof-cell:not(.locked) .hof-q { display: none; }
+
+    .hof-cell.justwon { animation: pop 0.5s cubic-bezier(.34,1.56,.64,1); border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,74,0.4); }
+    .hof-cell.flashpip { position: relative; }
+    .hof-cell.flashpip::after { content: "✨"; position: absolute; top: -4px; right: -2px; font-size: 1.1rem; animation: sparkle 0.7s ease forwards; }
+
+    .hof-empty-note { font-family: var(--font-sans); font-size: 0.8rem; color: var(--ink-light); text-align: center; padding: 0.4rem 1rem 0.9rem; }
+
+    @media (max-width: 1080px) {
+      .hof-layout { flex-direction: column; align-items: center; }
+      .quiz-page, .hof-rail { width: 100%; max-width: 600px; flex: none; }
+      .hof-grid { grid-template-columns: repeat(6, 1fr); }
+    }
     @media (max-width: 480px) {
       .option-grid { grid-template-columns: 1fr; }
-      .option-btn { min-height: 56px; }
-      .filter-label { min-width: 100%; margin-bottom: -0.1rem; }
+      .hof-grid { grid-template-columns: repeat(4, 1fr); }
     }
   </style>
 </head>
@@ -222,198 +136,217 @@
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
   <nav class="site-nav">
-    <a href="../../index.html">← All Games</a>
+    <a href="../../subjects/history.html">← History</a>
   </nav>
 </header>
 
-<div class="game-layout">
-<div class="quiz-page game-main">
+<div class="hof-layout">
+  <div class="quiz-page">
 
-  <div class="quiz-top">
-    <h1>Who Said It?</h1>
-    <div class="stat-group">
-      <div class="stat-badge" id="scoreBadge">0 / 0</div>
+    <div class="quiz-top">
+      <h1>Who Said It?</h1>
+      <div class="stat-badge">Collected <b id="collectStat">0</b> / <span id="totalStat">0</span></div>
     </div>
-  </div>
 
-  <div class="filter-rows">
-    <div class="filter-row" id="diffRow"><span class="filter-label">Level</span></div>
-    <div class="filter-row" id="eraRow"><span class="filter-label">Era</span></div>
-  </div>
+    <div class="quote-card">
+      <div class="quote-text" id="quoteText">Loading…</div>
+      <div class="quote-blurb" id="quoteBlurb"></div>
 
-  <div class="quote-card">
-    <span class="cat-pill" id="catPill">Era</span>
-    <div class="quote-text" id="quoteText">Loading…</div>
-    <div class="quote-blurb" id="quoteBlurb"></div>
-    <div class="reveal-name" id="revealName"></div>
-  </div>
+      <div class="reveal" id="reveal">
+        <div class="reveal-portrait" id="revealPortrait"></div>
+        <div class="reveal-name" id="revealName"></div>
+        <div class="reveal-era" id="revealEra"></div>
+        <div class="reveal-tag" id="revealTag"></div>
+      </div>
+    </div>
 
-  <div class="prompt">Who said it?</div>
+    <div class="prompt">Who said it?</div>
+    <div class="feedback" id="feedback"></div>
+    <div class="option-grid" id="optionGrid"></div>
 
-  <div class="feedback" id="feedback"></div>
+    <button id="nextBtn" onclick="advance()" style="display:none">Next Quote →</button>
 
-  <div class="option-grid" id="optionGrid"></div>
+    <div class="control-row">
+      <button class="reset-link" onclick="resetHall()">Reset Hall of Fame</button>
+    </div>
 
-  <button id="nextBtn" onclick="advance()" style="display:none">Next Quote →</button>
+  </div><!-- /.quiz-page -->
 
-  <div class="control-row">
-    <button class="reset-link" onclick="resetAll()">Start Over</button>
-  </div>
-
-</div><!-- /.quiz-page -->
-
-  <aside class="hsg-rail" id="streakRail"></aside>
-</div><!-- /.game-layout -->
+  <aside class="hof-rail">
+    <div class="hof-panel">
+      <div class="hof-head">
+        <h2>🏛️ Hall of Fame</h2>
+        <span class="hof-count"><b id="hofCount">0</b> / <span id="hofTotal">0</span></span>
+      </div>
+      <div class="hof-bar"><i id="hofBar"></i></div>
+      <div class="hof-grid" id="hofGrid"></div>
+      <div class="hof-empty-note" id="hofNote">Guess a quote right to add that person to your Hall of Fame.</div>
+    </div>
+  </aside>
+</div>
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/portrait.js"></script>
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script>
 // ============================================================
-// WHO SAID IT? — match the quote to the speaker
-// Distractors are drawn from speakers of the SAME era.
+// WHO SAID IT? — collect famous people into a Hall of Fame.
+// Guess a quote's speaker right and their silhouette fills in
+// with a cartoon portrait. The collection persists locally.
 // ============================================================
 
-const DECK = [
-  // FOUNDING ERA — American Revolution
-  {quote:"Give me liberty, or give me death!", who:"Patrick Henry", era:"Founding Era", blurb:"A fiery cry in a Virginia church, 1775.", tier:"gimme"},
-  {quote:"We hold these truths to be self-evident, that all men are created equal.", who:"Thomas Jefferson", era:"Founding Era", blurb:"The opening creed of the Declaration.", tier:"medium"},
-  {quote:"Well done is better than well said.", who:"Benjamin Franklin", era:"Founding Era", blurb:"From the almanac of a printer-statesman.", tier:"niche"},
-  {quote:"I have not yet begun to fight.", who:"John Paul Jones", era:"Founding Era", blurb:"A naval captain, with his ship sinking beneath him.", tier:"niche"},
-  {quote:"These are the times that try men's souls.", who:"Thomas Paine", era:"Founding Era", blurb:"From a pamphlet read to weary Continental troops.", tier:"niche"},
-
-  // 1800s — Civil War & Westward America
-  {quote:"Four score and seven years ago...", who:"Abraham Lincoln", era:"1800s America", blurb:"Spoken on a battlefield turned cemetery.", tier:"gimme"},
-  {quote:"A house divided against itself cannot stand.", who:"Abraham Lincoln", era:"1800s America", blurb:"On a nation split over slavery.", tier:"medium"},
-  {quote:"Ain't I a woman?", who:"Sojourner Truth", era:"1800s America", blurb:"An abolitionist's challenge at a women's convention.", tier:"niche"},
-  {quote:"I will fight no more forever.", who:"Chief Joseph", era:"1800s America", blurb:"A Nez Perce leader's surrender in the snow.", tier:"niche"},
-  {quote:"Damn the torpedoes, full speed ahead!", who:"David Farragut", era:"1800s America", blurb:"A Union admiral charging into Mobile Bay.", tier:"niche"},
-
-  // 20th CENTURY — World Wars & the Presidency
-  {quote:"The only thing we have to fear is fear itself.", who:"Franklin D. Roosevelt", era:"20th Century", blurb:"An inaugural address in the depths of the Depression.", tier:"medium"},
-  {quote:"We shall fight on the beaches.", who:"Winston Churchill", era:"20th Century", blurb:"Defiance as Britain stood nearly alone.", tier:"medium"},
-  {quote:"Ask not what your country can do for you.", who:"John F. Kennedy", era:"20th Century", blurb:"A young president's call to service.", tier:"gimme"},
-  {quote:"That's one small step for man, one giant leap for mankind.", who:"Neil Armstrong", era:"20th Century", blurb:"First words from another world.", tier:"gimme"},
-  {quote:"Speak softly and carry a big stick.", who:"Theodore Roosevelt", era:"20th Century", blurb:"A Rough Rider's rule for diplomacy.", tier:"niche"},
-
-  // CIVIL RIGHTS & REFORM
-  {quote:"I have a dream.", who:"Martin Luther King Jr.", era:"Civil Rights", blurb:"From the steps of the Lincoln Memorial, 1963.", tier:"gimme"},
-  {quote:"Injustice anywhere is a threat to justice everywhere.", who:"Martin Luther King Jr.", era:"Civil Rights", blurb:"Written from a Birmingham jail cell.", tier:"medium"},
-  {quote:"You must be the change you wish to see in the world.", who:"Mahatma Gandhi", era:"Civil Rights", blurb:"From the leader of India's nonviolent struggle.", tier:"medium"},
-  {quote:"No one can make you feel inferior without your consent.", who:"Eleanor Roosevelt", era:"Civil Rights", blurb:"A first lady and champion of human rights.", tier:"niche"},
-  {quote:"Failure is impossible.", who:"Susan B. Anthony", era:"Civil Rights", blurb:"A suffragist's last public words.", tier:"niche"},
-
-  // ANCIENT & CLASSICAL
-  {quote:"I came, I saw, I conquered.", who:"Julius Caesar", era:"Ancient World", blurb:"A Roman general's report after a swift victory.", tier:"gimme"},
-  {quote:"The unexamined life is not worth living.", who:"Socrates", era:"Ancient World", blurb:"A philosopher's defense at his own trial.", tier:"medium"},
-  {quote:"Give me a place to stand and I will move the earth.", who:"Archimedes", era:"Ancient World", blurb:"A Greek thinker on the power of the lever.", tier:"niche"},
-  {quote:"Man is by nature a political animal.", who:"Aristotle", era:"Ancient World", blurb:"A tutor to Alexander the Great.", tier:"niche"},
-  {quote:"Let food be thy medicine.", who:"Hippocrates", era:"Ancient World", blurb:"The father of medicine.", tier:"niche"},
-
-  // SCIENCE & INVENTION
-  {quote:"Imagination is more important than knowledge.", who:"Albert Einstein", era:"Science & Invention", blurb:"From the mind behind relativity.", tier:"medium"},
-  {quote:"If I have seen further it is by standing on the shoulders of giants.", who:"Isaac Newton", era:"Science & Invention", blurb:"On gravity, motion, and humility.", tier:"niche"},
-  {quote:"Nothing in life is to be feared, it is only to be understood.", who:"Marie Curie", era:"Science & Invention", blurb:"A two-time Nobel laureate in radioactivity.", tier:"niche"},
-  {quote:"Genius is one percent inspiration, ninety-nine percent perspiration.", who:"Thomas Edison", era:"Science & Invention", blurb:"The inventor of the practical light bulb.", tier:"medium"},
-  {quote:"I have not failed. I've just found ten thousand ways that won't work.", who:"Thomas Edison", era:"Science & Invention", blurb:"On the long road to a working invention.", tier:"niche"},
+// Each person: a quote (or two), a one-line context, an era label, a birth year
+// (for ordering the gallery + picking era-plausible wrong answers), and a face.
+const PEOPLE = [
+  {name:"Socrates", era:"Ancient Greece", year:-470, face:{skin:'tan',hair:'#8a8076',hairStyle:'bald',facial:'beardFull',facialColor:'#9a9088',clothes:'#b9a37a',collar:'#a98f6a'},
+    quotes:[{q:"The unexamined life is not worth living.", b:"A philosopher's defense at his own trial."}]},
+  {name:"Hippocrates", era:"Ancient Greece", year:-460, face:{skin:'tan',hair:'#cfc8bc',hairStyle:'bald',facial:'beardFull',facialColor:'#cfc8bc',clothes:'#b9a37a'},
+    quotes:[{q:"Let food be thy medicine.", b:"The father of medicine."}]},
+  {name:"Aristotle", era:"Ancient Greece", year:-384, face:{skin:'tan',hair:'#6a5a44',hairStyle:'short',facial:'beardChin',facialColor:'#6a5a44',clothes:'#c2b48f'},
+    quotes:[{q:"Man is by nature a political animal.", b:"A tutor to Alexander the Great."}]},
+  {name:"Archimedes", era:"Ancient Greece", year:-287, face:{skin:'tan',hair:'#b0a89a',hairStyle:'short',facial:'beardFull',facialColor:'#b0a89a',clothes:'#a98f6a'},
+    quotes:[{q:"Give me a place to stand and I will move the earth.", b:"A Greek thinker on the power of the lever."}]},
+  {name:"Julius Caesar", era:"Ancient Rome", year:-100, face:{skin:'olive',hair:'#3a2f26',hairStyle:'caesar',facial:'none',hat:'laurel',clothes:'#b23b3b',collar:'#eee'},
+    quotes:[{q:"I came, I saw, I conquered.", b:"A Roman general's report after a swift victory."}]},
+  {name:"Isaac Newton", era:"Scientific Revolution", year:1643, face:{skin:'fair',hair:'#7a6a55',hairStyle:'long',facial:'none',clothes:'#5a3f6a',collar:'#e8e2d4'},
+    quotes:[{q:"If I have seen further it is by standing on the shoulders of giants.", b:"On gravity, motion, and humility."}]},
+  {name:"Benjamin Franklin", era:"Founding Era", year:1706, face:{skin:'fair',hair:'#9a9082',hairStyle:'baldTop',facial:'none',glasses:'oval',clothes:'#6a4a2a'},
+    quotes:[{q:"Well done is better than well said.", b:"From the almanac of a printer-statesman."}]},
+  {name:"Patrick Henry", era:"Founding Era", year:1736, face:{skin:'fair',hair:'#6a5440',hairStyle:'short',facial:'none',clothes:'#3a4a66'},
+    quotes:[{q:"Give me liberty, or give me death!", b:"A fiery cry in a Virginia church, 1775."}]},
+  {name:"Thomas Paine", era:"Founding Era", year:1737, face:{skin:'fair',hair:'#5a4a38',hairStyle:'short',facial:'none',clothes:'#5a3a3a'},
+    quotes:[{q:"These are the times that try men's souls.", b:"From a pamphlet read to weary Continental troops."}]},
+  {name:"John Paul Jones", era:"Founding Era", year:1747, face:{skin:'fair',hair:'#6a5a44',hairStyle:'short',facial:'none',hat:'bicorne',clothes:'#1a2a55',collar:'#d4af37'},
+    quotes:[{q:"I have not yet begun to fight.", b:"A naval captain, with his ship sinking beneath him."}]},
+  {name:"Thomas Jefferson", era:"Founding Era", year:1743, face:{skin:'fair',hair:'#b06a44',hairStyle:'sweptBack',facial:'none',clothes:'#3a4a66'},
+    quotes:[{q:"We hold these truths to be self-evident, that all men are created equal.", b:"The opening creed of the Declaration."}]},
+  {name:"Sojourner Truth", era:"1800s America", year:1797, face:{skin:'deep',hair:'#2a2a2a',hairStyle:'short',facial:'none',hat:'headscarf',scarf:'#e8e4d8',clothes:'#3a3a55',shawl:'#cfc8bc'},
+    quotes:[{q:"Ain't I a woman?", b:"An abolitionist's challenge at a women's convention."}]},
+  {name:"Abraham Lincoln", era:"1800s America", year:1809, face:{skin:'fair',hair:'#23201c',hairStyle:'short',facial:'beardChin',facialColor:'#23201c',hat:'tophat',clothes:'#222'},
+    quotes:[{q:"Four score and seven years ago...", b:"Spoken on a battlefield turned cemetery."},
+            {q:"A house divided against itself cannot stand.", b:"On a nation split over slavery."}]},
+  {name:"David Farragut", era:"1800s America", year:1801, face:{skin:'fair',hair:'#cfc8bc',hairStyle:'baldTop',facial:'whiskers',facialColor:'#cfc8bc',hat:'bicorne',clothes:'#1a2a55',collar:'#d4af37'},
+    quotes:[{q:"Damn the torpedoes, full speed ahead!", b:"A Union admiral charging into Mobile Bay."}]},
+  {name:"Chief Joseph", era:"1800s America", year:1840, face:{skin:'brown',hair:'#1c1c1c',hairStyle:'braids',facial:'none',hat:'feather',clothes:'#8a6a3a'},
+    quotes:[{q:"I will fight no more forever.", b:"A Nez Perce leader's surrender in the snow."}]},
+  {name:"Susan B. Anthony", era:"Reform Era", year:1820, face:{skin:'fair',hair:'#9a9082',hairStyle:'updo',facial:'none',clothes:'#3a2a3a',collar:'#d8c9a8'},
+    quotes:[{q:"Failure is impossible.", b:"A suffragist's last public words."}]},
+  {name:"Thomas Edison", era:"Age of Invention", year:1847, face:{skin:'fair',hair:'#b8b2a6',hairStyle:'short',facial:'none',clothes:'#3a3a3a',bowtie:'#7a2a2a'},
+    quotes:[{q:"Genius is one percent inspiration, ninety-nine percent perspiration.", b:"The inventor of the practical light bulb."},
+            {q:"I have not failed. I've just found ten thousand ways that won't work.", b:"On the long road to a working invention."}]},
+  {name:"Theodore Roosevelt", era:"Age of Invention", year:1858, face:{skin:'fair',hair:'#5a4a38',hairStyle:'short',facial:'mustacheBush',facialColor:'#5a4a38',glasses:'round',clothes:'#3a4a3a'},
+    quotes:[{q:"Speak softly and carry a big stick.", b:"A Rough Rider's rule for diplomacy."}]},
+  {name:"Marie Curie", era:"Age of Invention", year:1867, face:{skin:'fair',hair:'#3a2f26',hairStyle:'bun',facial:'none',clothes:'#3a3a4a',collar:'#2a2a38'},
+    quotes:[{q:"Nothing in life is to be feared, it is only to be understood.", b:"A two-time Nobel laureate in radioactivity."}]},
+  {name:"Mahatma Gandhi", era:"20th Century", year:1869, face:{skin:'brown',hair:'#2a2a2a',hairStyle:'bald',facial:'mustacheThin',facialColor:'#3a3a3a',glasses:'round',clothes:'#efe7d6',shawl:'#f4f1e8'},
+    quotes:[{q:"You must be the change you wish to see in the world.", b:"The leader of India's nonviolent struggle."}]},
+  {name:"Albert Einstein", era:"20th Century", year:1879, face:{skin:'fair',hair:'#dad4c8',hairStyle:'wild',facial:'mustacheBush',facialColor:'#dad4c8',clothes:'#5a5a5a'},
+    quotes:[{q:"Imagination is more important than knowledge.", b:"From the mind behind relativity."}]},
+  {name:"Winston Churchill", era:"20th Century", year:1874, face:{skin:'fair',hair:'#c8c2b6',hairStyle:'receding',facial:'none',clothes:'#222',bowtie:'#3a4a8a'},
+    quotes:[{q:"We shall fight on the beaches.", b:"Defiance as Britain stood nearly alone."}]},
+  {name:"Franklin D. Roosevelt", era:"20th Century", year:1882, face:{skin:'fair',hair:'#a39a8a',hairStyle:'short',facial:'none',glasses:'oval',clothes:'#2a2a38'},
+    quotes:[{q:"The only thing we have to fear is fear itself.", b:"An inaugural address in the depths of the Depression."}]},
+  {name:"Eleanor Roosevelt", era:"20th Century", year:1884, face:{skin:'fair',hair:'#9a8f7e',hairStyle:'updo',facial:'none',clothes:'#4a3a55',collar:'#e8e2d4'},
+    quotes:[{q:"No one can make you feel inferior without your consent.", b:"A first lady and champion of human rights."}]},
+  {name:"John F. Kennedy", era:"Modern America", year:1917, face:{skin:'fair',hair:'#7a5a3a',hairStyle:'sidePart',facial:'none',clothes:'#2a3a55'},
+    quotes:[{q:"Ask not what your country can do for you.", b:"A young president's call to service."}]},
+  {name:"Martin Luther King Jr.", era:"Civil Rights", year:1929, face:{skin:'brown',hair:'#1c1c1c',hairStyle:'short',facial:'mustache',facialColor:'#1c1c1c',clothes:'#222'},
+    quotes:[{q:"I have a dream.", b:"From the steps of the Lincoln Memorial, 1963."},
+            {q:"Injustice anywhere is a threat to justice everywhere.", b:"Written from a Birmingham jail cell."}]},
+  {name:"Neil Armstrong", era:"Space Age", year:1930, face:{skin:'fair',hair:'#7a6a52',hairStyle:'short',facial:'none',hat:'helmet',clothes:'#e8eaee'},
+    quotes:[{q:"That's one small step for man, one giant leap for mankind.", b:"First words from another world."}]},
 ];
 
+const STORE_KEY = 'hsg_hof_who-said-it';
 const KEYS = ['A','B','C','D'];
-const TARGET = 25;
-const DELAY_OK = 2500, DELAY_NO = 4000;
+const DELAY_OK = 2600, DELAY_NEW = 3400, DELAY_NO = 4000;
 
-const TIERS = [
-  {id:'all', label:'All'}, {id:'gimme', label:'Easy'},
-  {id:'medium', label:'Medium'}, {id:'niche', label:'Hard'},
-];
-const ERAS = ['All', ...[...new Set(DECK.map(c => c.era))]];
+// flatten quotes -> a draw deck, each tagged with its person
+const DECK = [];
+PEOPLE.forEach(p => p.quotes.forEach(qq => DECK.push({ who: p.name, quote: qq.q, blurb: qq.b, person: p })));
+const byName = {};
+PEOPLE.forEach(p => byName[p.name] = p);
 
-let correct = 0, total = 0, streak = 0, bestStreak = 0;
-let answered = false, currentCard = null, queue = [];
-let selTier = 'all', selEra = 'All';
-let advanceTimer = null, pendingEnd = false;
+let collected = loadCollected();
+let answered = false, currentCard = null, queue = [], advanceTimer = null;
+
+function loadCollected() {
+  try { const a = JSON.parse(localStorage.getItem(STORE_KEY)); return new Set(Array.isArray(a) ? a.filter(n => byName[n]) : []); }
+  catch (e) { return new Set(); }
+}
+function saveCollected() { try { localStorage.setItem(STORE_KEY, JSON.stringify([...collected])); } catch (e) {} }
 
 function shuffle(arr) {
   const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
 
-function activeDeck() {
-  return DECK.filter(c =>
-    (selTier === 'all' || c.tier === selTier) &&
-    (selEra === 'All'  || c.era === selEra));
-}
-
+// Draw a quote, preferring people not yet collected so you make progress.
 function drawCard() {
-  if (queue.length === 0) queue = shuffle(activeDeck());
+  if (queue.length === 0) {
+    const uncollected = DECK.filter(c => !collected.has(c.who));
+    queue = shuffle(uncollected.length ? uncollected : DECK);
+  }
   return queue.pop();
 }
 
+// 4 name options: the speaker + 3 era-plausible distractors (closest by year).
 function buildOptions(card) {
-  // Distractors: other speakers from the same era (more plausible).
-  let pool = DECK.filter(c => c.era === card.era && c.who !== card.who).map(c => c.who);
-  pool = [...new Set(pool)];
-  if (pool.length < 3) {
-    const extra = [...new Set(DECK.map(c => c.who))].filter(w => w !== card.who && !pool.includes(w));
-    pool = pool.concat(shuffle(extra));
-  }
-  const distractors = shuffle(pool).slice(0, 3);
-  return shuffle([card.who, ...distractors]);
+  const others = PEOPLE.filter(p => p.name !== card.who);
+  const near = others.slice().sort((a, b) => Math.abs(a.year - card.person.year) - Math.abs(b.year - card.person.year));
+  const pool = shuffle(near.slice(0, Math.min(8, near.length))).slice(0, 3).map(p => p.name);
+  while (pool.length < 3) { const r = others[Math.floor(Math.random() * others.length)].name; if (!pool.includes(r)) pool.push(r); }
+  return shuffle([card.who, ...pool]);
 }
 
-function buildFilters() {
-  const diffRow = document.getElementById('diffRow');
-  const eraRow = document.getElementById('eraRow');
-  TIERS.forEach(t => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (t.id === selTier ? ' active' : '');
-    b.textContent = t.label;
-    b.dataset.tier = t.id;
-    b.onclick = () => { if (selTier === t.id) return; selTier = t.id; HSGSound.tick(); startRound(); };
-    diffRow.appendChild(b);
-  });
-  ERAS.forEach(era => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (era === selEra ? ' active' : '');
-    b.textContent = era;
-    b.dataset.era = era;
-    b.onclick = () => { if (selEra === era) return; selEra = era; HSGSound.tick(); startRound(); };
-    eraRow.appendChild(b);
-  });
+// ---------- Hall of Fame gallery ----------
+function cellHTML(p) {
+  const owned = collected.has(p.name);
+  return '<div class="hof-cell' + (owned ? '' : ' locked') + '" data-name="' + p.name + '">' +
+      '<div class="hof-frame">' + HSGPortrait.svg(p.face) + '<div class="hof-q">?</div></div>' +
+      '<div class="hof-name">' + (owned ? p.name : '???') + '</div>' +
+    '</div>';
 }
-function syncFilterChips() {
-  document.querySelectorAll('#diffRow .chip').forEach(b => b.classList.toggle('active', b.dataset.tier === selTier));
-  document.querySelectorAll('#eraRow .chip').forEach(b => b.classList.toggle('active', b.dataset.era === selEra));
+function buildGallery() {
+  document.getElementById('hofGrid').innerHTML = PEOPLE.map(cellHTML).join('');
+  document.getElementById('hofTotal').textContent = PEOPLE.length;
+  document.getElementById('totalStat').textContent = PEOPLE.length;
+  updateCounts();
+}
+function updateCounts() {
+  const c = collected.size, t = PEOPLE.length;
+  document.getElementById('hofCount').textContent = c;
+  document.getElementById('collectStat').textContent = c;
+  document.getElementById('hofBar').style.width = (c / t * 100) + '%';
+  const note = document.getElementById('hofNote');
+  if (c === 0) note.textContent = 'Guess a quote right to add that person to your Hall of Fame.';
+  else if (c >= t) note.textContent = '🏆 Hall of Fame complete — you collected everyone!';
+  else note.textContent = (t - c) + ' more to collect.';
+}
+function unlockCell(name) {
+  const cell = document.querySelector('.hof-cell[data-name="' + CSS.escape(name) + '"]');
+  if (!cell) return;
+  cell.classList.remove('locked');
+  cell.querySelector('.hof-name').textContent = name;
+  cell.classList.add('justwon', 'flashpip');
+  setTimeout(() => cell.classList.remove('justwon', 'flashpip'), 800);
 }
 
+// ---------- round flow ----------
 function nextCard() {
   clearTimeout(advanceTimer);
-  pendingEnd = false;
   answered = false;
   currentCard = drawCard();
-  if (!currentCard) {
-    document.getElementById('quoteText').textContent = 'No quotes match that combination';
-    document.getElementById('quoteBlurb').textContent = 'Pick another level or era.';
-    document.getElementById('catPill').textContent = '—';
-    document.getElementById('optionGrid').innerHTML = '';
-    document.getElementById('revealName').textContent = '';
-    document.getElementById('feedback').textContent = '';
-    return;
-  }
   const options = buildOptions(currentCard);
 
-  document.getElementById('catPill').textContent = currentCard.era;
   document.getElementById('quoteText').textContent = currentCard.quote;
   document.getElementById('quoteBlurb').textContent = currentCard.blurb;
-  document.getElementById('revealName').textContent = '';
+  document.getElementById('reveal').className = 'reveal';
   document.getElementById('feedback').textContent = '';
   document.getElementById('nextBtn').style.display = 'none';
 
@@ -422,19 +355,9 @@ function nextCard() {
   options.forEach((who, i) => {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
-    btn.dataset.idx = i;
-    btn.dataset.who = who;
-
-    const keyEl = document.createElement('span');
-    keyEl.className = 'key-hint';
-    keyEl.textContent = KEYS[i];
-
-    const valEl = document.createElement('span');
-    valEl.className = 'option-val';
-    valEl.textContent = who;
-
-    btn.appendChild(keyEl);
-    btn.appendChild(valEl);
+    btn.dataset.idx = i; btn.dataset.who = who;
+    btn.innerHTML = '<span class="key-hint">' + KEYS[i] + '</span><span class="option-val"></span>';
+    btn.querySelector('.option-val').textContent = who;
     btn.addEventListener('click', () => handleAnswer(who, btn));
     grid.appendChild(btn);
   });
@@ -443,101 +366,81 @@ function nextCard() {
 function handleAnswer(chosen, clickedBtn) {
   if (answered) return;
   answered = true;
-  total++;
-  let endedStreak = 0;
 
   const allBtns = document.querySelectorAll('.option-btn');
   allBtns.forEach(b => b.disabled = true);
 
+  const person = currentCard.person;
   const isCorrect = chosen === currentCard.who;
+  let isNew = false;
 
   if (isCorrect) {
-    correct++; streak++;
-    if (streak > bestStreak) bestStreak = streak;
-    rail.hit();
-    HSGSound.correct();
     clickedBtn.classList.add('correct');
-    const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
-              : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
-              :                `✓ Correct!`;
-    document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
-    if (HSGfx.milestone(streak)) HSGSound.streak(streak);
+    isNew = !collected.has(person.name);
+    if (isNew) {
+      collected.add(person.name); saveCollected();
+      unlockCell(person.name); updateCounts();
+      HSGSound.correct(); if (HSGfx && HSGfx.milestone) { /* confetti handled below */ }
+    } else {
+      HSGSound.correct();
+    }
+    document.getElementById('feedback').innerHTML = isNew
+      ? '<span style="color:var(--green)">🎉 New! Portrait collected</span>'
+      : '<span style="color:var(--green)">✓ Correct!</span>';
   } else {
-    endedStreak = streak;
-    streak = 0;
     HSGSound.wrong();
     clickedBtn.classList.add('wrong');
-    allBtns.forEach(b => {
-      if (b.dataset.who === currentCard.who) b.classList.add('reveal-correct');
-    });
-    document.getElementById('feedback').innerHTML =
-      `<span style="color:var(--red)">✗ That was ${currentCard.who}</span>`;
+    allBtns.forEach(b => { if (b.dataset.who === currentCard.who) b.classList.add('reveal-correct'); });
+    document.getElementById('feedback').innerHTML = '<span style="color:var(--red)">✗ Not quite</span>';
   }
 
-  document.getElementById('revealName').textContent =
-    `${currentCard.who} — ${currentCard.era}`;
+  // reveal the speaker with their portrait
+  const rev = document.getElementById('reveal');
+  document.getElementById('revealPortrait').innerHTML = HSGPortrait.svg(person.face);
+  document.getElementById('revealName').textContent = person.name;
+  document.getElementById('revealEra').textContent = person.era;
+  const tag = document.getElementById('revealTag');
+  if (isCorrect && isNew) { tag.textContent = '✓ Added to your Hall of Fame'; tag.className = 'reveal-tag win'; }
+  else if (isCorrect) { tag.textContent = '✓ Already in your Hall of Fame'; tag.className = 'reveal-tag dup'; }
+  else { tag.textContent = collected.has(person.name) ? 'Already collected' : 'Get them right to collect this portrait'; tag.className = 'reveal-tag miss'; }
+  rev.className = 'reveal show' + (isNew ? ' win' : '');
 
-  updateBadges();
-  if (endedStreak) rail.end();
+  if (isNew && collected.size >= PEOPLE.length && HSGfx && HSGfx.showSummary) {
+    // full collection — celebrate after the reveal
+    setTimeout(celebrateComplete, DELAY_NEW);
+  }
 
-  pendingEnd = (total >= TARGET && streak === 0);
   const nextBtn = document.getElementById('nextBtn');
-  nextBtn.textContent = pendingEnd ? 'See results →' : 'Next Quote →';
+  nextBtn.textContent = 'Next Quote →';
   nextBtn.style.display = 'block';
-  scheduleAdvance(isCorrect ? DELAY_OK : DELAY_NO);
+  scheduleAdvance(isCorrect ? (isNew ? DELAY_NEW : DELAY_OK) : DELAY_NO);
 }
 
-function scheduleAdvance(ms) {
-  clearTimeout(advanceTimer);
-  advanceTimer = setTimeout(advance, ms);
-}
-function advance() {
-  clearTimeout(advanceTimer);
-  if (!answered) return;
-  if (pendingEnd) endSession();
-  else nextCard();
+function celebrateComplete() {
+  if (HSGfx && HSGfx.showSummary) {
+    HSGfx.showSummary({ title: '🏛️ Hall of Fame complete!', correct: PEOPLE.length, total: PEOPLE.length, best: PEOPLE.length, onPlayAgain: nextCard });
+  }
 }
 
-function endSession() {
-  HSGfx.showSummary({
-    title: `Who Said It? — ${total} quotes`,
-    correct, total, best: bestStreak,
-    onPlayAgain: startRound,
-  });
-}
+function scheduleAdvance(ms) { clearTimeout(advanceTimer); advanceTimer = setTimeout(advance, ms); }
+function advance() { clearTimeout(advanceTimer); if (!answered) return; nextCard(); }
 
-function updateBadges() {
-  document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
+function resetHall() {
+  if (!window.confirm('Clear your Hall of Fame? This erases every portrait you have collected.')) return;
+  collected = new Set(); saveCollected(); queue = [];
+  buildGallery(); nextCard();
 }
-
-function startRound() {
-  clearTimeout(advanceTimer);
-  rail.end();
-  correct = 0; total = 0; streak = 0; bestStreak = 0; queue = [];
-  answered = false; pendingEnd = false;
-  syncFilterChips();
-  updateBadges();
-  nextCard();
-}
-
-function resetAll() { startRound(); }
 
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && answered) { e.preventDefault(); advance(); return; }
   if (answered) return;
   const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
   if (idx === -1) return;
-  const btn = document.querySelector(`.option-btn[data-idx="${idx}"]`);
+  const btn = document.querySelector('.option-btn[data-idx="' + idx + '"]');
   if (btn && !btn.disabled) btn.click();
 });
 
-const rail = HSGStreak.init({
-  gameId: 'who-said-it', gameName: 'Who Said It?', minStreak: 1,
-  mount: document.getElementById('streakRail')
-});
-
-buildFilters();
-updateBadges();
+buildGallery();
 nextCard();
 </script>
 

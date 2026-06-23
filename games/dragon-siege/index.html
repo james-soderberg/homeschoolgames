@@ -95,21 +95,24 @@
     .word-bubble .done { color: #2A5C3F; }
     .word-bubble .next { color: var(--red); text-decoration: underline; }
     .word-bubble .rest { color: var(--ink-light); }
+    /* the word you're currently typing — obviously highlighted */
     .word-bubble.active {
-      border-color: var(--gold);
-      background: #fffdf4;
-      box-shadow: 0 0 0 2px rgba(196,160,64,0.6), 0 4px 12px rgba(0,0,0,0.5);
+      border-color: #b07d00;
+      background: #ffe07a;
+      box-shadow: 0 0 0 3px rgba(224,165,59,0.85), 0 0 16px rgba(255,200,70,0.7), 0 4px 12px rgba(0,0,0,0.5);
     }
+    .word-bubble.active .rest { color: #6a5320; }
     .word-bubble .gword { display: block; }
     .word-bubble .pips { display: block; margin-top: 2px; font-size: 0.74rem; letter-spacing: 3px; line-height: 1; }
     .word-bubble .pip { color: var(--border); }
     .word-bubble .pip.done { color: var(--green); }
     .word-bubble .pip.cur { color: var(--gold); }
-    .word-bubble.miss { animation: bubbleMiss 0.28s ease; }
+    /* a wrong key flashes the bubble red — colour only, NEVER transform
+       (a transform here would wipe the bubble's positioning transform) */
+    .word-bubble.miss { animation: bubbleMiss 0.3s ease; }
     @keyframes bubbleMiss {
-      0%,100% { transform: translate(-50%,-50%); }
-      30% { transform: translate(calc(-50% - 5px),-50%); }
-      60% { transform: translate(calc(-50% + 5px),-50%); }
+      50% { background:#ffd6d6; border-color:var(--red);
+            box-shadow:0 0 0 3px rgba(139,32,32,0.55), 0 4px 12px rgba(0,0,0,0.5); }
     }
 
     /* ============ Overlays ============ */
@@ -210,7 +213,7 @@
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
   <nav class="site-nav">
-    <a href="../../index.html">← All Games</a>
+    <a href="../../subjects/typing.html">← Typing</a>
   </nav>
 </header>
 
@@ -288,6 +291,8 @@
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
@@ -335,10 +340,10 @@ const GIANT_PHRASES = [
 ];
 
 const REALMS = {
-  easy:       { pool:"squire",     troopSpeed:[15,22], rockDur:[10.0,7.5], dragonDur:[9.0,7.0], spawn:[3.4,2.2], group:[1,1], rockChance:0.14, dragonGap:16, giantGap:18 },
-  medium:     { pool:"knight",     troopSpeed:[19,28], rockDur:[8.5,6.0],  dragonDur:[8.0,6.0], spawn:[2.8,1.7], group:[1,2], rockChance:0.20, dragonGap:12, giantGap:14 },
-  hard:       { pool:"dragonlord", troopSpeed:[24,34], rockDur:[7.0,5.0],  dragonDur:[7.0,5.2], spawn:[2.3,1.3], group:[1,2], rockChance:0.26, dragonGap:9,  giantGap:11 },
-  impossible: { pool:"dragonlord", troopSpeed:[34,48], rockDur:[5.2,3.6],  dragonDur:[5.2,3.8], spawn:[1.7,0.9], group:[2,3], rockChance:0.36, dragonGap:6,  giantGap:8  }
+  easy:       { pool:"squire",     troopSpeed:[15,22], rockDur:[11.5,9.0], dragonDur:[9.0,7.0], spawn:[3.4,2.2], group:[1,1], rockChance:0.34, dragonGap:16, giantGap:18 },
+  medium:     { pool:"knight",     troopSpeed:[19,28], rockDur:[10.0,7.0], dragonDur:[8.0,6.0], spawn:[2.8,1.7], group:[1,2], rockChance:0.42, dragonGap:12, giantGap:14 },
+  hard:       { pool:"dragonlord", troopSpeed:[24,34], rockDur:[8.5,6.0],  dragonDur:[7.0,5.2], spawn:[2.3,1.3], group:[1,2], rockChance:0.50, dragonGap:9,  giantGap:11 },
+  impossible: { pool:"dragonlord", troopSpeed:[34,48], rockDur:[6.2,4.4],  dragonDur:[5.2,3.8], spawn:[1.7,0.9], group:[2,3], rockChance:0.60, dragonGap:6,  giantGap:8  }
 };
 
 const START_LIVES = 5;
@@ -385,6 +390,7 @@ let active=null;
 let lives=START_LIVES, slain=0, wave=1, bestStreak=0;
 let lastBossSlain=0, lastGiantSlain=0, spawnAcc=0, spawnInterval=2.9;
 let running=false, lastTs=0, rafId=null, sceneTime=0;
+let defeat=false, defeatT=0, defeatBoomAcc=0;     // losing cinematic: the castle burns down
 let shake=0, flashA=0, flashColor='255,120,40';
 let nextId=1, troopCount=0;
 let treb={ fireT:0 };   // siege engine arm animation (0 = cocked, pulses to 1 on fire)
@@ -692,9 +698,9 @@ function usedLetters(){
   const s = new Set();
   for (const th of threats){
     if (th.state==='dying' || th.state==='down') continue;
-    // only the word actually shown on screen matters (a giant shows just its
-    // current word, not its queued-up ones)
-    if (th.word) s.add(th.word[0]);
+    // a giant reserves all its remaining words so its letters never clash as it advances
+    if (th.words){ for (let k=th.wordIdx; k<th.words.length; k++) s.add(th.words[k][0]); }
+    else if (th.word) s.add(th.word[0]);
   }
   return s;
 }
@@ -715,7 +721,7 @@ function spawnTroop(offset){
     word, typed:0, state:'live',
     x: W + 30 + (offset||0), y: groundY()-2 + rand(-4,4),
     speed: sp, t0: rand(0,6.28), bob:0,
-    fallT:0
+    fallT:0, wounded:false, arrowStuck:false, kb:0
   };
   addThreat(th);
   return th;
@@ -754,16 +760,22 @@ function spawnDragon(){
   flashWave('A Dragon Descends!', '🐉 Boss');
 }
 function spawnGiant(){
-  // one long phrase you type straight through; marches at a soldier's pace
-  const phrase = pickWord(GIANT_PHRASES, usedLetters());
+  // five words, one at a time; each lands an arrow and brings it closer to death
+  const pool = WORDS[realm.pool];
+  const words = []; const avoid = usedLetters(); let guard = 0;
+  while (words.length < 5 && guard++ < 400){
+    const w = pickWord(pool, avoid);
+    if (!words.some(x => x[0]===w[0])){ words.push(w); avoid.add(w[0]); }
+  }
+  while (words.length < 5){ words.push(choice(pool).toLowerCase()); }
   const speed = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
   const th = {
     id:nextId++, kind:'giant', boss:true, state:'live',
-    word: phrase, typed:0,
-    x:W+60, y:groundY()-2, speed, t0:rand(0,6.28), bob:0, hurtT:0, hoverT:0
+    words, wordIdx:0, word:words[0], typed:0,
+    x:W+60, y:groundY()-2, speed, t0:rand(0,6.28), bob:0, hurtT:0, hoverT:0, arrows:[]
   };
   addThreat(th);
-  flashWave('A Giant Approaches!', '🗿 Type the phrase to fell it');
+  flashWave('A Giant Approaches!', '🗿 Five words to fell it');
 }
 function addThreat(th){
   const b=document.createElement('div');
@@ -802,10 +814,17 @@ function updateThreats(dt, t){
     // a 'struck' foe is doomed but keeps walking/arcing below until the shot lands
     if (th.state==='dying'){ // tumbling to the ground
       th.fallT += dt;
-      if (th.kind==='troop' || th.kind==='giant'){
-        th.rot = Math.min(Math.PI/2, (th.rot||0) + 5*dt);  // tip over to lying
+      if (th.kind==='giant'){
+        // slow, dramatic forward topple (toward the castle, to the left)
+        th.rot = Math.max(-1.45, (th.rot||0) - 1.7*dt);
+        if (th.fallT>=1.2){ th.state='down'; th.downT=0; th.rot=-1.45; emit(th.x-30, groundY()-6,'dust',16); shake=Math.max(shake,12); pruneCorpses(); }
+      } else if (th.kind==='troop'){
+        // both tip over and settle; a horse topples onto its side, soldiers lie flat
+        const maxRot = th.mounted ? 1.4 : Math.PI/2;
+        const rate   = th.mounted ? 2.4 : 5;
+        th.rot = Math.min(maxRot, (th.rot||0) + rate*dt);
         th.y   = Math.min(groundY()-2, th.y + 80*dt);       // settle onto the ground
-        if (th.fallT>=0.6){ th.state='down'; th.downT=0; th.rot=Math.PI/2; pruneCorpses(); }
+        if (th.fallT>=0.6){ th.state='down'; th.downT=0; th.rot=maxRot; pruneCorpses(); }
       } else {
         if (th.fallT>0.5){ removeThreat(th,i); }
       }
@@ -857,6 +876,7 @@ function updateThreats(dt, t){
 
     if (th.kind==='troop'){
       th.x -= th.speed*dt;
+      if (th.kb){ th.x += th.kb*dt; th.kb -= th.kb*Math.min(1,dt*6); if (Math.abs(th.kb)<8) th.kb=0; }
       th.bob = Math.sin(t*(th.mounted?11:7) + th.t0);
       th.sx=th.x; th.sy=th.y - (th.mounted?74:44);
       // only a LIVE soldier breaches the wall; a doomed (struck) one keeps
@@ -1012,8 +1032,7 @@ function drawTroop(th,t){
   const bob = fallen?0:th.bob*1.5;
   const cols = { knight:['#6b7280','#9aa3b0'], goblin:['#5f8c3f','#7fae5c'], orc:['#8a5a3b','#a9754f'], skeleton:['#d9d2bf','#fff'] };
   let [c1,c2]=cols[th.variant];
-  if (fallen){ c1='#e23b2f'; c2='#ff8074'; }   // cartoon red when slain
-  const headCol = fallen ? '#ff6a5c' : (th.variant==='skeleton'?'#efe9d8':'#d8b48a');
+  const headCol = (th.variant==='skeleton'?'#efe9d8':'#d8b48a');
   // legs (march)
   ctx.strokeStyle='#2b2b2f'; ctx.lineWidth=3;
   const sw = fallen?0:Math.sin(t*9+th.t0)*3;
@@ -1043,15 +1062,43 @@ function drawTroop(th,t){
 function drawHorseman(th,t){
   const x=th.x, y=th.y;
   const fallen=(th.state==='dying'||th.state==='down');
+  const hide='#7a5230', hideD='#5e3f24';           // horse colors
   ctx.save(); ctx.translate(x,y);
   ctx.globalAlpha=1; ctx.fillStyle='rgba(0,0,0,0.30)';
-  ctx.beginPath(); ctx.ellipse(0,2, fallen?24:20, fallen?4:5, 0,0,6.28); ctx.fill();
-  if (fallen) ctx.rotate(th.rot||0);
+  ctx.beginPath(); ctx.ellipse(0,2, fallen?28:20, fallen?5:5, 0,0,6.28); ctx.fill();
   let alpha=1; if (th.state==='down'&&th.downT>28) alpha=clamp((30-th.downT)/2,0,1);
   ctx.globalAlpha=alpha;
-  const gallop = fallen?0:Math.sin(t*14+th.t0);   // fast leg cycle
-  let hide='#7a5230', hideD='#5e3f24';             // horse colors
-  if (fallen){ hide='#d23b2f'; hideD='#a82a22'; }
+
+  if (th.state==='down'){
+    // a dead horse lying flat on its side, legs stiff out to one side, rider thrown
+    ctx.fillStyle=hide; ctx.beginPath(); ctx.ellipse(-2,-9,23,9,0,0,6.28); ctx.fill();   // body flat
+    // neck + head along the ground (left)
+    ctx.beginPath(); ctx.moveTo(-18,-13); ctx.lineTo(-34,-5); ctx.lineTo(-34,-1); ctx.lineTo(-15,-6); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-34,-4,5,3.5,0.25,0,6.28); ctx.fill();
+    // four stiff legs sticking out sideways (slightly up — lying on its side)
+    ctx.strokeStyle=hideD; ctx.lineWidth=3.5; ctx.lineCap='round';
+    for (const [bx,ex,ey] of [[-6,-12,-26],[-1,-4,-28],[8,12,-26],[13,20,-23]]){
+      ctx.beginPath(); ctx.moveTo(bx,-14); ctx.lineTo(ex,ey); ctx.stroke();
+    }
+    // tail on the ground
+    ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(19,-11); ctx.quadraticCurveTo(30,-9,33,-2); ctx.stroke();
+    // dead eye (X)
+    ctx.strokeStyle='#2a1c12'; ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.moveTo(-36,-6); ctx.lineTo(-32,-2); ctx.moveTo(-32,-6); ctx.lineTo(-36,-2); ctx.stroke();
+    // rider thrown to the ground beside the horse
+    ctx.fillStyle='#7c8696'; roundRect(2,-9,16,7,3); ctx.fill();              // torso flat
+    ctx.fillStyle='#d8b48a'; ctx.beginPath(); ctx.arc(20,-6,4,0,6.28); ctx.fill();   // head
+    ctx.fillStyle='#aab3c0'; ctx.beginPath(); ctx.arc(20,-7,4.6,Math.PI,6.28); ctx.fill(); // helm
+    if (th.arrowStuck){
+      ctx.strokeStyle='#caa24a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(8,-8); ctx.lineTo(16,-14); ctx.stroke();
+      ctx.fillStyle='#e8e2d0'; ctx.beginPath(); ctx.moveTo(16,-14); ctx.lineTo(18,-17); ctx.lineTo(13,-15); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore(); ctx.globalAlpha=1;
+    return;
+  }
+
+  if (th.state==='dying') ctx.rotate(th.rot||0);  // tip over smoothly before it lands
+  const gallop = th.state==='live' ? Math.sin(t*14+th.t0) : 0;  // only gallops while alive
   // legs (galloping: front pair & back pair swing opposite)
   ctx.strokeStyle=hideD; ctx.lineWidth=3.5; ctx.lineCap='round';
   ctx.beginPath();
@@ -1073,13 +1120,13 @@ function drawHorseman(th,t){
   // saddle
   ctx.fillStyle='#3a2a1a'; ctx.fillRect(-7,-28,12,4);
   // ---- rider (armored knight) ----
-  let armor=fallen?'#d23b2f':'#7c8696', armorL=fallen?'#ff8074':'#aab3c0';
+  const armor='#7c8696', armorL='#aab3c0';
   const rb=fallen?0:gallop*1.2;            // rider bob with gallop
   // torso
   ctx.fillStyle=armor; roundRect(-4,-44+rb,9,18,3); ctx.fill();
   ctx.fillStyle=armorL; roundRect(-4,-44+rb,3,18,2); ctx.fill();
   // head + helm + plume
-  ctx.fillStyle= fallen?'#ff6a5c':'#d8b48a'; ctx.beginPath(); ctx.arc(0,-48+rb,4.5,0,6.28); ctx.fill();
+  ctx.fillStyle='#d8b48a'; ctx.beginPath(); ctx.arc(0,-48+rb,4.5,0,6.28); ctx.fill();
   ctx.fillStyle=armorL; ctx.beginPath(); ctx.arc(0,-49+rb,5.2,Math.PI,6.28); ctx.fill();
   ctx.strokeStyle='#b3402a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,-54+rb); ctx.lineTo(3,-58+rb); ctx.stroke();
   // shield
@@ -1089,6 +1136,17 @@ function drawHorseman(th,t){
   ctx.strokeStyle='#5a3d22'; ctx.lineWidth=2.5;
   ctx.beginPath(); ctx.moveTo(6,-40+rb); ctx.lineTo(-30,-30+rb); ctx.stroke();
   ctx.fillStyle='#cfd3d8'; ctx.beginPath(); ctx.moveTo(-30,-30+rb); ctx.lineTo(-25,-33+rb); ctx.lineTo(-25,-27+rb); ctx.fill();
+  // an arrow stuck in the wounded knight
+  if (th.arrowStuck){
+    // a big arrow buried in the chest, fletching sticking out toward the castle
+    ctx.save(); ctx.translate(0,-35+rb);
+    ctx.strokeStyle='#4a3118'; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-18,-3); ctx.lineTo(5,2); ctx.stroke();              // shaft
+    ctx.fillStyle='#caa24a'; ctx.beginPath(); ctx.moveTo(7,2.5); ctx.lineTo(1,-1); ctx.lineTo(2,5); ctx.closePath(); ctx.fill();  // head into chest
+    ctx.strokeStyle='#e8e2d0'; ctx.lineWidth=2;                                       // fletching
+    ctx.beginPath(); ctx.moveTo(-18,-3); ctx.lineTo(-14,-6); ctx.moveTo(-18,-3); ctx.lineTo(-14,0); ctx.stroke();
+    ctx.lineCap='butt'; ctx.restore();
+  }
   ctx.restore();
   ctx.globalAlpha=1;
 }
@@ -1096,69 +1154,75 @@ function drawGiant(th,t){
   const x=th.x, y=th.y;
   const fallen=(th.state==='dying'||th.state==='down');
   ctx.save(); ctx.translate(x,y);
-  // big ground shadow
   ctx.globalAlpha=1; ctx.fillStyle='rgba(0,0,0,0.34)';
-  ctx.beginPath(); ctx.ellipse(0,2, fallen?52:32, fallen?6:9, 0,0,6.28); ctx.fill();
-  if (fallen) ctx.rotate(th.rot||0);
+  ctx.beginPath(); ctx.ellipse(0,2, fallen?56:32, fallen?6:9, 0,0,6.28); ctx.fill();
+  if (fallen) ctx.rotate(th.rot||0);          // slow forward topple
   let alpha=1; if (th.state==='down' && th.downT>28) alpha=clamp((30-th.downT)/2,0,1);
   ctx.globalAlpha=alpha;
-  const bob = fallen?0:(th.bob||0)*2;
-  // a huge human giant — ruddy skin, ragged tunic; reddens when slain
+
+  const still  = fallen || th.state==='siege';                    // standing still at the wall
+  const bob    = fallen?0:(th.bob||0)*2;
+  const stride = still?0:Math.sin(t*5.5 + th.t0);                 // walk cycle
+  const armSw  = still?0:Math.sin(t*5.5 + th.t0 + Math.PI);       // arms opposite
+
+  // damage is shown by the arrows piling up in its chest, not by color
   let skin='#c2926a', skinD='#9c6f4a', skinL='#d8ad84';
-  if (fallen){ skin='#d23b2f'; skinD='#a82a22'; skinL='#ff8074'; }
-  else if (th.hurtT>0){ skin='#e3b78c'; skinL='#f1d0a8'; }
+  if (!fallen && th.hurtT>0){ skin='#f4d6b0'; skinL='#fbe7ca'; }   // brief flinch on a fresh hit
   const tunic='#5d5142', tunicD='#473d31';
-  // legs (long)
-  ctx.fillStyle=skinD;
-  roundRect(-20,-66,17,66,7); ctx.fill();
-  roundRect(4,-66,17,66,7); ctx.fill();
-  // feet
-  ctx.beginPath(); ctx.ellipse(-12,-2,11,5,0,0,6.28); ctx.ellipse(13,-2,11,5,0,0,6.28); ctx.fill();
+
+  // legs — animated stride
+  ctx.lineCap='round'; ctx.lineWidth=15; ctx.strokeStyle=skinD;
+  const lf=-10+stride*8, rf=10-stride*8;
+  ctx.beginPath(); ctx.moveTo(-9,-58+bob); ctx.lineTo(lf,0); ctx.moveTo(9,-58+bob); ctx.lineTo(rf,0); ctx.stroke();
+  ctx.fillStyle=skinD; ctx.beginPath(); ctx.ellipse(lf,-1,11,5,0,0,6.28); ctx.ellipse(rf,-1,11,5,0,0,6.28); ctx.fill();
   // tunic skirt
-  ctx.fillStyle=tunic;
-  ctx.beginPath(); ctx.moveTo(-26,-70+bob); ctx.lineTo(26,-70+bob); ctx.lineTo(21,-42); ctx.lineTo(-21,-42); ctx.closePath(); ctx.fill();
+  ctx.fillStyle=tunic; ctx.beginPath(); ctx.moveTo(-26,-70+bob); ctx.lineTo(26,-70+bob); ctx.lineTo(20,-44); ctx.lineTo(-20,-44); ctx.closePath(); ctx.fill();
   // broad torso
-  ctx.fillStyle=skin;
-  ctx.beginPath(); ctx.moveTo(-28,-72+bob);
-  ctx.quadraticCurveTo(-40,-124+bob,-20,-136+bob);
-  ctx.lineTo(20,-136+bob);
-  ctx.quadraticCurveTo(40,-124+bob,28,-72+bob);
-  ctx.closePath(); ctx.fill();
-  // tunic over the chest + belt
-  ctx.fillStyle=tunic;
-  ctx.beginPath(); ctx.moveTo(-26,-72+bob);
-  ctx.quadraticCurveTo(-33,-108+bob,-18,-116+bob);
-  ctx.lineTo(18,-116+bob);
-  ctx.quadraticCurveTo(33,-108+bob,26,-72+bob);
-  ctx.closePath(); ctx.fill();
+  ctx.fillStyle=skin; ctx.beginPath(); ctx.moveTo(-28,-72+bob);
+  ctx.quadraticCurveTo(-40,-124+bob,-20,-136+bob); ctx.lineTo(20,-136+bob);
+  ctx.quadraticCurveTo(40,-124+bob,28,-72+bob); ctx.closePath(); ctx.fill();
+  // tunic chest + belt
+  ctx.fillStyle=tunic; ctx.beginPath(); ctx.moveTo(-26,-72+bob);
+  ctx.quadraticCurveTo(-33,-108+bob,-18,-116+bob); ctx.lineTo(18,-116+bob);
+  ctx.quadraticCurveTo(33,-108+bob,26,-72+bob); ctx.closePath(); ctx.fill();
   ctx.fillStyle=tunicD; ctx.fillRect(-26,-78+bob,52,6);
-  ctx.fillStyle='#caa24a'; ctx.fillRect(-5,-79+bob,10,8); // belt buckle
-  // left arm hangs in front
-  ctx.strokeStyle=skin; ctx.lineWidth=17; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-22,-124+bob); ctx.lineTo(-33,-72+bob); ctx.stroke();
-  ctx.fillStyle=skinD; ctx.beginPath(); ctx.arc(-33,-70+bob,10,0,6.28); ctx.fill();
-  // neck + head (big)
+  ctx.fillStyle='#caa24a'; ctx.fillRect(-5,-79+bob,10,8);
+  // left arm swings as it walks
+  ctx.strokeStyle=skin; ctx.lineWidth=17;
+  const lhand=-32+armSw*7;
+  ctx.beginPath(); ctx.moveTo(-22,-124+bob); ctx.lineTo(lhand,-72+bob); ctx.stroke();
+  ctx.fillStyle=skinD; ctx.beginPath(); ctx.arc(lhand,-70+bob,10,0,6.28); ctx.fill();
+  // neck + head (with a bit of look-around sway)
   ctx.fillStyle=skin; roundRect(-8,-144+bob,16,14,4); ctx.fill();
-  ctx.beginPath(); ctx.arc(0,-156+bob,17,0,6.28); ctx.fill();
-  // shaggy hair + heavy brow
-  ctx.fillStyle=skinD; ctx.beginPath(); ctx.arc(0,-160+bob,17,Math.PI,2*Math.PI); ctx.fill();
-  ctx.fillRect(-13,-158+bob,26,4);
-  // deep-set eyes + nose
-  ctx.fillStyle='#2a1c12';
-  ctx.beginPath(); ctx.arc(-6,-153+bob,2.6,0,6.28); ctx.arc(6,-153+bob,2.6,0,6.28); ctx.fill();
-  ctx.strokeStyle=skinD; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,-152+bob); ctx.lineTo(0,-146+bob); ctx.stroke();
-  // grizzled beard
-  ctx.fillStyle='#7a6a55'; ctx.beginPath(); ctx.arc(0,-143+bob,11,0,Math.PI); ctx.fill();
-  // right arm + great club shouldered (pounds during a siege)
+  const hx = fallen?0:stride*1.5;
+  ctx.beginPath(); ctx.arc(hx,-156+bob,17,0,6.28); ctx.fill();
+  ctx.fillStyle=skinD; ctx.beginPath(); ctx.arc(hx,-160+bob,17,Math.PI,2*Math.PI); ctx.fill(); ctx.fillRect(hx-13,-158+bob,26,4);
+  ctx.fillStyle='#2a1c12'; ctx.beginPath(); ctx.arc(hx-6,-153+bob,2.6,0,6.28); ctx.arc(hx+6,-153+bob,2.6,0,6.28); ctx.fill();
+  ctx.strokeStyle=skinD; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(hx,-152+bob); ctx.lineTo(hx,-146+bob); ctx.stroke();
+  ctx.fillStyle='#7a6a55'; ctx.beginPath(); ctx.arc(hx,-143+bob,11,0,Math.PI); ctx.fill();
+  // right arm + great club (sways as it walks; pounds during a siege)
   ctx.strokeStyle=skin; ctx.lineWidth=18; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(20,-128+bob); ctx.lineTo(34,-104+bob); ctx.stroke();
-  ctx.save(); ctx.translate(34,-104+bob);
-  ctx.rotate(-0.5 + (th.state==='siege' ? Math.sin(th.hoverT*7)*0.5 : 0));
+  const gripY=-104+bob - armSw*4;
+  ctx.beginPath(); ctx.moveTo(20,-128+bob); ctx.lineTo(34,gripY); ctx.stroke();
+  ctx.save(); ctx.translate(34,gripY);
+  ctx.rotate(-0.5 + (th.state==='siege' ? Math.sin(th.hoverT*7)*0.5 : stride*0.2));
   ctx.fillStyle='#6b4a2a'; roundRect(-9,-70,18,74,9); ctx.fill();
   ctx.fillStyle='#7d5630'; ctx.beginPath(); ctx.arc(0,-70,17,0,6.28); ctx.fill();
   ctx.fillStyle='#5a3d22'; ctx.beginPath(); ctx.arc(-5,-66,3.2,0,6.28); ctx.arc(6,-76,3.2,0,6.28); ctx.arc(2,-84,2.8,0,6.28); ctx.fill();
   ctx.restore();
   ctx.lineCap='butt';
+  // ---- arrows buried in its chest (the visible damage) ----
+  if (th.arrows){
+    for (const a of th.arrows){
+      ctx.save(); ctx.translate(a.lx, a.ly+bob*0.7); ctx.rotate(a.ang);
+      ctx.strokeStyle='#4a3118'; ctx.lineWidth=3.5; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-26,0); ctx.lineTo(6,0); ctx.stroke();           // long shaft sticking out
+      ctx.fillStyle='#caa24a'; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(2,-3.5); ctx.lineTo(2,3.5); ctx.closePath(); ctx.fill();  // head buried in
+      ctx.strokeStyle='#e8e2d0'; ctx.lineWidth=2.5;                                 // white fletching
+      ctx.beginPath(); ctx.moveTo(-26,0); ctx.lineTo(-21,-4); ctx.moveTo(-26,0); ctx.lineTo(-21,4); ctx.moveTo(-22,0); ctx.lineTo(-17,-4); ctx.moveTo(-22,0); ctx.lineTo(-17,4); ctx.stroke();
+      ctx.lineCap='butt'; ctx.restore();
+    }
+  }
   ctx.restore();
   ctx.globalAlpha=1;
 }
@@ -1236,14 +1300,24 @@ function drawWing(ctx, ang, color){
 // ===================================================================
 // TYPING / TARGETING
 // ===================================================================
+function setActive(th){
+  if (active===th) return;
+  if (active && active.bubble) active.bubble.classList.remove('active');
+  active = th;
+  if (active && active.bubble) active.bubble.classList.add('active');
+}
+function clearActive(){
+  if (active && active.bubble) active.bubble.classList.remove('active');
+  active = null;
+}
 function handleChar(chRaw){
   if (!running) return;
   const ch=chRaw.toLowerCase();
   if (!/^[a-z' -]$/.test(ch)) return;
   if (!active || (active.state!=='live' && active.state!=='siege')){
-    active=acquire(ch);
-    if (!active) return;
-    active.bubble.classList.add('active');
+    const t = acquire(ch);
+    if (!t) return;
+    setActive(t);
     advance(active, ch);
     return;
   }
@@ -1269,10 +1343,14 @@ function advance(th, ch){
     th.typed++;
     if (th.typed>=th.word.length){
       if (th.words && th.wordIdx < th.words.length-1){
-        // one of several words done — stagger the foe and move to the next
+        // one of several words done — stagger the foe and move to the next,
+        // then release the lock so you can pick off other foes and come back
         th.wordIdx++; th.typed=0; th.word=th.words[th.wordIdx];
         renderBubble(th);
         giantWordDown(th);
+        clearActive();
+      } else if (th.mounted && !th.wounded){
+        woundKnight(th);     // first hit only wounds a horseman
       } else {
         slay(th);
       }
@@ -1287,8 +1365,22 @@ function advance(th, ch){
 function giantWordDown(th){
   th.hurtT = 0.25;
   const ax=castleW()*0.4, ay=wallTopY()-2;
-  loose(ax, ay, th.sx, th.sy+34, 'arrow', null, th);
-  emit(th.x, th.y-60, 'dust', 7);
+  // an arrow flies in and stays buried in the giant
+  const stick = { lx: rand(-13,13), ly: rand(-116,-94), ang: rand(-0.3,0.2) };   // chest
+  loose(ax, ay, th.x, th.y-104, 'arrow', ()=>{ th.arrows.push(stick); }, th);
+  emit(th.x, th.y-104, 'dust', 7);
+}
+// first hit on a mounted knight: an arrow thunks home, it skids back, and a
+// fresh word appears — you must finish that one to actually drop it.
+function woundKnight(th){
+  th.wounded = true;
+  th.kb = 340;                      // recoil/skid backward
+  const ax=castleW()*0.3, ay=wallTopY()-2;
+  loose(ax, ay, th.sx, th.sy+28, 'arrow', ()=>{ th.arrowStuck = true; }, th);
+  emit(th.x, th.y-30, 'dust', 8);
+  th.word = pickWord(WORDS[realm.pool], usedLetters());   // a new word to finish the job
+  th.typed = 0;
+  renderBubble(th);
 }
 
 // ===================================================================
@@ -1300,6 +1392,8 @@ function slay(th){
   if (th.bubble){ th.bubble.remove(); th.bubble=null; }
   slain++;
   rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+  if (window.HSGSound) HSGSound.correct();
+  if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
   updateHud();
 
   // wave every 8 kills
@@ -1326,17 +1420,21 @@ function slay(th){
     if (th.bubble){ th.bubble.remove(); th.bubble=null; }
     th.state='retreat'; th.retreatT=0;
   } else if (th.kind==='giant'){
-    // a heavy volley fells the giant; it topples and lies on the field
+    // the killing fifth arrow buries itself, then the giant slowly topples forward
     const ax=castleW()*0.4, ay=wallTopY()-2;
-    for (let k=0;k<5;k++) setTimeout(()=>{
-      if (threats.includes(th)) loose(ax, ay, th.sx+rand(-20,20), th.sy+rand(-10,50), 'arrow',
-        k===4 ? ()=>{ th.state='dying'; th.fallT=0; emit(th.x, th.y-30, 'dust', 18); } : null, th);
-    }, k*80);
+    const stick = { lx: rand(-13,13), ly: rand(-116,-94), ang: rand(-0.3,0.2) };   // chest
+    loose(ax, ay, th.x, th.y-104, 'arrow', ()=>{
+      th.arrows.push(stick);
+      th.state='dying'; th.fallT=0; th.rot=0;
+      emit(th.x, th.y-60, 'dust', 14);
+    }, th);
   }
 }
 
 function impactTroop(th, i){
   damageCastle(castleW()-6, th.y-20, 'small');
+  if (active===th) clearActive();                        // free you to pick a new word
+  if (th.bubble){ th.bubble.remove(); th.bubble=null; }  // its word vanishes immediately
   th.state='dying'; th.fallT=0; // (it falls at the wall)
   th.y -= 6;
 }
@@ -1365,7 +1463,9 @@ function impactGiant(th, i){
 }
 
 function damageCastle(x, y, size){
+  if (defeat) return;            // already falling — ignore further hits
   lives--;
+  if (window.HSGSound) HSGSound.wrong();
   rail.reset(); // breaking the line snuffs the live streak (no mid-run modal)
   decals.push({ x:clamp(x,8,castleW()), y:clamp(y,wallTopY()-20,groundY()), r: size==='small'?16:28 });
   if (decals.length>14) decals.shift();
@@ -1375,7 +1475,7 @@ function damageCastle(x, y, size){
   flashColor = size==='fire'?'255,90,30':'255,140,50';
   floaters.push({ x:castleW()*0.5, y:wallTopY()-20, vy:-26, life:1, txt:'-1 ❤' });
   updateHud();
-  if (lives<=0) gameOver();
+  if (lives<=0) startDefeat();
 }
 
 function breatheFire(th){
@@ -1421,7 +1521,7 @@ function updateProjectiles(dt){
     // track a moving foe so the shot actually connects where it now stands
     if (pr.target && threats.includes(pr.target)){
       pr.tx = pr.target.sx;
-      pr.ty = pr.target.sy + (pr.target.kind==='troop' ? 22 : 0);
+      pr.ty = pr.target.sy + (pr.target.kind==='troop' ? 22 : pr.target.kind==='giant' ? 96 : 0);
     }
     pr.p += dt/pr.dur;
     const p=clamp(pr.p,0,1);
@@ -1571,9 +1671,14 @@ function tick(ts){
   sceneTime += dt;
 
   // update
-  manageSpawns(dt);
-  updateThreats(dt, sceneTime);
-  updateProjectiles(dt);
+  if (defeat){
+    defeatT += dt;
+    runDefeatFx(dt);            // the keep burns, worse and worse
+  } else {
+    manageSpawns(dt);
+    updateThreats(dt, sceneTime);
+    updateProjectiles(dt);
+  }
   updateParticles(dt);
   if (shake>0) shake=Math.max(0, shake-dt*40);
   if (flashA>0) flashA=Math.max(0, flashA-dt*1.6);
@@ -1596,8 +1701,66 @@ function tick(ts){
   bubbleLayer.style.transform = shake>0 ? 'translate('+rand(-shake,shake)+'px,'+rand(-shake,shake)+'px)' : 'none';
   // impact flash
   if (flashA>0){ ctx.fillStyle='rgba('+flashColor+','+flashA+')'; ctx.fillRect(0,0,W,H); }
+  // defeat: darkening, hellish glow, then the final card
+  if (defeat){ drawDefeatOverlay(); if (defeatT>=DEFEAT_LEN){ finishDefeat(); return; } }
 
   rafId=requestAnimationFrame(tick);
+}
+// the losing cinematic: escalating fire across the castle for ~5s
+function startDefeat(){
+  defeat=true; defeatT=0; defeatBoomAcc=0; active=null;
+  // a soft initial flare (not the full jarring inferno) — the dread builds from here
+  emit(castleW()*0.45, wallTopY(), 'fire', 22, 1.6);
+  emit(castleW()*0.45, wallTopY(), 'smoke', 10);
+  shake = Math.max(shake, 7); flashA = Math.max(flashA, 0.35); flashColor = '255,90,30';
+  threats.forEach(t=>{ if(t.bubble) t.bubble.style.visibility='hidden'; }); // just the burning keep
+}
+const DEFEAT_LEN = 5.2;
+function runDefeatFx(dt){
+  const p=Math.min(1, defeatT/DEFEAT_LEN);
+  // steady, intensifying fire on the keep — no violent booms, just a soft rumble
+  const n=2+Math.floor(p*6);
+  for (let k=0;k<n;k++) emit(rand(2,castleW()), rand(wallTopY()-30, groundY()), 'fire', 1, 1+p*1.3);
+  if (Math.random()<0.3+p*0.4) emit(rand(2,castleW()), rand(wallTopY()-24, groundY()-10), 'smoke', 1, 1+p);
+  shake = Math.max(shake, 1.5 + p*3);
+  // final act: flames sweep across the whole battlefield and engulf it
+  if (defeatT > 3.4){
+    const e=clamp((defeatT-3.4)/(DEFEAT_LEN-3.4), 0, 1);
+    const cols=Math.floor(6 + e*34);
+    for (let k=0;k<cols;k++) emit(rand(0,W), rand(H - e*(H+40), H), 'fire', 1, 1.6+e*2.4);
+    if (Math.random()<0.5) emit(rand(0,W), rand(H*0.4,H), 'smoke', 1, 1.4+e);
+  }
+}
+function drawDefeatOverlay(){
+  const p=Math.min(1, defeatT/DEFEAT_LEN);
+  ctx.fillStyle='rgba(18,6,3,'+(p*0.4)+')'; ctx.fillRect(0,0,W,H);
+  const cx=castleW()*0.4, cy=groundY()-40;
+  const g=ctx.createRadialGradient(cx,cy,8, cx,cy,W*0.85);
+  g.addColorStop(0,'rgba(255,90,30,'+(p*0.4)+')'); g.addColorStop(1,'rgba(255,90,30,0)');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // a rising wall of flame swallows the whole screen just before the card
+  if (defeatT > 3.4){
+    const e=clamp((defeatT-3.4)/(DEFEAT_LEN-3.4), 0, 1);
+    const top=H*(1-e*1.05);
+    const fg=ctx.createLinearGradient(0,H,0,Math.max(0,top));
+    fg.addColorStop(0,'rgba(255,225,120,'+(0.9*e)+')');
+    fg.addColorStop(0.45,'rgba(255,130,40,'+(0.82*e)+')');
+    fg.addColorStop(1,'rgba(190,40,20,0)');
+    ctx.fillStyle=fg; ctx.fillRect(0, Math.max(0,top), W, H);
+    if (e>0.8){ ctx.fillStyle='rgba(255,150,50,'+((e-0.8)/0.2*0.85)+')'; ctx.fillRect(0,0,W,H); } // full engulf
+  }
+}
+function finishDefeat(){
+  defeat=false; running=false; if(rafId) cancelAnimationFrame(rafId);
+  document.getElementById('fsSlain').textContent=slain;
+  document.getElementById('fsBest').textContent=bestStreak;
+  document.getElementById('fsWave').textContent=wave;
+  document.getElementById('overTitle').textContent='The Castle Is Lost';
+  document.getElementById('overCrest').textContent='🔥';
+  overOverlay.classList.remove('hidden');
+  if (window.HSGSound) HSGSound.finish(slain >= 8);   // a cleared wave counts as a good stand
+  if (window.HSGfx && bestStreak >= 10) HSGfx.confetti({ count: 50 });
+  endRun(true);
 }
 
 // ===================================================================
@@ -1608,7 +1771,8 @@ function startGame(key){
   clearField();
   lives=START_LIVES; slain=0; wave=1; bestStreak=0; troopCount=0;
   lastBossSlain=0; lastGiantSlain=0; spawnAcc=0; spawnInterval=realm.spawn[0]; sceneTime=0;
-  shake=0; flashA=0;
+  shake=0; flashA=0; defeat=false; defeatT=0;
+  document.getElementById('overTitle').textContent='The Castle Is Lost';
   rail.reset();
   setupCanvas();
   updateHud();
@@ -1616,10 +1780,16 @@ function startGame(key){
   overOverlay.classList.add('hidden');
   flashWave('Wave 1', 'To arms!');
   running=true; lastTs=0; focusCatcher();
-  // start with a soldier already a quarter of the way in, so there's a word to
-  // type right away instead of waiting for the first spawn
-  const first = spawnTroop(0);
-  first.x = castleW() + (W - castleW()) * 0.75;
+  // open with a wave already advancing: four foot soldiers spread out…
+  [0.5, 0.62, 0.74, 0.86].forEach(fr=>{
+    const s = spawnTroop(0);            // counts 1–4 → foot soldiers
+    s.x = castleW() + (W - castleW()) * fr;
+  });
+  // …and a knight bringing up the rear (the 5th spawn is mounted)
+  const kn = spawnTroop(0);
+  kn.x = castleW() + (W - castleW()) * 0.96;
+  // first trebuchet shot lands a few seconds in
+  setTimeout(()=>{ if (running && !defeat) spawnRock(); }, 3000);
   rafId=requestAnimationFrame(tick);
 }
 function clearField(){
@@ -1628,7 +1798,7 @@ function clearField(){
 }
 function quitToMenu(){
   endRun(false);
-  running=false; if (rafId) cancelAnimationFrame(rafId);
+  running=false; defeat=false; if (rafId) cancelAnimationFrame(rafId);
   clearField();
   ctx.clearRect(0,0,W,H);
   overOverlay.classList.add('hidden');
@@ -1637,16 +1807,6 @@ function quitToMenu(){
 function endRun(showModal){
   rail.value=bestStreak;
   if (showModal) rail.end(); else rail.reset();
-}
-function gameOver(){
-  running=false; if (rafId) cancelAnimationFrame(rafId);
-  active=null;
-  document.getElementById('fsSlain').textContent=slain;
-  document.getElementById('fsBest').textContent=bestStreak;
-  document.getElementById('fsWave').textContent=wave;
-  // keep the final frame on screen for a beat, then show the overlay
-  setTimeout(()=>{ overOverlay.classList.remove('hidden'); }, 700);
-  endRun(true);
 }
 
 // ===================================================================
@@ -1667,9 +1827,9 @@ catcher.addEventListener('blur', ()=>{ if (running) setTimeout(focusCatcher,0); 
 document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ lastTs=0; } else if (running){ lastTs=0; focusCatcher(); } });
 
 document.querySelectorAll('.realm-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>startGame(btn.dataset.realm));
+  btn.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(btn.dataset.realm); });
 });
-document.getElementById('againBtn').addEventListener('click', ()=>startGame(realmKey));
+document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(realmKey); });
 document.getElementById('changeRealmBtn').addEventListener('click', ()=>{
   overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
 });

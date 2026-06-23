@@ -7,7 +7,12 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    .snake-page { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    /* Wide board, but keep the MAIN column centered in the viewport by
+       mirroring the streak rail with a phantom spacer on the left. */
+    .game-layout-wide { max-width: min(1800px, 96vw); gap: 1rem; justify-content: center; }
+    .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
+    @media (max-width: 1000px) { .game-layout-wide::before { display: none; } }
+    .snake-page { margin: 0 auto; padding: 1.25rem 1rem 3rem; width: 100%; }
     .snake-top {
       display: flex; align-items: center; justify-content: space-between;
       gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem;
@@ -21,30 +26,67 @@
     }
     .hearts .spent { filter: grayscale(1) opacity(0.4); }
 
-    .word-rail { display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-bottom: 0.6rem; }
-    .word-slots { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center; }
+    /* clue + blank slots that reveal as you spell */
+    .word-rail { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; }
+    .clue-line {
+      display: flex; align-items: center; gap: 0.6rem; max-width: 52ch; text-align: center;
+      font-family: var(--font-serif); font-size: 1.65rem; font-weight: 700; color: var(--ink);
+      line-height: 1.3;
+    }
+    .clue-label {
+      font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--gold-dark, #b07d2b);
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.25rem 0.6rem; flex-shrink: 0;
+    }
+    .word-slots { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
     .slot {
-      min-width: 1.5rem; height: 2.4rem; padding: 0 0.35rem;
+      min-width: 1.7rem; height: 2.7rem; padding: 0 0.4rem;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.5rem;
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.7rem;
       border-bottom: 4px solid var(--border); color: var(--ink-light);
       transition: color .15s, border-color .15s, transform .15s;
     }
     .slot.done { color: var(--green); border-color: var(--green); }
-    .slot.next { color: var(--red); border-color: var(--gold); transform: translateY(-3px); }
-    .hear-btn {
-      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
-      width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; line-height: 1;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .hear-btn:hover { background: #e3dccb; }
+    .slot.next { border-color: var(--gold); transform: translateY(-3px); }
 
     .stage {
       position: relative; width: 100%; border-radius: 16px; overflow: hidden;
       border: 2.5px solid var(--border); box-shadow: 0 8px 26px rgba(26,23,20,0.18);
       background: #20302a; touch-action: none;
+      height: min(72vh, 680px); min-height: 460px;
     }
+    @media (max-width: 600px) { .stage { height: 62vh; min-height: 380px; } }
     #snakeCanvas { display: block; width: 100%; height: 100%; }
+
+    /* between-words prompt — a pill under the clue; the board stays fully visible */
+    .ready-banner {
+      font-family: var(--font-sans); font-weight: 800; font-size: 0.95rem;
+      background: var(--gold); color: #2a1f08; border-radius: 99px; padding: 0.45rem 1.2rem;
+      box-shadow: 0 3px 10px rgba(26,23,20,0.18); cursor: pointer;
+      animation: rpPulse 1.1s ease-in-out infinite;
+    }
+    .ready-banner.hidden { display: none; }
+    @keyframes rpPulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.05); } }
+
+    /* size readout in the score badge */
+    .size-badge { font-size: 0.92rem; }
+
+    /* custom game-over card stats */
+    .end-size { font-family: var(--font-serif); font-size: 3.2rem; font-weight: 800; color: var(--gold-light, #e6c264); line-height: 1; margin: 0.1rem 0 0.1rem; }
+    .end-size-label { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color:#cfe6da; margin-bottom: 0.9rem; }
+    .end-row { display: flex; gap: 1.4rem; justify-content: center; margin-bottom: 1.2rem; }
+    .end-row .es { text-align: center; }
+    .end-row .es b { display: block; font-family: var(--font-serif); font-size: 1.5rem; color:#fff; line-height: 1; }
+    .end-row .es span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color:#bcd0c6; }
+    .end-actions { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 280px; }
+    .end-btn {
+      font-family: var(--font-sans); font-weight: 800; font-size: 1rem; cursor: pointer;
+      border-radius: 99px; padding: 0.65rem 1rem; border: 2.5px solid var(--border);
+    }
+    .end-btn.primary { background: var(--gold); color:#2a1f08; border-color: var(--gold); }
+    .end-btn.ghost { background: rgba(255,253,244,0.12); color:#fdf7ec; }
+    .end-btn:hover { filter: brightness(1.06); }
 
     .bf-overlay {
       position: absolute; inset: 0; z-index: 12;
@@ -85,37 +127,55 @@
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-layout-wide">
 <div class="snake-page game-main">
 
   <div class="snake-top">
     <h1>Letter Snake</h1>
     <div class="stat-group">
-      <div class="stat-badge" id="scoreBadge">⭐ 0</div>
+      <div class="stat-badge size-badge" id="scoreBadge">🐍 Length 3</div>
       <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️</div>
     </div>
   </div>
 
   <div class="word-rail">
-    <button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button>
+    <div class="clue-line"><span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span></div>
     <div class="word-slots" id="wordSlots"></div>
+    <div class="ready-banner hidden" id="readyBanner">Press any key to start ▶</div>
   </div>
 
   <div class="stage" id="stage">
     <canvas id="snakeCanvas"></canvas>
+
+    <!-- Game over: biggest-snake high score -->
+    <div class="bf-overlay hidden" id="endOverlay">
+      <div class="crest">🐍</div>
+      <h2 id="endTitle">Game Over</h2>
+      <div class="end-size" id="endSize">3</div>
+      <div class="end-size-label">Final snake length</div>
+      <div class="end-row">
+        <div class="es"><b id="endWords">0</b><span>Words</span></div>
+        <div class="es"><b id="endBest">0</b><span>Longest ever</span></div>
+      </div>
+      <div class="end-actions">
+        <button class="end-btn primary" id="endPlayAgain">Play again →</button>
+        <button class="end-btn ghost" onclick="quitToMenu()">Change level</button>
+      </div>
+    </div>
+
     <div class="bf-overlay" id="startOverlay">
       <div class="crest">🐍</div>
       <h2>Letter Snake</h2>
-      <p>Steer the snake to eat the letters <strong>in spelling order</strong>. Eat the wrong letter or hit a wall and you're in trouble! Pick a level:</p>
+      <p>Read the <strong>clue</strong>, then steer the snake to gobble the letters <strong>in spelling order</strong>. Edges wrap around — you won't crash off them! Pick a level:</p>
       <div class="level-row">
-        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Sprout</span><span class="l-desc">Short words • slow</span></span></button>
-        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Scout</span><span class="l-desc">Longer words • brisk</span></span></button>
-        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Scholar</span><span class="l-desc">Tricky words • fast</span></span></button>
+        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Sprout</span><span class="l-desc">Short words • super slow</span></span></button>
+        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Scout</span><span class="l-desc">Longer words • steady</span></span></button>
+        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Scholar</span><span class="l-desc">Tricky words • quicker</span></span></button>
       </div>
     </div>
   </div>
 
-  <p class="hint">Steer with <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>WASD</kbd> or swipe. Eat the <span style="color:var(--red);font-weight:700">red</span> letter next; don't hit the walls or yourself.</p>
+  <p class="hint">Steer with <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>WASD</kbd> or swipe. Gobble the letters in order — the edges loop you around to the other side.</p>
 
   <div class="control-row"><button class="reset-link" onclick="quitToMenu()">Change Level</button></div>
 
@@ -132,69 +192,94 @@
 <script src="../../assets/js/spelling-words.js"></script>
 <script>
 // ============================================================
-// LETTER SNAKE — eat letters in spelling order; don't crash.
+// LETTER SNAKE — read the clue, steer the snake to gobble the
+// letters IN SPELLING ORDER. Edges wrap around (no wall deaths).
+// The snake grows with every letter, so longer words get tricky.
 // ============================================================
 const LEVELS = {
-  easy:   { stepMs:[180,130], pellets:5 },
-  medium: { stepMs:[150,100], pellets:6 },
-  hard:   { stepMs:[125,80],  pellets:7 }
+  easy:   { stepMs:[360,290], decoys:4 },  // super slow
+  medium: { stepMs:[300,235], decoys:6 },  // steady
+  hard:   { stepMs:[250,195], decoys:8 }   // quicker
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
 
-const stage   = document.getElementById('stage');
-const canvas  = document.getElementById('snakeCanvas');
-const ctx     = canvas.getContext('2d');
-const wordSlots = document.getElementById('wordSlots');
-const scoreBadge= document.getElementById('scoreBadge');
-const heartsBadge=document.getElementById('heartsBadge');
+const stage    = document.getElementById('stage');
+const canvas   = document.getElementById('snakeCanvas');
+const ctx      = canvas.getContext('2d');
+const wordSlots= document.getElementById('wordSlots');
+const clueText = document.getElementById('clueText');
+const scoreBadge = document.getElementById('scoreBadge');
+const heartsBadge= document.getElementById('heartsBadge');
 const startOverlay = document.getElementById('startOverlay');
+const readyBanner  = document.getElementById('readyBanner');
+const endOverlay = document.getElementById('endOverlay');
+const endTitle = document.getElementById('endTitle');
+const endSize  = document.getElementById('endSize');
+const endWords = document.getElementById('endWords');
+const endBest  = document.getElementById('endBest');
 
 let W=560,H=460,dpr=1, CELL=32, COLS=17, ROWS=13;
 function setupCanvas(){
   const r=stage.getBoundingClientRect();
-  W=Math.max(300,r.width);
-  CELL=Math.max(26, Math.floor(W/18));
-  COLS=Math.floor(W/CELL);
-  ROWS=Math.round(COLS*0.74);
-  H=ROWS*CELL;
-  W=COLS*CELL;
-  stage.style.height=H+'px';
+  const wpx=Math.max(300,r.width), hpx=Math.max(300,r.height);
+  CELL=Math.max(34, Math.round(wpx/22));
+  COLS=Math.max(10, Math.round(wpx/CELL));
+  ROWS=Math.max(7,  Math.round(hpx/CELL));
+  W=COLS*CELL; H=ROWS*CELL;
   dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener('resize', ()=>{ if(!running){ setupCanvas(); render(); } });
+window.addEventListener('resize', ()=>{ if(state!=='playing'){ setupCanvas(); render(); } });
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;
 
+// state: 'menu' | 'ready' (paused, reading clue) | 'playing' | 'over'
+let state='menu';
 let level='easy', cfg=LEVELS.easy;
-let word='', typed=0, score=0, mistakes=0, bestStreak=0;
-let snake=[], dir={dc:1,dr:0}, queued=null, pellets=[];
-let running=false, stepAcc=0, lastTs=0, rafId=null, flashT=0, shakeT=0, nextId=1;
+let word='', clueStr='', typed=0, lettersEaten=0, wordsDone=0, mistakes=0;
+const START_LEN=3;
+let snake=[], lastSnake=[], dir={dc:1,dr:0}, queued=null, pellets=[];
+let stepAcc=0, curInterval=0.3, lastTs=0, rafId=null, flashT=0, shakeT=0, lifeT=0, nextId=1;
 
 const rail = HSGStreak.init({ gameId:'letter-snake', gameName:'Letter Snake', minStreak:2,
   mount: document.getElementById('streakRail') });
 
-// ---- words / speech ----
-function speak(w){
-  try{ if(HSGSound.muted||!window.speechSynthesis) return;
-    speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(w); u.rate=0.85; u.pitch=1.05; speechSynthesis.speak(u);
-  }catch(e){}
-}
+// ---- slots (blank until spelled) ----
 function renderSlots(){
   wordSlots.innerHTML='';
   for(let i=0;i<word.length;i++){
     const s=document.createElement('span');
     s.className='slot'+(i<typed?' done':(i===typed?' next':''));
-    s.textContent=word[i]; wordSlots.appendChild(s);
+    s.textContent = i<typed ? word[i] : '';   // hidden until eaten in order
+    wordSlots.appendChild(s);
   }
 }
+function resetSnake(){
+  const cr=Math.floor(ROWS/2), cc=Math.floor(COLS/2);
+  snake=[{c:cc,r:cr},{c:cc-1,r:cr},{c:cc-2,r:cr}];
+  lastSnake=snake.map(s=>({c:s.c,r:s.r}));   // no slide on a fresh snake
+  dir={dc:1,dr:0}; queued=null;
+}
+
+// ---- new word: pause (snake keeps its size & spot), show clue, wait for a key ----
 function newWord(){
   word=HSGSpellWords.pick(level).toLowerCase();
-  typed=0; renderSlots(); speak(word);
-  pellets=[]; placeNeeded(); topUp();
+  clueStr=HSGSpellWords.clue(word) || ('It has ' + word.length + ' letters');
+  typed=0; renderSlots();
+  clueText.textContent=clueStr;
+  buildPellets();                 // NOTE: snake is NOT reset — it keeps growing
+  // ready state — snake sits frozen in place until the player presses a key / taps
+  state='ready'; stepAcc=0; lastSnake=snake.map(s=>({c:s.c,r:s.r}));
+  readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word — press any key to continue ▶';
+  readyBanner.classList.remove('hidden');
+}
+function beginPlay(){
+  if(state!=='ready') return;
+  readyBanner.classList.add('hidden');
+  state='playing'; lastTs=0; stepAcc=0;
 }
 
 // ---- pellet placement ----
@@ -207,170 +292,230 @@ function randCell(){
   for(let i=0;i<200;i++){ const c=Math.floor(Math.random()*COLS), r=Math.floor(Math.random()*ROWS); if(cellFree(c,r)) return {c,r}; }
   return null;
 }
-function placeNeeded(){
-  const need=word[typed]; if(need==null) return;
-  if (pellets.some(p=>p.ch===need)) return;
-  const cell=randCell(); if(cell) pellets.push({id:nextId++, ...cell, ch:need});
-}
-function topUp(){
+// Scatter EVERY letter of the word plus some decoys, all on screen at once.
+function buildPellets(){
+  pellets=[];
+  for (const ch of word){ const cell=randCell(); if(cell) pellets.push({id:nextId++, ...cell, ch}); }
   let guard=0;
-  while (pellets.length < cfg.pellets && guard++<50){
+  while (guard++ < cfg.decoys){
     const cell=randCell(); if(!cell) break;
-    let ch;
-    if (Math.random()<0.45 && word.length>1) ch=word[Math.floor(Math.random()*word.length)];
-    else ch=ALPHA[Math.floor(Math.random()*26)];
-    if (ch===word[typed] && Math.random()<0.7) ch=ALPHA[Math.floor(Math.random()*26)];
-    pellets.push({id:nextId++, ...cell, ch});
+    pellets.push({id:nextId++, ...cell, ch:ALPHA[Math.floor(Math.random()*26)]});
   }
 }
+// move a (wrong) pellet to a fresh spot so the full letter set stays on screen
+function relocate(p){ const cell=randCell(); if(cell){ p.c=cell.c; p.r=cell.r; } }
 
 // ---- lifecycle ----
 function startGame(lv){
   level=lv; cfg=LEVELS[lv];
-  score=0; mistakes=0; bestStreak=0;
-  flashT=0; shakeT=0; stepAcc=0;
+  lettersEaten=0; wordsDone=0; mistakes=0;
+  flashT=0; shakeT=0; lifeT=0; stepAcc=0;
   rail.reset(); setupCanvas();
-  const cr=Math.floor(ROWS/2);
-  snake=[{c:4,r:cr},{c:3,r:cr},{c:2,r:cr}];
-  dir={dc:1,dr:0}; queued=null;
-  updateHud();
+  resetSnake();        // the only place the snake is reset — it persists between words
   startOverlay.classList.add('hidden');
-  newWord();
-  running=true; lastTs=0;
-  rafId=requestAnimationFrame(tick);
+  endOverlay.classList.add('hidden');
+  updateHud();
+  newWord();           // -> 'ready'
+  if(!rafId) rafId=requestAnimationFrame(loop);
 }
 function quitToMenu(){
-  running=false; if(rafId) cancelAnimationFrame(rafId);
-  rail.value=bestStreak; rail.end();
-  startOverlay.classList.remove('hidden'); render();
+  // record an in-progress run before bailing (a finished run is already recorded)
+  if (state==='playing'||state==='ready'){ rail.value=snake.length; rail.end(); }
+  state='menu';
+  readyBanner.classList.add('hidden');
+  endOverlay.classList.add('hidden');
+  clueText.textContent='Pick a level to start!';
+  scoreBadge.textContent='🐍 Length '+START_LEN;
+  startOverlay.classList.remove('hidden');
 }
+// running out of hearts OR biting yourself ends the run
 function gameOver(reason){
-  running=false; if(rafId) cancelAnimationFrame(rafId);
-  rail.value=bestStreak; rail.end();
+  state='over';
+  readyBanner.classList.add('hidden');
+  const finalLen=snake.length;
+  const best=Math.max(finalLen, rail.bestToBeat());
+  endTitle.textContent = reason==='self' ? 'You bit your own tail!' : 'Out of hearts!';
+  endSize.textContent = finalLen;
+  endWords.textContent = wordsDone;
+  endBest.textContent = best;
+  endOverlay.classList.remove('hidden');
   HSGSound.finish(false);
-  HSGfx.showSummary({
-    title: reason==='crash'?'Crashed!':'Game Over', correct:score, total:score+mistakes, best:bestStreak,
-    onPlayAgain:()=>startGame(level), allGamesHref:'../../all-games.html'
-  });
+  rail.value=finalLen; rail.end();   // record to leaderboard (name prompt if it qualifies)
 }
 
-// ---- core eat resolution (testable) ----
-function eat(ch){
-  if (ch === word[typed]){
-    typed++; renderSlots();
-    if (typed>=word.length){ wordComplete(); return 'complete'; }
-    HSGSound.tick(); placeNeeded(); topUp();
-    return 'correct';
-  } else {
-    mistakeMade(); topUp();
-    return 'wrong';
-  }
-}
 function wordComplete(){
-  score++; rail.hit();
-  if (rail.value>bestStreak) bestStreak=rail.value;
+  wordsDone++;
   HSGSound.correct();
-  if (HSGfx.milestone(rail.value)) HSGSound.streak(rail.value); else HSGfx.confetti({count:24});
-  flashT=0.35; updateHud();
-  newWord();
+  HSGfx.confetti({count:24});
+  flashT=0.4; updateHud();
+  newWord();   // pauses for the next clue; snake keeps its size
 }
-function mistakeMade(){
-  mistakes++; rail.reset(); HSGSound.wrong(); HSGfx.shake(); shakeT=0.35; updateHud();
-  if (mistakes>=MAX_MISTAKES) gameOver('mistakes');
+// wrong letter -> lose a heart (snake keeps its size); no reset
+function loseLife(){
+  mistakes++; HSGSound.wrong(); HSGfx.shake();
+  shakeT=0.35; lifeT=0.55; updateHud();
+  if (mistakes>=MAX_MISTAKES) gameOver('hearts');
 }
 function updateHud(){
-  scoreBadge.textContent='⭐ '+score;
+  scoreBadge.textContent='🐍 Length '+snake.length;
   let h=''; for(let i=0;i<MAX_MISTAKES;i++) h+= i<(MAX_MISTAKES-mistakes)?'❤️':'<span class="spent">🤍</span>';
   heartsBadge.innerHTML=h;
 }
 
-// ---- step (testable) ----
+// ---- step ----
 function step(){
   if (queued && !(queued.dc===-dir.dc && queued.dr===-dir.dr)) dir=queued;
   queued=null;
-  const head={c:snake[0].c+dir.dc, r:snake[0].r+dir.dr};
-  if (head.c<0||head.c>=COLS||head.r<0||head.r>=ROWS){ crash(); return; }
-  // self collision (ignore the tail cell, which will move when not growing)
-  for (let i=0;i<snake.length-1;i++){ if(snake[i].c===head.c&&snake[i].r===head.r){ crash(); return; } }
+  lastSnake=snake.map(s=>({c:s.c,r:s.r}));   // snapshot for smooth interpolation
+  // wrap around the edges to the opposite side at the same coordinate
+  let nc=snake[0].c+dir.dc, nr=snake[0].r+dir.dr;
+  if (nc<0) nc=COLS-1; else if (nc>=COLS) nc=0;
+  if (nr<0) nr=ROWS-1; else if (nr>=ROWS) nr=0;
+  const head={c:nc,r:nr};
+  // self collision -> instant game over (the bigger you grow, the riskier)
+  for (let i=0;i<snake.length-1;i++){ if(snake[i].c===head.c&&snake[i].r===head.r){ gameOver('self'); return; } }
   snake.unshift(head);
   const pi=pellets.findIndex(p=>p.c===head.c&&p.r===head.r);
   let grew=false;
   if (pi>=0){
-    const ch=pellets[pi].ch; pellets.splice(pi,1);
-    const res=eat(ch);
-    if (res==='correct'||res==='complete') grew=true;
+    const p=pellets[pi];
+    if (p.ch===word[typed]){            // right letter, in order -> eat it, snake grows
+      pellets.splice(pi,1);
+      typed++; lettersEaten++; renderSlots();
+      if (typed>=word.length){ wordComplete(); return; }   // newWord() rebuilt everything
+      HSGSound.tick(); grew=true; updateHud();
+    } else {                            // wrong letter -> lose a heart, bounce it elsewhere
+      loseLife(); relocate(p);
+    }
   }
   if (!grew) snake.pop();
 }
-function crash(){ HSGfx.shake(); gameOver('crash'); }
 
-// ---- loop ----
-function tick(ts){
-  if(!running) return;
+// ---- master loop (always runs; only steps while 'playing') ----
+function loop(ts){
   if(!lastTs) lastTs=ts;
   let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.1) dt=0.1;
-  const interval = lerp(cfg.stepMs[0], cfg.stepMs[1], clamp(score/24,0,1))/1000;
-  stepAcc+=dt;
-  while (running && stepAcc>=interval){ stepAcc-=interval; step(); }
+  if (state==='playing'){
+    curInterval = lerp(cfg.stepMs[0], cfg.stepMs[1], clamp(lettersEaten/20,0,1))/1000;
+    stepAcc+=dt;
+    while (state==='playing' && stepAcc>=curInterval){ stepAcc-=curInterval; step(); }
+  }
   if (flashT>0) flashT=Math.max(0,flashT-dt);
   if (shakeT>0) shakeT=Math.max(0,shakeT-dt);
+  if (lifeT>0)  lifeT =Math.max(0,lifeT-dt);
   render();
-  if (running) rafId=requestAnimationFrame(tick);
+  rafId=requestAnimationFrame(loop);
 }
 
 function render(){
   ctx.clearRect(0,0,W,H);
   ctx.save();
   if (shakeT>0) ctx.translate((Math.random()-0.5)*8,(Math.random()-0.5)*6);
-  // board
-  ctx.fillStyle='#243a31'; ctx.fillRect(0,0,W,H);
-  // checker
-  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
-    if((r+c)%2===0){ ctx.fillStyle='rgba(255,255,255,0.03)'; ctx.fillRect(c*CELL,r*CELL,CELL,CELL); }
-  }
-  // pellets
+  drawBoard();
+  // pellets — all look the same so the player must KNOW the spelling
   for (const p of pellets){
-    const need = p.ch===word[typed];
     const x=p.c*CELL+CELL/2, y=p.r*CELL+CELL/2, rad=CELL*0.4;
+    ctx.beginPath(); ctx.arc(x,y+rad*0.18,rad,0,6.28); ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fill(); // drop shadow
     ctx.beginPath(); ctx.arc(x,y,rad,0,6.28);
-    ctx.fillStyle = need ? '#fff3d0' : '#3d574a';
-    ctx.fill();
-    ctx.lineWidth=2.5; ctx.strokeStyle = need ? '#E0531B' : '#86a596'; ctx.stroke();
-    ctx.fillStyle = need ? '#8B2020' : '#dbe7e0';
+    ctx.fillStyle='#f6eed6'; ctx.fill();
+    ctx.lineWidth=2.5; ctx.strokeStyle='#caa75a'; ctx.stroke();
+    ctx.fillStyle='#5a3d1a';
     ctx.font='700 '+Math.round(CELL*0.5)+"px 'Courier New', monospace";
     ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText(p.ch, x, y+1);
   }
-  // snake
-  for (let i=snake.length-1;i>=0;i--){
-    const s=snake[i], x=s.c*CELL, y=s.r*CELL;
-    const head=i===0;
-    ctx.fillStyle = head ? '#C4A040' : (i%2? '#5fae7a':'#6fbf86');
-    roundRect(x+2,y+2,CELL-4,CELL-4, head?9:7); ctx.fill();
-    if (head){
-      ctx.fillStyle='#1A1714';
-      const ex=x+CELL/2+dir.dc*5, ey=y+CELL/2+dir.dr*5;
-      ctx.beginPath(); ctx.arc(ex-4*(dir.dr!==0?1:0)-(dir.dc!==0?0:0), ey, 2.6,0,6.28);
-      ctx.arc(ex+ (dir.dc!==0?0:4), ey,2.6,0,6.28); ctx.fill();
-    }
-  }
+  drawSnake();
   ctx.restore();
   if (flashT>0){ ctx.fillStyle='rgba(120,210,140,'+(flashT*0.5)+')'; ctx.fillRect(0,0,W,H); }
+  if (lifeT>0){  ctx.fillStyle='rgba(220,70,50,'+(lifeT*0.35)+')'; ctx.fillRect(0,0,W,H); }
 }
-function roundRect(x,y,w,h,r){
-  ctx.beginPath();
-  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
-  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+
+function drawBoard(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#34553f'); g.addColorStop(0.55,'#274839'); g.addColorStop(1,'#1c392d');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // soft checker for a mown-lawn feel
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if((r+c)%2===0){ ctx.fillStyle='rgba(255,255,255,0.030)'; ctx.fillRect(c*CELL,r*CELL,CELL,CELL); }
+  }
+  // faint grid
+  ctx.strokeStyle='rgba(0,0,0,0.07)'; ctx.lineWidth=1; ctx.beginPath();
+  for(let c=1;c<COLS;c++){ ctx.moveTo(c*CELL,0); ctx.lineTo(c*CELL,H); }
+  for(let r=1;r<ROWS;r++){ ctx.moveTo(0,r*CELL); ctx.lineTo(W,r*CELL); }
+  ctx.stroke();
+  // vignette to focus the centre
+  const rg=ctx.createRadialGradient(W/2,H/2,Math.min(W,H)*0.25, W/2,H/2,Math.max(W,H)*0.62);
+  rg.addColorStop(0,'rgba(0,0,0,0)'); rg.addColorStop(1,'rgba(0,0,0,0.30)');
+  ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+}
+
+function bodyColor(f,hurt){
+  if(hurt) return '#bb4a32';
+  return 'rgb('+Math.round(lerp(96,58,f))+','+Math.round(lerp(192,150,f))+','+Math.round(lerp(132,96,f))+')';
+}
+function segCenter(i,t){
+  const to=snake[i]; let from=lastSnake[i]||to;
+  if(Math.abs(to.c-from.c)>1 || Math.abs(to.r-from.r)>1) from=to;  // wrapped -> snap, no streak across board
+  return { x:(lerp(from.c,to.c,t)+0.5)*CELL, y:(lerp(from.r,to.r,t)+0.5)*CELL };
+}
+function drawSnake(){
+  const n=snake.length; if(!n) return;
+  const hurt=lifeT>0;
+  const t = state==='playing' ? clamp(stepAcc/curInterval,0,1) : 0;
+  const pts=[]; for(let i=0;i<n;i++) pts.push(segCenter(i,t));
+  ctx.lineCap='round'; ctx.lineJoin='round';
+  // draw tail-first so the head sits on top; smooth body via fat round strokes + dots
+  for(let i=n-1;i>=1;i--){
+    const f=i/n, col=bodyColor(f,hurt), w=lerp(CELL*0.82, CELL*0.46, f);
+    ctx.fillStyle=col; ctx.beginPath(); ctx.arc(pts[i].x,pts[i].y,w/2,0,6.28); ctx.fill();
+    const a=snake[i], b=snake[i-1];
+    if (Math.abs(a.c-b.c)+Math.abs(a.r-b.r)===1){   // adjacent (not a wrap seam)
+      ctx.strokeStyle=col; ctx.lineWidth=w;
+      ctx.beginPath(); ctx.moveTo(pts[i].x,pts[i].y); ctx.lineTo(pts[i-1].x,pts[i-1].y); ctx.stroke();
+    }
+  }
+  drawHead(pts[0], hurt);
+}
+function drawHead(p,hurt){
+  const R=CELL*0.5;
+  // neck link to first body segment
+  if(snake.length>1){
+    const b=snake[1], a=snake[0];
+    if (Math.abs(a.c-b.c)+Math.abs(a.r-b.r)===1){
+      const p1=segCenter(1, state==='playing'?clamp(stepAcc/curInterval,0,1):0);
+      ctx.strokeStyle=hurt?'#cf5036':'#9bcf6e'; ctx.lineWidth=CELL*0.82; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(p.x,p.y); ctx.lineTo(p1.x,p1.y); ctx.stroke();
+    }
+  }
+  ctx.fillStyle=hurt?'#e0573c':'#C4A040';
+  ctx.beginPath(); ctx.arc(p.x,p.y,R,0,6.28); ctx.fill();
+  // eyes look in the travel direction
+  const ox=dir.dc, oy=dir.dr, px=-oy, py=ox, ef=R*0.34, eo=R*0.44;
+  for(const s of [-1,1]){
+    const ex=p.x+ox*ef+px*eo*s, ey=p.y+oy*ef+py*eo*s;
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(ex,ey,R*0.27,0,6.28); ctx.fill();
+    ctx.fillStyle='#17130d'; ctx.beginPath(); ctx.arc(ex+ox*R*0.1, ey+oy*R*0.1, R*0.14,0,6.28); ctx.fill();
+  }
 }
 
 // ---- input ----
-function setDir(dc,dr){ if(running) queued={dc,dr}; }
+function setDir(dc,dr){ if(state==='playing') queued={dc,dr}; }
+function dirFromKey(k){
+  if (k==='arrowleft'||k==='a') return {dc:-1,dr:0};
+  if (k==='arrowright'||k==='d') return {dc:1,dr:0};
+  if (k==='arrowup'||k==='w') return {dc:0,dr:-1};
+  if (k==='arrowdown'||k==='s') return {dc:0,dr:1};
+  return null;
+}
 document.addEventListener('keydown', e=>{
-  const k=e.key.toLowerCase();
-  if (k==='arrowleft'||k==='a'){ setDir(-1,0); e.preventDefault(); }
-  else if (k==='arrowright'||k==='d'){ setDir(1,0); e.preventDefault(); }
-  else if (k==='arrowup'||k==='w'){ setDir(0,-1); e.preventDefault(); }
-  else if (k==='arrowdown'||k==='s'){ setDir(0,1); e.preventDefault(); }
+  if (state==='menu'||state==='over') return;
+  const d=dirFromKey(e.key.toLowerCase());
+  if (state==='ready'){
+    beginPlay();
+    if (d) queued=d;       // first key also sets the heading
+    e.preventDefault(); return;
+  }
+  if (d){ setDir(d.dc,d.dr); e.preventDefault(); }
 });
 let touchStart=null;
 stage.addEventListener('touchstart', e=>{ const t=e.touches[0]; touchStart={x:t.clientX,y:t.clientY}; }, {passive:true});
@@ -378,17 +523,22 @@ stage.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false})
 stage.addEventListener('touchend', e=>{
   if(!touchStart) return; const t=e.changedTouches[0];
   const dx=t.clientX-touchStart.x, dy=t.clientY-touchStart.y;
+  touchStart=null;
+  if (state==='ready'){ beginPlay(); }   // a tap/swipe starts the next word
   if (Math.abs(dx)<18 && Math.abs(dy)<18) return;
   if (Math.abs(dx)>Math.abs(dy)) setDir(dx>0?1:-1,0); else setDir(0,dy>0?1:-1);
-  touchStart=null;
 });
-document.getElementById('hearBtn').addEventListener('click', ()=>{ if(word) speak(word); });
+// tap the board or the banner to start moving between words
+stage.addEventListener('click', ()=>{ if(state==='ready') beginPlay(); });
+readyBanner.addEventListener('click', beginPlay);
+document.getElementById('endPlayAgain').addEventListener('click', ()=>startGame(level));
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', ()=>startGame(b.dataset.level)));
-document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && running) lastTs=0; });
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state==='playing') lastTs=0; });
 
 setupCanvas();
 updateHud();
-(function idle(){ if(!running){ render(); requestAnimationFrame(idle); } })();
+render();
+rafId=requestAnimationFrame(loop);
 </script>
 
 </body>

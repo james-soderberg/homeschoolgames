@@ -78,6 +78,56 @@
     }
     .friends-btn:hover { border-color: var(--ink-light); }
 
+    /* ---- era picker ---- */
+    .era-prompt {
+      font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600;
+      color: var(--ink); margin: 1.25rem 0 0.25rem;
+    }
+    .era-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem;
+      max-width: 470px; margin: 0.5rem auto 0.25rem;
+    }
+    .era-tile {
+      display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
+      padding: 0.95rem 0.4rem; border: 2px solid var(--border); border-radius: 14px;
+      background: #fff; cursor: pointer; font-family: var(--font-sans); color: var(--ink);
+      box-shadow: 0 3px 10px rgba(26,23,20,0.08);
+      transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+      animation: eraIn 0.45s ease both;
+    }
+    @keyframes eraIn { 0% { opacity: 0; transform: translateY(16px) scale(0.9); } 100% { opacity: 1; transform: none; } }
+    .era-tile:hover { transform: translateY(-5px) scale(1.04); border-color: var(--gold); box-shadow: 0 10px 22px rgba(196,160,64,0.25); }
+    .era-tile:hover .era-emoji { transform: scale(1.15) rotate(-6deg); }
+    .era-emoji { font-size: 2rem; line-height: 1; transition: transform 0.2s; }
+    .era-name { font-family: var(--font-serif); font-weight: 600; font-size: 1.05rem; }
+    .era-range { font-size: 0.66rem; color: var(--ink-light); font-weight: 600; }
+    .era-count { font-size: 0.58rem; color: var(--gold); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; margin-top: 0.1rem; }
+    .era-tile.era-all { grid-column: 1 / -1; flex-direction: row; justify-content: center; gap: 0.6rem;
+      background: linear-gradient(95deg, #FFF6E2, #fff); padding: 0.7rem; }
+    .era-tile.era-all .era-emoji { font-size: 1.7rem; }
+    .era-tile.era-all .era-name { font-size: 1.15rem; }
+    .era-tile.era-all .era-range::before { content: "· "; }
+    .era-tile.era-all .era-range, .era-tile.era-all .era-count { font-size: 0.62rem; }
+
+    /* selection transition */
+    .era-grid.chosen .era-tile:not(.picked) { opacity: 0.2; transform: scale(0.9); transition: all 0.4s; pointer-events: none; }
+    .era-tile.picked { animation: eraPick 0.5s cubic-bezier(.34,1.56,.64,1) both; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light), 0 10px 24px rgba(196,160,64,0.35); }
+    @keyframes eraPick { 0% { transform: scale(1); } 45% { transform: scale(1.14); } 100% { transform: scale(1.06); } }
+
+    .friends-link {
+      background: none; border: none; color: var(--ink-light); text-decoration: underline;
+      font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans); margin-top: 0.75rem;
+    }
+    .friends-link:hover { color: var(--ink); }
+
+    @media (max-width: 460px) {
+      .era-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .era-tile { animation: none !important; }
+      .era-tile.picked { animation: none !important; }
+    }
+
     /* Friends setup panel (hidden by default) */
     .friends-setup {
       background: white;
@@ -335,9 +385,54 @@
     .circa-card.dimmed { opacity: 0.4; transition: opacity 0.3s; }
     /* equal-size cards while comparing */
     .showdown.revealing .circa-card { width: 200px; max-width: none; min-height: 165px; }
+
+    /* ---- living BC->AD timeline (reveal) ---- */
+    .timeline-wrap {
+      max-width: 470px; margin: 0 auto; max-height: 0; opacity: 0; overflow: hidden;
+      transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
+    }
+    .timeline-wrap.show { max-height: 210px; opacity: 1; margin-top: 0.9rem; }
+    .timeline { position: relative; padding: 44px 18px 56px; min-height: 106px; }
+    .tl-track { position: relative; height: 6px; border-radius: 99px;
+      background: linear-gradient(90deg, #c6d4e4 0%, #e7ddc9 100%); }
+    .tl-tick { position: absolute; top: -6px; bottom: -6px; width: 1px; background: var(--ink-light); opacity: 0.18; }
+    .tl-end { position: absolute; top: 44px; font-size: 0.52rem; font-weight: 700; letter-spacing: 0.05em; color: var(--ink-light); opacity: 0.7; text-transform: uppercase; }
+    .tl-end.left { left: 0; }
+    .tl-end.right { right: 0; }
+    .tl-zero { position: absolute; top: -7px; bottom: -7px; width: 2px; background: var(--ink-light); opacity: 0.4; }
+    .tl-zero-label { position: absolute; top: -20px; transform: translateX(-50%);
+      font-size: 0.52rem; font-weight: 700; letter-spacing: 0.06em; color: var(--ink-light); white-space: nowrap; }
+    .tl-fill { position: absolute; top: 0; height: 6px; border-radius: 99px;
+      transform: scaleX(0); transform-origin: left center; transition: transform 0.5s ease 0.4s; }
+    .tl-fill.good { background: var(--green); }
+    .tl-fill.bad  { background: var(--red); }
+    .tl-fill.grow { transform: scaleX(1); }
+    .tl-pin { position: absolute; top: 3px; animation: tlDrop 0.5s cubic-bezier(.34,1.56,.64,1) both; }
+    .tl-pin.pick { animation-delay: 0.16s; }
+    @keyframes tlDrop { 0% { opacity: 0; transform: translate(-50%,-28px); } 100% { opacity: 1; transform: translate(-50%,-50%); } }
+    .tl-pin .dot { display: block; width: 15px; height: 15px; border-radius: 50%; border: 2.5px solid #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.25); }
+    .tl-pin.center .dot { background: var(--gold); }
+    .tl-pin.pick.good .dot { background: var(--green); }
+    .tl-pin.pick.bad  .dot { background: var(--red); }
+    .tl-pin .yr { position: absolute; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-serif); font-size: 0.74rem; font-weight: 700; white-space: nowrap; }
+    .tl-pin .tag { position: absolute; left: 50%; transform: translateX(-50%);
+      font-size: 0.5rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: var(--ink-light); white-space: nowrap; }
+    .tl-pin.center .yr { bottom: 17px; color: #9a7b22; }
+    .tl-pin.center .tag { bottom: 32px; }
+    .tl-pin.pick .yr { top: 17px; }
+    .tl-pin.pick .tag { top: 32px; }
+    .tl-pin.pick.good .yr { color: var(--green); }
+    .tl-pin.pick.bad  .yr { color: var(--red); }
+
+    /* staggered hand deal-in */
+    .circa-card.deal-in { animation: dealIn 0.4s ease both; }
+    @keyframes dealIn { 0% { opacity: 0; transform: translateY(16px) scale(0.95); } 100% { opacity: 1; transform: none; } }
+
     @media (prefers-reduced-motion: reduce) {
       .circa-card.in-showdown { transition: none !important; }
-      .showdown-gap, .year-diff { transition: none !important; }
+      .showdown-gap, .year-diff, .timeline-wrap, .tl-fill { transition: none !important; }
+      .tl-pin, .circa-card.deal-in { animation: none !important; }
     }
 
     /* Punchy "how far off" verdict line */
@@ -552,7 +647,7 @@
   <header class="site-header">
     <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
     <nav class="site-nav">
-      <a href="../../index.html">← All Games</a>
+      <a href="../../subjects/history.html">← History</a>
     </nav>
   </header>
 
@@ -561,10 +656,11 @@
     <div class="setup-icon">🏛️</div>
     <h1>Circa</h1>
     <p class="setup-tagline">A history card game</p>
-    <p class="setup-how">A history card is revealed in the center. Pick the card from your hand that is <strong>closest in date</strong> to it. Get it right to keep your streak going!</p>
+    <p class="setup-how">Pick an era — your whole hand will be cards from that time. Then choose the card <strong>closest in date</strong> to the center card!</p>
 
-    <button class="play-solo-btn" onclick="quickStartSolo()">Play Solo →</button>
-    <button class="friends-btn" onclick="showFriendsSetup()">Play with Friends</button>
+    <p class="era-prompt">Choose your era</p>
+    <div class="era-grid" id="eraGrid"></div>
+    <button class="friends-link" onclick="showFriendsSetup()">…or play with friends</button>
 
     <div class="friends-setup" id="friendsSetup" style="display:none">
       <label>Number of players</label>
@@ -614,6 +710,7 @@
         <div class="showdown-gap" id="showdownGap"></div>
         <div class="showdown-slot" id="pickSlot"></div>
       </div>
+      <div class="timeline-wrap" id="timelineWrap"></div>
     </div>
 
     <!-- Feedback -->
@@ -678,11 +775,16 @@
   </footer>
 
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/circa-deck.js"></script>
 <script>
 // ============================================================
 // CIRCA — Full deck
 // ============================================================
-const DECK = [
+// Use the big generated deck (1,746 cards) when present; the inline list
+// below is a fallback if circa-deck.js fails to load.
+const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK : [
   { title: "Homo sapiens emerge", desc: "Modern humans first appear in Africa, distinct from earlier hominid species.", year: -300000, approx: true },
   { title: "Cave paintings at Lascaux", desc: "Artists in southern France cover cave walls with vivid animals and symbols.", year: -15000, approx: true },
   { title: "Last Ice Age ends", desc: "Glaciers retreat across the Northern Hemisphere, reshaping coastlines and enabling new migrations.", year: -10000, approx: true },
@@ -976,12 +1078,14 @@ let soloStreak = 0;
 let soloRoundNum = 0;
 let handSize = 6;
 let soloAwaitingNext = false;
+let soloSourceDeck = null;   // set by the era picker; null = whole deck
 
 function startSoloGame() {
   soloStreak = 0;
   if (typeof rail !== 'undefined') rail.reset();
   soloRoundNum = 0;
-  soloDeck = shuffle([...DECK]);
+  const src = (soloSourceDeck && soloSourceDeck.length) ? soloSourceDeck : DECK;
+  soloDeck = shuffle([...src]);
   soloHand = [];
 
   // Deal initial hand
@@ -1064,6 +1168,8 @@ function renderSoloHand(revealed) {
       }
     } else {
       el.addEventListener('click', () => soloPickCard(i));
+      el.classList.add('deal-in');                 // staggered deal animation
+      el.style.animationDelay = (i * 0.05) + 's';
     }
 
     grid.appendChild(el);
@@ -1091,13 +1197,69 @@ function resetShowdown() {
   if (pickSlot) pickSlot.innerHTML = '';
   const gap = document.getElementById('showdownGap');
   if (gap) gap.innerHTML = '';
+  const tl = document.getElementById('timelineWrap');
+  if (tl) { tl.classList.remove('show'); tl.innerHTML = ''; }
   const label = document.getElementById('centerLabel');
   if (label) label.textContent = 'Center card — find the closest in your hand';
+}
+
+function fmtYearShort(y) { return Math.abs(y) + (y < 0 ? ' BC' : ' AD'); }
+
+// Timeline scale spans the CURRENT era's range (set in startSoloWithEra),
+// so the ribbon reads "start of this era ... end of this era".
+let tlBounds = [-3000, 2025];
+
+function renderTimeline(centerYear, pickYear, isCorrect) {
+  const wrap = document.getElementById('timelineWrap');
+  if (!wrap) return;
+  const s = tlBounds[0], e = tlBounds[1], span = (e - s) || 1;
+  const pos = y => Math.max(1.5, Math.min(98.5, (y - s) / span * 100));
+  const cPos = pos(centerYear), pPos = pos(pickYear);
+  const fillLeft = Math.min(cPos, pPos), fillW = Math.abs(cPos - pPos);
+  const cls = isCorrect ? 'good' : 'bad';
+
+  // BC/AD divider only if this era's range crosses year 0
+  let zero = '';
+  if (s < 0 && e > 0) {
+    const zp = (0 - s) / span * 100;
+    zero = `<div class="tl-zero" style="left:${zp}%"></div><div class="tl-zero-label" style="left:${zp}%">BC | AD</div>`;
+  }
+  const leftLabel = fmtYearShort(s);
+  const rightLabel = e >= 2024 ? 'today' : fmtYearShort(e);
+
+  wrap.innerHTML =
+    `<div class="timeline"><div class="tl-track">` +
+      zero +
+      `<div class="tl-fill ${cls}" style="left:${fillLeft}%;width:${fillW}%"></div>` +
+      `<div class="tl-pin center" style="left:${cPos}%"><span class="tag">Center</span><span class="yr">${fmtYearShort(centerYear)}</span><span class="dot"></span></div>` +
+      `<div class="tl-pin pick ${cls}" style="left:${pPos}%"><span class="tag">Your pick</span><span class="yr">${fmtYearShort(pickYear)}</span><span class="dot"></span></div>` +
+      `<div class="tl-end left">${leftLabel}</div><div class="tl-end right">${rightLabel}</div>` +
+    `</div></div>`;
+  requestAnimationFrame(() => {
+    wrap.classList.add('show');
+    const fill = wrap.querySelector('.tl-fill');
+    if (fill) requestAnimationFrame(() => fill.classList.add('grow'));
+  });
+}
+
+// Animate a number ticking up from 0 to `to` (eased), for tension/payoff.
+function countUpEl(el, to, dur) {
+  if (!el) return;
+  const start = performance.now();
+  function step(now) {
+    const t = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - t, 3);
+    el.textContent = Math.round(eased * to).toLocaleString();
+    if (t < 1) requestAnimationFrame(step);
+    else el.textContent = to.toLocaleString();
+  }
+  requestAnimationFrame(step);
 }
 
 function soloPickCard(pickedIdx) {
   if (soloAwaitingNext) return;
   soloAwaitingNext = true; // lock further picks during the reveal
+  if (window.HSGSound) HSGSound.tick();
 
   const bestIdx = findBestCardIndex(soloHand, soloCenterCard);
   const pickedCard = soloHand[pickedIdx];
@@ -1196,12 +1358,14 @@ function soloPickCard(pickedIdx) {
   // ---- Step 3: show the years-apart between the cards, then verdict + Next ----
   const finishReveal = () => {
     gapEl.innerHTML =
-      `<div class="year-diff"><span class="num">${pickedDiff.toLocaleString()}</span>` +
+      `<div class="year-diff"><span class="num">0</span>` +
       `<span class="label">years apart</span></div>`;
     requestAnimationFrame(() => {
       const yd = gapEl.querySelector('.year-diff');
       if (yd) yd.classList.add('show');
+      countUpEl(gapEl.querySelector('.num'), pickedDiff, 750); // tally up the gap for tension
     });
+    renderTimeline(soloCenterCard.year, pickedCard.year, isCorrect); // drop both onto a BC->AD ribbon
 
     const instruction = document.getElementById('soloInstruction');
     const bar = document.getElementById('soloActionBar');
@@ -1210,6 +1374,9 @@ function soloPickCard(pickedIdx) {
     if (isCorrect) {
       soloStreak++;
       rail.hit();
+      if (window.HSGSound) HSGSound.correct();
+      if (window.HSGfx) HSGfx.confetti({ big: pickedDiff <= 300 }); // bigger burst for a tight guess
+      if (window.HSGfx && HSGfx.milestone(soloStreak) && window.HSGSound) HSGSound.streak(soloStreak);
       if (soloStreak > getHighScore()) setHighScore(soloStreak);
       updateSoloStats();
       soloHand.splice(pickedIdx, 1); // played card leaves the hand
@@ -1227,6 +1394,8 @@ function soloPickCard(pickedIdx) {
     } else {
       const prevStreak = soloStreak;
       soloStreak = 0;
+      if (window.HSGSound) HSGSound.wrong();
+      if (window.HSGfx) { HSGfx.flash('red'); if (pickedDiff > 2000) HSGfx.shake(); } // shake on a wild miss
       updateSoloStats();
 
       instruction.innerHTML = `<div class="round-verdict" style="color:var(--red)">${roundCommentary(pickedDiff, false)}</div>`;
@@ -1292,9 +1461,18 @@ function soloEndGame(reason) {
   rows.forEach(r => {
     const row = document.createElement('div');
     row.className = 'final-row';
-    row.innerHTML = `<div class="name">${r.label}</div><div class="wins">${r.val}</div>`;
+    row.innerHTML = `<div class="name">${r.label}</div><div class="wins">0</div>`;
     container.appendChild(row);
   });
+  // count the stats up, then celebrate
+  setTimeout(() => {
+    const nums = container.querySelectorAll('.wins');
+    rows.forEach((r, i) => countUpEl(nums[i], r.val, 650));
+  }, 120);
+
+  const newBest = soloStreak > 0 && soloStreak >= hs;
+  if (window.HSGSound) HSGSound.finish(true);
+  if (window.HSGfx) HSGfx.confetti({ big: newBest, count: newBest ? 90 : 45 });
 }
 
 // ============================================================
@@ -1542,11 +1720,70 @@ function showEndScreen() {
 // Simplified setup helpers
 // ============================================================
 
-function quickStartSolo() {
+// ---- Era picker (solo) ----
+const ERAS = [
+  { key: 'all',         emoji: '🌍', label: 'All Time',     range: 'every era',       lo: -Infinity, hi: Infinity },
+  { key: 'prehistory',  emoji: '🦴', label: 'Prehistory',   range: 'before 3000 BC',  lo: -Infinity, hi: -3000 },
+  { key: 'ancient',     emoji: '🏺', label: 'Ancient',      range: '3000–500 BC',     lo: -3000, hi: -500 },
+  { key: 'classical',   emoji: '⚔️', label: 'Classical',    range: '500 BC–500 AD',   lo: -500, hi: 500 },
+  { key: 'medieval',    emoji: '🏰', label: 'Medieval',     range: '500–1500',        lo: 500, hi: 1500 },
+  { key: 'earlymodern', emoji: '⛵', label: 'Early Modern', range: '1500–1800',       lo: 1500, hi: 1800 },
+  { key: '1800s',       emoji: '🚂', label: 'The 1800s',    range: '19th century',    lo: 1800, hi: 1900 },
+  { key: '1900s',       emoji: '✈️', label: 'The 1900s',    range: '20th century',    lo: 1900, hi: 2000 },
+  { key: '2000s',       emoji: '🛰️', label: 'The 2000s',    range: '21st century',    lo: 2000, hi: Infinity },
+];
+
+function deckForEra(key) {
+  if (key === 'all') return DECK;
+  const e = ERAS.find(x => x.key === key);
+  return DECK.filter(c => c.year >= e.lo && c.year < e.hi);
+}
+
+// Timeline ribbon span for the chosen era: its defined start/end, with the
+// open-ended eras (Prehistory, 2000s, All Time) backed by the deck's range.
+function eraTimelineBounds(key, deck) {
+  if (key === 'all') return [-3000, 2025];
+  const e = ERAS.find(x => x.key === key) || {};
+  const years = (deck && deck.length) ? deck.map(c => c.year) : [];
+  let lo = isFinite(e.lo) ? e.lo : (years.length ? Math.min.apply(null, years) : -3000);
+  let hi = isFinite(e.hi) ? e.hi : (years.length ? Math.max.apply(null, years.concat(2025)) : 2025);
+  return [lo, hi];
+}
+
+function renderEraTiles() {
+  const grid = document.getElementById('eraGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  ERAS.forEach((e, i) => {
+    const n = deckForEra(e.key).length;
+    const tile = document.createElement('button');
+    tile.className = 'era-tile' + (e.key === 'all' ? ' era-all' : '');
+    tile.style.animationDelay = (i * 0.05) + 's';
+    tile.innerHTML =
+      `<span class="era-emoji">${e.emoji}</span>` +
+      `<span class="era-name">${e.label}</span>` +
+      `<span class="era-range">${e.range}</span>` +
+      `<span class="era-count">${n} cards</span>`;
+    tile.addEventListener('click', () => startSoloWithEra(e.key, tile));
+    grid.appendChild(tile);
+  });
+}
+
+function startSoloWithEra(key, tileEl) {
   mode = 'solo';
   handSize = 6;
-  document.getElementById('setupScreen').style.display = 'none';
-  startSoloGame();
+  soloSourceDeck = deckForEra(key);
+  tlBounds = eraTimelineBounds(key, soloSourceDeck);
+  if (window.HSGSound) HSGSound.tick();
+  const grid = document.getElementById('eraGrid');
+  if (grid) grid.classList.add('chosen');
+  if (tileEl) tileEl.classList.add('picked');
+  setTimeout(() => {
+    document.getElementById('setupScreen').style.display = 'none';
+    if (grid) grid.classList.remove('chosen');
+    if (tileEl) tileEl.classList.remove('picked');
+    startSoloGame();
+  }, 480);
 }
 
 function showFriendsSetup() {
@@ -1571,6 +1808,7 @@ const rail = HSGStreak.init({
 });
 
 updatePlayerNames();
+renderEraTiles();
 </script>
 
 </body>

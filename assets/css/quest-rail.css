@@ -146,11 +146,147 @@
 .quest-status.good { color: var(--green); }
 .quest-status.bad  { color: var(--red); }
 
+/* =========================================================
+   Time Machine theme (Who Said It?) — a big, animated time corridor.
+   Earliest era at the bottom, a glowing wormhole (the present) at the top.
+   A traveller pod warps up on right answers, is knocked down on wrong ones,
+   and the PARADOX gauge fills — fill it and the timeline collapses (game over).
+   ========================================================= */
+.tm-stage { position: relative; line-height: 0; }
+.tm-svg { display: block; width: 100%; height: auto; }
+
+/* ---- starfield: drifts down to sell the time-travel motion ---- */
+.tm-star { fill: #cfd6ff; opacity: 0.7; animation: tmstar var(--d,3s) linear infinite; animation-delay: var(--dl,0s); }
+@keyframes tmstar { 0% { transform: translateY(-14px); opacity: 0; } 12% { opacity: 0.8; } 100% { transform: translateY(34px); opacity: 0; } }
+.tm-svg.warp .tm-star { animation-duration: 0.5s; }
+.tm-svg.warp .tm-star { fill: #fff; }
+
+/* ---- speed lines out of the wormhole ---- */
+.tm-speed { stroke: #6b5bc0; stroke-width: 1.2; opacity: 0; stroke-linecap: round;
+  animation: tmspeed 1.4s linear infinite; animation-delay: var(--dl,0s); }
+@keyframes tmspeed { 0% { opacity: 0; stroke-dasharray: 2 300; stroke-dashoffset: 0; } 50% { opacity: 0.25; } 100% { opacity: 0; stroke-dashoffset: -90; } }
+.tm-svg.warp .tm-speed { animation-duration: 0.45s; stroke: #9d8bff; }
+
+/* ---- wormhole at the top ---- */
+.tm-vring { fill: none; stroke: #7c5bd6; stroke-width: 1.6; opacity: 0.5; transform-box: fill-box; transform-origin: center; }
+.tm-vring.v0 { stroke: #7fe4ff; animation: tmspin 8s linear infinite; }
+.tm-vring.v1 { animation: tmspin 12s linear infinite reverse; }
+.tm-vring.v2 { animation: tmspin 16s linear infinite; opacity: 0.42; }
+.tm-vring.v3 { animation: tmspin 22s linear infinite reverse; opacity: 0.34; }
+.tm-vring.v4 { animation: tmspin 28s linear infinite; opacity: 0.26; }
+.tm-vring.v5 { animation: tmspin 36s linear infinite reverse; opacity: 0.2; }
+.tm-vring.v6 { animation: tmspin 46s linear infinite; opacity: 0.14; }
+@keyframes tmspin { to { transform: rotate(360deg); } }
+.tm-eye { animation: tmeye 3.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes tmeye { 0%,100% { opacity: 0.85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.12); } }
+.tm-svg.arrived .tm-vring { stroke: #ffd23f; opacity: 0.7; }
+.tm-svg.arrived .tm-eye { animation: tmbloom 1.4s ease forwards; }
+@keyframes tmbloom { 0% { transform: scale(1); opacity: 1; } 60% { transform: scale(2.6); opacity: 0.9; } 100% { transform: scale(3.4); opacity: 0; } }
+
+/* ---- timeline rail + the lit, already-travelled portion ---- */
+.tm-line { stroke: #3b3566; stroke-width: 3; stroke-linecap: round; }
+.tm-line-lit { stroke: url(#tmbeam); stroke-width: 5; stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(127,228,255,0.7)); transition: y2 0.55s cubic-bezier(.34,1.4,.5,1); }
+
+/* ---- era waypoints + year ticks ---- */
+.tm-node-glow { fill: #7fe4ff; opacity: 0; transition: opacity 0.3s ease; }
+.tm-node-dot { fill: #241f44; stroke: #6b5bc0; stroke-width: 2; transition: fill 0.3s ease, stroke 0.3s ease; }
+.tm-node.reached .tm-node-dot { fill: #7fe4ff; stroke: #d4f5ff; }
+.tm-node.reached .tm-node-glow { opacity: 0.3; }
+.tm-node.current .tm-node-dot { fill: #fff; stroke: #fff; }
+.tm-node.current .tm-node-glow { opacity: 0.55; animation: tmnode 1.6s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes tmnode { 0%,100% { opacity: 0.4; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.35); } }
+.tm-tick { font-family: var(--font-sans); font-size: 12px; font-weight: 700; fill: #a89fe0; }
+.tm-tick.present { fill: #ffd23f; }
+
+/* ---- paradox gauge ---- */
+.tm-pdx-track { fill: rgba(8,6,20,0.6); stroke: #4a4275; stroke-width: 1.5; }
+.tm-pdx-fill { transition: y 0.4s ease, height 0.4s ease; filter: drop-shadow(0 0 5px rgba(255,80,90,0.6)); }
+.tm-pdx-cell { stroke: #4a4275; stroke-width: 1.5; }
+.tm-pdx-icon { font-size: 15px; fill: #ff6b7d; }
+.tm-pdx-title { font-family: var(--font-sans); font-size: 9px; font-weight: 700; letter-spacing: 0.22em; fill: #8a82b8; }
+.tm-svg.danger .tm-pdx-fill { animation: tmpdxflux 0.7s ease-in-out infinite; }
+@keyframes tmpdxflux { 0%,100% { filter: drop-shadow(0 0 5px rgba(255,80,90,0.6)); } 50% { filter: drop-shadow(0 0 12px rgba(255,60,70,0.95)); } }
+.tm-svg.danger .tm-pdx-icon { animation: tmblink 0.6s steps(2) infinite; }
+@keyframes tmblink { 50% { opacity: 0.3; } }
+
+/* ---- the traveller pod ---- */
+.tm-pod { transition: transform 0.55s cubic-bezier(.34,1.4,.5,1); }
+.tm-trail { opacity: 0; transition: opacity 0.2s ease; }
+.tm-pod.jump .tm-trail { animation: tmtrail 0.6s ease-out; }
+@keyframes tmtrail { 0% { opacity: 0.9; transform: scaleY(0.2); transform-origin: top; } 60% { opacity: 0.7; } 100% { opacity: 0; transform: scaleY(1.6); transform-origin: top; } }
+.tm-aura { fill: #7fe4ff; opacity: 0.22; animation: tmpulse 2.4s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes tmpulse { 0%,100% { opacity: 0.18; transform: scale(1); } 50% { opacity: 0.36; transform: scale(1.14); } }
+.tm-pod-ring { transform-box: fill-box; transform-origin: center; animation: tmspin 5s linear infinite; }
+.tm-pod-ring ellipse { fill: none; stroke: #7fe4ff; stroke-width: 2; opacity: 0.85; }
+.tm-orb { stroke: #d4f5ff; stroke-width: 1.5; }
+.tm-trav { dominant-baseline: middle; }
+.tm-pod.jump .tm-orb { animation: tmflare 0.55s ease-out; }
+@keyframes tmflare { 0% { filter: drop-shadow(0 0 0 #7fe4ff); } 40% { filter: drop-shadow(0 0 16px #c4f3ff); } 100% { filter: drop-shadow(0 0 0 #7fe4ff); } }
+.tm-pod.jump .tm-pod-ring { animation: tmringpop 0.55s ease-out, tmspin 5s linear infinite; }
+@keyframes tmringpop { 0% { transform: scale(0.5); opacity: 1; } 100% { transform: scale(1.7); opacity: 0; } }
+
+/* spark burst on a forward jump */
+.tm-spark { fill: #d4f5ff; opacity: 0; transform-box: fill-box; transform-origin: center; }
+.tm-pod.jump .tm-spark { animation: tmspark 0.55s ease-out; }
+@keyframes tmspark { 0% { opacity: 1; transform: rotate(var(--sa)) translateY(0); } 100% { opacity: 0; transform: rotate(var(--sa)) translateY(-32px); } }
+
+/* ---- warp flash + knockback glitch ---- */
+.tm-flash { fill: #fff; opacity: 0; pointer-events: none; }
+.tm-flash.flash-on { animation: tmflash 0.5s ease-out; }
+@keyframes tmflash { 0% { opacity: 0; } 18% { opacity: 0.32; } 100% { opacity: 0; } }
+.tm-svg.glitch { animation: tmglitch 0.45s steps(3); }
+@keyframes tmglitch { 0%,100% { filter: none; } 33% { filter: hue-rotate(-40deg) saturate(2); transform: translateX(-2px); } 66% { filter: hue-rotate(30deg); transform: translateX(2px); } }
+
+/* ---- collapse: cracks shatter across the corridor ---- */
+.tm-crack { fill: none; stroke: #ff5b6e; stroke-width: 2; opacity: 0; stroke-linecap: round;
+  stroke-dasharray: 240; stroke-dashoffset: 240; filter: drop-shadow(0 0 4px rgba(255,60,80,0.8)); }
+.tm-svg.collapsing .tm-crack { opacity: 1; animation: tmcrack 0.6s ease-out forwards; animation-delay: var(--cd,0s); }
+@keyframes tmcrack { to { stroke-dashoffset: 0; } }
+.tm-svg.collapsing .tm-bg { animation: tmredout 1.8s ease forwards; }
+@keyframes tmredout { 0% { opacity: 1; } 30% { opacity: 1; } 100% { opacity: 0.3; } }
+.tm-svg.collapsing .tm-pod { animation: tmfadepod 1.3s ease-in forwards; }
+@keyframes tmfadepod { 0% { opacity: 1; } 70% { opacity: 1; } 100% { opacity: 0; } }
+.tm-svg.collapsing .tm-orb { animation: tmorbdoom 1.3s ease-in forwards; }
+@keyframes tmorbdoom { 0% { filter: drop-shadow(0 0 0 #ff5b6e); } 50% { filter: drop-shadow(0 0 16px #ff5b6e); } 100% { filter: drop-shadow(0 0 0 #ff5b6e); } }
+
+/* ---- big year readout (top-right) ---- */
+.tm-year {
+  position: absolute; top: 12px; right: 14px; text-align: right;
+  display: flex; flex-direction: column; line-height: 1;
+  background: rgba(8,6,20,0.6); border: 1.5px solid rgba(127,228,255,0.45);
+  border-radius: 12px; padding: 0.45rem 0.8rem; box-shadow: 0 0 18px rgba(127,228,255,0.25);
+}
+.tm-year-lab { font-family: var(--font-sans); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.2em; color: #8fb8d6; }
+.tm-year-val { font-family: var(--font-serif); font-size: 1.7rem; font-weight: 700; color: #7fe4ff; text-shadow: 0 0 12px rgba(127,228,255,0.6); }
+.tm-svg.danger ~ .tm-year .tm-year-val { color: #ffd23f; }
+
+/* ---- event banner ---- */
+.tm-banner {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 1rem;
+  font-family: var(--font-serif); font-weight: 700; font-size: 1.7rem; line-height: 1.1;
+  color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.6);
+  pointer-events: none; opacity: 0; transition: opacity 0.2s ease;
+}
+.tm-banner.show { opacity: 1; animation: bannerpop 0.4s cubic-bezier(.34,1.56,.64,1); }
+.tm-banner.win  { background: radial-gradient(circle, rgba(255,210,63,0.32), rgba(124,91,214,0.28)); }
+.tm-banner.fail { background: rgba(120,40,60,0.4); }
+.tm-banner.doom { background: radial-gradient(circle, rgba(255,40,60,0.45), rgba(40,6,20,0.75)); font-size: 1.9rem; }
+
+.quest-meters .tm-era b   { color: #2f8fb8; }
+.quest-meters .tm-pdx-m b { color: #ff6b7d; }
+.quest-meters .tm-trips b { color: var(--gold); }
+
 @media (prefers-reduced-motion: reduce) {
   .ark, .cloud, .rain .drop, .wave, .sun .rays,
   .ark-part, .ark-animals, .ark-lift, .ark-banner,
   .builder.tapping, .builder.tapping .hammer, .builder.tapping .dust,
-  .ark-svg.saved .rainbow path, .ark-svg.splashing .splash circle, .quest-shake {
+  .ark-svg.saved .rainbow path, .ark-svg.splashing .splash circle, .quest-shake,
+  .tm-star, .tm-speed, .tm-vring, .tm-eye, .tm-node.current .tm-node-glow,
+  .tm-pod, .tm-pod-ring, .tm-aura, .tm-line-lit, .tm-pdx-fill,
+  .tm-pod.jump .tm-spark, .tm-pod.jump .tm-orb, .tm-pod.jump .tm-trail, .tm-pod.jump .tm-pod-ring,
+  .tm-banner, .tm-flash, .tm-svg.collapsing .tm-crack {
     animation: none !important;
     transition: none !important;
   }
