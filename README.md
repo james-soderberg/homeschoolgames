@@ -7,6 +7,7 @@ Educational games for homeschoolers. Simple, focused, no ads, no accounts.
 - **Circa** — History card game. Guess event dates, closest wins.
 - **Map Quiz** — Click the country on the map. Americas, Europe, Asia, Africa.
 - **Math Drill** — Click the correct answer. Four operations, three difficulty levels.
+- **Dragon Siege** — Typing defense. Type the word above each foe to strike it down before it reaches your keep. Three realms by word difficulty.
 
 ## Structure
 
@@ -18,6 +19,7 @@ games/
   circa/index.html
   map-quiz/index.html
   math-drill/index.html
+  dragon-siege/index.html
 ```
 
 ## Deployment

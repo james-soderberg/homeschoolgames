@@ -206,19 +206,20 @@
     }
 
     .game-grid {
-      display: grid;
-      /* fixed 3-up grid; tiles wrap row by row */
-      grid-template-columns: repeat(3, 1fr);
+      /* centered flex-wrap: up to 3 per row, and any incomplete last
+         row centers instead of looking lopsided */
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
       gap: 1.75rem;
-      max-width: 760px;
+      max-width: 800px;
       margin: 0 auto;
     }
+    .game-grid .game-tile { width: 220px; }
 
-    @media (max-width: 760px) {
-      .game-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 420px) {
-      .game-grid { grid-template-columns: 1fr; }
+    @media (max-width: 520px) {
+      .game-grid { gap: 1rem; }
+      .game-grid .game-tile { width: 100%; max-width: 320px; }
     }
 
     /* floating, tap-me tiles — just an icon and a name */
@@ -276,6 +277,7 @@
     .game-tile:nth-child(5) { animation-delay: -2.4s; background: #E1F2F7; }
     .game-tile:nth-child(6) { animation-delay: -3.0s; background: #FFF6DD; }
     .game-tile:nth-child(7) { animation-delay: -3.6s; background: #F3E2E2; }
+    .game-tile:nth-child(8) { animation-delay: -4.2s; background: #DCEFE8; }
 
     /* featured "Most Popular" tile */
     .game-tile--featured {
@@ -429,6 +431,12 @@
         <span class="new-badge">✦ New</span>
         <span class="tile-icon">🐉</span>
         <span class="tile-name">Dragon Siege</span>
+      </a>
+
+      <a href="games/word-racer/index.html" class="game-tile game-tile--new">
+        <span class="new-badge">✦ New</span>
+        <span class="tile-icon">🏎️</span>
+        <span class="tile-name">Word Racer</span>
       </a>
 
     </div>

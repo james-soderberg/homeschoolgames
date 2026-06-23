@@ -1,0 +1,1337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dragon Siege — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .siege-page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+    }
+
+    .siege-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .siege-top h1 { margin: 0; font-size: 1.8rem; }
+
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
+    .stat-badge {
+      background: var(--cream-dark);
+      border: 1.5px solid var(--border);
+      border-radius: 99px;
+      padding: 0.45rem 0.95rem;
+      font-weight: 700;
+      font-size: 0.9rem;
+      font-family: var(--font-sans);
+      color: var(--ink);
+      white-space: nowrap;
+    }
+    .hearts { font-size: 1.05rem; letter-spacing: 0.05em; line-height: 1; text-align: right; }
+    .hearts .spent { filter: grayscale(1) opacity(0.4); }
+
+    /* ============ Battlefield (canvas scene) ============ */
+    .battlefield {
+      position: relative;
+      width: 100%;
+      height: min(72vh, 680px);
+      min-height: 460px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 2.5px solid #2a2036;
+      box-shadow: 0 10px 34px rgba(26,23,20,0.35);
+      cursor: crosshair;
+      user-select: none;
+      touch-action: manipulation;
+      background: #1a1422;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    /* soft vignette for depth */
+    .battlefield::after {
+      content: "";
+      position: absolute; inset: 0;
+      pointer-events: none;
+      box-shadow: inset 0 0 120px 24px rgba(0,0,0,0.45);
+      border-radius: 14px;
+      z-index: 6;
+    }
+
+    /* word labels float in their own layer above the canvas */
+    .bubble-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; will-change: transform; }
+    .word-bubble {
+      position: absolute;
+      top: 0; left: 0;
+      transform: translate(-50%, -50%);
+      font-family: 'Courier New', ui-monospace, monospace;
+      font-weight: 700;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      background: rgba(255,253,244,0.96);
+      color: var(--ink);
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      padding: 1px 7px;
+      white-space: nowrap;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.45);
+    }
+    .word-bubble.boss { font-size: 1.18rem; padding: 2px 9px; border-color: #b3402a; }
+    .word-bubble .done { color: #2A5C3F; }
+    .word-bubble .next { color: var(--red); text-decoration: underline; }
+    .word-bubble .rest { color: var(--ink-light); }
+    .word-bubble.active {
+      border-color: var(--gold);
+      background: #fffdf4;
+      box-shadow: 0 0 0 2px rgba(196,160,64,0.6), 0 4px 12px rgba(0,0,0,0.5);
+    }
+    .word-bubble.miss { animation: bubbleMiss 0.28s ease; }
+    @keyframes bubbleMiss {
+      0%,100% { transform: translate(-50%,-50%); }
+      30% { transform: translate(calc(-50% - 5px),-50%); }
+      60% { transform: translate(calc(-50% + 5px),-50%); }
+    }
+
+    /* ============ Overlays ============ */
+    .bf-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 12;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 1.5rem;
+      background: rgba(20,15,26,0.86);
+      backdrop-filter: blur(2px);
+      color: #fdf7ec;
+    }
+    .bf-overlay.hidden { display: none; }
+    .bf-overlay h2 { font-family: var(--font-serif); color: #fff; font-size: 2.1rem; margin: 0 0 0.4rem; }
+    .bf-overlay p { color: #e7ddcf; margin: 0 0 1.25rem; max-width: 36ch; font-size: 0.98rem; line-height: 1.5; }
+    .bf-overlay .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.4rem; }
+
+    .realm-row { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; max-width: 340px; }
+    .realm-btn {
+      display: flex; align-items: center; gap: 0.75rem;
+      background: rgba(255,253,244,0.96);
+      border: 2.5px solid var(--border);
+      border-radius: 12px;
+      padding: 0.7rem 1rem;
+      cursor: pointer;
+      font-family: var(--font-sans);
+      text-align: left;
+      transition: transform 0.12s, border-color 0.12s, background 0.12s;
+      color: var(--ink);
+    }
+    .realm-btn:hover { transform: translateY(-2px); border-color: var(--gold); background: #fff; }
+    .realm-btn .r-icon { font-size: 1.9rem; line-height: 1; flex-shrink: 0; }
+    .realm-btn .r-name { font-weight: 800; font-size: 1.05rem; display: block; }
+    .realm-btn .r-desc { font-size: 0.78rem; color: var(--ink-light); display: block; }
+
+    .play-btn {
+      background: var(--gold); color: var(--ink); border: none;
+      border-radius: 99px; padding: 0.85rem 2rem;
+      font-family: var(--font-sans); font-size: 1.1rem; font-weight: 800;
+      cursor: pointer; box-shadow: 0 6px 0 #a07f2c;
+      transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    .play-btn:hover { background: #d0ab48; }
+    .play-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #a07f2c; }
+    .play-btn.secondary {
+      background: transparent; color: #fdf7ec;
+      border: 2px solid rgba(253,247,236,0.5); box-shadow: none;
+      font-size: 0.95rem; padding: 0.6rem 1.4rem;
+    }
+    .play-btn.secondary:hover { background: rgba(253,247,236,0.12); }
+    .overlay-actions { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+
+    .final-stats { display: flex; gap: 1.5rem; margin-bottom: 1.25rem; }
+    .final-stats .fs { display: flex; flex-direction: column; align-items: center; }
+    .final-stats .fs b { font-family: var(--font-serif); font-size: 2.2rem; line-height: 1; color: var(--gold-light); }
+    .final-stats .fs span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: #cdc2b4; margin-top: 0.25rem; }
+
+    .wave-flash {
+      position: absolute; top: 38%; left: 50%;
+      transform: translate(-50%,-50%);
+      z-index: 8;
+      font-family: var(--font-serif); font-weight: 700; font-size: 2.1rem;
+      color: #fff; text-shadow: 0 2px 14px rgba(0,0,0,0.8);
+      pointer-events: none; opacity: 0; text-align: center;
+    }
+    .wave-flash small { display:block; font-size: 0.9rem; letter-spacing: 0.15em; text-transform: uppercase; color:#f0c87a; }
+    .wave-flash.show { animation: waveFlash 1.6s ease forwards; }
+    @keyframes waveFlash {
+      0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.6); }
+      20%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+      78%  { opacity: 1; transform: translate(-50%,-50%) scale(1); }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(1.12); }
+    }
+
+    .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: -9999px; }
+
+    .hint { text-align: center; font-size: 0.86rem; color: var(--ink-light); margin-top: 0.9rem; line-height: 1.5; }
+    .hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.8rem; }
+
+    .control-row { display: flex; justify-content: center; margin-top: 0.6rem; }
+    .reset-link {
+      background: none; border: none; color: var(--ink-light);
+      font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans);
+      text-decoration: underline; padding: 0.3rem 0.5rem;
+    }
+    .reset-link:hover { color: var(--ink); }
+
+    @media (max-width: 600px) {
+      .battlefield { height: 62vh; min-height: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← All Games</a>
+  </nav>
+</header>
+
+<div class="game-layout game-layout-wide">
+<div class="siege-page game-main">
+
+  <div class="siege-top">
+    <h1>Dragon Siege</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="slainBadge">⚔️ 0</div>
+      <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️❤️❤️</div>
+    </div>
+  </div>
+
+  <div class="battlefield" id="battlefield">
+    <canvas id="scene"></canvas>
+    <div class="bubble-layer" id="bubbleLayer"></div>
+    <div class="wave-flash" id="waveFlash"></div>
+
+    <!-- Start overlay -->
+    <div class="bf-overlay" id="startOverlay">
+      <div class="crest">🐉</div>
+      <h2>Dragon Siege</h2>
+      <p>An army marches on your keep — with flaming boulders and dragons behind them. <strong>Type the word</strong> over each foe to loose your archers before it strikes the walls. Choose your realm:</p>
+      <div class="realm-row">
+        <button class="realm-btn" data-realm="squire">
+          <span class="r-icon">🛡️</span>
+          <span><span class="r-name">Squire's Watch</span><span class="r-desc">Short words • gentle pace</span></span>
+        </button>
+        <button class="realm-btn" data-realm="knight">
+          <span class="r-icon">⚔️</span>
+          <span><span class="r-name">Knight's March</span><span class="r-desc">Longer words • steady swarm</span></span>
+        </button>
+        <button class="realm-btn" data-realm="dragonlord">
+          <span class="r-icon">🐲</span>
+          <span><span class="r-name">Dragonlord's Siege</span><span class="r-desc">Hard words • relentless</span></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Game over overlay -->
+    <div class="bf-overlay hidden" id="overOverlay">
+      <div class="crest" id="overCrest">🏰</div>
+      <h2 id="overTitle">The Keep Has Fallen</h2>
+      <div class="final-stats">
+        <div class="fs"><b id="fsSlain">0</b><span>Slain</span></div>
+        <div class="fs"><b id="fsBest">0</b><span>Best Streak</span></div>
+        <div class="fs"><b id="fsWave">1</b><span>Wave</span></div>
+      </div>
+      <div class="overlay-actions">
+        <button class="play-btn" id="againBtn">Defend Again ⚔️</button>
+        <button class="play-btn secondary" id="changeRealmBtn">Change Realm</button>
+      </div>
+    </div>
+
+    <input class="type-catcher" id="catcher" type="text" autocomplete="off"
+           autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="latin" aria-hidden="true">
+  </div>
+
+  <p class="hint">
+    Type a foe's word to lock on, then finish it to loose an arrow. Letters only — start typing to begin.
+    On a phone, tap the field to raise the keyboard.
+  </p>
+
+  <div class="control-row">
+    <button class="reset-link" onclick="quitToMenu()">Surrender &amp; Choose Realm</button>
+  </div>
+
+</div><!-- /.siege-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script src="../../assets/js/streak-rail.js"></script>
+<script>
+// ============================================================
+// DRAGON SIEGE — an animated medieval typing-defense game.
+// A canvas battlefield: marching army patches, flaming trebuchet
+// boulders, and swooping fire-breathing dragons all converge on
+// your keep. Type a foe's word to loose arrows; let one through
+// and it slams the walls with screen-shaking, fiery impact.
+// ============================================================
+
+// ---------- Word pools, graded by realm ----------
+const WORDS = {
+  squire: [
+    "king","gold","oath","page","lord","iron","fire","wolf","bow","axe",
+    "helm","moat","gate","keep","oak","vow","raid","duke","clan","mace",
+    "sword","crown","horse","lance","armor","royal","noble","realm","blade","flame",
+    "beast","quest","raven","brave","tower","siege","cloak","spear","feast","shire",
+    "north","stone","grail","squire","valor"
+  ],
+  knight: [
+    "castle","knight","dragon","shield","archer","dagger","helmet","banner","throne","wizard",
+    "goblin","baron","herald","turret","scroll","falcon","defend","attack","rampart","cavalry",
+    "kingdom","gallant","valiant","crusade","peasant","monarch","warrior","victory","courage","dungeon",
+    "stallion","chalice","chamber","conquer","emperor","jester","minstrel","vanguard","outpost","bastion"
+  ],
+  dragonlord: [
+    "fortress","catapult","crossbow","gauntlet","chainmail","blacksmith","battlement","portcullis","trebuchet","longbowman",
+    "knighthood","sorcerer","enchanted","dragonfire","stronghold","vanquished","conquered","broadsword","guardian","cathedral",
+    "excalibur","chivalry","drawbridge","besieged","alliance","rebellion","fellowship","sovereign","barbarian","apprentice",
+    "holy grail","round table","iron throne","castle gate","by my sword","dragon fire","hold the line","raise the bridge"
+  ]
+};
+const BOSS_WORDS = [
+  "fire-breathing","ancient wyrm","the great wyrm","scorched earth","wings of doom",
+  "conflagration","annihilation","apocalypse","leviathan","incandescent","devastation"
+];
+
+const REALMS = {
+  squire:     { pool:"squire",     troopSpeed:[11,18], rockDur:[10.0,7.5], dragonDur:[9.0,7.0], spawn:[3.4,2.0], group:[1,2], rockChance:0.14, dragonGap:16 },
+  knight:     { pool:"knight",     troopSpeed:[15,24], rockDur:[8.5,6.0],  dragonDur:[8.0,6.0], spawn:[2.7,1.4], group:[2,3], rockChance:0.20, dragonGap:12 },
+  dragonlord: { pool:"dragonlord", troopSpeed:[20,30], rockDur:[7.0,5.0],  dragonDur:[7.0,5.2], spawn:[2.1,1.05],group:[2,4], rockChance:0.26, dragonGap:9  }
+};
+
+const START_LIVES = 5;
+const TROOP_KINDS = ["knight","goblin","orc","skeleton"];
+
+// ---------- DOM ----------
+const bf          = document.getElementById('battlefield');
+const canvas      = document.getElementById('scene');
+const ctx         = canvas.getContext('2d');
+const bubbleLayer = document.getElementById('bubbleLayer');
+const catcher     = document.getElementById('catcher');
+const slainBadge  = document.getElementById('slainBadge');
+const heartsBadge = document.getElementById('heartsBadge');
+const startOverlay= document.getElementById('startOverlay');
+const overOverlay = document.getElementById('overOverlay');
+const waveFlashEl = document.getElementById('waveFlash');
+
+// ---------- Canvas sizing ----------
+let W = 720, H = 480, dpr = 1;
+function setupCanvas() {
+  const r = bf.getBoundingClientRect();
+  W = Math.max(320, r.width);
+  H = r.height;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildScenery();
+}
+window.addEventListener('resize', setupCanvas);
+
+// ---------- Utils ----------
+const rand  = (a, b) => a + Math.random() * (b - a);
+const randi = (a, b) => Math.floor(rand(a, b + 1));
+const choice= a => a[Math.floor(Math.random() * a.length)];
+const lerp  = (a, b, t) => a + (b - a) * t;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ---------- State ----------
+let realmKey='squire', realm=REALMS.squire;
+let threats=[], projectiles=[], particles=[], decals=[], floaters=[];
+let active=null;
+let lives=START_LIVES, slain=0, wave=1, bestStreak=0;
+let lastBossSlain=0, spawnAcc=0, spawnInterval=2.9;
+let running=false, lastTs=0, rafId=null, sceneTime=0;
+let shake=0, flashA=0, flashColor='255,120,40';
+let nextId=1;
+let treb={ fireT:0 };   // siege engine arm animation (0 = cocked, pulses to 1 on fire)
+
+const rail = HSGStreak.init({
+  gameId:'dragon-siege', gameName:'Dragon Siege', minStreak:3,
+  mount: document.getElementById('streakRail')
+});
+
+// ---------- Geometry helpers ----------
+function castleW(){ return Math.min(210, W * 0.30); }
+function groundY(){ return H - 64; }
+function wallTopY(){ return groundY() - 96; }   // archers stand here
+function towerTopY(){ return H * 0.20; }
+
+// ===================================================================
+// SCENERY (static-ish background built once per resize)
+// ===================================================================
+let stars=[], clouds=[], hillsFar=[], hillsMid=[], grass=[], torches=[];
+function buildScenery(){
+  stars = [];
+  for (let i=0;i<70;i++) stars.push({ x:rand(0,W), y:rand(0,H*0.55), r:rand(0.4,1.5), tw:rand(0,6.28) });
+  clouds = [];
+  for (let i=0;i<5;i++) clouds.push({ x:rand(0,W), y:rand(20,H*0.4), s:rand(0.7,1.5), v:rand(3,9) });
+  // rolling hill silhouettes
+  hillsFar = makeHills(H*0.62, 26, 0.6);
+  hillsMid = makeHills(H*0.72, 44, 1.0);
+  grass = [];
+  for (let i=0;i<60;i++) grass.push({ x:rand(castleW(), W), y:rand(groundY()+6, H-8), h:rand(5,13), b:rand(0,6.28) });
+  torches = [
+    { x:castleW()*0.34, y:wallTopY()-6 },
+    { x:castleW()*0.74, y:towerTopY()+30 }
+  ];
+}
+function makeHills(baseY, amp, freq){
+  const pts=[]; const step=40;
+  for (let x=-step; x<=W+step; x+=step){
+    pts.push({ x, y: baseY + Math.sin(x*0.01*freq + baseY)*amp + Math.sin(x*0.027)*amp*0.4 });
+  }
+  return pts;
+}
+
+function drawBackground(t){
+  // sky
+  const sky = ctx.createLinearGradient(0,0,0,H);
+  sky.addColorStop(0,'#241640');
+  sky.addColorStop(0.35,'#3a2358');
+  sky.addColorStop(0.6,'#7a4a55');
+  sky.addColorStop(0.78,'#a85a3a');
+  sky.addColorStop(1,'#2a1d22');
+  ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+
+  // stars
+  for (const s of stars){
+    const a = 0.4 + 0.5*Math.abs(Math.sin(t*1.5 + s.tw));
+    ctx.globalAlpha = a; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // moon + halo
+  const mx = W*0.8, my = H*0.16;
+  const halo = ctx.createRadialGradient(mx,my,4, mx,my,60);
+  halo.addColorStop(0,'rgba(255,240,200,0.5)'); halo.addColorStop(1,'rgba(255,240,200,0)');
+  ctx.fillStyle=halo; ctx.beginPath(); ctx.arc(mx,my,60,0,6.28); ctx.fill();
+  const mg = ctx.createRadialGradient(mx-6,my-6,2, mx,my,26);
+  mg.addColorStop(0,'#fff7e0'); mg.addColorStop(1,'#d9bd72');
+  ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(mx,my,24,0,6.28); ctx.fill();
+
+  // clouds (drift)
+  for (const c of clouds){
+    c.x -= c.v * 0; // movement handled in update via dt; static here
+    drawCloud(c.x, c.y, c.s);
+  }
+
+  // hills
+  drawHillBand(hillsFar, '#2c2140');
+  drawHillBand(hillsMid, '#241a2e');
+
+  // ground
+  const g = ctx.createLinearGradient(0,groundY()-10,0,H);
+  g.addColorStop(0,'#3a2c24'); g.addColorStop(0.5,'#241a18'); g.addColorStop(1,'#160f12');
+  ctx.fillStyle=g; ctx.fillRect(0,groundY(),W,H-groundY());
+  // worn path highlight
+  ctx.fillStyle='rgba(90,68,52,0.4)';
+  ctx.fillRect(0, groundY()+18, W, 22);
+
+  // grass tufts swaying
+  ctx.strokeStyle='#2f3d24'; ctx.lineWidth=2;
+  for (const bld of grass){
+    const sw = Math.sin(t*2 + bld.b)*3;
+    ctx.beginPath(); ctx.moveTo(bld.x, bld.y); ctx.quadraticCurveTo(bld.x+sw, bld.y-bld.h*0.6, bld.x+sw*1.6, bld.y-bld.h); ctx.stroke();
+  }
+}
+function drawCloud(x,y,s){
+  ctx.fillStyle='rgba(60,44,66,0.5)';
+  for (const [ox,oy,r] of [[-22,4,16],[0,-4,22],[24,4,17],[6,8,20]]){
+    ctx.beginPath(); ctx.ellipse(x+ox*s, y+oy*s, r*s, r*0.7*s, 0,0,6.28); ctx.fill();
+  }
+}
+function drawHillBand(pts, color){
+  ctx.fillStyle=color; ctx.beginPath(); ctx.moveTo(-40,H);
+  for (const p of pts) ctx.lineTo(p.x,p.y);
+  ctx.lineTo(W+40,H); ctx.closePath(); ctx.fill();
+}
+
+// ===================================================================
+// THE CASTLE
+// ===================================================================
+function drawCastle(t){
+  const cw = castleW();
+  const gy = groundY();
+  const wallTop = wallTopY();
+  const stone='#7d7466', stoneDark='#5b5347', stoneLight='#9a9082';
+  const lost = START_LIVES - lives; // 0..5 damage steps
+
+  // --- back tall tower ---
+  const towX = cw*0.62, towW = cw*0.30, towTop = towerTopY();
+  // tower body
+  stoneBlock(towX, towTop, towW, gy-towTop, stone, stoneDark, stoneLight);
+  // conical roof
+  ctx.fillStyle='#43305e';
+  ctx.beginPath(); ctx.moveTo(towX-6, towTop); ctx.lineTo(towX+towW/2, towTop-40); ctx.lineTo(towX+towW+6, towTop); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#523a72';
+  ctx.beginPath(); ctx.moveTo(towX-6, towTop); ctx.lineTo(towX+towW/2, towTop-40); ctx.lineTo(towX+towW/2, towTop); ctx.closePath(); ctx.fill();
+  // flag pole + waving pennant
+  drawFlag(towX+towW/2, towTop-40, t);
+  // tower window glow
+  ctx.fillStyle='rgba(255,190,90,'+(0.55+0.25*Math.sin(t*3))+')';
+  roundRect(towX+towW/2-5, towTop+30, 10, 16, 4); ctx.fill();
+
+  // --- main keep ---
+  const keepX=cw*0.06, keepW=cw*0.5, keepTop=wallTop-30;
+  stoneBlock(keepX, keepTop, keepW, gy-keepTop, stone, stoneDark, stoneLight);
+  crenellations(keepX, keepTop, keepW, 16, 14, stone, stoneDark, lost);
+  // gate
+  const gx=keepX+keepW*0.3, gw=keepW*0.42, gh=64;
+  ctx.fillStyle='#1c1410';
+  ctx.beginPath();
+  ctx.moveTo(gx, gy); ctx.lineTo(gx, gy-gh+18);
+  ctx.quadraticCurveTo(gx+gw/2, gy-gh-14, gx+gw, gy-gh+18);
+  ctx.lineTo(gx+gw, gy); ctx.closePath(); ctx.fill();
+  // portcullis bars
+  ctx.strokeStyle='rgba(120,100,70,0.7)'; ctx.lineWidth=2;
+  for (let i=1;i<5;i++){ ctx.beginPath(); ctx.moveTo(gx+i*gw/5, gy-gh+14); ctx.lineTo(gx+i*gw/5, gy); ctx.stroke(); }
+
+  // --- front wall with crenellations + archers ---
+  const wX=0, wW=cw*0.42, wTop=wallTop;
+  stoneBlock(wX, wTop, wW, gy-wTop, stoneLight, stoneDark, '#ada392');
+  crenellations(wX, wTop, wW, 18, 13, stoneLight, stoneDark, lost);
+  // arrow slits
+  ctx.fillStyle='#22190f';
+  for (let i=0;i<2;i++) roundRect(wX+wW*0.3+i*wW*0.35, wTop+22, 6, 18, 3), ctx.fill();
+  // archers along the wall
+  drawArcher(wX+wW*0.30, wTop-2, t, 0);
+  drawArcher(wX+wW*0.62, wTop-2, t, 1.3);
+
+  // --- torches (flicker glow) ---
+  for (const tr of torches) drawTorchGlow(tr.x, tr.y, t);
+
+  // --- damage decals (scorch + cracks) ---
+  for (const d of decals){
+    const rg = ctx.createRadialGradient(d.x,d.y,2, d.x,d.y,d.r);
+    rg.addColorStop(0,'rgba(0,0,0,0.6)'); rg.addColorStop(0.7,'rgba(20,10,8,0.35)'); rg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=rg; ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,6.28); ctx.fill();
+  }
+  // burning battlements when badly hurt
+  if (lives<=2){
+    for (let i=0;i<3;i++){
+      if (Math.random()<0.5) emit(rand(keepX,keepX+keepW), keepTop+rand(-4,8), 'fire', 1);
+    }
+  }
+}
+function stoneBlock(x,y,w,h,base,dark,light){
+  ctx.fillStyle=base; ctx.fillRect(x,y,w,h);
+  // shading edges
+  ctx.fillStyle=dark; ctx.fillRect(x+w-5,y,5,h);
+  ctx.fillStyle=light; ctx.fillRect(x,y,4,h);
+  // brick lines
+  ctx.strokeStyle='rgba(0,0,0,0.12)'; ctx.lineWidth=1;
+  for (let yy=y+12; yy<y+h; yy+=12){ ctx.beginPath(); ctx.moveTo(x,yy); ctx.lineTo(x+w,yy); ctx.stroke(); }
+}
+function crenellations(x,y,w,bw,bh,base,dark,lost){
+  const n = Math.floor(w/(bw*1.6));
+  const gap = w/n;
+  for (let i=0;i<n;i++){
+    // knock out merlons as damage rises (from the right, nearest the field)
+    if (lost>0 && i >= n-lost) continue;
+    const mx = x + i*gap + gap*0.18;
+    ctx.fillStyle=base; ctx.fillRect(mx, y-bh, bw, bh);
+    ctx.fillStyle=dark; ctx.fillRect(mx+bw-3, y-bh, 3, bh);
+  }
+}
+function drawFlag(x,y,t){
+  ctx.strokeStyle='#3a2c1c'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(x,y+6); ctx.lineTo(x,y-34); ctx.stroke();
+  // waving pennant
+  ctx.fillStyle='#C4A040';
+  ctx.beginPath(); ctx.moveTo(x,y-32);
+  for (let i=0;i<=6;i++){
+    const px=x+i*5, py=y-32 + Math.sin(t*6 + i*0.9)*3;
+    ctx.lineTo(px, py + (i===6?6:0));
+  }
+  for (let i=6;i>=0;i--){
+    const px=x+i*5, py=y-22 + Math.sin(t*6 + i*0.9)*3;
+    ctx.lineTo(px, py);
+  }
+  ctx.closePath(); ctx.fill();
+}
+function drawArcher(x,y,t,phase){
+  const bob = Math.sin(t*2+phase)*1.2;
+  // body
+  ctx.fillStyle='#3b4a63'; roundRect(x-4, y-20+bob, 8, 16, 3); ctx.fill();
+  // head + helm
+  ctx.fillStyle='#d8b48a'; ctx.beginPath(); ctx.arc(x, y-24+bob, 4.5, 0, 6.28); ctx.fill();
+  ctx.fillStyle='#6b7280'; ctx.beginPath(); ctx.arc(x, y-25+bob, 5, Math.PI, 6.28); ctx.fill();
+  // bow (faces right/field)
+  ctx.strokeStyle='#5a3d22'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(x+5, y-16+bob, 8, -1.1, 1.1); ctx.stroke();
+}
+function drawTorchGlow(x,y,t){
+  const fl = 0.7 + 0.3*Math.sin(t*12 + x);
+  const g = ctx.createRadialGradient(x,y,1, x,y,26*fl);
+  g.addColorStop(0,'rgba(255,180,60,0.7)'); g.addColorStop(1,'rgba(255,120,30,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,26*fl,0,6.28); ctx.fill();
+  if (Math.random()<0.6) emit(x, y, 'fire', 1, 0.4);
+}
+
+// ===================================================================
+// THE ENEMY TREBUCHET (right side) — big, animated siege engine
+// ===================================================================
+function trebGeom(){
+  const bx = W - 104, by = groundY();
+  const px = bx - 6, py = by - 118;       // pivot, high up
+  return { bx, by, px, py, armLen:128, cwLen:48, restA:0.62, firedA:-2.05 };
+}
+function trebReleasePoint(){
+  const g = trebGeom();
+  // the sling tip at the top of the throw (where the rock leaves the arm)
+  return { x: g.px + Math.cos(-1.45)*g.armLen, y: g.py + Math.sin(-1.45)*g.armLen };
+}
+function drawTrebuchet(t){
+  const g = trebGeom(), { bx, by, px, py, armLen, cwLen } = g;
+  const swing = Math.sin(clamp(treb.fireT,0,1) * Math.PI);   // 0 → 1 → 0 whip
+  const a = lerp(g.restA, g.firedA, swing);
+
+  // ground shadow
+  ctx.fillStyle='rgba(0,0,0,0.30)';
+  ctx.beginPath(); ctx.ellipse(bx, by+5, 86, 11, 0, 0, 6.28); ctx.fill();
+
+  // wheels
+  for (const wx of [bx-40, bx+34]){
+    ctx.fillStyle='#2c1f12'; ctx.beginPath(); ctx.arc(wx, by-8, 16, 0, 6.28); ctx.fill();
+    ctx.strokeStyle='#7a5a36'; ctx.lineWidth=4; ctx.stroke();
+    ctx.lineWidth=3; ctx.beginPath();
+    ctx.moveTo(wx-11,by-8); ctx.lineTo(wx+11,by-8); ctx.moveTo(wx,by-19); ctx.lineTo(wx,by+3); ctx.stroke();
+  }
+  // base sill
+  ctx.fillStyle='#3d2a18'; roundRect(bx-46, by-16, 92, 12, 3); ctx.fill();
+
+  // A-frame legs
+  ctx.strokeStyle='#5a3d22'; ctx.lineWidth=11; ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(bx-40, by-8); ctx.lineTo(px, py);
+  ctx.moveTo(bx+34, by-8); ctx.lineTo(px, py);
+  ctx.stroke();
+  // cross brace
+  ctx.lineWidth=6;
+  ctx.beginPath(); ctx.moveTo(bx-26, by-52); ctx.lineTo(bx+22, by-52); ctx.stroke();
+
+  // throwing arm (long tip + short counterweight side)
+  const tipX = px + Math.cos(a)*armLen,  tipY = py + Math.sin(a)*armLen;
+  const cwX  = px - Math.cos(a)*cwLen,   cwY  = py - Math.sin(a)*cwLen;
+  ctx.strokeStyle='#6b4a2a'; ctx.lineWidth=9;
+  ctx.beginPath(); ctx.moveTo(cwX, cwY); ctx.lineTo(tipX, tipY); ctx.stroke();
+
+  // pivot bolt
+  ctx.fillStyle='#1f140a'; ctx.beginPath(); ctx.arc(px, py, 6, 0, 6.28); ctx.fill();
+
+  // counterweight crate
+  ctx.save(); ctx.translate(cwX, cwY);
+  ctx.fillStyle='#3a3330'; ctx.fillRect(-16, -3, 32, 30);
+  ctx.strokeStyle='#6b6258'; ctx.lineWidth=2; ctx.strokeRect(-16, -3, 32, 30);
+  ctx.beginPath(); ctx.moveTo(-16,-3); ctx.lineTo(16,27); ctx.moveTo(16,-3); ctx.lineTo(-16,27); ctx.stroke();
+  ctx.restore();
+
+  // sling + a loaded boulder at the tip while cocked
+  if (treb.fireT < 0.14){
+    ctx.strokeStyle='rgba(60,46,30,0.85)'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(tipX, tipY); ctx.lineTo(tipX+7, tipY+20); ctx.stroke();
+    ctx.fillStyle='#34302c'; ctx.beginPath(); ctx.arc(tipX+7, tipY+22, 11, 0, 6.28); ctx.fill();
+    ctx.strokeStyle='rgba(255,120,40,0.5)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(tipX+2,tipY+20); ctx.lineTo(tipX+12,tipY+24); ctx.stroke();
+  }
+  ctx.lineCap='butt';
+}
+
+// ===================================================================
+// THREATS
+// ===================================================================
+function spawnTroop(offset){
+  const sp = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
+  const word = choice(WORDS[realm.pool]).toLowerCase();
+  const th = {
+    id:nextId++, kind:'troop', variant:choice(TROOP_KINDS),
+    word, typed:0, state:'live',
+    x: W + 30 + (offset||0), y: groundY()-2 + rand(-4,4),
+    speed: sp, t0: rand(0,6.28), bob:0,
+    fallT:0
+  };
+  addThreat(th);
+}
+function spawnRock(){
+  const dur = lerp(realm.rockDur[0], realm.rockDur[1], diffT());
+  const word = choice(WORDS[realm.pool]).toLowerCase();
+  // Launch from the arm of the trebuchet on the right, so you SEE it flung…
+  const tp = trebReleasePoint();
+  const sx = tp.x + rand(-8,8), sy = tp.y + rand(-8,8);
+  // …and arc over the field down onto the castle, with the apex kept on-screen.
+  const tx = rand(castleW()*0.1, castleW()*0.7), ty = rand(wallTopY()-10, groundY()-30);
+  const cx = lerp(tx, sx, 0.45);
+  const cy = rand(H*0.08, H*0.18);
+  // swing the arm and throw up debris where it's flung
+  treb.fireT = 1;
+  emit(sx, sy, 'dust', 10);
+  emit(sx, sy, 'spark', 9);
+  const th = {
+    id:nextId++, kind:'rock', word, typed:0, state:'live',
+    sx0:sx, sy0:sy, tx, ty, cx, cy,
+    p:0, dur, x:sx, y:sy, rot:0, r:rand(16,22),
+    jag: Array.from({length:9},()=>rand(0.78,1.18))
+  };
+  addThreat(th);
+}
+function spawnDragon(){
+  const dur = lerp(realm.dragonDur[0], realm.dragonDur[1], diffT());
+  const word = choice(BOSS_WORDS).toLowerCase();
+  const th = {
+    id:nextId++, kind:'dragon', boss:true, word, typed:0, state:'live',
+    p:0, dur, x:W+60, y:H*0.22, flap:rand(0,6.28),
+    tx:castleW()+40, ty:H*0.30, amp:rand(30,60), retreatT:0, breathT:0
+  };
+  addThreat(th);
+  flashWave('A Dragon Descends!', '🐉 Boss');
+}
+function addThreat(th){
+  const b=document.createElement('div');
+  b.className='word-bubble'+(th.boss?' boss':'');
+  bubbleLayer.appendChild(b);
+  th.bubble=b;
+  renderBubble(th);
+  threats.push(th);
+}
+
+function diffT(){ return clamp((slain + (wave-1)*3)/55, 0, 1); }
+
+function renderBubble(th){
+  const w=th.word, d=w.slice(0,th.typed), nx=w.slice(th.typed,th.typed+1), rest=w.slice(th.typed+1);
+  th.bubble.innerHTML='<span class="done">'+escapeHtml(d)+'</span>'+
+                      '<span class="next">'+escapeHtml(nx)+'</span>'+
+                      '<span class="rest">'+escapeHtml(rest)+'</span>';
+}
+
+// ---- per-frame threat update ----
+function updateThreats(dt, t){
+  const cw=castleW();
+  for (let i=threats.length-1;i>=0;i--){
+    const th=threats[i];
+
+    if (th.state==='struck'){ continue; } // hit confirmed, frozen until the arrow/bolt lands
+    if (th.state==='dying'){ // falling troop / fading
+      th.fallT += dt;
+      if (th.kind==='troop'){ th.y += 60*dt; th.rot=(th.rot||0)+4*dt; }
+      if (th.fallT>0.5){ removeThreat(th,i); }
+      continue;
+    }
+    if (th.state==='retreat'){ // driven off by arrows — fast, panicked escape
+      th.retreatT += dt;
+      th.x += 180*dt; th.y -= 90*dt; th.flap += dt*16;
+      if (th.x>W+120 || th.y<-120){ removeThreat(th,i); }
+      placeBubble(th);
+      continue;
+    }
+    if (th.state==='flee'){ // it burned the castle — leaves slowly, victorious
+      th.retreatT += dt;
+      th.x += 42*dt; th.y -= 12*dt; th.flap += dt*5;
+      th.y += Math.sin(th.retreatT*1.6)*0.6; // lazy gliding bob
+      if (th.x>W+160){ removeThreat(th,i); }
+      placeBubble(th);
+      continue;
+    }
+
+    if (th.kind==='troop'){
+      th.x -= th.speed*dt;
+      th.bob = Math.sin(t*7 + th.t0);
+      th.sx=th.x; th.sy=th.y - 44;
+      if (th.x <= cw+6){ impactTroop(th,i); continue; }
+    }
+    else if (th.kind==='rock'){
+      th.p += dt/th.dur;
+      const p=clamp(th.p,0,1);
+      th.x = bez(th.sx0, th.cx, th.tx, p);
+      th.y = bez(th.sy0, th.cy, th.ty, p);
+      th.rot += dt*5;
+      th.sx=th.x; th.sy=th.y-22;
+      if (Math.random()<0.9) emit(th.x, th.y, 'fire', 1, 1);
+      if (Math.random()<0.5) emit(th.x, th.y, 'smoke', 1, 1);
+      if (p>=1){ impactRock(th,i); continue; }
+    }
+    else if (th.kind==='dragon'){
+      th.p += dt/th.dur;
+      const p=clamp(th.p,0,1);
+      th.x = lerp(W+60, th.tx, p);
+      th.y = lerp(H*0.22, th.ty, p) + Math.sin(p*Math.PI*3)*th.amp;
+      th.flap += dt*9;
+      th.sx=th.x; th.sy=th.y-46;
+      if (p>=1){ impactDragon(th,i); continue; }
+    }
+    placeBubble(th);
+  }
+}
+function bez(a,b,c,p){ const m=1-p; return m*m*a + 2*m*p*b + p*p*c; }
+
+function placeBubble(th){
+  if (!th.bubble) return;
+  const off = th.kind==='dragon'?60 : th.kind==='rock'?34 : 46;
+  th._bx = th.sx;
+  th._by = th.sy - off + (th.bob ? th.bob*2 : 0);
+  th.bubble.style.transform='translate('+th._bx+'px,'+th._by+'px) translate(-50%,-50%)';
+}
+
+// Keep word labels readable: the one you're typing (active) is always shown
+// and on top; otherwise the foe nearest the castle wins, and any label it
+// would overlap is hidden until the foe in front of it is cleared.
+function resolveBubbles(){
+  const list = threats.filter(th => th.bubble && th._bx != null);
+  list.sort((x, y) => {
+    if (x === active) return -1;
+    if (y === active) return 1;
+    return x.sx - y.sx;            // closest to the castle (smallest x) first
+  });
+  const placed = [];
+  let z = 300;
+  for (const th of list){
+    const b = th.bubble;
+    const hw = (b.offsetWidth || 70)/2 + 5;
+    const hh = (b.offsetHeight || 24)/2 + 3;
+    const r = { l: th._bx-hw, r: th._bx+hw, t: th._by-hh, b: th._by+hh };
+    let blocked = false;
+    if (th !== active){
+      for (const p of placed){ if (rectsOverlap(r, p)){ blocked = true; break; } }
+    }
+    if (blocked){
+      b.style.visibility = 'hidden';
+    } else {
+      b.style.visibility = 'visible';
+      b.style.zIndex = z--;
+      placed.push(r);
+    }
+  }
+}
+function rectsOverlap(a, b){ return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t; }
+function removeThreat(th, idx){
+  if (th.bubble) th.bubble.remove();
+  if (active===th) active=null;
+  if (idx==null) idx=threats.indexOf(th);
+  if (idx>=0) threats.splice(idx,1);
+}
+
+// ---- threat drawing ----
+function drawThreats(t){
+  for (const th of threats){
+    if (th.kind==='troop') drawTroop(th,t);
+    else if (th.kind==='rock') drawRock(th,t);
+    else if (th.kind==='dragon') drawDragon(th,t);
+  }
+}
+function drawTroop(th,t){
+  const x=th.x, y=th.y;
+  const dying = th.state==='dying';
+  ctx.save();
+  ctx.translate(x,y);
+  if (dying){ ctx.rotate(th.rot||0); ctx.globalAlpha=clamp(1-th.fallT/0.5,0,1); }
+  // shadow
+  ctx.globalAlpha *= 1; ctx.fillStyle='rgba(0,0,0,0.3)';
+  ctx.beginPath(); ctx.ellipse(0,2,13,4,0,0,6.28); ctx.fill();
+  // cartoonish pop-and-redden when struck down
+  if (dying){ const s=1+th.fallT*0.5; ctx.scale(s,s); }
+  const bob = dying?0:th.bob*1.5;
+  const cols = { knight:['#6b7280','#9aa3b0'], goblin:['#5f8c3f','#7fae5c'], orc:['#8a5a3b','#a9754f'], skeleton:['#d9d2bf','#fff'] };
+  let [c1,c2]=cols[th.variant];
+  if (dying){ c1='#e23b2f'; c2='#ff8074'; }
+  const headCol = dying ? '#ff6a5c' : (th.variant==='skeleton'?'#efe9d8':'#d8b48a');
+  // legs (march)
+  ctx.strokeStyle='#2b2b2f'; ctx.lineWidth=3;
+  const sw = dying?0:Math.sin(t*9+th.t0)*3;
+  ctx.beginPath(); ctx.moveTo(-3,-6); ctx.lineTo(-3-sw,2); ctx.moveTo(3,-6); ctx.lineTo(3+sw,2); ctx.stroke();
+  // body
+  ctx.fillStyle=c1; roundRect(-6,-26+bob,12,20,4); ctx.fill();
+  ctx.fillStyle=c2; roundRect(-6,-26+bob,4,20,3); ctx.fill();
+  // head
+  ctx.fillStyle = headCol;
+  ctx.beginPath(); ctx.arc(0,-30+bob,5,0,6.28); ctx.fill();
+  // helmet / detail
+  if (th.variant==='knight'){ ctx.fillStyle='#9aa3b0'; ctx.beginPath(); ctx.arc(0,-31+bob,5.5,Math.PI,6.28); ctx.fill(); }
+  if (th.variant==='goblin'||th.variant==='orc'){ ctx.fillStyle=c1; // ears
+    ctx.beginPath(); ctx.moveTo(-5,-31+bob); ctx.lineTo(-9,-34+bob); ctx.lineTo(-4,-29+bob); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(5,-31+bob); ctx.lineTo(9,-34+bob); ctx.lineTo(4,-29+bob); ctx.fill(); }
+  // shield (left/field side)
+  ctx.fillStyle='#8a3b2e'; ctx.beginPath(); ctx.ellipse(-7,-16+bob,4,7,0,0,6.28); ctx.fill();
+  ctx.strokeStyle='#caa24a'; ctx.lineWidth=1.3; ctx.stroke();
+  // spear
+  ctx.strokeStyle='#5a3d22'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(6,-34+bob); ctx.lineTo(11,4); ctx.stroke();
+  ctx.fillStyle='#cfd3d8'; ctx.beginPath(); ctx.moveTo(6,-34+bob); ctx.lineTo(3,-40+bob); ctx.lineTo(9,-38+bob); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha=1;
+}
+function drawRock(th,t){
+  const x=th.x,y=th.y;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(th.rot);
+  // glow
+  const g=ctx.createRadialGradient(0,0,2,0,0,th.r*2.2);
+  g.addColorStop(0,'rgba(255,150,40,0.8)'); g.addColorStop(1,'rgba(255,80,20,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,th.r*2.2,0,6.28); ctx.fill();
+  // jagged rock
+  ctx.fillStyle='#3a3330'; ctx.beginPath();
+  for (let i=0;i<th.jag.length;i++){ const a=i/th.jag.length*6.28; const rr=th.r*th.jag[i];
+    const px=Math.cos(a)*rr, py=Math.sin(a)*rr; i?ctx.lineTo(px,py):ctx.moveTo(px,py); }
+  ctx.closePath(); ctx.fill();
+  // lava cracks
+  ctx.strokeStyle='rgba(255,120,40,0.9)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(-th.r*0.5,-2); ctx.lineTo(0,3); ctx.lineTo(th.r*0.5,-3); ctx.stroke();
+  ctx.restore();
+}
+function drawDragon(th,t){
+  const x=th.x,y=th.y, s=th.boss?1:0.8;
+  const flap=Math.sin(th.flap)*0.6;
+  // when fleeing victorious it turns to face the way it's flying (right)
+  const faceDir = th.state==='flee' ? -1 : 1;
+  ctx.save(); ctx.translate(x,y); ctx.scale(s*faceDir, s);
+  // facing left (toward castle): default art faces left
+  // glow
+  const g=ctx.createRadialGradient(0,0,4,0,0,70);
+  g.addColorStop(0,'rgba(180,40,30,0.35)'); g.addColorStop(1,'rgba(180,40,30,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,70,0,6.28); ctx.fill();
+  // tail
+  ctx.strokeStyle='#3a2438'; ctx.lineWidth=10; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(14,2); ctx.quadraticCurveTo(48, -6+Math.sin(th.flap*0.8)*6, 60, 12); ctx.stroke();
+  ctx.fillStyle='#7a1f2a'; ctx.beginPath(); ctx.moveTo(60,12); ctx.lineTo(70,4); ctx.lineTo(66,18); ctx.fill();
+  // far wing
+  drawWing(ctx, flap-0.25, '#3a2030');
+  // body
+  ctx.fillStyle='#52203a'; ctx.beginPath(); ctx.ellipse(0,0,22,14,0,0,6.28); ctx.fill();
+  ctx.fillStyle='#6b2a46'; ctx.beginPath(); ctx.ellipse(-3,-2,18,10,0,0,6.28); ctx.fill();
+  // belly scales
+  ctx.fillStyle='#caa24a'; ctx.beginPath(); ctx.ellipse(-2,5,12,5,0,0,Math.PI); ctx.fill();
+  // neck + head (to the left)
+  ctx.strokeStyle='#52203a'; ctx.lineWidth=12; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-12,-2); ctx.quadraticCurveTo(-30,-14,-38,-6); ctx.stroke();
+  ctx.fillStyle='#6b2a46'; ctx.beginPath(); ctx.ellipse(-40,-5,11,8,-0.3,0,6.28); ctx.fill();
+  // horns
+  ctx.fillStyle='#2a1822'; ctx.beginPath(); ctx.moveTo(-42,-11); ctx.lineTo(-46,-20); ctx.lineTo(-39,-13); ctx.fill();
+  // jaw
+  ctx.fillStyle='#52203a'; ctx.beginPath(); ctx.moveTo(-46,-3); ctx.lineTo(-52,0); ctx.lineTo(-44,2); ctx.fill();
+  // eye glow
+  ctx.fillStyle='#ffd54a'; ctx.beginPath(); ctx.arc(-43,-7,2.2,0,6.28); ctx.fill();
+  // near wing (over body)
+  drawWing(ctx, flap+0.15, '#5a2a44');
+  // breath telegraph: embers gather at the maw just before it strikes
+  if (th.state==='live' && th.p>0.8) { for(let i=0;i<2;i++) emit(x-50*s, y-2*s, 'fire', 1, 1); }
+  ctx.restore();
+}
+function drawWing(ctx, ang, color){
+  ctx.save(); ctx.rotate(ang);
+  ctx.fillStyle=color;
+  ctx.beginPath();
+  ctx.moveTo(4,-4);
+  ctx.quadraticCurveTo(2,-40, 28,-44);
+  ctx.quadraticCurveTo(20,-26, 36,-24);
+  ctx.quadraticCurveTo(22,-14, 30,-6);
+  ctx.quadraticCurveTo(16,-4, 8,2);
+  ctx.closePath(); ctx.fill();
+  // wing bones
+  ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.moveTo(6,-3); ctx.lineTo(28,-42); ctx.moveTo(6,-3); ctx.lineTo(34,-24); ctx.moveTo(6,-3); ctx.lineTo(28,-7); ctx.stroke();
+  ctx.restore();
+}
+
+// ===================================================================
+// TYPING / TARGETING
+// ===================================================================
+function handleChar(chRaw){
+  if (!running) return;
+  const ch=chRaw.toLowerCase();
+  if (!/^[a-z' -]$/.test(ch)) return;
+  if (!active || active.state!=='live'){
+    active=acquire(ch);
+    if (!active) return;
+    active.bubble.classList.add('active');
+    advance(active, ch);
+    return;
+  }
+  advance(active, ch);
+}
+function acquire(ch){
+  let best=null, bestKey=Infinity;
+  for (const th of threats){
+    if (th.state!=='live' || th.typed>0) continue;
+    if (th.word[0]!==ch) continue;
+    // urgency: rocks/dragons by progress, troops by closeness to wall
+    const key = th.kind==='troop' ? th.x : (1-th.p)*1000 - 2000;
+    if (key<bestKey){ bestKey=key; best=th; }
+  }
+  return best;
+}
+function advance(th, ch){
+  if (ch===th.word[th.typed]){
+    th.typed++;
+    renderBubble(th);
+    if (th.typed>=th.word.length) slay(th);
+  } else {
+    th.bubble.classList.remove('miss'); void th.bubble.offsetWidth; th.bubble.classList.add('miss');
+  }
+}
+
+// ===================================================================
+// OUTCOMES
+// ===================================================================
+function slay(th){
+  th.state='struck';
+  if (active===th) active=null;
+  if (th.bubble){ th.bubble.remove(); th.bubble=null; }
+  slain++;
+  rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+  updateHud();
+
+  // wave every 8 kills
+  const nw=Math.floor(slain/8)+1;
+  if (nw>wave){ wave=nw; flashWave('Wave '+wave, 'Hold the line'); }
+
+  if (th.kind==='troop'){
+    // arrow(s) from the wall
+    const ax=castleW()*0.3, ay=wallTopY()-2;
+    loose(ax, ay, th.sx, th.sy+10, 'arrow', ()=>{
+      th.state='dying'; th.fallT=0; emit(th.x,th.y-10,'dust',8);
+    });
+  } else if (th.kind==='rock'){
+    // ballista bolt intercepts midair → harmless burst
+    const bx=castleW()*0.6, by=towerTopY()+20;
+    loose(bx, by, th.sx, th.sy, 'bolt', ()=>{
+      burst(th.x, th.y, 'air'); removeThreat(th);
+    });
+  } else if (th.kind==='dragon'){
+    // volley peppers it; it roars and retreats
+    const bx=castleW()*0.6, by=towerTopY()+10;
+    for (let i=0;i<3;i++) setTimeout(()=>{ if(threats.includes(th)) loose(bx,by, th.sx+rand(-12,12), th.sy+rand(-10,10), 'bolt', null); }, i*90);
+    burst(th.sx, th.sy, 'air');
+    if (th.bubble){ th.bubble.remove(); th.bubble=null; }
+    th.state='retreat'; th.retreatT=0;
+  }
+}
+
+function impactTroop(th, i){
+  damageCastle(castleW()-6, th.y-20, 'small');
+  th.state='dying'; th.fallT=0; // (it falls at the wall)
+  th.y -= 6;
+}
+function impactRock(th, i){
+  damageCastle(th.tx, th.ty, 'big');
+  removeThreat(th, i);
+}
+function impactDragon(th, i){
+  // breathe fire on the battlements
+  breatheFire(th);
+  damageCastle(castleW()*0.4, wallTopY(), 'fire');
+  if (th.bubble){ th.bubble.remove(); th.bubble=null; }
+  th.state='flee';   // it won — it leaves slowly and triumphant (not driven off)
+  th.retreatT=0;
+}
+
+function damageCastle(x, y, size){
+  lives--;
+  rail.reset(); // breaking the line snuffs the live streak (no mid-run modal)
+  decals.push({ x:clamp(x,8,castleW()), y:clamp(y,wallTopY()-20,groundY()), r: size==='small'?16:28 });
+  if (decals.length>14) decals.shift();
+  burst(x, y, size);
+  shake = size==='big'?22 : size==='fire'?16 : 11;
+  flashA = size==='small'?0.35:0.6;
+  flashColor = size==='fire'?'255,90,30':'255,140,50';
+  floaters.push({ x:castleW()*0.5, y:wallTopY()-20, vy:-26, life:1, txt:'-1 ❤' });
+  updateHud();
+  if (lives<=0) gameOver();
+}
+
+function breatheFire(th){
+  const ox=th.x, oy=th.y;
+  for (let i=0;i<46;i++){
+    const a=Math.PI - rand(-0.4,0.4);
+    const sp=rand(120,320);
+    particles.push({ x:ox-30, y:oy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp+rand(-40,40),
+      g:30, life:rand(0.5,1.0), max:1, size:rand(4,10), kind:'fire' });
+  }
+}
+
+// ===================================================================
+// PROJECTILES (castle → foe)
+// ===================================================================
+function loose(x,y,tx,ty,kind,onArrive){
+  // arrows (at the foot army) fly slower so you can watch the shot land;
+  // ballista bolts (rocks/dragons) stay quick.
+  projectiles.push({ x,y, sx:x,sy:y, tx,ty, p:0, dur: kind==='bolt'?0.22:0.45, kind, onArrive });
+}
+function updateProjectiles(dt){
+  for (let i=projectiles.length-1;i>=0;i--){
+    const pr=projectiles[i];
+    pr.p += dt/pr.dur;
+    const p=clamp(pr.p,0,1);
+    pr.x=lerp(pr.sx,pr.tx,p); pr.y=lerp(pr.sy,pr.ty,p);
+    if (pr.kind==='bolt' && Math.random()<0.6) emit(pr.x,pr.y,'spark',1,0.5);
+    if (p>=1){ if (pr.onArrive) pr.onArrive(); projectiles.splice(i,1); }
+  }
+}
+function drawProjectiles(){
+  for (const pr of projectiles){
+    const ang=Math.atan2(pr.ty-pr.sy, pr.tx-pr.sx);
+    ctx.save(); ctx.translate(pr.x,pr.y); ctx.rotate(ang);
+    if (pr.kind==='arrow'){
+      ctx.strokeStyle='#caa24a'; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(6,0); ctx.stroke();
+      ctx.fillStyle='#e8e2d0'; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(1,-3); ctx.lineTo(1,3); ctx.fill();
+      ctx.strokeStyle='#9a8a5a'; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(-12,-2); ctx.moveTo(-9,0); ctx.lineTo(-12,2); ctx.stroke();
+    } else { // bolt — bigger, glowing
+      ctx.shadowColor='rgba(255,180,60,0.9)'; ctx.shadowBlur=8;
+      ctx.strokeStyle='#ffd27a'; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(8,0); ctx.stroke();
+      ctx.fillStyle='#fff0c0'; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(2,-4); ctx.lineTo(2,4); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ===================================================================
+// PARTICLES
+// ===================================================================
+function emit(x,y,kind,n,scale){
+  scale=scale||1;
+  for (let i=0;i<n;i++){
+    let p={x,y,kind,life:1,max:1,size:4};
+    if (kind==='fire'){ p.vx=rand(-30,30)*scale; p.vy=rand(-70,-20)*scale; p.g=-30; p.life=rand(0.4,0.8); p.size=rand(3,7)*scale; }
+    else if (kind==='smoke'){ p.vx=rand(-20,20); p.vy=rand(-40,-10); p.g=-12; p.life=rand(0.8,1.5); p.size=rand(6,12); }
+    else if (kind==='spark'){ p.vx=rand(-120,120); p.vy=rand(-120,120); p.g=120; p.life=rand(0.2,0.4); p.size=rand(1.5,3); }
+    else if (kind==='dust'){ p.vx=rand(-50,50); p.vy=rand(-60,-10); p.g=160; p.life=rand(0.3,0.6); p.size=rand(2,5); }
+    else if (kind==='debris'){ p.vx=rand(-160,160); p.vy=rand(-220,-60); p.g=420; p.life=rand(0.6,1.1); p.size=rand(3,7); p.rot=rand(0,6.28); p.vr=rand(-10,10); }
+    p.max=p.life;
+    particles.push(p);
+  }
+}
+function burst(x,y,size){
+  if (size==='air'){ emit(x,y,'spark',16); emit(x,y,'fire',10); emit(x,y,'smoke',5); return; }
+  const big = size==='big'||size==='fire';
+  emit(x,y,'fire', big?34:16);
+  emit(x,y,'smoke', big?14:7);
+  emit(x,y,'spark', big?26:14);
+  emit(x,y,'debris', big?16:8);
+}
+function updateParticles(dt){
+  for (let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.life-=dt; if (p.life<=0){ particles.splice(i,1); continue; }
+    p.vy += (p.g||0)*dt; p.x += p.vx*dt; p.y += p.vy*dt;
+    if (p.vr) p.rot += p.vr*dt;
+  }
+  // floaters (-1 hp text)
+  for (let i=floaters.length-1;i>=0;i--){
+    const f=floaters[i]; f.life-=dt*0.8; f.y+=f.vy*dt; if (f.life<=0) floaters.splice(i,1);
+  }
+}
+function drawParticles(){
+  for (const p of particles){
+    const a=clamp(p.life/p.max,0,1);
+    if (p.kind==='fire'){
+      ctx.globalAlpha=a; const c = a>0.6?'#ffe28a': a>0.3?'#ff9b3a':'#e0531b';
+      ctx.fillStyle=c; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*a,0,6.28); ctx.fill();
+    } else if (p.kind==='smoke'){
+      ctx.globalAlpha=a*0.5; ctx.fillStyle='#6b6166';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size*(2-a),0,6.28); ctx.fill();
+    } else if (p.kind==='spark'){
+      ctx.globalAlpha=a; ctx.fillStyle='#ffd27a';
+      ctx.fillRect(p.x,p.y,p.size,p.size);
+    } else if (p.kind==='dust'){
+      ctx.globalAlpha=a*0.7; ctx.fillStyle='#9a8a6a';
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,6.28); ctx.fill();
+    } else if (p.kind==='debris'){
+      ctx.globalAlpha=a; ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot||0);
+      ctx.fillStyle='#4a4038'; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); ctx.restore();
+    }
+  }
+  ctx.globalAlpha=1;
+  // floaters
+  for (const f of floaters){
+    ctx.globalAlpha=clamp(f.life,0,1);
+    ctx.fillStyle='#ff6b6b'; ctx.font='bold 18px Inter, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(f.txt, f.x, f.y);
+  }
+  ctx.globalAlpha=1; ctx.textAlign='left';
+}
+
+// ===================================================================
+// SPAWN MANAGER
+// ===================================================================
+function manageSpawns(dt){
+  spawnAcc += dt;
+  spawnInterval = lerp(realm.spawn[0], realm.spawn[1], diffT());
+  if (spawnAcc < spawnInterval) return;
+  spawnAcc = 0;
+
+  // dragon due?
+  if (slain - lastBossSlain >= realm.dragonGap && !threats.some(t=>t.kind==='dragon')){
+    lastBossSlain = slain;
+    spawnDragon();
+    return;
+  }
+  // a single trebuchet shot (only one rock in the air per shot)
+  if (Math.random() < realm.rockChance && !threats.some(t=>t.kind==='rock')){
+    spawnRock();
+    return;
+  }
+  // otherwise a patch of troops
+  const n = randi(realm.group[0], realm.group[1]);
+  for (let k=0;k<n;k++) spawnTroop(k*rand(34,56));
+}
+
+// ===================================================================
+// HUD / FLASHES
+// ===================================================================
+function updateHud(){
+  slainBadge.textContent='⚔️ '+slain;
+  let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives?'❤️':'<span class="spent">🤍</span>';
+  heartsBadge.innerHTML=h;
+}
+function flashWave(title, sub){
+  waveFlashEl.innerHTML = title + (sub?'<small>'+sub+'</small>':'');
+  waveFlashEl.classList.remove('show'); void waveFlashEl.offsetWidth; waveFlashEl.classList.add('show');
+}
+
+// ===================================================================
+// MAIN LOOP
+// ===================================================================
+function tick(ts){
+  if (!running) return;
+  if (!lastTs) lastTs=ts;
+  let dt=(ts-lastTs)/1000; lastTs=ts;
+  if (dt>0.05) dt=0.05;
+  sceneTime += dt;
+
+  // update
+  manageSpawns(dt);
+  updateThreats(dt, sceneTime);
+  updateProjectiles(dt);
+  updateParticles(dt);
+  if (shake>0) shake=Math.max(0, shake-dt*40);
+  if (flashA>0) flashA=Math.max(0, flashA-dt*1.6);
+  if (treb.fireT>0) treb.fireT=Math.max(0, treb.fireT-dt*1.9);
+
+  // render
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if (shake>0){ ctx.translate(rand(-shake,shake), rand(-shake,shake)); }
+  drawBackground(sceneTime);
+  drawCastle(sceneTime);
+  drawTrebuchet(sceneTime);
+  drawThreats(sceneTime);
+  drawProjectiles();
+  drawParticles();
+  ctx.restore();
+  resolveBubbles();
+  // shake the bubble layer in sync
+  bubbleLayer.style.transform = shake>0 ? 'translate('+rand(-shake,shake)+'px,'+rand(-shake,shake)+'px)' : 'none';
+  // impact flash
+  if (flashA>0){ ctx.fillStyle='rgba('+flashColor+','+flashA+')'; ctx.fillRect(0,0,W,H); }
+
+  rafId=requestAnimationFrame(tick);
+}
+
+// ===================================================================
+// LIFECYCLE
+// ===================================================================
+function startGame(key){
+  realmKey=key; realm=REALMS[key];
+  clearField();
+  lives=START_LIVES; slain=0; wave=1; bestStreak=0;
+  lastBossSlain=0; spawnAcc=0; spawnInterval=realm.spawn[0]; sceneTime=0;
+  shake=0; flashA=0;
+  rail.reset();
+  setupCanvas();
+  updateHud();
+  startOverlay.classList.add('hidden');
+  overOverlay.classList.add('hidden');
+  flashWave('Wave 1', 'To arms!');
+  running=true; lastTs=0; focusCatcher();
+  rafId=requestAnimationFrame(tick);
+}
+function clearField(){
+  threats.forEach(t=>{ if(t.bubble) t.bubble.remove(); });
+  threats=[]; projectiles=[]; particles=[]; decals=[]; floaters=[]; active=null;
+}
+function quitToMenu(){
+  endRun(false);
+  running=false; if (rafId) cancelAnimationFrame(rafId);
+  clearField();
+  ctx.clearRect(0,0,W,H);
+  overOverlay.classList.add('hidden');
+  startOverlay.classList.remove('hidden');
+}
+function endRun(showModal){
+  rail.value=bestStreak;
+  if (showModal) rail.end(); else rail.reset();
+}
+function gameOver(){
+  running=false; if (rafId) cancelAnimationFrame(rafId);
+  active=null;
+  document.getElementById('fsSlain').textContent=slain;
+  document.getElementById('fsBest').textContent=bestStreak;
+  document.getElementById('fsWave').textContent=wave;
+  // keep the final frame on screen for a beat, then show the overlay
+  setTimeout(()=>{ overOverlay.classList.remove('hidden'); }, 700);
+  endRun(true);
+}
+
+// ===================================================================
+// INPUT
+// ===================================================================
+function focusCatcher(){ try{ catcher.focus({preventScroll:true}); }catch(e){} }
+catcher.addEventListener('input', ()=>{ const v=catcher.value; for (const ch of v) handleChar(ch); catcher.value=''; });
+document.addEventListener('keydown', e=>{
+  if (!running) return;
+  if (e.metaKey||e.ctrlKey||e.altKey) return;
+  if (e.key.length!==1) return;
+  if (document.activeElement===catcher) return;
+  if (/^[a-zA-Z' -]$/.test(e.key)){ e.preventDefault(); handleChar(e.key); }
+});
+bf.addEventListener('mousedown', e=>{ if (running){ e.preventDefault(); focusCatcher(); } });
+bf.addEventListener('touchstart', ()=>{ if (running) focusCatcher(); }, {passive:true});
+catcher.addEventListener('blur', ()=>{ if (running) setTimeout(focusCatcher,0); });
+document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ lastTs=0; } else if (running){ lastTs=0; focusCatcher(); } });
+
+document.querySelectorAll('.realm-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>startGame(btn.dataset.realm));
+});
+document.getElementById('againBtn').addEventListener('click', ()=>startGame(realmKey));
+document.getElementById('changeRealmBtn').addEventListener('click', ()=>{
+  overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
+});
+
+// ---------- small canvas helpers ----------
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+setupCanvas();
+updateHud();
+// idle backdrop behind the start overlay so it isn't a blank box
+(function idle(){
+  if (!running){ ctx.clearRect(0,0,W,H); drawBackground(sceneTime); drawCastle(sceneTime); drawTrebuchet(sceneTime); sceneTime+=0.016; requestAnimationFrame(idle); }
+})();
+</script>
+
+</body>
+</html>
