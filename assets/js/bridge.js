@@ -96,6 +96,7 @@
     @keyframes brArmB { 0%,100%{ transform:rotate(20deg);} 50%{ transform:rotate(-20deg);} }
     .br-char.fall { animation:brFall 1s cubic-bezier(.5,.1,.7,1) forwards; }
     @keyframes brFall { to { transform:translateX(-50%) translateY(240px) rotate(500deg); opacity:0; } }
+    .br-char.sprint svg { transform:rotate(-13deg); transition:transform .2s; }
     .br-char.cheer { animation:brCheer .6s ease; }
     @keyframes brCheer { 0%,100%{ transform:translateX(-50%) translateY(0);} 45%{ transform:translateX(-50%) translateY(-22px);} }
 
@@ -440,8 +441,13 @@
 
     function enterCoast() {
       coasting = true;
+      // Path is built — sprint to the finish so you never wait on a big lead.
+      const remaining = finishX() - runnerX;
+      speed = Math.max(speed * 2.6, remaining / 1.6);   // ~1.6s dash, min 2.6× pace
+      charEl.style.setProperty('--wd', Math.max(0.14, 22 / speed).toFixed(2) + 's');
+      charEl.classList.add('sprint');
       promptEl.style.display = 'block';
-      promptEl.textContent = '🏁 Made it — run!';
+      promptEl.textContent = '🏁 Sprint to the finish!';
       inputRow.style.display = 'none';
       answersEl.innerHTML = '';
     }
@@ -476,7 +482,7 @@
 
     function clearLevel() {
       running = false; cancelAnimationFrame(raf);
-      charEl.classList.remove('walk'); charEl.classList.add('cheer');
+      charEl.classList.remove('walk', 'sprint'); charEl.classList.add('cheer');
       dangerEl.classList.remove('on');
       promptEl.style.display = 'block'; promptEl.textContent = `🎉 Level ${level} cleared!`;
       answersEl.innerHTML = '';
@@ -523,7 +529,7 @@
 
     showStart();
     return {
-      _debug: () => ({ level, target, builtBlocks, runnerX: Math.round(runnerX), running, over, coasting,
+      _debug: () => ({ level, target, builtBlocks, runnerX: Math.round(runnerX), running, over, coasting, speed,
         totalCorrect, totalQ, streak, bestStreak, answer: q && q.answer, tier: tiers[tierIdx] && tiers[tierIdx].key }),
       _tick: (ms) => loop((lastTs || 0) + ms),
       // static visual preview of a level's scene (no countdown/loop) — for screenshots
