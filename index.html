@@ -6,7 +6,6 @@
   <title>HomeschoolGames — Learn by Playing</title>
   <link rel="stylesheet" href="assets/css/site.css">
   <style>
-    /* ============ Games section ============ */
     .games-section {
       max-width: 980px;
       margin: 0 auto;
@@ -14,7 +13,7 @@
     }
     .games-heading {
       text-align: center;
-      margin-bottom: 2rem;
+      margin-bottom: 1.5rem;
     }
     .games-heading h1 {
       font-family: var(--font-serif);
@@ -34,144 +33,43 @@
       font-size: clamp(1rem, 2.6vw, 1.2rem);
     }
 
-    .game-grid {
-      /* centered flex-wrap: up to 3 per row, and any incomplete last
-         row centers instead of looking lopsided */
+    /* "All Games" call-to-action */
+    .home-toolbar {
       display: flex;
-      flex-wrap: wrap;
       justify-content: center;
-      gap: 1.75rem;
-      max-width: 800px;
-      margin: 0 auto;
+      margin-bottom: 2.5rem;
     }
-    .game-grid .game-tile { width: 220px; }
-
-    @media (max-width: 520px) {
-      .game-grid { gap: 1rem; }
-      .game-grid .game-tile { width: 100%; max-width: 320px; }
-    }
-
-    /* floating, tap-me tiles — just an icon and a name */
-    .game-tile {
-      position: relative;
-      border-radius: 22px;
-      padding: 2.5rem 1.25rem;
-      text-decoration: none;
-      color: var(--ink);
-      display: flex;
-      flex-direction: column;
+    .all-games-btn {
+      display: inline-flex;
       align-items: center;
-      gap: 0.9rem;
-      border: 2.5px solid rgba(26,23,20,0.06);
-      box-shadow: 0 12px 24px rgba(26,23,20,0.10);
-      animation: float 4.5s ease-in-out infinite;
-      transition: transform 0.18s, box-shadow 0.18s, border-color 0.18s;
-    }
-    .game-tile:hover,
-    .game-tile:focus-visible {
-      transform: translateY(-10px) scale(1.04);
-      box-shadow: 0 22px 38px rgba(26,23,20,0.20);
-      border-color: var(--gold);
+      gap: 0.5rem;
+      background: var(--gold);
       color: var(--ink);
+      border-radius: 99px;
+      padding: 0.7rem 1.6rem;
+      font-family: var(--font-sans);
+      font-weight: 700;
+      font-size: 1rem;
       text-decoration: none;
-      animation-play-state: paused;
-      outline: none;
+      box-shadow: 0 5px 0 #a07f2c, 0 8px 16px rgba(196,160,64,0.35);
+      transition: transform 0.12s, box-shadow 0.12s, background 0.15s;
     }
+    .all-games-btn:hover { background: #d0ab48; text-decoration: none; color: var(--ink); }
+    .all-games-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07f2c, 0 3px 8px rgba(196,160,64,0.35); }
 
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50%     { transform: translateY(-10px); }
-    }
-
-    .tile-icon {
-      font-size: 4.8rem;
-      line-height: 1;
-      filter: drop-shadow(0 5px 6px rgba(26,23,20,0.15));
-      transition: transform 0.2s;
-    }
-    .game-tile:hover .tile-icon { transform: scale(1.14) rotate(8deg); }
-
-    .tile-name {
-      font-family: var(--font-serif);
+    /* small "N games" line under each subject name */
+    .tile-count {
+      font-family: var(--font-sans);
+      font-size: 0.8rem;
       font-weight: 600;
-      font-size: 1.55rem;
-      text-align: center;
-    }
-
-    /* staggered float + soft subject colours */
-    .game-tile:nth-child(1) { animation-delay:  0s;   background: #FFF6DD; }
-    .game-tile:nth-child(2) { animation-delay: -0.6s; background: #E1F2F7; }
-    .game-tile:nth-child(3) { animation-delay: -1.2s; background: #E7F4EC; }
-    .game-tile:nth-child(4) { animation-delay: -1.8s; background: #EEE6F8; }
-    .game-tile:nth-child(5) { animation-delay: -2.4s; background: #E1F2F7; }
-    .game-tile:nth-child(6) { animation-delay: -3.0s; background: #FFF6DD; }
-    .game-tile:nth-child(7) { animation-delay: -3.6s; background: #F3E2E2; }
-    .game-tile:nth-child(8) { animation-delay: -4.2s; background: #DCEFE8; }
-    .game-tile:nth-child(9) { animation-delay: -4.8s; background: #E1F2F7; }
-    .game-tile:nth-child(10){ animation-delay: -5.4s; background: #F3E2E2; }
-
-    /* featured "Most Popular" tile */
-    .game-tile--featured {
-      border-color: var(--gold) !important;
-      box-shadow: 0 12px 30px rgba(196,160,64,0.30);
-    }
-    .popular-badge {
-      position: absolute;
-      top: -13px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(95deg, #E0531B, #E0A53B);
-      color: #fff;
-      font-family: var(--font-sans);
-      font-size: 0.64rem;
-      font-weight: 800;
-      letter-spacing: 0.09em;
+      letter-spacing: 0.04em;
       text-transform: uppercase;
-      padding: 0.34rem 0.85rem;
-      border-radius: 99px;
-      white-space: nowrap;
-      box-shadow: 0 5px 14px rgba(224,83,27,0.45);
-      animation: popPulse 1.8s ease-in-out infinite;
-      z-index: 3;
-    }
-    @keyframes popPulse {
-      0%,100% { transform: translateX(-50%) scale(1); }
-      50%     { transform: translateX(-50%) scale(1.09); }
-    }
-
-    /* "New" tile badge */
-    .new-badge {
-      position: absolute;
-      top: -13px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(95deg, #2E8FE0, #7A9C5C);
-      color: #fff;
-      font-family: var(--font-sans);
-      font-size: 0.64rem;
-      font-weight: 800;
-      letter-spacing: 0.09em;
-      text-transform: uppercase;
-      padding: 0.34rem 0.85rem;
-      border-radius: 99px;
-      white-space: nowrap;
-      box-shadow: 0 5px 14px rgba(46,143,224,0.45);
-      animation: popPulse 1.8s ease-in-out infinite;
-      z-index: 3;
-    }
-    .game-tile--new {
-      border-color: #2E8FE0 !important;
-      box-shadow: 0 12px 30px rgba(46,143,224,0.25);
+      color: var(--ink-light);
+      opacity: 0.75;
     }
 
     @media (max-width: 600px) {
       .games-section { padding: 2.5rem 1rem 3rem; }
-      .game-grid { gap: 1rem; }
-    }
-
-    /* Be kind to motion-sensitive kids */
-    @media (prefers-reduced-motion: reduce) {
-      .game-tile, .popular-badge, .new-badge { animation: none !important; }
     }
   </style>
 </head>
@@ -181,68 +79,52 @@
     <a href="index.html" class="site-logo">Homeschool<span>Games</span></a>
   </header>
 
-  <!-- ============ Games ============ -->
-  <section class="games-section" id="games">
+  <section class="games-section">
     <div class="games-heading">
       <h1>Homeschool <span class="pop">Games</span></h1>
-      <p>Pick a game, press play, and learn something cool — no sign-in, no ads.</p>
+      <p>Pick a subject, press play, and learn something cool — no sign-in, no ads.</p>
+    </div>
+
+    <div class="home-toolbar">
+      <a href="all-games.html" class="all-games-btn">All Games <span aria-hidden="true">▸</span></a>
     </div>
 
     <div class="game-grid">
 
-      <a href="games/circa/index.html" class="game-tile game-tile--featured">
-        <span class="popular-badge">★ Most Popular</span>
+      <a href="subjects/history.html" class="game-tile">
         <span class="tile-icon">🏛️</span>
-        <span class="tile-name">Circa</span>
+        <span class="tile-name">History</span>
+        <span class="tile-count">2 games</span>
       </a>
 
-      <a href="games/map-quiz/index.html" class="game-tile">
-        <span class="tile-icon">🗺️</span>
-        <span class="tile-name">Map Quiz</span>
-      </a>
-
-      <a href="games/math-drill/index.html" class="game-tile">
+      <a href="subjects/math.html" class="game-tile">
         <span class="tile-icon">✖️</span>
-        <span class="tile-name">Math Drill</span>
+        <span class="tile-name">Math</span>
+        <span class="tile-count">2 games</span>
       </a>
 
-      <a href="games/bible-quiz/index.html" class="game-tile">
-        <span class="tile-icon">📖</span>
-        <span class="tile-name">Bible Quiz</span>
-      </a>
-
-      <a href="games/flag-frenzy/index.html" class="game-tile">
-        <span class="tile-icon">🚩</span>
-        <span class="tile-name">Flag Frenzy</span>
-      </a>
-
-      <a href="games/who-said-it/index.html" class="game-tile">
-        <span class="tile-icon">🎙️</span>
-        <span class="tile-name">Who Said It?</span>
-      </a>
-
-      <a href="games/dragon-siege/index.html" class="game-tile game-tile--new">
-        <span class="new-badge">✦ New</span>
-        <span class="tile-icon">🐉</span>
-        <span class="tile-name">Dragon Siege</span>
-      </a>
-
-      <a href="games/word-racer/index.html" class="game-tile game-tile--new">
-        <span class="new-badge">✦ New</span>
-        <span class="tile-icon">🏎️</span>
-        <span class="tile-name">Word Racer</span>
-      </a>
-
-      <a href="games/element-hunter/index.html" class="game-tile game-tile--new">
-        <span class="new-badge">✦ New</span>
+      <a href="subjects/science.html" class="game-tile">
         <span class="tile-icon">🧪</span>
-        <span class="tile-name">Element Hunter</span>
+        <span class="tile-name">Science</span>
+        <span class="tile-count">1 game</span>
       </a>
 
-      <a href="games/bridge-run/index.html" class="game-tile game-tile--new">
-        <span class="new-badge">✦ New</span>
-        <span class="tile-icon">🌉</span>
-        <span class="tile-name">Bridge Run</span>
+      <a href="subjects/geography.html" class="game-tile">
+        <span class="tile-icon">🗺️</span>
+        <span class="tile-name">Geography</span>
+        <span class="tile-count">2 games</span>
+      </a>
+
+      <a href="subjects/typing.html" class="game-tile">
+        <span class="tile-icon">⌨️</span>
+        <span class="tile-name">Typing</span>
+        <span class="tile-count">2 games</span>
+      </a>
+
+      <a href="subjects/bible.html" class="game-tile">
+        <span class="tile-icon">📖</span>
+        <span class="tile-name">Bible</span>
+        <span class="tile-count">1 game</span>
       </a>
 
     </div>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Games — HomeschoolGames</title>
+  <link rel="stylesheet" href="assets/css/site.css">
+  <style>
+    .games-section {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 3rem 1.5rem 4rem;
+    }
+    .games-heading {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .games-heading h1 {
+      font-family: var(--font-serif);
+      font-weight: 600;
+      font-size: clamp(2.2rem, 6vw, 3.2rem);
+      line-height: 1.05;
+      margin: 0 0 0.5rem;
+    }
+    .games-heading h1 .pop {
+      background: linear-gradient(90deg, #E0853B, var(--gold) 45%, #7A9C5C 90%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .games-heading p {
+      color: var(--ink-light);
+      font-size: clamp(1rem, 2.6vw, 1.2rem);
+    }
+    @media (max-width: 600px) {
+      .games-section { padding: 2.5rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <a href="index.html" class="site-logo">Homeschool<span>Games</span></a>
+  </header>
+
+  <a href="index.html" class="back-link"><span class="arrow" aria-hidden="true">←</span> Back</a>
+
+  <section class="games-section">
+    <div class="games-heading">
+      <h1>All <span class="pop">Games</span></h1>
+      <p>Every game in one place — no sign-in, no ads.</p>
+    </div>
+
+    <div class="game-grid">
+
+      <a href="games/circa/index.html" class="game-tile game-tile--featured">
+        <span class="popular-badge">★ Most Popular</span>
+        <span class="tile-icon">🏛️</span>
+        <span class="tile-name">Circa</span>
+      </a>
+
+      <a href="games/map-quiz/index.html" class="game-tile">
+        <span class="tile-icon">🗺️</span>
+        <span class="tile-name">Map Quiz</span>
+      </a>
+
+      <a href="games/bible-quiz/index.html" class="game-tile">
+        <span class="tile-icon">📖</span>
+        <span class="tile-name">Bible Quiz</span>
+      </a>
+
+      <a href="games/flag-frenzy/index.html" class="game-tile">
+        <span class="tile-icon">🚩</span>
+        <span class="tile-name">Flag Frenzy</span>
+      </a>
+
+      <a href="games/who-said-it/index.html" class="game-tile">
+        <span class="tile-icon">🎙️</span>
+        <span class="tile-name">Who Said It?</span>
+      </a>
+
+      <a href="games/dragon-siege/index.html" class="game-tile game-tile--new">
+        <span class="new-badge">✦ New</span>
+        <span class="tile-icon">🐉</span>
+        <span class="tile-name">Dragon Siege</span>
+      </a>
+
+      <a href="games/word-racer/index.html" class="game-tile game-tile--new">
+        <span class="new-badge">✦ New</span>
+        <span class="tile-icon">🏎️</span>
+        <span class="tile-name">Word Racer</span>
+      </a>
+
+      <a href="games/element-hunter/index.html" class="game-tile game-tile--new">
+        <span class="new-badge">✦ New</span>
+        <span class="tile-icon">🧪</span>
+        <span class="tile-name">Element Hunter</span>
+      </a>
+
+      <a href="games/bridge-run/index.html" class="game-tile game-tile--new">
+        <span class="new-badge">✦ New</span>
+        <span class="tile-icon">🌉</span>
+        <span class="tile-name">Bridge Run</span>
+      </a>
+
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    homeschoolgames.app
+  </footer>
+
+</body>
+</html>
