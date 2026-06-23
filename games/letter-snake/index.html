@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letter Snake — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .snake-page { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    .snake-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+    }
+    .snake-top h1 { margin: 0; font-size: 1.7rem; }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border);
+      border-radius: 99px; padding: 0.4rem 0.85rem; font-weight: 700;
+      font-size: 0.86rem; font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
+    }
+    .hearts .spent { filter: grayscale(1) opacity(0.4); }
+
+    .word-rail { display: flex; align-items: center; justify-content: center; gap: 0.6rem; margin-bottom: 0.6rem; }
+    .word-slots { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center; }
+    .slot {
+      min-width: 1.5rem; height: 2.4rem; padding: 0 0.35rem;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.5rem;
+      border-bottom: 4px solid var(--border); color: var(--ink-light);
+      transition: color .15s, border-color .15s, transform .15s;
+    }
+    .slot.done { color: var(--green); border-color: var(--green); }
+    .slot.next { color: var(--red); border-color: var(--gold); transform: translateY(-3px); }
+    .hear-btn {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; line-height: 1;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .hear-btn:hover { background: #e3dccb; }
+
+    .stage {
+      position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+      border: 2.5px solid var(--border); box-shadow: 0 8px 26px rgba(26,23,20,0.18);
+      background: #20302a; touch-action: none;
+    }
+    #snakeCanvas { display: block; width: 100%; height: 100%; }
+
+    .bf-overlay {
+      position: absolute; inset: 0; z-index: 12;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 1.5rem; background: rgba(16,26,22,0.85);
+      backdrop-filter: blur(2px); color: #fdf7ec;
+    }
+    .bf-overlay.hidden { display: none; }
+    .bf-overlay h2 { font-family: var(--font-serif); color:#fff; font-size: 2rem; margin: 0 0 0.3rem; }
+    .bf-overlay p { color:#e7ddcf; margin: 0 0 1.2rem; max-width: 34ch; line-height: 1.5; }
+    .bf-overlay .crest { font-size: 2.8rem; margin-bottom: 0.35rem; }
+    .level-row { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 300px; }
+    .level-btn {
+      display: flex; align-items: center; gap: 0.7rem; background: rgba(255,253,244,0.96);
+      border: 2.5px solid var(--border); border-radius: 12px; padding: 0.65rem 1rem;
+      cursor: pointer; font-family: var(--font-sans); text-align: left; color: var(--ink);
+      transition: transform .12s, border-color .12s, background .12s;
+    }
+    .level-btn:hover { transform: translateY(-2px); border-color: var(--gold); background:#fff; }
+    .level-btn .l-icon { font-size: 1.7rem; }
+    .level-btn .l-name { font-weight: 800; display: block; }
+    .level-btn .l-desc { font-size: 0.78rem; color: var(--ink-light); display: block; }
+
+    .hint { text-align: center; font-size: 0.85rem; color: var(--ink-light); margin-top: 0.8rem; line-height: 1.5; }
+    .hint kbd { font-family:'Courier New',monospace; background: var(--cream-dark); border:1px solid var(--border); border-radius:4px; padding:0.05rem 0.35rem; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.5rem; }
+    .reset-link { background:none; border:none; color:var(--ink-light); font-size:0.85rem; cursor:pointer;
+      font-family:var(--font-sans); text-decoration:underline; padding:0.3rem 0.5rem; }
+    .reset-link:hover { color: var(--ink); }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../subjects/spelling.html">← Spelling</a>
+  </nav>
+</header>
+
+<div class="game-layout">
+<div class="snake-page game-main">
+
+  <div class="snake-top">
+    <h1>Letter Snake</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="scoreBadge">⭐ 0</div>
+      <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️</div>
+    </div>
+  </div>
+
+  <div class="word-rail">
+    <button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button>
+    <div class="word-slots" id="wordSlots"></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="snakeCanvas"></canvas>
+    <div class="bf-overlay" id="startOverlay">
+      <div class="crest">🐍</div>
+      <h2>Letter Snake</h2>
+      <p>Steer the snake to eat the letters <strong>in spelling order</strong>. Eat the wrong letter or hit a wall and you're in trouble! Pick a level:</p>
+      <div class="level-row">
+        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Sprout</span><span class="l-desc">Short words • slow</span></span></button>
+        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Scout</span><span class="l-desc">Longer words • brisk</span></span></button>
+        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Scholar</span><span class="l-desc">Tricky words • fast</span></span></button>
+      </div>
+    </div>
+  </div>
+
+  <p class="hint">Steer with <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>WASD</kbd> or swipe. Eat the <span style="color:var(--red);font-weight:700">red</span> letter next; don't hit the walls or yourself.</p>
+
+  <div class="control-row"><button class="reset-link" onclick="quitToMenu()">Change Level</button></div>
+
+</div><!-- /.snake-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
+
+<footer class="site-footer"><a href="../../index.html">homeschoolgames.app</a></footer>
+
+<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/spelling-words.js"></script>
+<script>
+// ============================================================
+// LETTER SNAKE — eat letters in spelling order; don't crash.
+// ============================================================
+const LEVELS = {
+  easy:   { stepMs:[180,130], pellets:5 },
+  medium: { stepMs:[150,100], pellets:6 },
+  hard:   { stepMs:[125,80],  pellets:7 }
+};
+const MAX_MISTAKES = 3;
+const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+
+const stage   = document.getElementById('stage');
+const canvas  = document.getElementById('snakeCanvas');
+const ctx     = canvas.getContext('2d');
+const wordSlots = document.getElementById('wordSlots');
+const scoreBadge= document.getElementById('scoreBadge');
+const heartsBadge=document.getElementById('heartsBadge');
+const startOverlay = document.getElementById('startOverlay');
+
+let W=560,H=460,dpr=1, CELL=32, COLS=17, ROWS=13;
+function setupCanvas(){
+  const r=stage.getBoundingClientRect();
+  W=Math.max(300,r.width);
+  CELL=Math.max(26, Math.floor(W/18));
+  COLS=Math.floor(W/CELL);
+  ROWS=Math.round(COLS*0.74);
+  H=ROWS*CELL;
+  W=COLS*CELL;
+  stage.style.height=H+'px';
+  dpr=Math.min(window.devicePixelRatio||1,2);
+  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+}
+window.addEventListener('resize', ()=>{ if(!running){ setupCanvas(); render(); } });
+
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const lerp=(a,b,t)=>a+(b-a)*t;
+
+let level='easy', cfg=LEVELS.easy;
+let word='', typed=0, score=0, mistakes=0, bestStreak=0;
+let snake=[], dir={dc:1,dr:0}, queued=null, pellets=[];
+let running=false, stepAcc=0, lastTs=0, rafId=null, flashT=0, shakeT=0, nextId=1;
+
+const rail = HSGStreak.init({ gameId:'letter-snake', gameName:'Letter Snake', minStreak:2,
+  mount: document.getElementById('streakRail') });
+
+// ---- words / speech ----
+function speak(w){
+  try{ if(HSGSound.muted||!window.speechSynthesis) return;
+    speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(w); u.rate=0.85; u.pitch=1.05; speechSynthesis.speak(u);
+  }catch(e){}
+}
+function renderSlots(){
+  wordSlots.innerHTML='';
+  for(let i=0;i<word.length;i++){
+    const s=document.createElement('span');
+    s.className='slot'+(i<typed?' done':(i===typed?' next':''));
+    s.textContent=word[i]; wordSlots.appendChild(s);
+  }
+}
+function newWord(){
+  word=HSGSpellWords.pick(level).toLowerCase();
+  typed=0; renderSlots(); speak(word);
+  pellets=[]; placeNeeded(); topUp();
+}
+
+// ---- pellet placement ----
+function cellFree(c,r){
+  if (snake.some(s=>s.c===c&&s.r===r)) return false;
+  if (pellets.some(p=>p.c===c&&p.r===r)) return false;
+  return true;
+}
+function randCell(){
+  for(let i=0;i<200;i++){ const c=Math.floor(Math.random()*COLS), r=Math.floor(Math.random()*ROWS); if(cellFree(c,r)) return {c,r}; }
+  return null;
+}
+function placeNeeded(){
+  const need=word[typed]; if(need==null) return;
+  if (pellets.some(p=>p.ch===need)) return;
+  const cell=randCell(); if(cell) pellets.push({id:nextId++, ...cell, ch:need});
+}
+function topUp(){
+  let guard=0;
+  while (pellets.length < cfg.pellets && guard++<50){
+    const cell=randCell(); if(!cell) break;
+    let ch;
+    if (Math.random()<0.45 && word.length>1) ch=word[Math.floor(Math.random()*word.length)];
+    else ch=ALPHA[Math.floor(Math.random()*26)];
+    if (ch===word[typed] && Math.random()<0.7) ch=ALPHA[Math.floor(Math.random()*26)];
+    pellets.push({id:nextId++, ...cell, ch});
+  }
+}
+
+// ---- lifecycle ----
+function startGame(lv){
+  level=lv; cfg=LEVELS[lv];
+  score=0; mistakes=0; bestStreak=0;
+  flashT=0; shakeT=0; stepAcc=0;
+  rail.reset(); setupCanvas();
+  const cr=Math.floor(ROWS/2);
+  snake=[{c:4,r:cr},{c:3,r:cr},{c:2,r:cr}];
+  dir={dc:1,dr:0}; queued=null;
+  updateHud();
+  startOverlay.classList.add('hidden');
+  newWord();
+  running=true; lastTs=0;
+  rafId=requestAnimationFrame(tick);
+}
+function quitToMenu(){
+  running=false; if(rafId) cancelAnimationFrame(rafId);
+  rail.value=bestStreak; rail.end();
+  startOverlay.classList.remove('hidden'); render();
+}
+function gameOver(reason){
+  running=false; if(rafId) cancelAnimationFrame(rafId);
+  rail.value=bestStreak; rail.end();
+  HSGSound.finish(false);
+  HSGfx.showSummary({
+    title: reason==='crash'?'Crashed!':'Game Over', correct:score, total:score+mistakes, best:bestStreak,
+    onPlayAgain:()=>startGame(level), allGamesHref:'../../all-games.html'
+  });
+}
+
+// ---- core eat resolution (testable) ----
+function eat(ch){
+  if (ch === word[typed]){
+    typed++; renderSlots();
+    if (typed>=word.length){ wordComplete(); return 'complete'; }
+    HSGSound.tick(); placeNeeded(); topUp();
+    return 'correct';
+  } else {
+    mistakeMade(); topUp();
+    return 'wrong';
+  }
+}
+function wordComplete(){
+  score++; rail.hit();
+  if (rail.value>bestStreak) bestStreak=rail.value;
+  HSGSound.correct();
+  if (HSGfx.milestone(rail.value)) HSGSound.streak(rail.value); else HSGfx.confetti({count:24});
+  flashT=0.35; updateHud();
+  newWord();
+}
+function mistakeMade(){
+  mistakes++; rail.reset(); HSGSound.wrong(); HSGfx.shake(); shakeT=0.35; updateHud();
+  if (mistakes>=MAX_MISTAKES) gameOver('mistakes');
+}
+function updateHud(){
+  scoreBadge.textContent='⭐ '+score;
+  let h=''; for(let i=0;i<MAX_MISTAKES;i++) h+= i<(MAX_MISTAKES-mistakes)?'❤️':'<span class="spent">🤍</span>';
+  heartsBadge.innerHTML=h;
+}
+
+// ---- step (testable) ----
+function step(){
+  if (queued && !(queued.dc===-dir.dc && queued.dr===-dir.dr)) dir=queued;
+  queued=null;
+  const head={c:snake[0].c+dir.dc, r:snake[0].r+dir.dr};
+  if (head.c<0||head.c>=COLS||head.r<0||head.r>=ROWS){ crash(); return; }
+  // self collision (ignore the tail cell, which will move when not growing)
+  for (let i=0;i<snake.length-1;i++){ if(snake[i].c===head.c&&snake[i].r===head.r){ crash(); return; } }
+  snake.unshift(head);
+  const pi=pellets.findIndex(p=>p.c===head.c&&p.r===head.r);
+  let grew=false;
+  if (pi>=0){
+    const ch=pellets[pi].ch; pellets.splice(pi,1);
+    const res=eat(ch);
+    if (res==='correct'||res==='complete') grew=true;
+  }
+  if (!grew) snake.pop();
+}
+function crash(){ HSGfx.shake(); gameOver('crash'); }
+
+// ---- loop ----
+function tick(ts){
+  if(!running) return;
+  if(!lastTs) lastTs=ts;
+  let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.1) dt=0.1;
+  const interval = lerp(cfg.stepMs[0], cfg.stepMs[1], clamp(score/24,0,1))/1000;
+  stepAcc+=dt;
+  while (running && stepAcc>=interval){ stepAcc-=interval; step(); }
+  if (flashT>0) flashT=Math.max(0,flashT-dt);
+  if (shakeT>0) shakeT=Math.max(0,shakeT-dt);
+  render();
+  if (running) rafId=requestAnimationFrame(tick);
+}
+
+function render(){
+  ctx.clearRect(0,0,W,H);
+  ctx.save();
+  if (shakeT>0) ctx.translate((Math.random()-0.5)*8,(Math.random()-0.5)*6);
+  // board
+  ctx.fillStyle='#243a31'; ctx.fillRect(0,0,W,H);
+  // checker
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if((r+c)%2===0){ ctx.fillStyle='rgba(255,255,255,0.03)'; ctx.fillRect(c*CELL,r*CELL,CELL,CELL); }
+  }
+  // pellets
+  for (const p of pellets){
+    const need = p.ch===word[typed];
+    const x=p.c*CELL+CELL/2, y=p.r*CELL+CELL/2, rad=CELL*0.4;
+    ctx.beginPath(); ctx.arc(x,y,rad,0,6.28);
+    ctx.fillStyle = need ? '#fff3d0' : '#3d574a';
+    ctx.fill();
+    ctx.lineWidth=2.5; ctx.strokeStyle = need ? '#E0531B' : '#86a596'; ctx.stroke();
+    ctx.fillStyle = need ? '#8B2020' : '#dbe7e0';
+    ctx.font='700 '+Math.round(CELL*0.5)+"px 'Courier New', monospace";
+    ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(p.ch, x, y+1);
+  }
+  // snake
+  for (let i=snake.length-1;i>=0;i--){
+    const s=snake[i], x=s.c*CELL, y=s.r*CELL;
+    const head=i===0;
+    ctx.fillStyle = head ? '#C4A040' : (i%2? '#5fae7a':'#6fbf86');
+    roundRect(x+2,y+2,CELL-4,CELL-4, head?9:7); ctx.fill();
+    if (head){
+      ctx.fillStyle='#1A1714';
+      const ex=x+CELL/2+dir.dc*5, ey=y+CELL/2+dir.dr*5;
+      ctx.beginPath(); ctx.arc(ex-4*(dir.dr!==0?1:0)-(dir.dc!==0?0:0), ey, 2.6,0,6.28);
+      ctx.arc(ex+ (dir.dc!==0?0:4), ey,2.6,0,6.28); ctx.fill();
+    }
+  }
+  ctx.restore();
+  if (flashT>0){ ctx.fillStyle='rgba(120,210,140,'+(flashT*0.5)+')'; ctx.fillRect(0,0,W,H); }
+}
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+// ---- input ----
+function setDir(dc,dr){ if(running) queued={dc,dr}; }
+document.addEventListener('keydown', e=>{
+  const k=e.key.toLowerCase();
+  if (k==='arrowleft'||k==='a'){ setDir(-1,0); e.preventDefault(); }
+  else if (k==='arrowright'||k==='d'){ setDir(1,0); e.preventDefault(); }
+  else if (k==='arrowup'||k==='w'){ setDir(0,-1); e.preventDefault(); }
+  else if (k==='arrowdown'||k==='s'){ setDir(0,1); e.preventDefault(); }
+});
+let touchStart=null;
+stage.addEventListener('touchstart', e=>{ const t=e.touches[0]; touchStart={x:t.clientX,y:t.clientY}; }, {passive:true});
+stage.addEventListener('touchmove', e=>{ e.preventDefault(); }, {passive:false});
+stage.addEventListener('touchend', e=>{
+  if(!touchStart) return; const t=e.changedTouches[0];
+  const dx=t.clientX-touchStart.x, dy=t.clientY-touchStart.y;
+  if (Math.abs(dx)<18 && Math.abs(dy)<18) return;
+  if (Math.abs(dx)>Math.abs(dy)) setDir(dx>0?1:-1,0); else setDir(0,dy>0?1:-1);
+  touchStart=null;
+});
+document.getElementById('hearBtn').addEventListener('click', ()=>{ if(word) speak(word); });
+document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', ()=>startGame(b.dataset.level)));
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && running) lastTs=0; });
+
+setupCanvas();
+updateHud();
+(function idle(){ if(!running){ render(); requestAnimationFrame(idle); } })();
+</script>
+
+</body>
+</html>
