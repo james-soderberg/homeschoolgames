@@ -231,6 +231,8 @@
 </footer>
 
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/map-data.js"></script>
 <script>
 // ============================================================
@@ -341,8 +343,10 @@ let currentCountry = null;
 let completed = new Set();   // ids of countries already found (this region)
 let scoreWrong = 0;
 let streak = 0;
+let bestStreak = 0;
 let waitingForNext = false;
 let advanceTimer = null;
+let regionJustFinished = false;
 
 // ---- Persistence: found countries survive reloads so you fill them in over time ----
 function storageKey(region) { return 'hsg-mapquiz-found-' + region; }
@@ -389,6 +393,8 @@ function startRound() {
   completed = loadCompleted(currentRegion);
   scoreWrong = 0;
   streak = 0;
+  bestStreak = 0;
+  regionJustFinished = false;
 
   // Grey out + label everything already found
   completed.forEach(id => {
@@ -420,9 +426,23 @@ function nextQuestion() {
   if (queue.length === 0) {
     // Region complete!
     currentCountry = null;
+    const total = REGIONS[currentRegion].countries.length;
     document.getElementById('promptCountry').textContent = 'All found! 🎉';
     document.getElementById('feedbackBar').innerHTML =
-      `<span class="feedback-correct">🌍 You found all ${REGIONS[currentRegion].countries.length} countries in ${REGIONS[currentRegion].label}!</span>`;
+      `<span class="feedback-correct">🌍 You found all ${total} countries in ${REGIONS[currentRegion].label}!</span>`;
+    // Only celebrate when the region was just finished by play (not on reload).
+    if (regionJustFinished) {
+      regionJustFinished = false;
+      HSGfx.confetti({ count: 90, big: true });
+      HSGfx.showSummary({
+        title: `${REGIONS[currentRegion].label} complete!`,
+        correct: total, total: total + scoreWrong, best: bestStreak,
+        onPlayAgain: () => {
+          try { localStorage.removeItem(storageKey(currentRegion)); } catch (e) {}
+          loadRegion(currentRegion);
+        },
+      });
+    }
     return;
   }
 
@@ -443,10 +463,14 @@ function handleCountryClick(countryId) {
 
   if (countryId === currentCountry.id) {
     streak++;
+    if (streak > bestStreak) bestStreak = streak;
     rail.hit();
+    HSGSound.correct();
+    if (HSGfx.milestone(streak)) HSGSound.streak(streak);
     // Mark found: persists, greys out, and reveals its name on hover.
     completed.add(currentCountry.id);
     saveCompleted();
+    if (completed.size === REGIONS[currentRegion].countries.length) regionJustFinished = true;
     if (correctEl) {
       correctEl.classList.add('correct-flash', 'completed');
       setTitle(correctEl, currentCountry.name);
@@ -459,6 +483,7 @@ function handleCountryClick(countryId) {
     scoreWrong++;
     const endedStreak = streak;
     streak = 0;
+    HSGSound.wrong();
     const wrongName = getCountryName(countryId);
     fb.innerHTML = `<span class="feedback-wrong">✗ ${wrongName ? `That's ${wrongName}.` : 'Not quite!'} ${currentCountry.name} is highlighted in green.</span>`;
     if (correctEl) correctEl.classList.add('show-correct');
