@@ -258,9 +258,25 @@
     }
     .reset-link:hover { color: var(--ink); }
 
+    /* Filter chips */
+    .filter-rows { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+    .filter-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
+    .filter-label {
+      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--ink-light); margin-right: 0.15rem; min-width: 3.6rem;
+    }
+    .chip {
+      padding: 0.32rem 0.8rem; border: 1.5px solid var(--border); border-radius: 99px;
+      background: #fff; font-size: 0.8rem; font-weight: 600; font-family: var(--font-sans);
+      color: var(--ink-light); cursor: pointer; transition: all 0.12s;
+    }
+    .chip.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+    .chip:hover:not(.active) { border-color: var(--ink-light); color: var(--ink); }
+
     @media (max-width: 480px) {
       .option-grid { grid-template-columns: 1fr; }
       .option-btn { min-height: 56px; }
+      .filter-label { min-width: 100%; margin-bottom: -0.1rem; }
     }
   </style>
 </head>
@@ -283,6 +299,11 @@
     </div>
   </div>
 
+  <div class="filter-rows">
+    <div class="filter-row" id="diffRow"><span class="filter-label">Level</span></div>
+    <div class="filter-row" id="catRow"><span class="filter-label">Type</span></div>
+  </div>
+
   <div class="verse-card">
     <span class="cat-pill" id="catPill">Story</span>
     <div class="verse-text" id="verseText">Loading…</div>
@@ -296,7 +317,7 @@
 
   <div class="option-grid" id="optionGrid"></div>
 
-  <button id="nextBtn" onclick="nextCard()" style="display:none">Next Verse →</button>
+  <button id="nextBtn" onclick="advance()" style="display:none">Next Verse →</button>
 
   <div class="control-row">
     <button class="reset-link" onclick="resetAll()">Start Over</button>
@@ -312,6 +333,8 @@
 </footer>
 
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
 <script>
 // ============================================================
 // BIBLE BOOK QUIZ
@@ -436,13 +459,27 @@ const CAT_LABEL = {
 };
 
 const KEYS = ['A','B','C','D'];
+const TARGET = 25;
+const DELAY_OK = 2500, DELAY_NO = 4000;
+
+const TIERS = [
+  {id:'all', label:'All'}, {id:'gimme', label:'Easy'},
+  {id:'medium', label:'Medium'}, {id:'niche', label:'Hard'},
+];
+const CATS = [
+  {id:'all', label:'All'}, {id:'story', label:'Story'}, {id:'verse', label:'Verse'},
+  {id:'character', label:'Character'}, {id:'wild', label:'Many Books'}, {id:'trap', label:'Tricky'},
+];
 
 let correct = 0;
 let total = 0;
 let streak = 0;
+let bestStreak = 0;
 let answered = false;
 let currentCard = null;
 let queue = [];
+let selTier = 'all', selCat = 'all';
+let advanceTimer = null, pendingEnd = false;
 
 function shuffle(arr) {
   const a = arr.slice();
@@ -453,9 +490,40 @@ function shuffle(arr) {
   return a;
 }
 
+function activeDeck() {
+  return DECK.filter(c =>
+    (selTier === 'all' || c.tier === selTier) &&
+    (selCat === 'all'  || c.cat === selCat));
+}
+
 function drawCard() {
-  if (queue.length === 0) queue = shuffle(DECK);
+  if (queue.length === 0) queue = shuffle(activeDeck());
   return queue.pop();
+}
+
+function buildFilters() {
+  const diffRow = document.getElementById('diffRow');
+  const catRow = document.getElementById('catRow');
+  TIERS.forEach(t => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (t.id === selTier ? ' active' : '');
+    b.textContent = t.label;
+    b.dataset.tier = t.id;
+    b.onclick = () => { if (selTier === t.id) return; selTier = t.id; HSGSound.tick(); startRound(); };
+    diffRow.appendChild(b);
+  });
+  CATS.forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'chip' + (c.id === selCat ? ' active' : '');
+    b.textContent = c.label;
+    b.dataset.cat = c.id;
+    b.onclick = () => { if (selCat === c.id) return; selCat = c.id; HSGSound.tick(); startRound(); };
+    catRow.appendChild(b);
+  });
+}
+function syncFilterChips() {
+  document.querySelectorAll('#diffRow .chip').forEach(b => b.classList.toggle('active', b.dataset.tier === selTier));
+  document.querySelectorAll('#catRow .chip').forEach(b => b.classList.toggle('active', b.dataset.cat === selCat));
 }
 
 function buildOptions(card) {
@@ -468,8 +536,20 @@ function buildOptions(card) {
 }
 
 function nextCard() {
+  clearTimeout(advanceTimer);
+  pendingEnd = false;
   answered = false;
   currentCard = drawCard();
+  if (!currentCard) {
+    document.getElementById('verseText').textContent = 'No verses match that combination';
+    document.getElementById('verseBlurb').textContent = 'Pick another level or type.';
+    document.getElementById('catPill').textContent = '—';
+    document.getElementById('catPill').className = 'cat-pill';
+    document.getElementById('optionGrid').innerHTML = '';
+    document.getElementById('revealName').textContent = '';
+    document.getElementById('feedback').textContent = '';
+    return;
+  }
   const { answer, options } = buildOptions(currentCard);
   currentCard._answer = answer;
   currentCard._options = options;
@@ -522,15 +602,19 @@ function handleAnswer(chosen, clickedBtn) {
   if (isCorrect) {
     correct++;
     streak++;
+    if (streak > bestStreak) bestStreak = streak;
     rail.hit();
+    HSGSound.correct();
     clickedBtn.classList.add('correct');
     const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
               : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
               :                `✓ Correct!`;
     document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
+    if (HSGfx.milestone(streak)) HSGSound.streak(streak);
   } else {
     endedStreak = streak;
     streak = 0;
+    HSGSound.wrong();
     clickedBtn.classList.add('wrong');
     // Reveal the one correct option in the grid.
     allBtns.forEach(b => {
@@ -549,29 +633,58 @@ function handleAnswer(chosen, clickedBtn) {
   document.getElementById('revealName').textContent = nameLine;
 
   updateBadges();
-  document.getElementById('nextBtn').style.display = 'block';
 
   // A streak just ended — flare down and offer the leaderboard if it qualifies.
   if (endedStreak) rail.end();
+
+  // End after TARGET questions, but never mid-streak.
+  pendingEnd = (total >= TARGET && streak === 0);
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = pendingEnd ? 'See results →' : 'Next Verse →';
+  nextBtn.style.display = 'block';
+  scheduleAdvance(isCorrect ? DELAY_OK : DELAY_NO);
+}
+
+function scheduleAdvance(ms) {
+  clearTimeout(advanceTimer);
+  advanceTimer = setTimeout(advance, ms);
+}
+function advance() {
+  clearTimeout(advanceTimer);
+  if (!answered) return;
+  if (pendingEnd) endSession();
+  else nextCard();
+}
+
+function endSession() {
+  HSGfx.showSummary({
+    title: `Bible Quiz — ${total} verses`,
+    correct, total, best: bestStreak,
+    onPlayAgain: startRound,
+  });
 }
 
 function updateBadges() {
   document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
 }
 
-function resetAll() {
-  rail.end(); // records if they reset mid-streak, then flares down
-  correct = 0; total = 0; streak = 0;
-  queue = [];
+function startRound() {
+  clearTimeout(advanceTimer);
+  rail.end();
+  correct = 0; total = 0; streak = 0; bestStreak = 0; queue = [];
+  answered = false; pendingEnd = false;
+  syncFilterChips();
   updateBadges();
   nextCard();
 }
+
+function resetAll() { startRound(); }
 
 // Keyboard: A/B/C/D to answer, Enter or Space for next.
 document.addEventListener('keydown', e => {
   if ((e.key === 'Enter' || e.key === ' ') && answered) {
     e.preventDefault();
-    nextCard();
+    advance();
     return;
   }
   if (answered) return;
@@ -586,6 +699,7 @@ const rail = HSGStreak.init({
   mount: document.getElementById('streakRail')
 });
 
+buildFilters();
 updateBadges();
 nextCard();
 </script>
