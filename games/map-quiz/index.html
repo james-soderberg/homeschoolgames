@@ -158,6 +158,9 @@
     .country.wrong-flash { fill: #8B2020 !important; }
     .country.highlight-target { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
     .country.show-correct { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
+    /* Already found — greyed out, still shows its name on hover */
+    .country.completed { fill: #A8A29A; stroke: #837C72; cursor: help; }
+    .country.completed:hover { fill: #A8A29A; }
 
     .btn-row {
       display: flex;
@@ -201,7 +204,7 @@
     <div class="score-box">
       <div class="score-item">
         <span class="score-num correct" id="scoreCorrect">0</span>
-        <span class="score-label">✓ Correct</span>
+        <span class="score-label">✓ Found</span>
       </div>
       <div class="score-item">
         <span class="score-num wrong" id="scoreWrong">0</span>
@@ -335,20 +338,38 @@ function buildRegionSVG(region) {
 let currentRegion = 'americas';
 let queue = [];
 let currentCountry = null;
-let scoreCorrect = 0;
+let completed = new Set();   // ids of countries already found (this region)
 let scoreWrong = 0;
 let streak = 0;
 let waitingForNext = false;
 let advanceTimer = null;
 
+// ---- Persistence: found countries survive reloads so you fill them in over time ----
+function storageKey(region) { return 'hsg-mapquiz-found-' + region; }
+function loadCompleted(region) {
+  try { return new Set(JSON.parse(localStorage.getItem(storageKey(region)) || '[]')); }
+  catch (e) { return new Set(); }
+}
+function saveCompleted() {
+  try { localStorage.setItem(storageKey(currentRegion), JSON.stringify([...completed])); }
+  catch (e) { /* ignore quota / private-mode errors */ }
+}
+
+// Native SVG tooltip on a country path
+function setTitle(el, name) {
+  if (!el) return;
+  let t = el.querySelector('title');
+  if (!t) {
+    t = document.createElementNS('http://www.w3.org/2000/svg', 'title');
+    el.appendChild(t);
+  }
+  t.textContent = name;
+}
+
 function loadRegion(region) {
   currentRegion = region;
+  const labels = { americas:'Americas', europe:'Europe', asia:'Asia', africa:'Africa' };
   document.querySelectorAll('.region-tab').forEach(t => {
-    t.classList.toggle('active', t.textContent.trim().toLowerCase().startsWith(region.charAt(0).toUpperCase() + region.slice(1, 3)));
-  });
-  // fix active for africa
-  document.querySelectorAll('.region-tab').forEach(t => {
-    const labels = { americas:'Americas', europe:'Europe', asia:'Asia', africa:'Africa' };
     t.classList.toggle('active', t.textContent.trim() === labels[region]);
   });
 
@@ -360,36 +381,49 @@ function loadRegion(region) {
     path.addEventListener('click', () => handleCountryClick(path.id));
   });
 
-  // Reset queue & start
-  resetQueue();
+  startRound();
 }
 
-function resetQueue() {
+function startRound() {
   if (typeof rail !== 'undefined') rail.end(); // streak ends on reset / region switch
-  queue = shuffle([...REGIONS[currentRegion].countries]);
-  scoreCorrect = 0;
+  completed = loadCompleted(currentRegion);
   scoreWrong = 0;
   streak = 0;
+
+  // Grey out + label everything already found
+  completed.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.add('completed'); setTitle(el, getCountryName(id)); }
+  });
+
+  // Only ask for countries not yet found
+  queue = shuffle(REGIONS[currentRegion].countries.filter(c => !completed.has(c.id)));
   updateScoreDisplay();
   nextQuestion();
 }
 
 function resetScores() {
+  if (!confirm('Reset your found countries and scores for ' + REGIONS[currentRegion].label + '?')) return;
+  try { localStorage.removeItem(storageKey(currentRegion)); } catch (e) {}
   loadRegion(currentRegion);
 }
 
 function nextQuestion() {
   clearTimeout(advanceTimer);
   waitingForNext = false;
-  // Clear feedback
+  // Clear feedback + transient highlights (keep persistent .completed greying)
   document.getElementById('feedbackBar').textContent = '';
-  // Clear highlights
   document.querySelectorAll('#mapContainer .country').forEach(el => {
     el.classList.remove('correct-flash', 'wrong-flash', 'show-correct');
   });
 
   if (queue.length === 0) {
-    queue = shuffle([...REGIONS[currentRegion].countries]);
+    // Region complete!
+    currentCountry = null;
+    document.getElementById('promptCountry').textContent = 'All found! 🎉';
+    document.getElementById('feedbackBar').innerHTML =
+      `<span class="feedback-correct">🌍 You found all ${REGIONS[currentRegion].countries.length} countries in ${REGIONS[currentRegion].label}!</span>`;
+    return;
   }
 
   currentCountry = queue.pop();
@@ -402,16 +436,22 @@ function handleCountryClick(countryId) {
     return;
   }
   if (!currentCountry) return;
+  if (completed.has(countryId)) return; // clicking an already-found country does nothing
 
   const fb = document.getElementById('feedbackBar');
   const correctEl = document.getElementById(currentCountry.id);
 
   if (countryId === currentCountry.id) {
-    scoreCorrect++;
     streak++;
     rail.hit();
+    // Mark found: persists, greys out, and reveals its name on hover.
+    completed.add(currentCountry.id);
+    saveCompleted();
+    if (correctEl) {
+      correctEl.classList.add('correct-flash', 'completed');
+      setTitle(correctEl, currentCountry.name);
+    }
     fb.innerHTML = `<span class="feedback-correct">🎉 Yes! That's ${currentCountry.name}!</span>`;
-    if (correctEl) correctEl.classList.add('correct-flash');
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1000);
@@ -427,6 +467,9 @@ function handleCountryClick(countryId) {
       wrongEl.classList.add('wrong-flash');
       setTimeout(() => wrongEl.classList.remove('wrong-flash'), 800);
     }
+    // Missed — put it back in the rotation so you get another shot at it.
+    const at = Math.floor(Math.random() * (queue.length + 1));
+    queue.splice(at, 0, currentCountry);
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1800);
@@ -441,7 +484,8 @@ function getCountryName(id) {
 }
 
 function updateScoreDisplay() {
-  document.getElementById('scoreCorrect').textContent = scoreCorrect;
+  const total = REGIONS[currentRegion].countries.length;
+  document.getElementById('scoreCorrect').textContent = `${completed.size} / ${total}`;
   document.getElementById('scoreWrong').textContent = scoreWrong;
 }
 
