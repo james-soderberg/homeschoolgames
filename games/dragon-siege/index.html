@@ -134,21 +134,19 @@
 
     .realm-row { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; max-width: 340px; }
     .realm-btn {
-      display: flex; align-items: center; gap: 0.75rem;
+      display: flex; align-items: center; justify-content: center; gap: 0.6rem;
       background: rgba(255,253,244,0.96);
       border: 2.5px solid var(--border);
       border-radius: 12px;
-      padding: 0.7rem 1rem;
+      padding: 0.8rem 1rem;
       cursor: pointer;
       font-family: var(--font-sans);
-      text-align: left;
       transition: transform 0.12s, border-color 0.12s, background 0.12s;
       color: var(--ink);
     }
     .realm-btn:hover { transform: translateY(-2px); border-color: var(--gold); background: #fff; }
-    .realm-btn .r-icon { font-size: 1.9rem; line-height: 1; flex-shrink: 0; }
-    .realm-btn .r-name { font-weight: 800; font-size: 1.05rem; display: block; }
-    .realm-btn .r-desc { font-size: 0.78rem; color: var(--ink-light); display: block; }
+    .realm-btn .r-icon { font-size: 1.6rem; line-height: 1; flex-shrink: 0; }
+    .realm-btn .r-name { font-weight: 800; font-size: 1.15rem; }
 
     .play-btn {
       background: var(--gold); color: var(--ink); border: none;
@@ -236,19 +234,19 @@
     <div class="bf-overlay" id="startOverlay">
       <div class="crest">🐉</div>
       <h2>Dragon Siege</h2>
-      <p>An army marches on your keep — with flaming boulders and dragons behind them. <strong>Type the word</strong> over each foe to loose your archers before it strikes the walls. Choose your realm:</p>
+      <p>Protect your castle!</p>
       <div class="realm-row">
-        <button class="realm-btn" data-realm="squire">
-          <span class="r-icon">🛡️</span>
-          <span><span class="r-name">Squire's Watch</span><span class="r-desc">Short words • gentle pace</span></span>
+        <button class="realm-btn" data-realm="easy">
+          <span class="r-icon">🛡️</span><span class="r-name">Easy</span>
         </button>
-        <button class="realm-btn" data-realm="knight">
-          <span class="r-icon">⚔️</span>
-          <span><span class="r-name">Knight's March</span><span class="r-desc">Longer words • steady swarm</span></span>
+        <button class="realm-btn" data-realm="medium">
+          <span class="r-icon">⚔️</span><span class="r-name">Medium</span>
         </button>
-        <button class="realm-btn" data-realm="dragonlord">
-          <span class="r-icon">🐲</span>
-          <span><span class="r-name">Dragonlord's Siege</span><span class="r-desc">Hard words • relentless</span></span>
+        <button class="realm-btn" data-realm="hard">
+          <span class="r-icon">🐲</span><span class="r-name">Hard</span>
+        </button>
+        <button class="realm-btn" data-realm="impossible">
+          <span class="r-icon">💀</span><span class="r-name">Impossible</span>
         </button>
       </div>
     </div>
@@ -329,10 +327,18 @@ const BOSS_WORDS = [
   "nightmare","venomspire","godslayer","onslaught","tempest","maelstrom"
 ];
 
+// The giant carries a whole phrase you type straight through.
+const GIANT_PHRASES = [
+  "fee fie fo fum","crush the keep","smash the gate","down with the wall",
+  "tremble before me","grind your bones","the giant is here","none shall pass",
+  "raze the castle","i smell a knight","stomp and roar","bring the walls down"
+];
+
 const REALMS = {
-  squire:     { pool:"squire",     troopSpeed:[15,22], rockDur:[10.0,7.5], dragonDur:[9.0,7.0], spawn:[3.4,2.0], group:[1,2], rockChance:0.14, dragonGap:16, giantGap:18 },
-  knight:     { pool:"knight",     troopSpeed:[19,28], rockDur:[8.5,6.0],  dragonDur:[8.0,6.0], spawn:[2.7,1.4], group:[2,3], rockChance:0.20, dragonGap:12, giantGap:14 },
-  dragonlord: { pool:"dragonlord", troopSpeed:[24,34], rockDur:[7.0,5.0],  dragonDur:[7.0,5.2], spawn:[2.1,1.05],group:[2,4], rockChance:0.26, dragonGap:9,  giantGap:11 }
+  easy:       { pool:"squire",     troopSpeed:[15,22], rockDur:[10.0,7.5], dragonDur:[9.0,7.0], spawn:[3.4,2.2], group:[1,1], rockChance:0.14, dragonGap:16, giantGap:18 },
+  medium:     { pool:"knight",     troopSpeed:[19,28], rockDur:[8.5,6.0],  dragonDur:[8.0,6.0], spawn:[2.8,1.7], group:[1,2], rockChance:0.20, dragonGap:12, giantGap:14 },
+  hard:       { pool:"dragonlord", troopSpeed:[24,34], rockDur:[7.0,5.0],  dragonDur:[7.0,5.2], spawn:[2.3,1.3], group:[1,2], rockChance:0.26, dragonGap:9,  giantGap:11 },
+  impossible: { pool:"dragonlord", troopSpeed:[34,48], rockDur:[5.2,3.6],  dragonDur:[5.2,3.8], spawn:[1.7,0.9], group:[2,3], rockChance:0.36, dragonGap:6,  giantGap:8  }
 };
 
 const START_LIVES = 5;
@@ -373,14 +379,14 @@ const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // ---------- State ----------
-let realmKey='squire', realm=REALMS.squire;
+let realmKey='easy', realm=REALMS.easy;
 let threats=[], projectiles=[], particles=[], decals=[], floaters=[];
 let active=null;
 let lives=START_LIVES, slain=0, wave=1, bestStreak=0;
 let lastBossSlain=0, lastGiantSlain=0, spawnAcc=0, spawnInterval=2.9;
 let running=false, lastTs=0, rafId=null, sceneTime=0;
 let shake=0, flashA=0, flashColor='255,120,40';
-let nextId=1;
+let nextId=1, troopCount=0;
 let treb={ fireT:0 };   // siege engine arm animation (0 = cocked, pulses to 1 on fire)
 
 const rail = HSGStreak.init({
@@ -698,16 +704,21 @@ function pickWord(pool, avoid){
 }
 
 function spawnTroop(offset){
-  const sp = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
+  troopCount++;
+  const mounted = (troopCount % 5 === 0);            // every fifth foe is a horseman
+  let sp = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
+  if (mounted) sp *= 2;                              // twice as fast as a foot soldier
   const word = pickWord(WORDS[realm.pool], usedLetters());
   const th = {
-    id:nextId++, kind:'troop', variant:choice(TROOP_KINDS),
+    id:nextId++, kind:'troop', mounted,
+    variant: mounted ? 'knight' : choice(TROOP_KINDS),
     word, typed:0, state:'live',
     x: W + 30 + (offset||0), y: groundY()-2 + rand(-4,4),
     speed: sp, t0: rand(0,6.28), bob:0,
     fallT:0
   };
   addThreat(th);
+  return th;
 }
 function spawnRock(){
   const dur = lerp(realm.rockDur[0], realm.rockDur[1], diffT());
@@ -743,25 +754,16 @@ function spawnDragon(){
   flashWave('A Dragon Descends!', '🐉 Boss');
 }
 function spawnGiant(){
-  const pool = WORDS[realm.pool];
-  // four words, each a distinct first letter and none clashing with foes already out
-  const words = [];
-  const avoid = usedLetters();
-  let guard = 0;
-  while (words.length < 4 && guard++ < 300){
-    const w = pickWord(pool, avoid);
-    if (!words.some(x => x[0]===w[0])){ words.push(w); avoid.add(w[0]); }
-  }
-  while (words.length < 4){ words.push(choice(pool).toLowerCase()); }   // safety net
-  // really slow — about half a foot-soldier's pace
-  const speed = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT()) * 0.55;
+  // one long phrase you type straight through; marches at a soldier's pace
+  const phrase = pickWord(GIANT_PHRASES, usedLetters());
+  const speed = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
   const th = {
     id:nextId++, kind:'giant', boss:true, state:'live',
-    words, wordIdx:0, word:words[0], typed:0,
+    word: phrase, typed:0,
     x:W+60, y:groundY()-2, speed, t0:rand(0,6.28), bob:0, hurtT:0, hoverT:0
   };
   addThreat(th);
-  flashWave('A Giant Approaches!', '🗿 Four words to fell it');
+  flashWave('A Giant Approaches!', '🗿 Type the phrase to fell it');
 }
 function addThreat(th){
   const b=document.createElement('div');
@@ -832,18 +834,21 @@ function updateThreats(dt, t){
     if (th.state==='siege'){ // a boss has reached the keep and is razing it
       th.hoverT=(th.hoverT||0)+dt;
       if (th.kind==='dragon'){
+        // hover high near the top and pour a steady torrent of fire downward
         th.flap+=dt*7;
-        th.x = castleW()+64 + Math.sin(th.hoverT*1.3)*5;
-        th.y = wallTopY()-26 + Math.sin(th.hoverT*2.0)*7;
+        th.x = castleW()+60 + Math.sin(th.hoverT*1.1)*6;
+        th.y = H*0.16 + Math.sin(th.hoverT*1.8)*6;
         th.sx=th.x; th.sy=th.y-46;
-        emit(th.x-48, th.y, 'fire', 2, 1.3);          // breath onto the maw
+        // dense flame streaming from the maw toward the burning wall
+        const mx=th.x-46, my=th.y+2, tx=castleW()*0.5, ty=wallTopY()+8;
+        for (let k=0;k<4;k++){ const p=Math.random(); emit(lerp(mx,tx,p)+rand(-8,8), lerp(my,ty,p)+rand(-8,8), 'fire', 1, 1.5); }
       } else { // giant — stands at the wall and pounds it
         th.x = castleW()+34;
         th.y = groundY()-2;
-        th.sx=th.x; th.sy=th.y-156;
+        th.sx=th.x; th.sy=th.y-186;
       }
-      // relentless flame pouring down onto the walls
-      emit(castleW()*0.55+rand(-26,26), wallTopY()+rand(-8,24), 'fire', 2, 1.5);
+      // relentless flame pooling on the walls
+      emit(castleW()*0.5+rand(-26,26), wallTopY()+rand(-8,24), 'fire', 2, 1.6);
       th.burnAcc += dt;
       if (th.burnAcc>=1){ th.burnAcc-=1; dragonInferno(); damageCastle(castleW()*0.42, wallTopY(), 'fire'); }
       placeBubble(th);
@@ -852,17 +857,17 @@ function updateThreats(dt, t){
 
     if (th.kind==='troop'){
       th.x -= th.speed*dt;
-      th.bob = Math.sin(t*7 + th.t0);
-      th.sx=th.x; th.sy=th.y - 44;
+      th.bob = Math.sin(t*(th.mounted?11:7) + th.t0);
+      th.sx=th.x; th.sy=th.y - (th.mounted?74:44);
       // only a LIVE soldier breaches the wall; a doomed (struck) one keeps
       // marching until its arrow lands but no longer harms the castle.
       if (th.state==='live' && th.x <= cw+6){ impactTroop(th,i); continue; }
     }
     else if (th.kind==='giant'){
-      th.x -= th.speed*dt;                 // a slow, lumbering trudge
+      th.x -= th.speed*dt;                 // marches at a soldier's pace
       th.bob = Math.sin(t*3 + th.t0);
       if (th.hurtT>0) th.hurtT -= dt;
-      th.sx=th.x; th.sy=th.y - 156;
+      th.sx=th.x; th.sy=th.y - 186;        // word floats high, above its head
       if (th.state==='live' && th.x <= cw+18){ impactGiant(th,i); continue; }
     }
     else if (th.kind==='rock'){
@@ -903,9 +908,14 @@ function pruneCorpses(){
 
 function placeBubble(th){
   if (!th.bubble) return;
-  const off = th.kind==='dragon'?60 : th.kind==='rock'?34 : th.kind==='giant'?10 : 46;
   th._bx = th.sx;
-  th._by = th.sy - off + (th.bob ? th.bob*2 : 0);
+  if (th.kind==='dragon' && th.state==='siege'){
+    // it's hovering at the very top — drop the word BELOW it so it stays on-screen
+    th._by = th.y + 44;
+  } else {
+    const off = th.kind==='dragon'?60 : th.kind==='rock'?34 : th.kind==='giant'?10 : 46;
+    th._by = th.sy - off + (th.bob ? th.bob*2 : 0);
+  }
   th.bubble.style.transform='translate('+th._bx+'px,'+th._by+'px) translate(-50%,-50%)';
 }
 
@@ -952,9 +962,36 @@ function drawThreats(t){
   // draw corpses first so upright foes stand in front of fallen ones
   for (const th of threats){
     if (th.kind==='giant') drawGiant(th,t);
-    else if (th.kind==='troop') drawTroop(th,t);
+    else if (th.kind==='troop') (th.mounted ? drawHorseman : drawTroop)(th,t);
     else if (th.kind==='rock') drawRock(th,t);
     else if (th.kind==='dragon') drawDragon(th,t);
+  }
+}
+// A big, flickering torrent of fire from a sieging dragon's maw down to the wall.
+function drawSiegeBreath(){
+  for (const th of threats){
+    if (th.kind!=='dragon' || th.state!=='siege') continue;
+    const mx=th.x-46, my=th.y+2;                 // maw (faces left)
+    const tx=castleW()*0.5, ty=wallTopY()+8;     // burning wall
+    const ang=Math.atan2(ty-my, tx-mx), pa=ang+Math.PI/2;
+    const wM=8+Math.random()*3, wT=42+Math.random()*10;  // flicker the width
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    const grad=ctx.createLinearGradient(mx,my,tx,ty);
+    grad.addColorStop(0,'rgba(255,235,150,0.9)');
+    grad.addColorStop(0.5,'rgba(255,140,40,0.6)');
+    grad.addColorStop(1,'rgba(214,50,20,0.25)');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    ctx.moveTo(mx+Math.cos(pa)*wM, my+Math.sin(pa)*wM);
+    ctx.lineTo(mx-Math.cos(pa)*wM, my-Math.sin(pa)*wM);
+    ctx.lineTo(tx-Math.cos(pa)*wT, ty-Math.sin(pa)*wT);
+    ctx.lineTo(tx+Math.cos(pa)*wT, ty+Math.sin(pa)*wT);
+    ctx.closePath(); ctx.fill();
+    // bright inner core
+    ctx.strokeStyle='rgba(255,245,200,0.85)'; ctx.lineWidth=4+Math.random()*2; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(mx,my); ctx.lineTo(tx+rand(-6,6),ty+rand(-4,4)); ctx.stroke();
+    ctx.restore();
   }
 }
 function drawTroop(th,t){
@@ -999,6 +1036,59 @@ function drawTroop(th,t){
   ctx.strokeStyle='#5a3d22'; ctx.lineWidth=2;
   ctx.beginPath(); ctx.moveTo(6,-34+bob); ctx.lineTo(11,4); ctx.stroke();
   ctx.fillStyle='#cfd3d8'; ctx.beginPath(); ctx.moveTo(6,-34+bob); ctx.lineTo(3,-40+bob); ctx.lineTo(9,-38+bob); ctx.fill();
+  ctx.restore();
+  ctx.globalAlpha=1;
+}
+// A knight on a galloping horse — every fifth foe, twice as fast.
+function drawHorseman(th,t){
+  const x=th.x, y=th.y;
+  const fallen=(th.state==='dying'||th.state==='down');
+  ctx.save(); ctx.translate(x,y);
+  ctx.globalAlpha=1; ctx.fillStyle='rgba(0,0,0,0.30)';
+  ctx.beginPath(); ctx.ellipse(0,2, fallen?24:20, fallen?4:5, 0,0,6.28); ctx.fill();
+  if (fallen) ctx.rotate(th.rot||0);
+  let alpha=1; if (th.state==='down'&&th.downT>28) alpha=clamp((30-th.downT)/2,0,1);
+  ctx.globalAlpha=alpha;
+  const gallop = fallen?0:Math.sin(t*14+th.t0);   // fast leg cycle
+  let hide='#7a5230', hideD='#5e3f24';             // horse colors
+  if (fallen){ hide='#d23b2f'; hideD='#a82a22'; }
+  // legs (galloping: front pair & back pair swing opposite)
+  ctx.strokeStyle=hideD; ctx.lineWidth=3.5; ctx.lineCap='round';
+  ctx.beginPath();
+  ctx.moveTo(-13,-12); ctx.lineTo(-13-gallop*4,0);
+  ctx.moveTo(-9,-12);  ctx.lineTo(-9+gallop*4,0);
+  ctx.moveTo(11,-12);  ctx.lineTo(11+gallop*4,0);
+  ctx.moveTo(7,-12);   ctx.lineTo(7-gallop*4,0);
+  ctx.stroke();
+  // body
+  ctx.fillStyle=hide; ctx.beginPath(); ctx.ellipse(-1,-18,17,9,0,0,6.28); ctx.fill();
+  // tail (right)
+  ctx.strokeStyle=hideD; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(15,-20); ctx.quadraticCurveTo(24,-18,22,-4); ctx.stroke();
+  // neck + head (left, toward the castle)
+  ctx.fillStyle=hide;
+  ctx.beginPath(); ctx.moveTo(-14,-22); ctx.lineTo(-24,-34); ctx.lineTo(-19,-36); ctx.lineTo(-9,-24); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-23,-35,5,3.5,-0.5,0,6.28); ctx.fill();   // head
+  ctx.fillStyle=hideD; ctx.beginPath(); ctx.moveTo(-14,-24); ctx.lineTo(-18,-34); ctx.lineTo(-13,-30); ctx.fill(); // mane
+  // saddle
+  ctx.fillStyle='#3a2a1a'; ctx.fillRect(-7,-28,12,4);
+  // ---- rider (armored knight) ----
+  let armor=fallen?'#d23b2f':'#7c8696', armorL=fallen?'#ff8074':'#aab3c0';
+  const rb=fallen?0:gallop*1.2;            // rider bob with gallop
+  // torso
+  ctx.fillStyle=armor; roundRect(-4,-44+rb,9,18,3); ctx.fill();
+  ctx.fillStyle=armorL; roundRect(-4,-44+rb,3,18,2); ctx.fill();
+  // head + helm + plume
+  ctx.fillStyle= fallen?'#ff6a5c':'#d8b48a'; ctx.beginPath(); ctx.arc(0,-48+rb,4.5,0,6.28); ctx.fill();
+  ctx.fillStyle=armorL; ctx.beginPath(); ctx.arc(0,-49+rb,5.2,Math.PI,6.28); ctx.fill();
+  ctx.strokeStyle='#b3402a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,-54+rb); ctx.lineTo(3,-58+rb); ctx.stroke();
+  // shield
+  ctx.fillStyle='#8a3b2e'; ctx.beginPath(); ctx.ellipse(-6,-34+rb,3.5,6,0,0,6.28); ctx.fill();
+  ctx.strokeStyle='#caa24a'; ctx.lineWidth=1.2; ctx.stroke();
+  // couched lance pointing forward (left)
+  ctx.strokeStyle='#5a3d22'; ctx.lineWidth=2.5;
+  ctx.beginPath(); ctx.moveTo(6,-40+rb); ctx.lineTo(-30,-30+rb); ctx.stroke();
+  ctx.fillStyle='#cfd3d8'; ctx.beginPath(); ctx.moveTo(-30,-30+rb); ctx.lineTo(-25,-33+rb); ctx.lineTo(-25,-27+rb); ctx.fill();
   ctx.restore();
   ctx.globalAlpha=1;
 }
@@ -1260,16 +1350,17 @@ function impactDragon(th, i){
   dragonInferno();                 // dramatic arrival blast (no life lost yet)
   th.state='siege';
   th.burnAcc=0; th.hoverT=0;
-  th.typed=0; if (th.bubble) renderBubble(th);   // re-arm its word so you can still slay it
+  // keep whatever you'd already typed — don't reset progress
+  if (th.bubble) renderBubble(th);
   flashWave('The Dragon Is Upon You!', '🔥 Slay it — fast!');
 }
 function impactGiant(th, i){
   // Same as the dragon: the giant reaches the keep and smashes/burns it for
-  // 1 life every second until you finish all its words.
+  // 1 life every second until you finish typing its phrase.
   dragonInferno();
   th.state='siege';
   th.burnAcc=0; th.hoverT=0;
-  if (th.bubble) renderBubble(th);   // keep its remaining words typeable
+  if (th.bubble) renderBubble(th);   // keep your typing progress, stay typeable
   flashWave('The Giant Breaches the Gate!', '🔥 Fell it — fast!');
 }
 
@@ -1453,7 +1544,7 @@ function manageSpawns(dt){
   // otherwise a patch of troops, well spread out so their words don't stack
   // and you can pick which one to pick off first
   const n = randi(realm.group[0], realm.group[1]);
-  for (let k=0;k<n;k++) spawnTroop(k*rand(130,210));
+  for (let k=0;k<n;k++) spawnTroop(k*rand(220,320));
 }
 
 // ===================================================================
@@ -1496,6 +1587,7 @@ function tick(ts){
   drawCastle(sceneTime);
   drawTrebuchet(sceneTime);
   drawThreats(sceneTime);
+  drawSiegeBreath();
   drawProjectiles();
   drawParticles();
   ctx.restore();
@@ -1514,7 +1606,7 @@ function tick(ts){
 function startGame(key){
   realmKey=key; realm=REALMS[key];
   clearField();
-  lives=START_LIVES; slain=0; wave=1; bestStreak=0;
+  lives=START_LIVES; slain=0; wave=1; bestStreak=0; troopCount=0;
   lastBossSlain=0; lastGiantSlain=0; spawnAcc=0; spawnInterval=realm.spawn[0]; sceneTime=0;
   shake=0; flashA=0;
   rail.reset();
@@ -1524,6 +1616,10 @@ function startGame(key){
   overOverlay.classList.add('hidden');
   flashWave('Wave 1', 'To arms!');
   running=true; lastTs=0; focusCatcher();
+  // start with a soldier already a quarter of the way in, so there's a word to
+  // type right away instead of waiting for the first spawn
+  const first = spawnTroop(0);
+  first.x = castleW() + (W - castleW()) * 0.75;
   rafId=requestAnimationFrame(tick);
 }
 function clearField(){
