@@ -118,7 +118,12 @@
     .br-countdown span { animation:brCount .6s ease; }
     @keyframes brCount { 0%{ opacity:0; transform:scale(.3);} 40%{ opacity:1; transform:scale(1.1);} 100%{ opacity:.85; transform:scale(1);} }
 
-    .br-answers { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-top:.75rem; }
+    .br-input-row { display:flex; align-items:center; justify-content:center; gap:.7rem; margin-top:.75rem; flex-wrap:wrap; }
+    .br-num { width:150px; text-align:center; font-family:var(--font-serif); font-size:1.8rem; font-weight:600;
+      padding:.35rem .6rem; border:2.5px solid var(--gold); border-radius:12px; background:#fff; color:var(--ink); outline:none; }
+    .br-num:focus { box-shadow:0 0 0 3px rgba(196,160,64,.3); }
+    .br-help-label { font-size:.8rem; color:var(--ink-light); font-family:var(--font-sans); }
+    .br-answers { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-top:.55rem; }
     .br-opt { background:#fff; border:2.5px solid var(--border); border-radius:12px; padding:.85rem;
       font-family:var(--font-serif); font-size:1.5rem; font-weight:600; color:var(--ink); cursor:pointer;
       display:flex; align-items:center; justify-content:center; gap:.5rem; min-height:60px;
@@ -178,6 +183,10 @@
           <div class="br-countdown" style="display:none"></div>
           <div class="br-start"></div>
         </div>
+        <div class="br-input-row" style="display:none">
+          <input class="br-num" type="text" inputmode="numeric" autocomplete="off" placeholder="answer">
+          <span class="br-help-label">type &amp; press <b>Enter</b> — or tap a choice</span>
+        </div>
         <div class="br-answers"></div>
       </div>`;
 
@@ -186,6 +195,7 @@
       blocksEl = $('.br-blocks'), platsEl = $('.br-plats'), charEl = $('.br-char'),
       promptEl = $('.br-prompt'), dangerEl = $('.br-danger'), cdEl = $('.br-countdown'),
       startEl = $('.br-start'), answersEl = $('.br-answers'),
+      inputRow = $('.br-input-row'), inputEl = $('.br-num'),
       levelEl = $('[data-level]'), distEl = $('[data-dist]'), leadbar = $('.br-leadbar'), leadFill = $('.br-leadbar > i');
 
     let tierIdx = 0, level = 1, terrain, q;
@@ -199,7 +209,7 @@
 
     function showStart() {
       running = false; over = false; cancelAnimationFrame(raf);
-      answersEl.innerHTML = ''; promptEl.style.display = 'none';
+      answersEl.innerHTML = ''; promptEl.style.display = 'none'; inputRow.style.display = 'none';
       startEl.style.display = 'flex';
       startEl.innerHTML = `<div class="br-start-card">
         <h2>Bridge Run</h2>
@@ -414,6 +424,9 @@
       q = makeQuestion(level, tiers[tierIdx].key);
       promptEl.style.display = 'block';
       promptEl.textContent = q.prompt;
+      inputRow.style.display = 'flex';
+      inputEl.value = '';
+      inputEl.focus();
       answersEl.innerHTML = '';
       q.choices.forEach((c, i) => {
         const b = document.createElement('button');
@@ -429,6 +442,7 @@
       coasting = true;
       promptEl.style.display = 'block';
       promptEl.textContent = '🏁 Made it — run!';
+      inputRow.style.display = 'none';
       answersEl.innerHTML = '';
     }
 
@@ -484,7 +498,21 @@
       }
     }
 
+    // typed numeric answer (fast path) — digits + optional leading minus
+    inputEl.addEventListener('input', () => {
+      inputEl.value = inputEl.value.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '');
+    });
+    inputEl.addEventListener('keydown', e => {
+      if (e.key !== 'Enter') return;
+      e.preventDefault();
+      if (!running || coasting) return;
+      const v = inputEl.value.trim();
+      if (v === '' || v === '-') return;
+      answer(v);
+    });
+
     document.addEventListener('keydown', e => {
+      if (e.target === inputEl) return;     // typing handles its own keys
       if (!running || coasting) return;
       const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
       if (idx === -1) return;
