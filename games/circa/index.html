@@ -84,8 +84,8 @@
       color: var(--ink); margin: 1.25rem 0 0.25rem;
     }
     .era-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem;
-      max-width: 470px; margin: 0.5rem auto 0.25rem;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.7rem;
+      max-width: 600px; margin: 0.5rem auto 0.25rem;
     }
     .era-tile {
       display: flex; flex-direction: column; align-items: center; gap: 0.1rem;
@@ -120,7 +120,7 @@
     }
     .friends-link:hover { color: var(--ink); }
 
-    @media (max-width: 460px) {
+    @media (max-width: 560px) {
       .era-grid { grid-template-columns: repeat(2, 1fr); }
     }
     @media (prefers-reduced-motion: reduce) {
@@ -455,6 +455,13 @@
     .circa-card.disabled { cursor: default; opacity: 0.5; }
     .circa-card.no-hover { cursor: default; }
 
+    .card-img {
+      width: 100%; height: 78px; margin-bottom: 0.45rem;
+      border-radius: 6px; overflow: hidden; background: var(--card-rule, #e8e0cf);
+      box-shadow: inset 0 0 0 1px rgba(26,23,20,0.08);
+    }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .circa-card.center .card-img { height: 96px; }
     .card-title {
       font-family: var(--font-serif);
       font-size: 0.92rem;
@@ -462,6 +469,7 @@
       color: var(--card-text);
       line-height: 1.25;
       margin-bottom: 0.4rem;
+      text-align: center;
     }
     .card-rule {
       height: 1px;
@@ -475,6 +483,7 @@
       color: var(--card-sub);
       line-height: 1.45;
       flex: 1;
+      text-align: center;
     }
     .card-year-tag {
       margin-top: 0.5rem;
@@ -482,7 +491,7 @@
       font-size: 0.78rem;
       font-weight: 600;
       color: var(--card-border);
-      text-align: right;
+      text-align: center;
     }
 
     /* When a card flips, hide its blurb and show the date big & clear */
@@ -538,6 +547,7 @@
     /* Card face/back visibility */
     .circa-card.face-down .card-title,
     .circa-card.face-down .card-rule,
+    .circa-card.face-down .card-img,
     .circa-card.face-down .card-desc { display: none; }
     .circa-card:not(.face-down) .card-back-year,
     .circa-card:not(.face-down) .card-back-era,
@@ -772,6 +782,7 @@
 
   <footer class="site-footer">
     <a href="../../index.html">homeschoolgames.app</a>
+    <span style="display:block; font-size:0.72rem; color:var(--ink-light); margin-top:0.35rem;">Historical images from <a href="https://commons.wikimedia.org" rel="noopener" target="_blank" style="color:inherit;">Wikimedia Commons</a> — hover any card for its credit.</span>
   </footer>
 
 <script src="../../assets/js/streak-rail.js"></script>
@@ -1004,6 +1015,20 @@ function roundCommentary(diff, won) {
 function makeCardFront(card, extraClass = '') {
   const el = document.createElement('div');
   el.className = 'circa-card' + (extraClass ? ' ' + extraClass : '');
+
+  if (card.img) {
+    const fig = document.createElement('div');
+    fig.className = 'card-img';
+    const im = document.createElement('img');
+    im.src = '../../assets/img/circa/' + card.img;
+    im.alt = card.title;
+    im.loading = 'lazy';
+    im.decoding = 'async';
+    if (card.credit) im.title = card.credit + (card.license ? ' · ' + card.license : '') + ' (via Wikimedia Commons)';
+    im.addEventListener('error', () => fig.remove());   // hide gracefully if missing
+    fig.appendChild(im);
+    el.appendChild(fig);
+  }
 
   const title = document.createElement('div');
   title.className = 'card-title';
