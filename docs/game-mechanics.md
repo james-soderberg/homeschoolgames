@@ -59,7 +59,7 @@ returns the current stop index.
 |---|---|---|
 | Bible Quiz | **Noah's Ark** (build vs. flood) | **DONE** |
 | Bible Trivia (NEW game) | **Chariot Chase (Exodus)** — full canvas arcade | **DONE** |
-| Flag Frenzy | **Around-the-World + Storm chase** | **DESIGNED** |
+| Flag Frenzy | **Around the World in 80 Days** (Fogg vs. Detective Fix) | **DONE** |
 | Who Said It? | **Hall of Fame** (collect cartoon portraits) | **DONE** (replaced Time Machine) |
 | Math Drill | **Asteroid Math** (full arcade reskin — NOT quest-rail) | **DESIGNED** |
 | Circa | unchanged mechanic; getting period-selector + bigger deck | see §3 |
@@ -114,12 +114,60 @@ Bible-trivia deck (people, events, numbers, places, OT & NT).
 - The scrapped goliath theme + its `.gv-*` CSS were removed from
   `quest-rail.js` / `quest-rail.css`.
 
-### 2c. Flag Frenzy → Around-the-World + Storm chase — DESIGNED
-Fly leg to leg; each correct lands you in the next country (passport/journey).
-The **bad thing** = a **planet-swallowing storm front chasing you around the
-globe**: correct answers outrun it, wrong answers let it gain **and** turn the
-plane back a stop. If the storm catches you, the run ends. (Combines the
-"go-backwards" idea with the chase.)
+### 2c. Flag Frenzy → Around the World in 80 Days — DONE
+**The storm chase was reskinned to Jules Verne's _Around the World in 80 Days_**
+(public domain, 1872): **Phileas Fogg** circles the globe while **Detective Fix**
+pursues. Self-contained canvas in `games/flag-frenzy/index.html` (no streak-rail;
+uses `sfx.js` + `fx.js`). Name the flag → sail to the next port.
+
+**History / pivot:** first built as an **80-day wager** (a pocket-watch day clock,
+a wrong answer = a day-costing mishap, win = reach London ≤ 80 days, with an
+"on pace / behind" badge and three difficulty paces). At the user's request this
+was **scrapped for an endless streak game** — the day-clock, wager, win/lose-by-days
+overlays, pace badge, and difficulty filters were all **removed**. The single design
+goal now: **how long a streak (flags in a row) can you build before Fix catches you.**
+
+Current design (DONE):
+- **Endless laps.** Reach London (progress ≥ 100) → a **"Around the world! Lap N
+  done"** celebration (confetti + flash) → reset the lap and **keep circling**.
+  Each lap repositions Fix a little closer and speeds him up (`fixStartFor` /
+  `creepFor` / `surgeFor` ramp by lap), so it escalates.
+- **Streak is the score.** `correct` → `streak++`, advance one leg (`+step`),
+  Fix creeps. A `wrong` answer **resets the streak to 0** but the run continues;
+  you can rebuild as long as Fix hasn't caught you. Best streak in the run is banked.
+- **Detective Fix is the only fail-state.** A wrong answer is still a **book-accurate
+  mishap** (railway ends at Kholby → elephant; opium den; bison; Fort Kearney raid;
+  etc.) that **surges Fix closer** (no day cost anymore). When `fixPos ≥ progress`
+  → **caught → game over.** Tuned so ~3 quick early misses catch you, more forgiving
+  once you've built a lead.
+- **Scene** = vintage parchment map: dotted route past the nine book waypoints
+  (London → Suez → Bombay → Calcutta → Hong Kong → Yokohama → San Francisco →
+  New York → London), a **Fogg token** showing the leg's transport (🚢/🐘/🚂), a
+  trailing **🕵️ Fix token**. Canvas HUD: a **🔥 STREAK** panel (top-left), **🌍 Lap N**
+  (top-center), and the **Fix "% behind" danger gauge** (top-right). Passing a port
+  pops "Arrived in {port}".
+- **Layout** is a 100vh flex: header → `play-area` (a **`game-col`** on the left with
+  the short map canvas + the question panel, and a persistent **leaderboard rail** on
+  the right) → footer. The map canvas flexes to fill; the question panel sizes to its
+  content so the page never scrolls on desktop. Mobile (`≤820px`) stacks the rail
+  below the game.
+- **Streak leaderboard** = the main scoreboard, a **local top-10** in
+  `localStorage['atw_streak_board']` (entries `{name, streak, lap}`), shown in the
+  right rail. On game-over the overlay **covers the whole `game-col`** (so it always
+  fits); if your run cracks the top 10 you **enter your name** (saved to
+  `localStorage['atw_name']`), it writes to the board, and your row highlights gold in
+  the rail. Header badges show **current streak** + **best**.
+- **Flags** render from **vendored SVGs** at `assets/flags/<iso>.svg` (38 files from
+  the MIT **flag-icons** set — national flags are factual symbols; see
+  `assets/flags/ATTRIBUTION.txt`) for crisp, Wikipedia-style art — emoji blown up to
+  hero size was blurry. Each deck entry carries an `iso`. **Clues are opt-in:** the
+  blurb is hidden behind a **💡 Need a hint?** button (in a fixed-height slot so the
+  reveal doesn't shift the layout) and also reveals on answer; the continent label is
+  part of that hint, not always-on. All 38 blurbs were rewritten to be
+  geography/landmark hints (not flag-colour restatements, never naming the country).
+- The page **title still reads "Around the World in 80 Days"** (the Verne theme +
+  route are intact) even though there's no literal 80-day limit now. Listed on the
+  home/geography grids as **"Around the World"** (🎩); dir stays `games/flag-frenzy/`.
 
 ### 2d. Who Said It? → Hall of Fame collection — DONE (redesigned)
 Self-contained in `games/who-said-it/index.html` (does **not** use quest-rail).

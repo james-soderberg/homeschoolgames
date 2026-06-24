@@ -3,216 +3,237 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Flag Frenzy — HomeschoolGames</title>
+  <title>Around the World in 80 Days — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
-  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    @keyframes pop {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.07); }
-      100% { transform: scale(1); }
-    }
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      20%     { transform: translateX(-9px); }
-      40%     { transform: translateX(9px); }
-      60%     { transform: translateX(-6px); }
-      80%     { transform: translateX(6px); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
+    /* Fill the viewport exactly: the page is a 100vh flex column, the question
+       panel sizes to its content, and the map canvas flexes to fill the rest —
+       so a desktop window needs no scrolling. */
+    html, body { height: 100%; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+    .chase-page {
+      max-width: 1180px; width: 100%; margin: 0 auto; padding: 0.7rem 1.25rem 0.7rem;
+      flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0;
     }
 
-    .quiz-page {
-      max-width: 580px;
-      margin: 0 auto;
-      padding: 1.5rem 1.25rem 3rem;
+    .chase-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.5rem; gap: 0.75rem; flex-wrap: wrap;
     }
 
-    .quiz-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-      gap: 0.75rem;
-      flex-wrap: wrap;
+    /* Left game column + right leaderboard rail */
+    .play-area { flex: 1 1 auto; display: flex; gap: 0.9rem; min-height: 0; }
+    .game-col { flex: 1 1 auto; display: flex; flex-direction: column; min-width: 0; position: relative; }
+    .rail {
+      flex: 0 0 232px; align-self: stretch; min-height: 0; overflow-y: auto;
+      background: #fbf4e3; border: 2.5px solid #5a4327; border-radius: 14px;
+      padding: 0.85rem 0.75rem; box-shadow: 0 8px 22px rgba(26,23,20,0.12);
     }
-    .quiz-top h1 { margin: 0; font-size: 1.8rem; }
+    .rail-title {
+      font-family: var(--font-sans); font-size: 0.82rem; font-weight: 800; letter-spacing: 0.05em;
+      text-transform: uppercase; color: var(--ink-light); text-align: center; margin-bottom: 0.6rem;
+    }
+    .rail-board { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.22rem; }
+    .rail-row {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.5rem; border-radius: 8px;
+      font-family: var(--font-sans); font-size: 0.92rem; color: var(--ink);
+    }
+    .rail-row:nth-child(even) { background: rgba(90,67,39,0.06); }
+    .rail-row.me { background: var(--gold); font-weight: 800; }
+    .rail-rank { width: 1.3rem; text-align: right; color: var(--ink-light); font-weight: 700; font-size: 0.8rem; }
+    .rail-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rail-streak { font-weight: 800; color: #b9472f; white-space: nowrap; }
+    .rail-row.me .rail-streak { color: var(--ink); }
+    .rail-empty { color: var(--ink-light); font-size: 0.85rem; font-style: italic; text-align: center; margin-top: 0.5rem; line-height: 1.45; }
 
-    .stat-group { display: flex; gap: 0.5rem; }
+    @media (max-width: 820px) {
+      .play-area { flex-direction: column; }
+      .rail { flex: 0 0 auto; max-height: 34vh; }
+    }
+    .chase-top h1 { margin: 0; font-size: 1.7rem; }
+    .chase-top h1 .sub {
+      display: block; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 700;
+      letter-spacing: 0.13em; text-transform: uppercase; color: var(--ink-light); margin-top: 0.15rem;
+    }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
     .stat-badge {
-      background: var(--cream-dark);
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      padding: 0.45rem 1rem;
-      font-weight: 700;
-      font-size: 0.92rem;
-      font-family: var(--font-sans);
-      color: var(--ink);
-      white-space: nowrap;
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.45rem 0.95rem; font-weight: 700; font-size: 0.9rem;
+      font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
       transition: background 0.2s, color 0.2s, border-color 0.2s;
     }
-    .stat-badge.hot { background: var(--gold); border-color: var(--gold); color: var(--ink); }
+    .stat-badge.pace-ok   { background: #E4F2E8; border-color: #2A5C3F; color: #2A5C3F; }
+    .stat-badge.pace-warn { background: #FBF0D6; border-color: #C4A040; color: #7A5C00; }
+    .stat-badge.pace-bad  { background: #FAE3E3; border-color: #8B2020; color: #8B2020; }
 
-    .flag-card {
-      background: white;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 1.5rem 1.5rem 1.5rem;
-      text-align: center;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
-      animation: fadeIn 0.3s ease;
+    /* ============ Scene (canvas) ============ */
+    .scene-wrap {
+      position: relative; width: 100%;
+      flex: 1 1 auto; min-height: 160px;
+      border-radius: 16px 16px 0 0; overflow: hidden;
+      border: 2.5px solid #5a4327; border-bottom: none;
+      box-shadow: 0 10px 30px rgba(26,23,20,0.30);
+      background: #e7d5ab; user-select: none; touch-action: manipulation;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .scene-wrap::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      box-shadow: inset 0 0 90px 14px rgba(70,46,18,0.26); z-index: 4;
     }
 
-    .cat-pill {
-      display: inline-block;
-      padding: 0.18rem 0.75rem;
-      border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      font-family: var(--font-sans);
+    /* ============ Overlays ============ */
+    .ov {
+      position: absolute; inset: 0; z-index: 12;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 1.5rem 1.25rem; background: rgba(38,26,12,0.86);
+      backdrop-filter: blur(2px); color: #fff; overflow-y: auto;
+    }
+    .ov.hidden { display: none; }
+    .ov .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.25rem; animation: bobCrest 2.4s ease-in-out infinite; }
+    @keyframes bobCrest { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    .ov h2 { font-family: var(--font-serif); font-size: 1.9rem; margin: 0 0 0.4rem; color: #fff; }
+    .ov p { color: #f1e3c8; margin: 0 0 1.1rem; max-width: 40ch; line-height: 1.5; }
+    .ov .final-stats { display: flex; gap: 1.4rem; margin-bottom: 1.2rem; flex-wrap: wrap; justify-content: center; }
+    .ov .fs { display: flex; flex-direction: column; align-items: center; }
+    .ov .fs b { font-family: var(--font-serif); font-size: 1.9rem; color: #ffd98a; line-height: 1; }
+    .ov .fs span { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.09em; color: #e6cfa6; margin-top: 0.25rem; }
+
+    .pace-row { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; margin-bottom: 1rem; }
+    .pace-btn, .play-btn {
+      background: var(--gold); color: var(--ink); border: none; border-radius: 12px;
+      padding: 0.8rem 1.4rem; font-size: 1.02rem; font-weight: 800; font-family: var(--font-sans);
+      cursor: pointer; transition: transform 0.1s, background 0.15s; box-shadow: 0 5px 0 #a07f2c;
+    }
+    .pace-btn:hover, .play-btn:hover { background: #d6b34e; }
+    .pace-btn:active, .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07f2c; }
+    .play-btn.secondary { background: #fff; box-shadow: 0 5px 0 #c9bfa8; }
+    .pace-btn { display: flex; flex-direction: column; gap: 0.15rem; min-width: 104px; }
+    .pace-btn .p-sub { font-size: 0.66rem; font-weight: 600; opacity: 0.78; text-transform: uppercase; letter-spacing: 0.05em; }
+    .overlay-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+
+    /* study filters on the start overlay */
+    .opt-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; justify-content: center; margin-bottom: 0.5rem; }
+    .opt-label {
+      font-size: 0.64rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase;
+      color: #d8c39a; margin-right: 0.15rem;
+    }
+    .ov .chip {
+      padding: 0.3rem 0.75rem; border: 1.5px solid rgba(255,255,255,0.35); border-radius: 99px;
+      background: rgba(255,255,255,0.06); font-size: 0.78rem; font-weight: 700; font-family: var(--font-sans);
+      color: #f1e3c8; cursor: pointer; transition: all 0.12s;
+    }
+    .ov .chip.active { background: var(--gold); color: var(--ink); border-color: var(--gold); }
+    .ov .chip:hover:not(.active) { border-color: #fff; }
+
+    /* ============ Question panel (docked under the canvas) ============ */
+    .qpanel {
+      border: 2.5px solid #5a4327; border-top: 2px dashed #c9a24a; border-radius: 0 0 16px 16px;
+      background: #fbf4e3; padding: 2.5rem 1.1rem 1rem; box-shadow: 0 8px 22px rgba(26,23,20,0.14);
+      flex: 0 0 auto;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .flag-row { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .flag-big { flex-shrink: 0; line-height: 0; }
+    .flag-img {                        /* plain Wikipedia-style flag picture */
+      width: clamp(120px, 30vw, 205px); height: auto; aspect-ratio: 4 / 3;
+      display: block; background: #fff;
+      border: 1px solid #a2a9b1;       /* the thin grey border Wikipedia uses */
+      box-shadow: 0 4px 14px rgba(26,23,20,0.13);
+      border-radius: 2px;
+      animation: fadeIn 0.25s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+    .flag-side { min-width: 0; text-align: center; }
+    .qtag {
+      display: inline-block; padding: 0.16rem 0.7rem; border-radius: 99px;
+      font-size: 0.64rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      font-family: var(--font-sans); margin-bottom: 0.3rem;
     }
     .cat-Africa   { background: #FFF3D0; color: #7A5C00; }
     .cat-Americas { background: #E4F2E8; color: #2A5C3F; }
     .cat-Asia     { background: #FAE0E0; color: #8B2020; }
     .cat-Europe   { background: #D4EEF5; color: #1A5C6B; }
     .cat-Oceania  { background: #E4DAF2; color: #4A2C6B; }
-
-    .flag-glyph {
-      font-size: clamp(4.5rem, 22vw, 7rem);
-      line-height: 1.1;
-      margin-bottom: 0.6rem;
-      /* keep flags crisp on systems that render emoji flags */
-      font-family: "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif;
+    /* Fixed-height slot so swapping the button for the clue never shifts the layout. */
+    .hint-slot {
+      min-height: 72px; display: flex; align-items: center; justify-content: center;
+      margin: 0.1rem 0 0.55rem;
     }
-
+    .hint-region {
+      font-style: normal; font-weight: 800; font-size: 0.72rem; letter-spacing: 0.07em;
+      text-transform: uppercase; margin-right: 0.45rem; white-space: nowrap;
+    }
+    .hint-region:empty { display: none; margin: 0; }
+    .hint-btn {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      background: none; border: 1.5px dashed var(--border); border-radius: 99px;
+      padding: 0.34rem 1rem; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 700;
+      color: var(--ink-light); cursor: pointer; margin: 0; transition: border-color 0.12s, color 0.12s, background 0.12s;
+    }
+    .hint-btn:hover { border-color: var(--gold); color: var(--ink); background: #FFFDF4; }
+    .hint-btn[hidden] { display: none; }
     .flag-blurb {
-      font-size: 1rem;
-      color: var(--ink-light);
-      line-height: 1.5;
-      max-width: 42ch;
-      margin: 0 auto;
-      font-style: italic;
+      font-size: 1rem; color: var(--ink-light); line-height: 1.4; font-style: italic;
+      max-width: 52ch; margin: 0; text-align: center;
+      background: #FBF3DC; border: 1px solid #E9DAB0; border-radius: 10px; padding: 0.5rem 0.95rem;
     }
+    .flag-blurb[hidden] { display: none; }
+    .reveal-name { font-family: var(--font-serif); font-size: 1rem; font-weight: 700; color: var(--gold); min-height: 1.2rem; margin: 0.15rem 0 0.4rem; }
+    .prompt-line {
+      font-family: var(--font-sans); font-size: 0.86rem; font-weight: 700; color: var(--ink-light);
+      text-align: center; margin-bottom: 0.3rem; letter-spacing: 0.01em;
+    }
+    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .ans {
+      display: flex; align-items: center; gap: 0.55rem; text-align: left;
+      background: #fff; border: 2.5px solid var(--border); border-radius: 11px;
+      padding: 0.7rem 0.8rem; font-family: var(--font-serif); cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.08s;
+      box-shadow: 0 2px 5px rgba(26,23,20,0.06); min-height: 54px;
+    }
+    .ans .k {
+      flex-shrink: 0; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800;
+      color: var(--ink-light); background: var(--cream-dark); border-radius: 6px; padding: 0.12rem 0.45rem;
+    }
+    .ans .v { font-size: 1.05rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+    .ans:hover:not(:disabled) { border-color: var(--gold); background: #FFFDF4; transform: translateY(-2px); }
+    .ans:disabled { cursor: default; }
+    .ans.correct { background: #EAF4EE; border-color: var(--green); }
+    .ans.correct .v, .ans.correct .k { color: var(--green); }
+    .ans.wrong { background: #FAE8E8; border-color: var(--red); }
+    .ans.wrong .v, .ans.wrong .k { color: var(--red); }
+    .ans.reveal { background: #EAF4EE; border-color: var(--green); }
+    .ans.reveal .v, .ans.reveal .k { color: var(--green); }
 
-    .reveal-name {
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--gold);
-      margin-top: 1rem;
-    }
-
-    .prompt {
-      text-align: center;
-      font-family: var(--font-sans);
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--ink-light);
-      letter-spacing: 0.02em;
-      margin-bottom: 0.9rem;
-    }
-
-    .feedback {
-      min-height: 1.9rem;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 0.6rem;
-    }
-
-    .option-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
-    }
-    .option-btn {
-      background: white;
-      border: 2.5px solid var(--border);
-      border-radius: 12px;
-      padding: 0.9rem 0.75rem;
-      font-family: var(--font-serif);
-      cursor: pointer;
-      transition: border-color 0.12s, background 0.12s, transform 0.1s;
-      box-shadow: 0 2px 6px rgba(26,23,20,0.07);
-      min-height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      text-align: center;
-    }
-    .option-btn .key-hint {
-      font-family: var(--font-sans);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--ink-light);
-      background: var(--cream-dark);
-      border-radius: 5px;
-      padding: 0.1rem 0.4rem;
-      flex-shrink: 0;
-    }
-    .option-btn .option-val { font-size: 1.3rem; font-weight: 600; color: var(--ink); line-height: 1.15; }
-    .option-btn:hover:not(:disabled) { border-color: var(--gold); background: #FFFDF4; transform: translateY(-2px); }
-    .option-btn.correct { background: #EAF4EE; border-color: var(--green); animation: pop 0.3s ease; }
-    .option-btn.correct .option-val, .option-btn.correct .key-hint { color: var(--green); }
-    .option-btn.wrong { background: #FAE8E8; border-color: var(--red); animation: shake 0.4s ease; }
-    .option-btn.wrong .option-val, .option-btn.wrong .key-hint { color: var(--red); }
-    .option-btn.reveal-correct { background: #EAF4EE; border-color: var(--green); }
-    .option-btn.reveal-correct .option-val, .option-btn.reveal-correct .key-hint { color: var(--green); }
-    .option-btn:disabled { cursor: default; transform: none; }
-
-    #nextBtn {
-      display: block;
-      width: 100%;
-      background: var(--gold);
-      color: var(--ink);
-      border: none;
-      border-radius: 12px;
-      padding: 1.05rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-      font-family: var(--font-sans);
-      cursor: pointer;
-      margin-bottom: 1rem;
-      transition: background 0.15s;
-    }
-    #nextBtn:hover { background: #b08e30; }
-
-    .control-row { display: flex; justify-content: center; margin-top: 0.25rem; }
+    .chase-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin-top: 0.5rem; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.3rem; }
     .reset-link {
-      background: none; border: none; color: var(--ink-light);
-      font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans);
-      text-decoration: underline; padding: 0.3rem 0.5rem;
+      background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer;
+      font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem;
     }
     .reset-link:hover { color: var(--ink); }
 
-    /* Filter chips */
-    .filter-rows { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
-    .filter-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-    .filter-label {
-      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--ink-light); margin-right: 0.15rem; min-width: 4.2rem;
+    /* ===== Streak leaderboard (on the game-over overlay) ===== */
+    .name-entry { margin-bottom: 1rem; }
+    .name-entry.hidden { display: none; }
+    .ne-label { display: block; font-size: 0.85rem; color: #ffe1a6; font-weight: 700; margin-bottom: 0.5rem; }
+    .ne-row { display: flex; gap: 0.5rem; justify-content: center; }
+    #nameInput {
+      border: 2px solid var(--border); border-radius: 10px; padding: 0.6rem 0.8rem; font-size: 1rem;
+      font-family: var(--font-sans); width: 170px; max-width: 48vw; color: var(--ink); background: #fff;
     }
-    .chip {
-      padding: 0.32rem 0.8rem; border: 1.5px solid var(--border); border-radius: 99px;
-      background: #fff; font-size: 0.8rem; font-weight: 600; font-family: var(--font-sans);
-      color: var(--ink-light); cursor: pointer; transition: all 0.12s;
-    }
-    .chip.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-    .chip:hover:not(.active) { border-color: var(--ink-light); color: var(--ink); }
+    .board { width: 100%; max-width: 340px; margin: 0 auto 1.1rem; }
+    .board-title { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #e6cfa6; margin-bottom: 0.45rem; }
+    .board-row { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0.7rem; border-radius: 8px; color: #f4e7cd; font-family: var(--font-sans); font-size: 0.95rem; }
+    .board-row:nth-child(even) { background: rgba(255,255,255,0.05); }
+    .board-row.me { background: var(--gold); color: var(--ink); font-weight: 800; }
+    .bk-rank { width: 1.4rem; text-align: right; opacity: 0.8; font-weight: 700; }
+    .bk-name { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bk-streak { font-weight: 800; }
+    .board-empty { color: #e6cfa6; font-size: 0.9rem; font-style: italic; }
 
     @media (max-width: 480px) {
-      .option-grid { grid-template-columns: 1fr; }
-      .option-btn { min-height: 56px; }
-      .filter-label { min-width: 100%; margin-bottom: -0.1rem; }
+      .answers { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -225,331 +246,714 @@
   </nav>
 </header>
 
-<div class="game-layout">
-<div class="quiz-page game-main">
+<div class="chase-page">
 
-  <div class="quiz-top">
-    <h1>Flag Frenzy</h1>
+  <div class="chase-top">
+    <h1>Around the World in 80 Days<span class="sub">Flag Frenzy · a Phileas Fogg adventure</span></h1>
     <div class="stat-group">
-      <div class="stat-badge" id="scoreBadge">0 / 0</div>
+      <div class="stat-badge" id="scoreBadge">🔥 0 in a row</div>
+      <div class="stat-badge" id="bestBadge">Best 0</div>
     </div>
   </div>
 
-  <div class="filter-rows">
-    <div class="filter-row" id="diffRow"><span class="filter-label">Level</span></div>
-    <div class="filter-row" id="contRow"><span class="filter-label">Region</span></div>
-  </div>
+  <div class="play-area">
+    <div class="game-col">
 
-  <div class="flag-card">
-    <span class="cat-pill" id="catPill">Continent</span>
-    <div class="flag-glyph" id="flagGlyph">🏳️</div>
-    <div class="flag-blurb" id="flagBlurb"></div>
-    <div class="reveal-name" id="revealName"></div>
-  </div>
+      <div class="scene-wrap" id="sceneWrap">
+        <canvas id="scene"></canvas>
+      </div>
 
-  <div class="prompt">Which country flies this flag?</div>
+      <div class="qpanel" id="qpanel">
+        <div class="flag-row">
+          <div class="flag-big" id="flagBig"></div>
+        </div>
+        <div class="reveal-name" id="revealName"></div>
+        <div class="prompt-line">Which country flies this flag?</div>
+        <div class="hint-slot">
+          <button class="hint-btn" id="hintBtn" type="button">💡 Need a hint?</button>
+          <div class="flag-blurb" id="flagBlurb" hidden><span class="hint-region" id="qtag"></span><span id="blurbText"></span></div>
+        </div>
+        <div class="answers" id="answers"></div>
+      </div>
 
-  <div class="feedback" id="feedback"></div>
+      <p class="chase-hint">Tap an answer or press <b>A · B · C · D</b>. Each correct flag sails you on and builds your <b>streak</b>; a wrong one triggers a <b>mishap</b> and lets Detective Fix close in. Circle the globe as many times as you can before he catches you!</p>
 
-  <div class="option-grid" id="optionGrid"></div>
+      <div class="control-row">
+        <button class="reset-link" onclick="startGame()">Start over</button>
+      </div>
 
-  <button id="nextBtn" onclick="advance()" style="display:none">Next Flag →</button>
+      <!-- Caught by Fix — covers the whole game column so it always fits -->
+      <div class="ov hidden" id="caughtOverlay">
+        <div class="crest">🕵️</div>
+        <h2>Detective Fix nabs you!</h2>
+        <p>Your voyage ends here — your best streak is logged in the Record Book.</p>
+        <div class="final-stats">
+          <div class="fs"><b id="cStreak">0</b><span>Best streak</span></div>
+          <div class="fs"><b id="cLap">1</b><span>Lap reached</span></div>
+          <div class="fs"><b id="cCountries">0</b><span>Countries</span></div>
+        </div>
+        <div class="name-entry hidden" id="nameEntry">
+          <span class="ne-label">🏅 New high streak! Add your name:</span>
+          <div class="ne-row">
+            <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off">
+            <button class="play-btn" id="saveNameBtn">Save</button>
+          </div>
+        </div>
+        <div class="overlay-actions">
+          <button class="play-btn" id="caughtAgainBtn">Set off again 🎩</button>
+          <a class="play-btn secondary" href="../../subjects/geography.html" style="text-decoration:none;display:inline-flex;align-items:center">← Geography</a>
+        </div>
+      </div>
 
-  <div class="control-row">
-    <button class="reset-link" onclick="resetAll()">Start Over</button>
-  </div>
+    </div><!-- /.game-col -->
 
-</div><!-- /.quiz-page -->
+    <aside class="rail" id="rail">
+      <div class="rail-title">🏅 Best Streaks</div>
+      <ol class="rail-board" id="railBoard"></ol>
+    </aside>
+  </div><!-- /.play-area -->
 
-  <aside class="hsg-rail" id="streakRail"></aside>
-</div><!-- /.game-layout -->
+</div>
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script>
 // ============================================================
-// FLAG FRENZY — name the country from its flag
+// AROUND THE WORLD IN 80 DAYS  (Flag Frenzy re-theme)
+// Identify each flag to advance Phileas Fogg along Jules Verne's
+// route. Detective Fix pursues; a wrong answer is a "mishap" that
+// costs days and lets Fix close in. Reach London before the
+// 80-day wager runs out — and before Fix catches you.
 // ============================================================
 
+// ---------------- Flag deck (the educational core) ----------------
+// iso = ISO 3166-1 alpha-2; the hero flag is rendered from assets/flags/<iso>.svg
+// (crisp vector). flag = the emoji, still used for the small inline reveal label.
 const DECK = [
   // AFRICA
-  {country:"Egypt", flag:"🇪🇬", continent:"Africa", blurb:"Pyramids rise from its desert; the Nile runs through it.", tier:"gimme"},
-  {country:"Nigeria", flag:"🇳🇬", continent:"Africa", blurb:"Africa's most populous nation; green and white bands.", tier:"medium"},
-  {country:"Kenya", flag:"🇰🇪", continent:"Africa", blurb:"A Maasai shield and spears at its center; home of the Rift Valley.", tier:"medium"},
-  {country:"South Africa", flag:"🇿🇦", continent:"Africa", blurb:"Six colors in a Y-shape; Table Mountain overlooks Cape Town.", tier:"medium"},
-  {country:"Morocco", flag:"🇲🇦", continent:"Africa", blurb:"A green star on deep red; a gateway between Africa and Europe.", tier:"niche"},
-  {country:"Ethiopia", flag:"🇪🇹", continent:"Africa", blurb:"Never colonized; the birthplace of coffee.", tier:"niche"},
-  {country:"Ghana", flag:"🇬🇭", continent:"Africa", blurb:"A lone black star on red, gold, and green.", tier:"niche"},
-  {country:"Tanzania", flag:"🇹🇿", continent:"Africa", blurb:"A diagonal black stripe; Mount Kilimanjaro towers here.", tier:"niche"},
+  {country:"Egypt", iso:"eg", flag:"🇪🇬", continent:"Africa", blurb:"Land of the pyramids and the Sphinx, where the river Nile winds through the desert.", tier:"gimme"},
+  {country:"Nigeria", iso:"ng", flag:"🇳🇬", continent:"Africa", blurb:"Africa's most populous country and the giant of the west; megacity Lagos and Nollywood films.", tier:"medium"},
+  {country:"Kenya", iso:"ke", flag:"🇰🇪", continent:"Africa", blurb:"Safari plains and the Great Rift Valley; home of the Maasai and world-beating marathon runners.", tier:"medium"},
+  {country:"South Africa", iso:"za", flag:"🇿🇦", continent:"Africa", blurb:"The continent's southern tip, where two oceans meet; Nelson Mandela's homeland.", tier:"medium"},
+  {country:"Morocco", iso:"ma", flag:"🇲🇦", continent:"Africa", blurb:"A North African kingdom of bustling souks and the Atlas Mountains, just across the strait from Spain.", tier:"niche"},
+  {country:"Ethiopia", iso:"et", flag:"🇪🇹", continent:"Africa", blurb:"An ancient Horn-of-Africa land, the birthplace of coffee, and one rarely ever colonized.", tier:"niche"},
+  {country:"Ghana", iso:"gh", flag:"🇬🇭", continent:"Africa", blurb:"On West Africa's old 'Gold Coast'; the first sub-Saharan nation to win its independence.", tier:"niche"},
+  {country:"Tanzania", iso:"tz", flag:"🇹🇿", continent:"Africa", blurb:"Home to Mount Kilimanjaro, the Serengeti, and the spice island of Zanzibar.", tier:"niche"},
 
   // AMERICAS
-  {country:"United States", flag:"🇺🇸", continent:"Americas", blurb:"Fifty stars and thirteen stripes.", tier:"gimme"},
-  {country:"Canada", flag:"🇨🇦", continent:"Americas", blurb:"A single red maple leaf on white.", tier:"gimme"},
-  {country:"Brazil", flag:"🇧🇷", continent:"Americas", blurb:"“Ordem e Progresso” on a green field.", tier:"gimme"},
-  {country:"Mexico", flag:"🇲🇽", continent:"Americas", blurb:"An eagle devouring a serpent on a cactus.", tier:"medium"},
-  {country:"Argentina", flag:"🇦🇷", continent:"Americas", blurb:"A golden Sun of May on sky blue and white.", tier:"medium"},
-  {country:"Peru", flag:"🇵🇪", continent:"Americas", blurb:"Red and white bands; heart of the old Inca empire.", tier:"niche"},
-  {country:"Chile", flag:"🇨🇱", continent:"Americas", blurb:"A lone white star; a long ribbon of land down the Pacific.", tier:"niche"},
-  {country:"Cuba", flag:"🇨🇺", continent:"Americas", blurb:"A single star in a red triangle; a Caribbean island.", tier:"niche"},
+  {country:"United States", iso:"us", flag:"🇺🇸", continent:"Americas", blurb:"A federation of fifty states from coast to coast; Hollywood, jazz, and the Grand Canyon.", tier:"gimme"},
+  {country:"Canada", iso:"ca", flag:"🇨🇦", continent:"Americas", blurb:"The second-largest country on Earth; a land of Mounties, moose, and maple syrup.", tier:"gimme"},
+  {country:"Brazil", iso:"br", flag:"🇧🇷", continent:"Americas", blurb:"South America's largest country; the Amazon rainforest and Rio's Carnival, in Portuguese.", tier:"gimme"},
+  {country:"Mexico", iso:"mx", flag:"🇲🇽", continent:"Americas", blurb:"Land of the Aztecs and Maya, tacos and mariachi, just south of the United States.", tier:"medium"},
+  {country:"Argentina", iso:"ar", flag:"🇦🇷", continent:"Americas", blurb:"Home of the tango, gauchos, and windswept Patagonia; the birthplace of Lionel Messi.", tier:"medium"},
+  {country:"Peru", iso:"pe", flag:"🇵🇪", continent:"Americas", blurb:"An Andean land cradling Machu Picchu and the old heart of the Inca empire.", tier:"niche"},
+  {country:"Chile", iso:"cl", flag:"🇨🇱", continent:"Americas", blurb:"A long, thin ribbon of land down the Pacific coast, from the Atacama Desert to Patagonia.", tier:"niche"},
+  {country:"Cuba", iso:"cu", flag:"🇨🇺", continent:"Americas", blurb:"The largest Caribbean island, famous for cigars, salsa, and vintage cars.", tier:"niche"},
 
   // ASIA
-  {country:"Japan", flag:"🇯🇵", continent:"Asia", blurb:"A red sun on a white field.", tier:"gimme"},
-  {country:"China", flag:"🇨🇳", continent:"Asia", blurb:"Five gold stars on red.", tier:"gimme"},
-  {country:"India", flag:"🇮🇳", continent:"Asia", blurb:"A blue wheel between saffron and green.", tier:"gimme"},
-  {country:"South Korea", flag:"🇰🇷", continent:"Asia", blurb:"A red-and-blue yin-yang with black trigrams.", tier:"medium"},
-  {country:"Israel", flag:"🇮🇱", continent:"Asia", blurb:"A blue Star of David between two stripes.", tier:"medium"},
-  {country:"Saudi Arabia", flag:"🇸🇦", continent:"Asia", blurb:"Arabic script above a sword on green.", tier:"niche"},
-  {country:"Thailand", flag:"🇹🇭", continent:"Asia", blurb:"Five bands of red, white, and blue.", tier:"niche"},
-  {country:"Vietnam", flag:"🇻🇳", continent:"Asia", blurb:"A single gold star on red.", tier:"niche"},
+  {country:"Japan", iso:"jp", flag:"🇯🇵", continent:"Asia", blurb:"An archipelago of the rising sun; Mount Fuji, sushi, samurai, and bullet trains.", tier:"gimme"},
+  {country:"China", iso:"cn", flag:"🇨🇳", continent:"Asia", blurb:"One of the world's most populous lands; the Great Wall, giant pandas, and ancient dynasties.", tier:"gimme"},
+  {country:"India", iso:"in", flag:"🇮🇳", continent:"Asia", blurb:"South Asia's giant; the Taj Mahal, Bollywood, and the sacred river Ganges.", tier:"gimme"},
+  {country:"South Korea", iso:"kr", flag:"🇰🇷", continent:"Asia", blurb:"An East Asian peninsula of K-pop and kimchi, with a tense border to its north.", tier:"medium"},
+  {country:"Israel", iso:"il", flag:"🇮🇱", continent:"Asia", blurb:"A small Middle Eastern nation on the Mediterranean; Jerusalem and the Dead Sea lie within.", tier:"medium"},
+  {country:"Saudi Arabia", iso:"sa", flag:"🇸🇦", continent:"Asia", blurb:"A vast desert kingdom holding Islam's holy cities of Mecca and Medina; rich in oil.", tier:"niche"},
+  {country:"Thailand", iso:"th", flag:"🇹🇭", continent:"Asia", blurb:"A Southeast Asian land of golden temples and pad thai, once known as Siam.", tier:"niche"},
+  {country:"Vietnam", iso:"vn", flag:"🇻🇳", continent:"Asia", blurb:"An S-shaped Southeast Asian country of rice paddies, steaming pho, and Halong Bay.", tier:"niche"},
 
   // EUROPE
-  {country:"France", flag:"🇫🇷", continent:"Europe", blurb:"Blue, white, and red — the tricolore.", tier:"gimme"},
-  {country:"United Kingdom", flag:"🇬🇧", continent:"Europe", blurb:"The Union Jack.", tier:"gimme"},
-  {country:"Germany", flag:"🇩🇪", continent:"Europe", blurb:"Black, red, and gold horizontal bands.", tier:"gimme"},
-  {country:"Italy", flag:"🇮🇹", continent:"Europe", blurb:"Green, white, and red; birthplace of Rome.", tier:"gimme"},
-  {country:"Spain", flag:"🇪🇸", continent:"Europe", blurb:"Red and yellow bands with a royal crest.", tier:"medium"},
-  {country:"Greece", flag:"🇬🇷", continent:"Europe", blurb:"Blue and white stripes with a cross in the corner.", tier:"medium"},
-  {country:"Switzerland", flag:"🇨🇭", continent:"Europe", blurb:"A white cross on a square red field.", tier:"niche"},
-  {country:"Sweden", flag:"🇸🇪", continent:"Europe", blurb:"A yellow cross on blue.", tier:"niche"},
-  {country:"Netherlands", flag:"🇳🇱", continent:"Europe", blurb:"Red, white, and blue horizontal bands.", tier:"niche"},
-  {country:"Ireland", flag:"🇮🇪", continent:"Europe", blurb:"Green, white, and orange.", tier:"niche"},
+  {country:"France", iso:"fr", flag:"🇫🇷", continent:"Europe", blurb:"Land of the Eiffel Tower, the Louvre, buttery croissants, and fine wine.", tier:"gimme"},
+  {country:"United Kingdom", iso:"gb", flag:"🇬🇧", continent:"Europe", blurb:"An island of Big Ben and red double-decker buses; Phileas Fogg set out from its capital.", tier:"gimme"},
+  {country:"Germany", iso:"de", flag:"🇩🇪", continent:"Europe", blurb:"Central European home of the autobahn, Oktoberfest, and the Brandenburg Gate.", tier:"gimme"},
+  {country:"Italy", iso:"it", flag:"🇮🇹", continent:"Europe", blurb:"A boot-shaped peninsula of pizza, pasta, gondolas, and the ancient Colosseum.", tier:"gimme"},
+  {country:"Spain", iso:"es", flag:"🇪🇸", continent:"Europe", blurb:"Land of flamenco, paella, and bullfighting on the sunny Iberian Peninsula.", tier:"medium"},
+  {country:"Greece", iso:"gr", flag:"🇬🇷", continent:"Europe", blurb:"Birthplace of democracy and the Olympics; whitewashed isles dot its Aegean Sea.", tier:"medium"},
+  {country:"Switzerland", iso:"ch", flag:"🇨🇭", continent:"Europe", blurb:"A neutral Alpine nation of chocolate, watches, ski slopes, and famous banks.", tier:"niche"},
+  {country:"Sweden", iso:"se", flag:"🇸🇪", continent:"Europe", blurb:"A Nordic land of IKEA, ABBA, pine forests, and long midsummer days.", tier:"niche"},
+  {country:"Netherlands", iso:"nl", flag:"🇳🇱", continent:"Europe", blurb:"A low, flat land of tulips, windmills, canals, and bicycles everywhere.", tier:"niche"},
+  {country:"Ireland", iso:"ie", flag:"🇮🇪", continent:"Europe", blurb:"The 'Emerald Isle' of rolling green hills, shamrocks, and Saint Patrick.", tier:"niche"},
 
   // OCEANIA
-  {country:"Australia", flag:"🇦🇺", continent:"Oceania", blurb:"The Southern Cross and a Union Jack canton.", tier:"medium"},
-  {country:"New Zealand", flag:"🇳🇿", continent:"Oceania", blurb:"A red Southern Cross and a Union Jack canton.", tier:"niche"},
-  {country:"Fiji", flag:"🇫🇯", continent:"Oceania", blurb:"A light blue field with a shield; Pacific islands.", tier:"niche"},
-  {country:"Papua New Guinea", flag:"🇵🇬", continent:"Oceania", blurb:"A bird of paradise and the Southern Cross.", tier:"niche"},
+  {country:"Australia", iso:"au", flag:"🇦🇺", continent:"Oceania", blurb:"An island continent of kangaroos, the red Outback, and the Great Barrier Reef.", tier:"medium"},
+  {country:"New Zealand", iso:"nz", flag:"🇳🇿", continent:"Oceania", blurb:"Two islands of the Maori and the All Blacks, where Middle-earth films were shot.", tier:"niche"},
+  {country:"Fiji", iso:"fj", flag:"🇫🇯", continent:"Oceania", blurb:"A tropical archipelago in the South Pacific, ringed by coral reefs.", tier:"niche"},
+  {country:"Papua New Guinea", iso:"pg", flag:"🇵🇬", continent:"Oceania", blurb:"A rugged island nation north of Australia, with more languages than any other country.", tier:"niche"},
+];
+
+// ---------------- The route (Jules Verne's itinerary) ----------------
+// pct = position along the 0..100 circuit; glyph = a landmark for the port.
+const ROUTE = [
+  { name:"London",        pct:0,   glyph:"🇬🇧" },
+  { name:"Suez",          pct:12,  glyph:"🏜️" },
+  { name:"Bombay",        pct:25,  glyph:"🛕" },
+  { name:"Calcutta",      pct:38,  glyph:"🐅" },
+  { name:"Hong Kong",     pct:52,  glyph:"🏮" },
+  { name:"Yokohama",      pct:64,  glyph:"⛩️" },
+  { name:"San Francisco", pct:76,  glyph:"🌉" },
+  { name:"New York",      pct:88,  glyph:"🗽" },
+  { name:"London",        pct:100, glyph:"🎩" },
+];
+// transport Fogg uses on the leg LEAVING waypoint i (toward i+1)
+const LEG_TRANSPORT = ["🚢","🚢","🐘","🚢","🚢","🚢","🚂","🚢"];
+
+// Book-accurate mishaps. Picked at random on a wrong answer.
+const MISHAPS = [
+  "The railway ends at Kholby — you must hire an elephant across India.",
+  "Passepartout is lured into a Hong Kong opium den and goes missing.",
+  "A gale hammers the steamer on the Pacific crossing.",
+  "A great herd of bison blocks the line across Nebraska.",
+  "The Medicine Bow trestle bridge is failing — a nerve-racking dash.",
+  "A raiding party storms the train near Fort Kearney.",
+  "You miss the Carnatic and must charter the schooner Tankadere.",
+  "Detective Fix's warrant snarls the whole party in red tape.",
+  "Becalmed mid-ocean — the sails hang limp for want of wind.",
+  "A muddled timetable sends your party the wrong way entirely.",
+  "Customs officers detain the travellers at the quay.",
+  "Monsoon floods wash out the road to Allahabad.",
 ];
 
 const KEYS = ['A','B','C','D'];
-const TARGET = 25;                 // session length — but never cut a streak short
-const DELAY_OK = 2500, DELAY_NO = 4000;
+const CONT_COLOR = { Africa:'#7A5C00', Americas:'#2A5C3F', Asia:'#8B2020', Europe:'#1A5C6B', Oceania:'#4A2C6B' };
+// Endless game: circle the globe lap after lap, building a streak. The circuit is
+// ~13 legs (step 7.7 → reach London on the 13th correct). Detective Fix is the only
+// threat: he creeps forward on every answer and surges on a wrong one; if he reaches
+// you, the run ends and your best streak is banked. Each new lap repositions him a
+// little closer and speeds him up, so the chase escalates the longer you survive.
+const PACE = { step: 7.7, fixStart: -22, fixCreep: 2.6, fixSurge: 6 };
+const BOARD_KEY = 'atw_streak_board';   // local top-10 best streaks
+const NAME_KEY  = 'atw_name';
+function fixStartFor(l) { return Math.max(-6, PACE.fixStart + (l - 1) * 3); }   // closer each lap
+function creepFor(l)    { return Math.min(5.0, PACE.fixCreep + (l - 1) * 0.25); }
+function surgeFor(l)    { return PACE.fixSurge + (l - 1) * 0.7; }
 
-const TIERS = [
-  {id:'all', label:'All'}, {id:'gimme', label:'Easy'},
-  {id:'medium', label:'Medium'}, {id:'niche', label:'Hard'},
-];
-const CONTINENTS = ['All','Africa','Americas','Asia','Europe','Oceania'];
+// ---------------- DOM ----------------
+const sceneWrap = document.getElementById('sceneWrap');
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+const caughtOverlay = document.getElementById('caughtOverlay');
+const answersEl = document.getElementById('answers');
 
-let correct = 0, total = 0, streak = 0, bestStreak = 0;
-let answered = false, currentCard = null, queue = [];
-let selTier = 'all', selCont = 'All';
-let advanceTimer = null, pendingEnd = false;
+// ---------------- State ----------------
+let W = 800, H = 420, dpr = 1;
+let state = 'run';            // run | lap | caught
+let lap = 1;                  // which time around the globe
 
+let progress = 0;             // 0..100 Fogg's position on the current lap
+let fixPos = -22;             // 0..100 Detective Fix's position (trails Fogg)
+let correctCount = 0, streak = 0, bestStreak = 0;
+let visited = new Set([0]);
+
+let queue = [], current = null, answered = false;
+let pendingScore = null;      // a qualifying streak awaiting a name
+
+// displayed (eased) values for smooth animation
+let dispProgress = 0, dispFix = -22;
+let sceneTime = 0, shake = 0, revealT = 0;
+let lapHold = 0, lapMsg = '';
+let mishapMsg = '', mishapT = 0;
+let arriveMsg = '', arriveT = 0;
+let surgeT = 0, stumbleT = 0;
+let lastTs = 0, rafId = null;
+
+function setupCanvas() {
+  const r = sceneWrap.getBoundingClientRect();
+  W = Math.max(320, r.width);
+  H = r.height;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', setupCanvas);
+window.addEventListener('load', setupCanvas);   // re-measure once the flex layout has settled
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp01 = v => Math.max(0, Math.min(1, v));
 function shuffle(arr) {
   const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
+function getBoard() { try { const a = JSON.parse(localStorage.getItem(BOARD_KEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function saveBoard(b) { try { localStorage.setItem(BOARD_KEY, JSON.stringify(b)); } catch (e) {} }
+function bestStreakEver() { const b = getBoard(); return b.length ? b[0].streak : 0; }
+function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
+function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
 
-function activeDeck() {
-  return DECK.filter(c =>
-    (selTier === 'all' || c.tier === selTier) &&
-    (selCont === 'All'  || c.continent === selCont));
+// ============================================================
+// Camera + route geometry
+// ============================================================
+const VISIBLE_SPAN = 52;                 // % of the circuit visible across the canvas
+function midY() { return H * 0.52; }
+function routeAmp() { return Math.min(54, H * 0.10); }
+function pxPerPct() { return W / VISIBLE_SPAN; }
+function screenX(p) { return W * 0.44 + (p - dispProgress) * pxPerPct(); }
+function routeY(p)  { return midY() + Math.sin(p * 0.14 + 0.6) * routeAmp(); }
+
+// ============================================================
+// Drawing — vintage map
+// ============================================================
+function drawBackground(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#f0e1ba'); g.addColorStop(0.55, '#e6d2a4'); g.addColorStop(1, '#d8be8c');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // faint lat/long grid (parchment map)
+  ctx.strokeStyle = 'rgba(120,86,40,0.10)'; ctx.lineWidth = 1;
+  const gridGap = 46;
+  const ox = -((dispProgress * pxPerPct() * 0.25) % gridGap);
+  for (let x = ox; x < W; x += gridGap) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+  for (let y = gridGap; y < H; y += gridGap) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+  // a couple of decorative rhumb arcs
+  ctx.strokeStyle = 'rgba(120,86,40,0.12)'; ctx.setLineDash([5, 7]);
+  ctx.beginPath(); ctx.arc(W * 0.2, H * 1.15, H * 0.95, Math.PI * 1.2, Math.PI * 1.85); ctx.stroke();
+  ctx.beginPath(); ctx.arc(W * 0.85, -H * 0.2, H * 0.8, Math.PI * 0.35, Math.PI * 0.9); ctx.stroke();
+  ctx.setLineDash([]);
+
+  drawCompass(W - 56, 52, 26, t);
 }
 
+function drawCompass(cx, cy, r, t) {
+  ctx.save(); ctx.translate(cx, cy);
+  ctx.strokeStyle = 'rgba(90,67,39,0.5)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
+  ctx.rotate(Math.sin(t * 0.3) * 0.04);
+  for (let i = 0; i < 4; i++) {
+    ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = i === 0 ? '#8B2020' : 'rgba(90,67,39,0.75)';
+    ctx.beginPath(); ctx.moveTo(0, -r * 0.92); ctx.lineTo(4, 0); ctx.lineTo(-4, 0); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(90,67,39,0.85)'; ctx.font = '700 10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('N', 0, -r - 7);
+  ctx.restore();
+}
+
+function drawRoute() {
+  // visible % window
+  const pStart = dispProgress - VISIBLE_SPAN * 0.55;
+  const pEnd   = dispProgress + VISIBLE_SPAN * 0.55;
+
+  // the travelled portion (solid) vs the road ahead (dotted)
+  ctx.lineCap = 'round';
+  // ahead (dotted)
+  ctx.strokeStyle = 'rgba(90,67,39,0.45)'; ctx.lineWidth = 3; ctx.setLineDash([3, 9]);
+  ctx.beginPath();
+  for (let p = pStart; p <= pEnd; p += 0.6) { const x = screenX(p), y = routeY(p); p === pStart ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+  ctx.stroke(); ctx.setLineDash([]);
+  // travelled (solid gold, up to Fogg)
+  ctx.strokeStyle = '#b9472f'; ctx.lineWidth = 4;
+  ctx.beginPath();
+  let started = false;
+  for (let p = pStart; p <= Math.min(pEnd, dispProgress); p += 0.6) { const x = screenX(p), y = routeY(p); started ? ctx.lineTo(x, y) : (ctx.moveTo(x, y), started = true); }
+  ctx.stroke();
+
+  // waypoint medallions
+  ROUTE.forEach((wp, i) => {
+    if (wp.pct < pStart - 4 || wp.pct > pEnd + 4) return;
+    const x = screenX(wp.pct), y = routeY(wp.pct);
+    const done = visited.has(i);
+    ctx.save(); ctx.translate(x, y);
+    // post
+    ctx.strokeStyle = 'rgba(90,67,39,0.55)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, -30); ctx.stroke();
+    // medallion
+    ctx.fillStyle = done ? '#2A5C3F' : '#fbf1d8';
+    ctx.strokeStyle = done ? '#2A5C3F' : '#8a6a3a'; ctx.lineWidth = 2.5;
+    ctx.beginPath(); ctx.arc(0, -44, 17, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.font = '17px "Apple Color Emoji","Segoe UI Emoji",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(done ? '✓' : wp.glyph, 0, -44);
+    // name plate
+    ctx.font = '700 10px sans-serif'; ctx.fillStyle = 'rgba(60,44,22,0.9)';
+    ctx.fillText(wp.name.toUpperCase(), 0, -68);
+    ctx.restore();
+  });
+}
+
+function currentTransport() {
+  let leg = 0;
+  for (let i = 0; i < ROUTE.length - 1; i++) { if (dispProgress >= ROUTE[i].pct) leg = i; }
+  return LEG_TRANSPORT[Math.min(leg, LEG_TRANSPORT.length - 1)];
+}
+
+function drawToken(p, glyph, label, accent, bob, big) {
+  const x = screenX(p), y = routeY(p) + bob;
+  const r = big ? 22 : 18;
+  ctx.save(); ctx.translate(x, y);
+  // shadow
+  ctx.fillStyle = 'rgba(60,40,15,0.18)';
+  ctx.beginPath(); ctx.ellipse(0, r + 5, r * 0.9, 5, 0, 0, Math.PI * 2); ctx.fill();
+  // disc
+  ctx.fillStyle = '#fff'; ctx.strokeStyle = accent; ctx.lineWidth = 3.5;
+  ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+  ctx.font = (big ? 22 : 18) + 'px "Apple Color Emoji","Segoe UI Emoji",sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(glyph, 0, big ? 1 : 0);
+  // label banner
+  ctx.font = '800 10px sans-serif'; const tw = ctx.measureText(label).width;
+  ctx.fillStyle = accent; const by = -r - 16;
+  roundRect(-tw / 2 - 6, by - 8, tw + 12, 15, 4); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textBaseline = 'middle'; ctx.fillText(label, 0, by);
+  ctx.restore();
+}
+
+function roundRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+function drawFix(t) {
+  // puff of pursuit dust behind Fix
+  const x = screenX(dispFix), y = routeY(dispFix);
+  ctx.fillStyle = 'rgba(110,90,60,0.20)';
+  for (let i = 0; i < 3; i++) {
+    const px = x - 16 - i * 9 + Math.sin(t * 6 + i) * 2;
+    ctx.beginPath(); ctx.arc(px, y + 6, 7 - i, 0, Math.PI * 2); ctx.fill();
+  }
+  drawToken(dispFix, '🕵️', 'DETECTIVE FIX', '#3a3530', Math.sin(t * 5) * 2, false);
+}
+
+function drawHUD() {
+  // Streak panel, top-left
+  const sx = 14, sy = 14, sw = 132, sh = 50;
+  ctx.fillStyle = 'rgba(251,244,224,0.92)'; ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 2;
+  roundRect(sx, sy, sw, sh, 10); ctx.fill(); ctx.stroke();
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = '800 10px sans-serif'; ctx.fillStyle = '#a06a1e';
+  ctx.fillText('🔥 STREAK', sx + 12, sy + 8);
+  ctx.font = '800 26px Georgia, serif'; ctx.fillStyle = '#b9472f';
+  ctx.fillText(String(streak), sx + 12, sy + 19);
+  ctx.textAlign = 'right'; ctx.font = '700 11px sans-serif'; ctx.fillStyle = '#5a4318';
+  ctx.fillText('best ' + bestStreakEver(), sx + sw - 12, sy + 31);
+
+  // Lap, top-center
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.font = '800 13px sans-serif'; ctx.fillStyle = '#4a3318';
+  ctx.fillText('🌍 Lap ' + lap, W / 2, sy + 4);
+
+  // Fix gauge, top-right (the danger meter)
+  const gap = Math.max(0, Math.round(progress - fixPos));
+  const gw = 124, gx = W - gw - 14, gy = 18;
+  ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+  ctx.font = '800 11px sans-serif'; ctx.fillStyle = gap < 12 ? '#8B2020' : '#4a3318';
+  ctx.fillText('🕵️ FIX · ' + gap + '% BEHIND', gx, gy);
+  ctx.fillStyle = 'rgba(90,67,39,0.22)'; roundRect(gx, gy + 16, gw, 8, 4); ctx.fill();
+  const lead = clamp01((progress - fixPos) / 40);
+  ctx.fillStyle = gap < 12 ? '#8B2020' : '#2A5C3F'; roundRect(gx, gy + 16, gw * lead, 8, 4); ctx.fill();
+}
+
+function drawBanners() {
+  if (state === 'lap') {
+    drawNote('🎉 ' + lapMsg, 'Detective Fix falls behind — keep circling!', '#C4A040', Math.min(1, lapHold + 0.2), H * 0.16);
+  } else if (mishapT > 0) {
+    const a = Math.min(1, mishapT / 0.4) * Math.min(1, mishapT);
+    drawNote('⚠ MISHAP — Fix gains ground!', mishapMsg, '#8B2020', a, H * 0.16);
+  } else if (arriveT > 0) {
+    const a = Math.min(1, arriveT / 0.4) * Math.min(1, arriveT);
+    drawNote('⚓ ' + arriveMsg, '', '#2A5C3F', a, H * 0.16);
+  }
+}
+function drawNote(title, body, color, alpha, cy) {
+  ctx.save(); ctx.globalAlpha = clamp01(alpha);
+  ctx.font = '800 15px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w1 = ctx.measureText(title).width;
+  ctx.font = '600 12px sans-serif'; const w2 = body ? ctx.measureText(body).width : 0;
+  const w = Math.min(W - 36, Math.max(w1, w2) + 36);
+  const h = body ? 50 : 32;
+  ctx.fillStyle = 'rgba(251,244,224,0.97)'; ctx.strokeStyle = color; ctx.lineWidth = 2.5;
+  roundRect(W / 2 - w / 2, cy - h / 2, w, h, 9); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = color; ctx.font = '800 15px sans-serif'; ctx.fillText(title, W / 2, cy - (body ? 9 : 0));
+  if (body) {
+    ctx.fillStyle = '#4a3318'; ctx.font = '600 12px sans-serif';
+    const trimmed = w2 > w - 36 ? fitText(body, w - 36) : body;
+    ctx.fillText(trimmed, W / 2, cy + 11);
+  }
+  ctx.restore();
+}
+function fitText(s, maxw) {
+  ctx.font = '600 12px sans-serif';
+  while (s.length > 6 && ctx.measureText(s + '…').width > maxw) s = s.slice(0, -1);
+  return s + '…';
+}
+
+// ============================================================
+// Main loop
+// ============================================================
+function render(dt) {
+  sceneTime += dt;
+  // ease displayed values toward targets
+  const k = Math.min(1, dt * 5);
+  dispProgress += (progress - dispProgress) * k;
+  dispFix += (fixPos - dispFix) * k;
+
+  ctx.save();
+  if (shake > 0) { ctx.translate(rand(-shake, shake), rand(-shake, shake)); shake = Math.max(0, shake - dt * 26); }
+
+  drawBackground(sceneTime);
+  drawRoute();
+  drawFix(sceneTime);
+  const bob = Math.sin(sceneTime * 3) * 2.5 + (surgeT > 0 ? -3 : 0) + (stumbleT > 0 ? 3 : 0);
+  drawToken(dispProgress, currentTransport(), 'PHILEAS FOGG', '#b9472f', bob, true);
+  ctx.restore();
+
+  drawHUD();
+  drawBanners();
+}
+
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000; lastTs = ts;
+  if (dt > 0.05) dt = 0.05;
+
+  surgeT = Math.max(0, surgeT - dt);
+  stumbleT = Math.max(0, stumbleT - dt);
+  mishapT = Math.max(0, mishapT - dt);
+  arriveT = Math.max(0, arriveT - dt);
+
+  if (state === 'run' && answered) {
+    revealT -= dt;
+    if (revealT <= 0) nextQuestion();
+  }
+  if (state === 'lap') {
+    lapHold -= dt;
+    if (lapHold <= 0) finishLap();
+  }
+  render(dt);
+}
+
+// ============================================================
+// Flag question flow
+// ============================================================
+function activeDeck() { return DECK; }   // one default mode — the whole world is fair game
 function drawCard() {
-  if (queue.length === 0) queue = shuffle(activeDeck());
+  if (!queue.length) queue = shuffle(activeDeck());
   return queue.pop();
 }
-
 function buildOptions(card) {
-  // Distractors are other countries from the SAME continent (more plausible).
-  let pool = DECK.filter(c => c.continent === card.continent && c.country !== card.country)
-                 .map(c => c.country);
-  if (pool.length < 3) {
-    pool = pool.concat(DECK.filter(c => c.country !== card.country).map(c => c.country));
-  }
+  let pool = DECK.filter(c => c.continent === card.continent && c.country !== card.country).map(c => c.country);
+  if (pool.length < 3) pool = pool.concat(DECK.filter(c => c.country !== card.country).map(c => c.country));
   pool = [...new Set(pool)];
   const distractors = shuffle(pool).slice(0, 3);
   return shuffle([card.country, ...distractors]);
 }
 
-function buildFilters() {
-  const diffRow = document.getElementById('diffRow');
-  const contRow = document.getElementById('contRow');
-  TIERS.forEach(t => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (t.id === selTier ? ' active' : '');
-    b.textContent = t.label;
-    b.onclick = () => { if (selTier === t.id) return; selTier = t.id; HSGSound.tick(); startRound(); };
-    b.dataset.tier = t.id;
-    diffRow.appendChild(b);
-  });
-  CONTINENTS.forEach(c => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (c === selCont ? ' active' : '');
-    b.textContent = c;
-    b.onclick = () => { if (selCont === c) return; selCont = c; HSGSound.tick(); startRound(); };
-    b.dataset.cont = c;
-    contRow.appendChild(b);
-  });
-}
-function syncFilterChips() {
-  document.querySelectorAll('#diffRow .chip').forEach(b => b.classList.toggle('active', b.dataset.tier === selTier));
-  document.querySelectorAll('#contRow .chip').forEach(b => b.classList.toggle('active', b.dataset.cont === selCont));
-}
-
-function nextCard() {
-  clearTimeout(advanceTimer);
-  pendingEnd = false;
+function nextQuestion() {
   answered = false;
-  currentCard = drawCard();
-  if (!currentCard) {  // empty filter combo
-    document.getElementById('flagGlyph').textContent = '🤔';
-    document.getElementById('flagBlurb').textContent = 'No flags match that combination — pick another level or region.';
-    document.getElementById('optionGrid').innerHTML = '';
-    document.getElementById('revealName').textContent = '';
-    document.getElementById('feedback').textContent = '';
-    document.getElementById('catPill').textContent = '—';
-    return;
-  }
-  const options = buildOptions(currentCard);
-
-  const pill = document.getElementById('catPill');
-  pill.textContent = currentCard.continent;
-  pill.className = 'cat-pill cat-' + currentCard.continent;
-
-  document.getElementById('flagGlyph').textContent = currentCard.flag;
-  document.getElementById('flagBlurb').textContent = currentCard.blurb;
+  current = drawCard();
+  const opts = buildOptions(current);
+  const tag = document.getElementById('qtag');
+  tag.textContent = current.continent;
+  tag.style.color = CONT_COLOR[current.continent] || 'var(--ink-light)';
+  document.getElementById('flagBig').innerHTML =
+    '<img class="flag-img" alt="Flag to identify" src="../../assets/flags/' + current.iso + '.svg">';
+  document.getElementById('blurbText').textContent = current.blurb;
+  document.getElementById('flagBlurb').hidden = true;   // region + clue stay hidden until asked for
+  document.getElementById('hintBtn').hidden = false;
   document.getElementById('revealName').textContent = '';
-  document.getElementById('feedback').textContent = '';
-  document.getElementById('nextBtn').style.display = 'none';
-
-  const grid = document.getElementById('optionGrid');
-  grid.innerHTML = '';
-  options.forEach((country, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.dataset.idx = i;
-    btn.dataset.country = country;
-
-    const keyEl = document.createElement('span');
-    keyEl.className = 'key-hint';
-    keyEl.textContent = KEYS[i];
-
-    const valEl = document.createElement('span');
-    valEl.className = 'option-val';
-    valEl.textContent = country;
-
-    btn.appendChild(keyEl);
-    btn.appendChild(valEl);
-    btn.addEventListener('click', () => handleAnswer(country, btn));
-    grid.appendChild(btn);
+  answersEl.innerHTML = '';
+  opts.forEach((val, i) => {
+    const b = document.createElement('button');
+    b.className = 'ans'; b.dataset.idx = i; b.dataset.val = val;
+    b.innerHTML = '<span class="k">' + KEYS[i] + '</span><span class="v"></span>';
+    b.querySelector('.v').textContent = val;
+    b.addEventListener('click', () => answer(i));
+    answersEl.appendChild(b);
   });
 }
 
-function handleAnswer(chosen, clickedBtn) {
-  if (answered) return;
-  answered = true;
-  total++;
-  let endedStreak = 0;
-
-  const allBtns = document.querySelectorAll('.option-btn');
-  allBtns.forEach(b => b.disabled = true);
-
-  const isCorrect = chosen === currentCard.country;
-
-  if (isCorrect) {
-    correct++; streak++;
-    if (streak > bestStreak) bestStreak = streak;
-    rail.hit();
-    HSGSound.correct();
-    clickedBtn.classList.add('correct');
-    const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
-              : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
-              :                `✓ Correct!`;
-    document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
-    if (HSGfx.milestone(streak)) HSGSound.streak(streak);
-  } else {
-    endedStreak = streak;
-    streak = 0;
-    HSGSound.wrong();
-    clickedBtn.classList.add('wrong');
-    allBtns.forEach(b => {
-      if (b.dataset.country === currentCard.country) b.classList.add('reveal-correct');
-    });
-    document.getElementById('feedback').innerHTML =
-      `<span style="color:var(--red)">✗ This is ${currentCard.country}</span>`;
+function checkArrivals() {
+  // mark any waypoints we've now passed this lap; announce the newest port
+  for (let i = 0; i < ROUTE.length; i++) {
+    if (!visited.has(i) && progress >= ROUTE[i].pct - 0.01) {
+      visited.add(i);
+      if (i > 0 && i < ROUTE.length - 1) {
+        arriveMsg = 'Arrived in ' + ROUTE[i].name;
+        arriveT = 1.8;
+      }
+    }
   }
+}
+
+function answer(idx) {
+  if (state !== 'run' || answered) return;
+  const btns = [...answersEl.children];
+  const btn = btns[idx]; if (!btn) return;
+  answered = true;
+  btns.forEach(b => b.disabled = true);
+  const isCorrect = (btn.dataset.val === current.country);
 
   document.getElementById('revealName').textContent =
-    `${currentCard.flag} ${currentCard.country} — ${currentCard.continent}`;
+    current.flag + ' ' + current.country + ' — ' + current.continent;
+  // once answered, show the clue as a takeaway fact (and retire the hint button)
+  document.getElementById('flagBlurb').hidden = false;
+  document.getElementById('hintBtn').hidden = true;
 
-  updateBadges();
-
-  // A streak just ended — flare down and offer the leaderboard if it qualifies.
-  if (endedStreak) rail.end();
-
-  // End the session after TARGET questions, but only once a streak has ended
-  // (so a hot streak always gets to play out).
-  pendingEnd = (total >= TARGET && streak === 0);
-  const nextBtn = document.getElementById('nextBtn');
-  nextBtn.textContent = pendingEnd ? 'See results →' : 'Next Flag →';
-  nextBtn.style.display = 'block';
-  scheduleAdvance(isCorrect ? DELAY_OK : DELAY_NO);
-}
-
-function scheduleAdvance(ms) {
-  clearTimeout(advanceTimer);
-  advanceTimer = setTimeout(advance, ms);
-}
-function advance() {
-  clearTimeout(advanceTimer);
-  if (!answered) return;
-  if (pendingEnd) endSession();
-  else nextCard();
-}
-
-function endSession() {
-  HSGfx.showSummary({
-    title: `Flag Frenzy — ${total} flags`,
-    correct, total, best: bestStreak,
-    onPlayAgain: startRound,
-  });
+  if (isCorrect) {
+    correctCount++; streak++; if (streak > bestStreak) bestStreak = streak;
+    btn.classList.add('correct');
+    progress += PACE.step;
+    fixPos += creepFor(lap);                        // Fix keeps coming, but you out-pace him
+    surgeT = 0.5;
+    if (window.HSGSound) HSGSound.correct();
+    if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
+    checkArrivals();
+    updateBadges();
+    if (progress >= 100) { startLap(); return; }    // circled the globe — celebrate, then keep going
+  } else {
+    streak = 0;
+    btn.classList.add('wrong');
+    btns.forEach(b => { if (b.dataset.val === current.country) b.classList.add('reveal'); });
+    // a mishap: Detective Fix surges closer
+    fixPos += creepFor(lap) + surgeFor(lap);
+    stumbleT = 0.5; shake = 7;
+    mishapMsg = MISHAPS[Math.floor(Math.random() * MISHAPS.length)];
+    mishapT = 2.2;
+    if (window.HSGSound) HSGSound.wrong();
+    if (window.HSGfx) HSGfx.flash('rgba(150,40,40,0.26)');
+    updateBadges();
+    if (fixPos >= progress) { revealT = 99; setTimeout(() => { if (state === 'run') caught(); }, 850); return; }
+  }
+  revealT = isCorrect ? 0.9 : 1.7;   // linger on a miss to read the answer + mishap
 }
 
 function updateBadges() {
-  document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
+  document.getElementById('scoreBadge').textContent = '🔥 ' + streak + ' in a row';
+  document.getElementById('bestBadge').textContent = 'Best ' + Math.max(bestStreak, bestStreakEver());
 }
 
-function startRound() {
-  clearTimeout(advanceTimer);
-  rail.end(); // records if mid-streak, then flares down
-  correct = 0; total = 0; streak = 0; bestStreak = 0; queue = [];
-  answered = false; pendingEnd = false;
-  syncFilterChips();
+// ============================================================
+// Lifecycle
+// ============================================================
+function startGame() {
+  state = 'run'; lap = 1;
+  progress = 0; fixPos = fixStartFor(1);
+  dispProgress = 0; dispFix = fixPos;
+  correctCount = 0; streak = 0; bestStreak = 0;
+  visited = new Set([0]);
+  queue = []; answered = false; surgeT = 0; stumbleT = 0; mishapT = 0; arriveT = 0; lapHold = 0;
+  pendingScore = null;
+  caughtOverlay.classList.add('hidden');
   updateBadges();
-  nextCard();
+  nextQuestion();
 }
 
-function resetAll() { startRound(); }
+// Circled the globe: celebrate, then roll straight into the next lap.
+function startLap() {
+  state = 'lap'; lapHold = 2.2; answered = true;
+  lapMsg = 'Around the world! Lap ' + lap + ' done';
+  checkArrivals();
+  document.getElementById('flagBlurb').hidden = true;
+  document.getElementById('hintBtn').hidden = true;
+  document.getElementById('revealName').textContent = '';
+  answersEl.innerHTML = '';
+  if (window.HSGSound) HSGSound.finish(true);
+  if (window.HSGfx) { HSGfx.confetti({ count: 70, big: true }); HSGfx.flash('rgba(255,215,120,0.4)'); }
+}
+
+function finishLap() {
+  lap++;
+  progress = 0; fixPos = fixStartFor(lap);
+  dispProgress = 0; dispFix = fixPos;        // snap so the camera doesn't slide back
+  visited = new Set([0]);
+  state = 'run';
+  updateBadges();
+  nextQuestion();
+}
+
+function caught() {
+  state = 'caught';
+  shake = 10;
+  document.getElementById('cStreak').textContent = bestStreak;
+  document.getElementById('cLap').textContent = lap;
+  document.getElementById('cCountries').textContent = correctCount;
+
+  const board = getBoard();
+  const qualifies = bestStreak > 0 && (board.length < 10 || bestStreak > board[board.length - 1].streak);
+  const ne = document.getElementById('nameEntry');
+  if (qualifies) {
+    pendingScore = { streak: bestStreak, lap: lap };
+    ne.classList.remove('hidden');
+    const inp = document.getElementById('nameInput');
+    inp.value = lastName();
+    setTimeout(() => inp.focus(), 60);
+  } else {
+    pendingScore = null;
+    ne.classList.add('hidden');
+  }
+  caughtOverlay.classList.remove('hidden');
+  if (window.HSGSound) HSGSound.finish(false);
+}
+
+// ---------------- Streak leaderboard ----------------
+function saveName() {
+  if (!pendingScore) return;
+  const inp = document.getElementById('nameInput');
+  const name = ((inp.value || '').trim() || 'Traveller').slice(0, 12);
+  setLastName(name);
+  const entry = { name: name, streak: pendingScore.streak, lap: pendingScore.lap };
+  const board = getBoard();
+  board.push(entry);
+  board.sort((a, b) => b.streak - a.streak);
+  saveBoard(board.slice(0, 10));
+  pendingScore = null;
+  document.getElementById('nameEntry').classList.add('hidden');
+  renderRail(entry);
+  updateBadges();
+}
+
+function renderRail(highlight) {
+  const board = getBoard();
+  const el = document.getElementById('railBoard');
+  el.innerHTML = '';
+  if (!board.length) {
+    const li = document.createElement('li');
+    li.className = 'rail-empty';
+    li.textContent = 'No records yet — survive a run and be the first in the book!';
+    el.appendChild(li);
+    return;
+  }
+  board.forEach((e, i) => {
+    const me = highlight && e.name === highlight.name && e.streak === highlight.streak && e.lap === highlight.lap;
+    const row = document.createElement('li');
+    row.className = 'rail-row' + (me ? ' me' : '');
+    const rank = document.createElement('span'); rank.className = 'rail-rank'; rank.textContent = (i + 1);
+    const nm = document.createElement('span'); nm.className = 'rail-name'; nm.textContent = e.name;
+    const st = document.createElement('span'); st.className = 'rail-streak'; st.textContent = '🔥 ' + e.streak;
+    row.appendChild(rank); row.appendChild(nm); row.appendChild(st);
+    el.appendChild(row);
+  });
+}
+
+// ---------------- Wiring ----------------
+function again() { if (window.HSGSound) HSGSound.tick(); startGame(); }
+document.getElementById('hintBtn').addEventListener('click', () => {
+  if (state !== 'run' || answered) return;
+  document.getElementById('flagBlurb').hidden = false;
+  document.getElementById('hintBtn').hidden = true;
+  if (window.HSGSound) HSGSound.tick();
+});
+document.getElementById('caughtAgainBtn').addEventListener('click', again);
+document.getElementById('saveNameBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); saveName(); });
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveName(); } });
 
 document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && answered) { e.preventDefault(); advance(); return; }
-  if (answered) return;
-  const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
-  if (idx === -1) return;
-  const btn = document.querySelector(`.option-btn[data-idx="${idx}"]`);
-  if (btn && !btn.disabled) btn.click();
+  if (state !== 'run' || answered) return;
+  const i = ['a', 'b', 'c', 'd'].indexOf(e.key.toLowerCase());
+  if (i === -1) return;
+  const btn = answersEl.children[i];
+  if (btn && !btn.disabled) { e.preventDefault(); answer(i); }
 });
 
-const rail = HSGStreak.init({
-  gameId: 'flag-frenzy', gameName: 'Flag Frenzy', minStreak: 1,
-  mount: document.getElementById('streakRail')
-});
-
-buildFilters();
-updateBadges();
-nextCard();
+// Straight into the first question — no menu.
+renderRail();
+setupCanvas();
+startGame();
+rafId = requestAnimationFrame(loop);
 </script>
 
 </body>
