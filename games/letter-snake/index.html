@@ -168,9 +168,10 @@
       <h2>Letter Snake</h2>
       <p>Read the <strong>clue</strong>, then steer the snake to gobble the letters <strong>in spelling order</strong>. Edges wrap around — you won't crash off them! Pick a level:</p>
       <div class="level-row">
-        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Sprout</span><span class="l-desc">Short words • super slow</span></span></button>
-        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Scout</span><span class="l-desc">Longer words • steady</span></span></button>
-        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Scholar</span><span class="l-desc">Tricky words • quicker</span></span></button>
+        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Easy</span><span class="l-desc">Grades 1–3</span></span></button>
+        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Medium</span><span class="l-desc">Grades 4–7</span></span></button>
+        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Hard</span><span class="l-desc">High school+</span></span></button>
+        <button class="level-btn" data-level="einstein"><span class="l-icon">🧠</span><span><span class="l-name">Einstein</span><span class="l-desc">Spelling-bee level</span></span></button>
       </div>
     </div>
   </div>
@@ -197,12 +198,29 @@
 // The snake grows with every letter, so longer words get tricky.
 // ============================================================
 const LEVELS = {
-  easy:   { stepMs:[360,290], decoys:4 },  // super slow
-  medium: { stepMs:[300,235], decoys:6 },  // steady
-  hard:   { stepMs:[250,195], decoys:8 }   // quicker
+  easy:     { stepMs:[360,290], decoys:4 },  // grades 1–3 • super slow
+  medium:   { stepMs:[300,235], decoys:6 },  // grades 4–7 • steady
+  hard:     { stepMs:[250,195], decoys:8 },  // high school+ • quicker
+  einstein: { stepMs:[215,165], decoys:9 }   // spelling-bee • fast
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+
+// Look-alike / sound-alike letters — decoys lean on these so a stray 'a' can
+// masquerade as the 'e' you're hunting for. Forces real spelling knowledge.
+const CONFUSE = {
+  a:'eo', e:'ai', i:'eyl', o:'ua', u:'ov', y:'ie',
+  b:'dp', d:'bpq', p:'bqd', q:'pgd', g:'qjy', c:'ks', k:'cq', s:'cz',
+  m:'n', n:'mh', h:'n', v:'wu', w:'vu', f:'t', t:'f', j:'gi', l:'it', r:'n', x:'ks', z:'s'
+};
+function trickyDecoy(){
+  // 60% of the time, a look-alike of some letter actually in the word
+  if (word.length && Math.random()<0.6){
+    const base=word[Math.floor(Math.random()*word.length)], conf=CONFUSE[base];
+    if (conf) return conf[Math.floor(Math.random()*conf.length)];
+  }
+  return ALPHA[Math.floor(Math.random()*26)];
+}
 
 const stage    = document.getElementById('stage');
 const canvas   = document.getElementById('snakeCanvas');
@@ -299,7 +317,7 @@ function buildPellets(){
   let guard=0;
   while (guard++ < cfg.decoys){
     const cell=randCell(); if(!cell) break;
-    pellets.push({id:nextId++, ...cell, ch:ALPHA[Math.floor(Math.random()*26)]});
+    pellets.push({id:nextId++, ...cell, ch:trickyDecoy()});
   }
 }
 // move a (wrong) pellet to a fresh spot so the full letter set stays on screen

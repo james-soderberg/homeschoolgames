@@ -1,122 +1,192 @@
 // ============================================================
 // HSGSpellWords — shared, graded spelling word bank.
 // Lowercase, letters a–z only, so it drops straight into any
-// spelling game. Three difficulty bands by length / trickiness.
+// spelling game. Four difficulty bands, by real grade level:
+//   easy     — 1st–3rd grade  (short, decodable, common sight words)
+//   medium   — 4th–7th grade  (multi-syllable everyday vocabulary)
+//   hard     — high school +  (advanced & notoriously misspelled words)
+//   einstein — expert/bee     (long science & SAT-level brain-benders)
 // API:  HSGSpellWords.pick(level)            -> a random word
 //       HSGSpellWords.pick(level, avoidSet)  -> avoids first letters in the Set
-//       HSGSpellWords.levels                 -> ['easy','medium','hard']
+//       HSGSpellWords.levels                 -> ['easy','medium','hard','einstein']
+//       HSGSpellWords.clue(word)             -> a kid-friendly clue (or null)
 // ============================================================
 (function () {
   const BANK = {
+    // ---------- 1st–3rd grade ----------
     easy: [
-      "cat","dog","sun","hat","bug","cup","bed","box","pig","fox",
-      "owl","jam","web","fan","map","key","bus","pen","net","ant",
-      "fish","ball","tree","book","frog","milk","jump","hand","star","cake",
-      "ship","gold","rain","leaf","bird","king","lamp","ring","sock","nest",
-      "gift","sand","wolf","corn","drum","flag","snow","moon","kite","bear",
-      "duck","road","song","hill","boat"
+      "cat","dog","sun","hat","run","bug","cup","bed","pig","fox",
+      "owl","web","fan","map","key","bus","pen","ant","fish","ball",
+      "tree","book","frog","milk","jump","hand","star","cake","ship","rain",
+      "leaf","bird","king","lamp","ring","sock","nest","gift","sand","corn",
+      "drum","flag","snow","moon","kite","bear","duck","road","hill","boat",
+      "happy","apple","water","green","smile","house","mouse","table","chair","sleep",
+      "train","clock","grape","sheep","candy","puppy","bread","grass","cloud","plant",
+      "friend","school"
     ],
+    // ---------- 4th–7th grade ----------
     medium: [
-      "apple","river","plant","cloud","bread","grass","house","mouse","table","chair",
-      "happy","smile","water","light","night","sweet","dream","storm","green","brown",
-      "bridge","dragon","garden","pencil","animal","orange","basket","castle","flower","jungle",
-      "planet","rocket","school","spider","turtle","window","yellow","pirate","knight","monkey",
-      "rabbit","guitar","winter","summer","forest","island","picture","morning","thunder","diamond",
-      "kitchen","blanket"
+      "river","garden","pencil","animal","orange","basket","castle","flower","jungle","spider",
+      "turtle","window","pirate","knight","guitar","forest","island","picture","morning","thunder",
+      "diamond","kitchen","blanket","dragon","planet","rocket","monkey","rabbit","winter","summer",
+      "yellow","elephant","dinosaur","mountain","hospital","computer","treasure","umbrella","butterfly","chocolate",
+      "adventure","beautiful","dangerous","vegetable","telescope","lightning","calendar","celebrate","important","different",
+      "surprise","sandwich","birthday","crocodile","strawberry","wonderful","furniture","favorite","remember","neighbor",
+      "library","science","sentence","special","suddenly","dictionary","character","volcano","continent","paragraph",
+      "weather","machine","distance","decision","attention","finally"
     ],
+    // ---------- high school and beyond ----------
     hard: [
-      "elephant","dinosaur","mountain","hospital","computer","treasure","umbrella","butterfly","chocolate","adventure",
-      "beautiful","dangerous","knowledge","vegetable","telescope","lightning","calendar","alphabet","geography","celebrate",
-      "important","different","necessary","separate","beginning","surprise","scissors","sandwich","birthday","kangaroo",
-      "crocodile","strawberry","wonderful","furniture","exercise","question","language","favorite","remember","together",
-      "yesterday","neighbor","because","february","wednesday","rhythm","library","science"
+      "knowledge","necessary","separate","beginning","definitely","embarrass","rhythm","parallel","privilege","lieutenant",
+      "maintenance","conscience","conscious","pronunciation","accommodate","occurrence","recommend","possess","miscellaneous","perseverance",
+      "mischievous","exaggerate","guarantee","hierarchy","restaurant","vacuum","weird","foreign","sovereign","acquaintance",
+      "questionnaire","millennium","vengeance","fluorescent","liaison","silhouette","camouflage","rendezvous","gauge","leisure",
+      "environment","government","temperature","independence","immediately","license","judgment","existence","especially","experience",
+      "equipment","persuade","ancient","opinion","original","scissors","rhinoceros","february","wednesday"
+    ],
+    // ---------- expert / spelling-bee brain-benders ----------
+    einstein: [
+      "photosynthesis","effervescent","onomatopoeia","conscientious","surveillance","hippopotamus","entrepreneur","idiosyncrasy","chrysanthemum","hemorrhage",
+      "paraphernalia","kaleidoscope","juxtaposition","connoisseur","quintessential","unparalleled","archipelago","encyclopedia","metamorphosis","electromagnetic",
+      "bioluminescence","pneumonia","mnemonic","tyrannosaurus","pterodactyl","mediterranean","gobbledygook","pharaoh","perpendicular","simultaneous",
+      "extraordinary","sophisticated","philosophical","refrigerator","thermometer","exaggeration","hallucination","bureaucracy","sesquipedalian"
     ]
   };
 
-  // Super-obvious, kid-friendly clues. Each one all but names the word so the
-  // only challenge left is spelling it. Emoji up front for instant recognition.
+  // Kid-friendly clues — each one points at the word so the challenge is the
+  // SPELLING, not guessing the meaning. Emoji up front for instant recognition.
   const CLUES = {
-    // ---- easy ----
+    // ---- easy: 1st–3rd grade ----
     cat:"🐱 The furry pet that says \"meow\"", dog:"🐶 The pet that barks and wags its tail",
     sun:"☀️ The bright star that lights up the day", hat:"🎩 You wear this on your head",
-    bug:"🐛 A tiny crawling insect", cup:"🥤 You drink water out of this",
-    bed:"🛏️ You sleep in this at night", box:"📦 A square cardboard container",
+    run:"🏃 To move fast on your feet", bug:"🐛 A tiny crawling insect",
+    cup:"🥤 You drink water out of this", bed:"🛏️ You sleep in this at night",
     pig:"🐷 The pink farm animal that says \"oink\"", fox:"🦊 The clever orange animal with a bushy tail",
-    owl:"🦉 The bird that says \"hoo\" at night", jam:"🍓 Sweet fruit spread for your toast",
-    web:"🕸️ A spider spins this to catch bugs", fan:"🌀 It spins to blow cool air on you",
-    map:"🗺️ It shows you where places are", key:"🔑 You use this to unlock a door",
-    bus:"🚌 The big yellow vehicle that takes kids to school", pen:"🖊️ You write with this in ink",
-    net:"🥅 You catch fish or score goals with this", ant:"🐜 A tiny insect that lives in a hill",
+    owl:"🦉 The bird that says \"hoo\" at night", web:"🕸️ A spider spins this to catch bugs",
+    fan:"🌀 It spins to blow cool air on you", map:"🗺️ It shows you where places are",
+    key:"🔑 You use this to unlock a door", bus:"🚌 The big yellow vehicle that takes kids to school",
+    pen:"🖊️ You write with this in ink", ant:"🐜 A tiny insect that lives in a hill",
     fish:"🐟 The animal that swims and breathes underwater", ball:"⚽ A round toy you bounce, kick, or throw",
     tree:"🌳 A tall plant with a trunk and leaves", book:"📖 You read the pages of this",
     frog:"🐸 The green animal that hops and says \"ribbit\"", milk:"🥛 The white drink that comes from cows",
     jump:"🦘 To leap up off the ground", hand:"✋ The part of your body with five fingers",
     star:"⭐ A tiny twinkling light in the night sky", cake:"🎂 The sweet treat you eat on your birthday",
-    ship:"🚢 A big boat that sails the ocean", gold:"🥇 The shiny yellow treasure metal",
-    rain:"🌧️ Water that falls from the clouds", leaf:"🍃 The green part that grows on a tree",
-    bird:"🐦 An animal with wings and feathers that flies", king:"👑 The man who rules a kingdom",
-    lamp:"💡 You switch this on for light", ring:"💍 Shiny jewelry you wear on a finger",
-    sock:"🧦 You wear this on your foot inside a shoe", nest:"🪺 The cozy home a bird builds for its eggs",
-    gift:"🎁 A wrapped present you give someone", sand:"🏖️ The tiny grains you find at the beach",
-    wolf:"🐺 The wild animal that howls at the moon", corn:"🌽 The yellow veggie on a cob",
+    ship:"🚢 A big boat that sails the ocean", rain:"🌧️ Water that falls from the clouds",
+    leaf:"🍃 The green part that grows on a tree", bird:"🐦 An animal with wings and feathers that flies",
+    king:"👑 The man who rules a kingdom", lamp:"💡 You switch this on for light",
+    ring:"💍 Shiny jewelry you wear on a finger", sock:"🧦 You wear this on your foot inside a shoe",
+    nest:"🪺 The cozy home a bird builds for its eggs", gift:"🎁 A wrapped present you give someone",
+    sand:"🏖️ The tiny grains you find at the beach", corn:"🌽 The yellow veggie on a cob",
     drum:"🥁 You bang on this to make a beat", flag:"🚩 A piece of cloth that waves on a pole",
     snow:"❄️ The cold white flakes that fall in winter", moon:"🌙 The big light in the night sky",
     kite:"🪁 You fly this on a string in the wind", bear:"🐻 The big furry animal that loves honey",
     duck:"🦆 The bird that says \"quack\" and swims", road:"🛣️ Cars drive on this",
-    song:"🎵 Words and music you sing", hill:"⛰️ A small mountain you can climb",
-    boat:"⛵ It floats on water and carries you across",
-    // ---- medium ----
-    apple:"🍎 The red fruit that keeps the doctor away", river:"🏞️ A long stream of water that flows to the sea",
-    plant:"🌱 A green thing that grows from a seed", cloud:"☁️ The fluffy white thing in the sky",
+    hill:"⛰️ A small mountain you can climb", boat:"⛵ It floats on water and carries you across",
+    happy:"😊 The feeling when you're full of joy", apple:"🍎 The red fruit that keeps the doctor away",
+    water:"💧 The clear drink you need to stay alive", green:"🟢 The color of grass and leaves",
+    smile:"🙂 You do this with your mouth when you're glad", house:"🏠 The building where a family lives",
+    mouse:"🐭 The tiny animal that says \"squeak\"", table:"🍽️ You eat your dinner on top of this",
+    chair:"🪑 You sit down on this", sleep:"😴 To close your eyes and rest at night",
+    train:"🚂 The long vehicle that rides on rails", clock:"🕐 It hangs on the wall and tells the time",
+    grape:"🍇 A small round fruit that grows in bunches", sheep:"🐑 The fluffy farm animal that says \"baa\"",
+    candy:"🍬 A sweet sugary treat", puppy:"🐶 A baby dog",
     bread:"🍞 You make a sandwich with slices of this", grass:"🌿 The green stuff that covers a lawn",
-    house:"🏠 The building where a family lives", mouse:"🐭 The tiny animal that says \"squeak\"",
-    table:"🪑 You eat your dinner on top of this", chair:"🪑 You sit down on this",
-    happy:"😊 The feeling when you're full of joy", smile:"🙂 You do this with your mouth when you're glad",
-    water:"💧 The clear drink you need to stay alive", light:"💡 The opposite of dark",
-    night:"🌃 The dark time when you go to sleep", sweet:"🍬 The taste of candy and sugar",
-    dream:"💭 The story your mind plays while you sleep", storm:"⛈️ Wild weather with thunder and lightning",
-    green:"🟢 The color of grass and leaves", brown:"🟤 The color of chocolate and tree trunks",
-    bridge:"🌉 You cross this to get over a river", dragon:"🐉 The fire-breathing monster with wings",
-    garden:"🌷 Where you grow flowers and veggies", pencil:"✏️ You write with this and erase mistakes",
-    animal:"🐾 A living creature like a dog or lion", orange:"🍊 The round fruit that's also a color",
-    basket:"🧺 A woven container with a handle", castle:"🏰 The huge stone home where a king lives",
-    flower:"🌸 The pretty colorful part of a plant", jungle:"🌴 A thick hot forest full of wild animals",
-    planet:"🪐 A huge round world like Earth or Mars", rocket:"🚀 The ship that blasts off into space",
-    school:"🏫 The place where kids go to learn", spider:"🕷️ The eight-legged bug that spins webs",
+    cloud:"☁️ The fluffy white thing in the sky", plant:"🌱 A green thing that grows from a seed",
+    friend:"🤗 Someone you like to play and spend time with", school:"🏫 The place where kids go to learn",
+
+    // ---- medium: 4th–7th grade ----
+    river:"🏞️ A long stream of water that flows to the sea", garden:"🌷 Where you grow flowers and veggies",
+    pencil:"✏️ You write with this and erase mistakes", animal:"🐾 A living creature like a dog or lion",
+    orange:"🍊 The round fruit that's also a color", basket:"🧺 A woven container with a handle",
+    castle:"🏰 The huge stone home where a king lives", flower:"🌸 The pretty colorful part of a plant",
+    jungle:"🌴 A thick hot forest full of wild animals", spider:"🕷️ The eight-legged bug that spins webs",
     turtle:"🐢 The slow animal with a hard shell", window:"🪟 The glass you look out of in a wall",
-    yellow:"🟡 The color of the sun and bananas", pirate:"🏴‍☠️ A sea robber who hunts for treasure",
-    knight:"⚔️ A warrior in shining armor", monkey:"🐒 The animal that swings in trees and eats bananas",
-    rabbit:"🐰 The hopping animal with long ears", guitar:"🎸 The instrument with six strings you strum",
+    pirate:"🏴‍☠️ A sea robber who hunts for treasure", knight:"⚔️ A warrior in shining armor",
+    guitar:"🎸 The instrument with six strings you strum", forest:"🌲 A big area covered in trees",
+    island:"🏝️ Land with water all around it", picture:"🖼️ A photo or drawing you hang on a wall",
+    morning:"🌅 The early part of the day when the sun rises", thunder:"🌩️ The loud boom you hear in a storm",
+    diamond:"💎 The sparkly precious gem", kitchen:"🍳 The room where you cook food",
+    blanket:"🛌 The soft cover that keeps you warm in bed", dragon:"🐉 The fire-breathing monster with wings",
+    planet:"🪐 A huge round world like Earth or Mars", rocket:"🚀 The ship that blasts off into space",
+    monkey:"🐒 The animal that swings in trees and eats bananas", rabbit:"🐰 The hopping animal with long ears",
     winter:"⛄ The cold snowy season of the year", summer:"🌞 The hot sunny season of the year",
-    forest:"🌲 A big area covered in trees", island:"🏝️ Land with water all around it",
-    picture:"🖼️ A photo or drawing you hang on a wall", morning:"🌅 The early part of the day when the sun rises",
-    thunder:"🌩️ The loud boom you hear in a storm", diamond:"💎 The sparkly precious gem",
-    kitchen:"🍳 The room where you cook food", blanket:"🛌 The soft cover that keeps you warm in bed",
-    // ---- hard ----
-    elephant:"🐘 The huge gray animal with a long trunk", dinosaur:"🦕 The giant reptile from long, long ago",
-    mountain:"🏔️ A giant rocky peak you climb", hospital:"🏥 Where doctors help sick people get better",
-    computer:"💻 The machine with a screen and keyboard", treasure:"💰 A chest of gold and jewels pirates hunt for",
-    umbrella:"☂️ You hold this over your head in the rain", butterfly:"🦋 The pretty insect with colorful wings",
-    chocolate:"🍫 The sweet brown candy everyone loves", adventure:"🗺️ An exciting and daring journey",
-    beautiful:"😍 Very, very pretty to look at", dangerous:"⚠️ Something that can hurt you — not safe",
-    knowledge:"🧠 All the things you know and have learned", vegetable:"🥦 Healthy food like broccoli or carrots",
+    yellow:"🟡 The color of the sun and bananas", elephant:"🐘 The huge gray animal with a long trunk",
+    dinosaur:"🦕 The giant reptile from long, long ago", mountain:"🏔️ A giant rocky peak you climb",
+    hospital:"🏥 Where doctors help sick people get better", computer:"💻 The machine with a screen and keyboard",
+    treasure:"💰 A chest of gold and jewels pirates hunt for", umbrella:"☂️ You hold this over your head in the rain",
+    butterfly:"🦋 The pretty insect with colorful wings", chocolate:"🍫 The sweet brown candy everyone loves",
+    adventure:"🗺️ An exciting and daring journey", beautiful:"😍 Very, very pretty to look at",
+    dangerous:"⚠️ Something that can hurt you — not safe", vegetable:"🥦 Healthy food like broccoli or carrots",
     telescope:"🔭 You look through this to see the stars up close", lightning:"⚡ The bright flash in the sky during a storm",
-    calendar:"📅 It shows all the days and months of the year", alphabet:"🔤 All 26 letters from A to Z",
-    geography:"🌍 The study of the world's countries and maps", celebrate:"🎉 To have a party for something special",
+    calendar:"📅 It shows all the days and months of the year", celebrate:"🎉 To have a party for something special",
     important:"❗ Something that really, really matters", different:"🔀 Not the same as something else",
-    necessary:"✅ Something you absolutely need to have", separate:"✂️ To split things apart into pieces",
-    beginning:"🏁 The very start, where something first begins", surprise:"🎈 Something unexpected that shocks you",
-    scissors:"✂️ The tool with two blades for cutting paper", sandwich:"🥪 Two slices of bread with filling inside",
-    birthday:"🎂 The special day you were born, with cake", kangaroo:"🦘 The hopping animal with a pouch from Australia",
-    crocodile:"🐊 The big green reptile with sharp teeth", strawberry:"🍓 The red juicy fruit with tiny seeds",
-    wonderful:"🌟 Really, really great and amazing", furniture:"🛋️ Things like chairs, tables, and sofas",
-    exercise:"🏃 Moving your body to stay fit and strong", question:"❓ Something you ask when you want an answer",
-    language:"🗣️ The words people speak, like English or Spanish", favorite:"⭐ The one you like the very best",
-    remember:"🧠 To keep something in your mind, not forget", together:"🤝 When people are joined with each other",
-    yesterday:"📆 The day right before today", neighbor:"🏡 The person who lives right next door",
-    because:"💬 The word you use to give a reason", february:"❄️ The short, cold second month of the year",
-    wednesday:"📅 The day in the middle of the school week", rhythm:"🥁 The steady beat in music you tap along to",
-    library:"📚 The quiet place full of books you can borrow", science:"🔬 The study of nature, experiments, and how things work"
+    surprise:"🎈 Something unexpected that shocks you", sandwich:"🥪 Two slices of bread with filling inside",
+    birthday:"🎂 The special day you were born, with cake", crocodile:"🐊 The big green reptile with sharp teeth",
+    strawberry:"🍓 The red juicy fruit with tiny seeds", wonderful:"🌟 Really, really great and amazing",
+    furniture:"🛋️ Things like chairs, tables, and sofas", favorite:"⭐ The one you like the very best",
+    remember:"🧠 To keep something in your mind, not forget", neighbor:"🏡 The person who lives right next door",
+    library:"📚 The quiet place full of books you can borrow", science:"🔬 The study of nature and how things work",
+    sentence:"✍️ A group of words that makes a complete thought", special:"🌟 Better or different in a great way",
+    suddenly:"💥 Happening quickly and without warning", dictionary:"📖 The book that tells you what words mean",
+    character:"🎭 A person in a story, or your inner nature", volcano:"🌋 A mountain that erupts with lava",
+    continent:"🌎 One of Earth's seven huge land masses", paragraph:"📄 A group of sentences about one idea",
+    weather:"🌦️ Sun, rain, wind, and clouds outside", machine:"⚙️ A device with parts that does work",
+    distance:"📏 How far apart two things are", decision:"🤔 A choice you make after thinking",
+    attention:"👀 Carefully watching or listening", finally:"🏁 At last, after a long wait",
+
+    // ---- hard: high school and beyond ----
+    knowledge:"🧠 All the things you know and have learned", necessary:"✅ Something you absolutely need (one c, two s)",
+    separate:"✂️ To split apart (there's \"a rat\" in the middle)", beginning:"🏁 The very start (double the n)",
+    definitely:"💯 For sure, without any doubt (\"finite\" inside)", embarrass:"😳 To make someone feel shy (two r, two s)",
+    rhythm:"🥁 The steady beat in music (no regular vowels!)", parallel:"🟰 Side-by-side lines that never meet (middle ll)",
+    privilege:"🎟️ A special right or advantage (no d)", lieutenant:"🎖️ A military officer below a captain",
+    maintenance:"🔧 Keeping something in good working order", conscience:"😇 The inner voice of right and wrong",
+    conscious:"👁️ Awake and aware of what's happening", pronunciation:"🗣️ The way a word is said out loud (no \"noun\")",
+    accommodate:"🛏️ To make room for someone (two c, two m)", occurrence:"📅 Something that happens (two c, two r)",
+    recommend:"👍 To suggest something is good (one c, two m)", possess:"🫳 To own or have something (two s, two s)",
+    miscellaneous:"🗃️ A mix of various different things", perseverance:"💪 Never giving up, even when it's hard",
+    mischievous:"😈 Playfully causing a little trouble (no extra i)", exaggerate:"📈 To make something sound bigger (two g)",
+    guarantee:"🤝 A firm promise that something will happen", hierarchy:"🪜 A ranking from highest to lowest",
+    restaurant:"🍽️ A place where you go to eat a meal", vacuum:"🧹 The machine that sucks up dust (two u)",
+    weird:"👽 Strange or unusual (this one breaks \"i before e\")", foreign:"🌍 From another country (e before i)",
+    sovereign:"👑 A supreme ruler, like a king or queen", acquaintance:"🤝 Someone you know, but not a close friend",
+    questionnaire:"📋 A printed list of questions to answer (two n)", millennium:"🗓️ A period of one thousand years (two l, two n)",
+    vengeance:"⚔️ Getting revenge for a wrong", fluorescent:"💡 Glowing bright, like a neon light",
+    liaison:"🔗 A go-between who links two groups", silhouette:"👤 A dark shadow outline of a shape",
+    camouflage:"🦎 Coloring that helps an animal blend in", rendezvous:"📍 A planned meeting at a set place",
+    gauge:"📏 A tool that measures an amount", leisure:"🛋️ Free time to relax and do what you like",
+    environment:"🌳 The natural world around us (don't forget the n)", government:"🏛️ The group that runs a country (the hidden n)",
+    temperature:"🌡️ How hot or cold something is", independence:"🗽 Being free and self-governing",
+    immediately:"⚡ Right now, without any delay (two m)", license:"🪪 An official card giving permission",
+    judgment:"⚖️ A careful decision or opinion (no e in the middle)", existence:"🌌 The state of being real",
+    especially:"⭐ More than usual; particularly", experience:"🎓 Knowledge gained by doing something",
+    equipment:"🧰 The tools and gear needed for a job", persuade:"💬 To convince someone to do something",
+    ancient:"🏺 Very, very old, from long ago", opinion:"💭 What you personally think or believe",
+    original:"🥇 The first of its kind, not a copy", scissors:"✂️ The tool with two blades for cutting paper",
+    rhinoceros:"🦏 The big animal with a horn on its nose", february:"❄️ The short, cold second month (don't drop the r)",
+    wednesday:"📅 The day in the middle of the week (a silent d)",
+
+    // ---- einstein: expert brain-benders ----
+    photosynthesis:"🌿 How plants turn sunlight into food", effervescent:"🫧 Bubbly and fizzy, like soda",
+    onomatopoeia:"💥 A word that sounds like its meaning, like \"buzz\"", conscientious:"✅ Careful, thorough, and hard-working",
+    surveillance:"📹 Closely watching someone or something", hippopotamus:"🦛 The huge river animal from Africa",
+    entrepreneur:"💼 A person who starts their own business", idiosyncrasy:"🎭 A quirky habit unique to one person",
+    chrysanthemum:"🌼 A round, many-petaled autumn flower", hemorrhage:"🩸 Heavy bleeding from a broken vessel",
+    paraphernalia:"🎒 All the bits of gear for some activity", kaleidoscope:"🔮 A tube of mirrors that makes color patterns",
+    juxtaposition:"↔️ Placing two things side by side to compare", connoisseur:"🍷 An expert with refined taste",
+    quintessential:"💯 The most perfect example of something", unparalleled:"🏆 So good that nothing else compares",
+    archipelago:"🏝️ A chain or group of many islands", encyclopedia:"📚 A big book of facts on every subject",
+    metamorphosis:"🦋 A total change, like caterpillar to butterfly", electromagnetic:"🧲 Relating to electricity and magnetism",
+    bioluminescence:"✨ Light made by living things, like fireflies", pneumonia:"🫁 A serious illness that fills the lungs (silent p)",
+    mnemonic:"🧠 A trick or rhyme that helps you remember (silent m)", tyrannosaurus:"🦖 The giant T. rex dinosaur",
+    pterodactyl:"🦅 A flying reptile from the dinosaur age (silent p)", mediterranean:"🌊 The famous sea between Europe and Africa",
+    gobbledygook:"🤪 Confusing, nonsense language", pharaoh:"👑 A king of ancient Egypt",
+    perpendicular:"📐 Meeting at a perfect right angle", simultaneous:"⏱️ Happening at exactly the same time",
+    extraordinary:"🌟 Far beyond ordinary — remarkable", sophisticated:"🎩 Refined, complex, and worldly",
+    philosophical:"🤔 Relating to deep thinking about life", refrigerator:"🧊 The kitchen machine that keeps food cold",
+    thermometer:"🌡️ The tool that measures temperature", exaggeration:"📈 Making something sound bigger than it is",
+    hallucination:"👻 Seeing something that isn't really there", bureaucracy:"🏛️ A system run by many officials and rules",
+    sesquipedalian:"📏 A long word that means \"fond of long words\"!"
   };
 
   function pick(level, avoid) {
@@ -133,7 +203,7 @@
   }
 
   window.HSGSpellWords = {
-    levels: ['easy', 'medium', 'hard'],
+    levels: ['easy', 'medium', 'hard', 'einstein'],
     bank: BANK,
     clues: CLUES,
     pick,
