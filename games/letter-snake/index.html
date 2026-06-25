@@ -69,12 +69,41 @@
     .ready-banner.hidden { display: none; }
     @keyframes rpPulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.05); } }
 
+    /* always-on second clue (first & last letter) */
+    .second-clue {
+      font-family: var(--font-sans); font-weight: 700; font-size: 0.88rem; text-align: center;
+      color: var(--ink-light); background: var(--cream-dark); border: 1.5px solid var(--border);
+      border-radius: 99px; padding: 0.35rem 1rem; max-width: 50ch;
+    }
+    .second-clue.hidden { display: none; }
+
+    /* pause / resume button, floating on the board */
+    .pause-btn {
+      position: absolute; top: 0.6rem; right: 0.6rem; z-index: 8;
+      width: 2.5rem; height: 2.5rem; border-radius: 50%; line-height: 1;
+      background: rgba(16,26,22,0.78); color: #fdf7ec; border: 2px solid rgba(255,253,244,0.4);
+      font-size: 1.05rem; cursor: pointer; display: none; align-items: center; justify-content: center;
+      transition: background .12s, border-color .12s, transform .1s;
+    }
+    .pause-btn.show { display: inline-flex; }
+    .pause-btn:hover { background: rgba(16,26,22,0.96); border-color: var(--gold); transform: translateY(-1px); }
+
     /* size readout in the score badge */
     .size-badge { font-size: 0.92rem; }
 
     /* custom game-over card stats */
     .end-size { font-family: var(--font-serif); font-size: 3.2rem; font-weight: 800; color: var(--gold-light, #e6c264); line-height: 1; margin: 0.1rem 0 0.1rem; }
-    .end-size-label { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color:#cfe6da; margin-bottom: 0.9rem; }
+    .end-size-label { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color:#cfe6da; margin-bottom: 0.7rem; }
+
+    /* the word you were spelling when you died — shown so you can learn it */
+    .end-word {
+      display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+      margin: 0 0 1rem; padding: 0.55rem 0.9rem; max-width: 34ch;
+      background: rgba(255,253,244,0.08); border: 1.5px solid rgba(255,253,244,0.18); border-radius: 12px;
+    }
+    .end-word-label { font-family: var(--font-sans); font-size: 0.66rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color:#bcd0c6; }
+    .end-word-text { font-family: 'Courier New', monospace; font-weight: 800; font-size: 1.7rem; letter-spacing: 0.14em; color: var(--gold-light, #e6c264); text-transform: uppercase; }
+    .end-word-clue { font-family: var(--font-serif); font-size: 0.9rem; color:#e7ddcf; line-height: 1.35; font-style: italic; }
     .end-row { display: flex; gap: 1.4rem; justify-content: center; margin-bottom: 1.2rem; }
     .end-row .es { text-align: center; }
     .end-row .es b { display: block; font-family: var(--font-serif); font-size: 1.5rem; color:#fff; line-height: 1; }
@@ -142,10 +171,12 @@
     <div class="clue-line"><span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span></div>
     <div class="word-slots" id="wordSlots"></div>
     <div class="ready-banner hidden" id="readyBanner">Press any key to start ▶</div>
+    <div class="second-clue hidden" id="secondClue"></div>
   </div>
 
   <div class="stage" id="stage">
     <canvas id="snakeCanvas"></canvas>
+    <button class="pause-btn" id="pauseBtn" type="button" aria-label="Pause">⏸</button>
 
     <!-- Game over: biggest-snake high score -->
     <div class="bf-overlay hidden" id="endOverlay">
@@ -153,6 +184,11 @@
       <h2 id="endTitle">Game Over</h2>
       <div class="end-size" id="endSize">3</div>
       <div class="end-size-label">Final snake length</div>
+      <div class="end-word">
+        <span class="end-word-label">The word was</span>
+        <span class="end-word-text" id="endWord">—</span>
+        <span class="end-word-clue" id="endWordClue"></span>
+      </div>
       <div class="end-row">
         <div class="es"><b id="endWords">0</b><span>Words</span></div>
         <div class="es"><b id="endBest">0</b><span>Longest ever</span></div>
@@ -197,11 +233,11 @@
 // letters IN SPELLING ORDER. Edges wrap around (no wall deaths).
 // The snake grows with every letter, so longer words get tricky.
 // ============================================================
-const LEVELS = {
-  easy:     { stepMs:[360,290], decoys:4 },  // grades 1–3 • super slow
-  medium:   { stepMs:[300,235], decoys:6 },  // grades 4–7 • steady
-  hard:     { stepMs:[250,195], decoys:8 },  // high school+ • quicker
-  einstein: { stepMs:[215,165], decoys:9 }   // spelling-bee • fast
+const LEVELS = {                               // stepMs = ms per move (start → fast); 15% slower than before
+  easy:     { stepMs:[414,334], decoys:4 },  // grades 1–3 • super slow
+  medium:   { stepMs:[345,270], decoys:6 },  // grades 4–7 • steady
+  hard:     { stepMs:[288,224], decoys:8 },  // high school+ • quicker
+  einstein: { stepMs:[247,190], decoys:9 }   // spelling-bee • fast
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
@@ -231,11 +267,15 @@ const scoreBadge = document.getElementById('scoreBadge');
 const heartsBadge= document.getElementById('heartsBadge');
 const startOverlay = document.getElementById('startOverlay');
 const readyBanner  = document.getElementById('readyBanner');
+const secondClue   = document.getElementById('secondClue');
+const pauseBtn     = document.getElementById('pauseBtn');
 const endOverlay = document.getElementById('endOverlay');
 const endTitle = document.getElementById('endTitle');
 const endSize  = document.getElementById('endSize');
 const endWords = document.getElementById('endWords');
 const endBest  = document.getElementById('endBest');
+const endWord  = document.getElementById('endWord');
+const endWordClue = document.getElementById('endWordClue');
 
 let W=560,H=460,dpr=1, CELL=32, COLS=17, ROWS=13;
 function setupCanvas(){
@@ -291,6 +331,8 @@ function newWord(){
   buildPellets();                 // NOTE: snake is NOT reset — it keeps growing
   // ready state — snake sits frozen in place until the player presses a key / taps
   state='ready'; stepAcc=0; lastSnake=snake.map(s=>({c:s.c,r:s.r}));
+  hidePauseUI();
+  showSecondClue();               // first & last letter — a permanent extra hint
   readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word — press any key to continue ▶';
   readyBanner.classList.remove('hidden');
 }
@@ -298,30 +340,63 @@ function beginPlay(){
   if(state!=='ready') return;
   readyBanner.classList.add('hidden');
   state='playing'; lastTs=0; stepAcc=0;
+  pauseBtn.classList.add('show');
+}
+
+// ---- always-on second clue (first & last letter) ----
+function secondClueText(){
+  if(!word) return '';
+  const first=word[0].toUpperCase(), last=word[word.length-1].toUpperCase();
+  return '🔎 Starts with “'+first+'” · ends with “'+last+'”';
+}
+function showSecondClue(){ secondClue.textContent=secondClueText(); secondClue.classList.remove('hidden'); }
+
+// ---- pause / resume ----
+function pauseGame(){
+  if(state!=='playing') return;
+  state='paused';
+  pauseBtn.textContent='▶'; pauseBtn.setAttribute('aria-label','Resume');
+}
+function resumeGame(){
+  if(state!=='paused') return;
+  state='playing'; lastTs=0;          // reset timing so the snake doesn't lurch
+  pauseBtn.textContent='⏸'; pauseBtn.setAttribute('aria-label','Pause');
+}
+function togglePause(){ if(state==='playing') pauseGame(); else if(state==='paused') resumeGame(); }
+function hidePauseUI(){
+  pauseBtn.classList.remove('show');
+  pauseBtn.textContent='⏸'; pauseBtn.setAttribute('aria-label','Pause');
+  secondClue.classList.add('hidden');
 }
 
 // ---- pellet placement ----
-function cellFree(c,r){
-  if (snake.some(s=>s.c===c&&s.r===r)) return false;
-  if (pellets.some(p=>p.c===c&&p.r===r)) return false;
-  return true;
+// Every empty cell (not under the snake, and — when relocating — not under another
+// pellet). Returns a fresh array each call.
+function freeCells(skip){
+  const occ=new Set(snake.map(s=>s.r*COLS+s.c));
+  if(skip) for(const p of pellets){ if(p!==skip) occ.add(p.r*COLS+p.c); }
+  const free=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){ if(!occ.has(r*COLS+c)) free.push({c,r}); }
+  return free;
 }
-function randCell(){
-  for(let i=0;i<200;i++){ const c=Math.floor(Math.random()*COLS), r=Math.floor(Math.random()*ROWS); if(cellFree(c,r)) return {c,r}; }
-  return null;
-}
-// Scatter EVERY letter of the word plus some decoys, all on screen at once.
+function shuffleCells(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// Scatter EVERY letter of the word (including duplicates) plus some decoys. Word
+// letters are poured into shuffled free cells FIRST, so the full set you need to
+// spell is always on the board; decoys only fill whatever cells remain.
 function buildPellets(){
   pellets=[];
-  for (const ch of word){ const cell=randCell(); if(cell) pellets.push({id:nextId++, ...cell, ch}); }
-  let guard=0;
-  while (guard++ < cfg.decoys){
-    const cell=randCell(); if(!cell) break;
-    pellets.push({id:nextId++, ...cell, ch:trickyDecoy()});
-  }
+  const free=shuffleCells(freeCells());
+  let i=0;
+  for (const ch of word){ if(i>=free.length) break; pellets.push({id:nextId++, ...free[i++], ch}); }
+  let placed=0;
+  while (placed<cfg.decoys && i<free.length){ pellets.push({id:nextId++, ...free[i++], ch:trickyDecoy()}); placed++; }
 }
-// move a (wrong) pellet to a fresh spot so the full letter set stays on screen
-function relocate(p){ const cell=randCell(); if(cell){ p.c=cell.c; p.r=cell.r; } }
+// move a (wrong) pellet to a fresh empty spot so the full letter set stays on screen
+function relocate(p){
+  const free=freeCells(p);
+  if(free.length){ const cell=free[Math.floor(Math.random()*free.length)]; p.c=cell.c; p.r=cell.r; }
+}
 
 // ---- lifecycle ----
 function startGame(lv){
@@ -338,8 +413,9 @@ function startGame(lv){
 }
 function quitToMenu(){
   // record an in-progress run before bailing (a finished run is already recorded)
-  if (state==='playing'||state==='ready'){ rail.value=snake.length; rail.end(); }
+  if (state==='playing'||state==='ready'||state==='paused'){ rail.value=snake.length; rail.end(); }
   state='menu';
+  hidePauseUI();
   readyBanner.classList.add('hidden');
   endOverlay.classList.add('hidden');
   clueText.textContent='Pick a level to start!';
@@ -349,11 +425,14 @@ function quitToMenu(){
 // running out of hearts OR biting yourself ends the run
 function gameOver(reason){
   state='over';
+  hidePauseUI();
   readyBanner.classList.add('hidden');
   const finalLen=snake.length;
   const best=Math.max(finalLen, rail.bestToBeat());
   endTitle.textContent = reason==='self' ? 'You bit your own tail!' : 'Out of hearts!';
   endSize.textContent = finalLen;
+  endWord.textContent = (word||'').toUpperCase();      // the word you were spelling — learn it for next time
+  endWordClue.textContent = clueStr || '';
   endWords.textContent = wordsDone;
   endBest.textContent = best;
   endOverlay.classList.remove('hidden');
@@ -527,7 +606,10 @@ function dirFromKey(k){
 }
 document.addEventListener('keydown', e=>{
   if (state==='menu'||state==='over') return;
-  const d=dirFromKey(e.key.toLowerCase());
+  const k=e.key.toLowerCase();
+  if ((k==='p'||k==='escape') && (state==='playing'||state==='paused')){ togglePause(); e.preventDefault(); return; }
+  if (state==='paused') return;            // ignore steering while paused
+  const d=dirFromKey(k);
   if (state==='ready'){
     beginPlay();
     if (d) queued=d;       // first key also sets the heading
@@ -549,8 +631,11 @@ stage.addEventListener('touchend', e=>{
 // tap the board or the banner to start moving between words
 stage.addEventListener('click', ()=>{ if(state==='ready') beginPlay(); });
 readyBanner.addEventListener('click', beginPlay);
-document.getElementById('endPlayAgain').addEventListener('click', ()=>startGame(level));
-document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', ()=>startGame(b.dataset.level)));
+pauseBtn.addEventListener('click', (e)=>{ e.stopPropagation(); togglePause(); });
+// stopPropagation so the selecting click doesn't bubble to the stage's start
+// handler (which would skip the read-the-clue pause and launch immediately).
+document.getElementById('endPlayAgain').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(level); });
+document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', (e)=>{ e.stopPropagation(); startGame(b.dataset.level); }));
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state==='playing') lastTs=0; });
 
 setupCanvas();

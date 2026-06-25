@@ -275,6 +275,7 @@ let W = 800, H = 420, dpr = 1;
 let state = 'menu';          // menu | run | finale | caught | win
 let pace = PACES.medium;
 let gap = 62;                // 0..100 lead over the army (0 = caught)
+let gapShown = 62;           // eased visual gap — the Israelites glide forward rather than snapping
 let progress = 0;            // 0..100 distance to the Red Sea
 let correctCount = 0, streak = 0, bestStreak = 0;
 let queue = [], current = null, answered = false;
@@ -509,18 +510,20 @@ function armyOpts() {
     skin: '#caa074', helmet: '#8a7f4a', spearTip: true };
 }
 
-// army x from the gap: small gap = right on your tail
-function armyX() { return playerX() - (40 + (gap / 100) * (W * 0.52)); }
-function playerX() { return W * 0.60; }
+// Pharaoh's army holds a near-fixed anchor near the left; the Israelites
+// advance forward (to the right) as their lead grows, so gaining ground reads
+// as them surging ahead rather than the army dropping back.
+function armyX() { return W * 0.16; }
+function playerX() { return armyX() + 40 + (gapShown / 100) * (W * 0.50); }
 
 function drawChase(dt) {
   drawBackground(sceneTime);
   drawDust(dt);
   drawArmy(sceneTime);
   // a dust wall behind the army when they're close
-  if (gap < 45) {
+  if (gapShown < 45) {
     const ax = armyX();
-    ctx.fillStyle = 'rgba(150,110,60,' + (0.18 * (1 - gap / 45)).toFixed(3) + ')';
+    ctx.fillStyle = 'rgba(150,110,60,' + (0.18 * (1 - gapShown / 45)).toFixed(3) + ')';
     ctx.fillRect(0, groundY() - 80, ax + 30, 80);
   }
   // the fleeing Israelites on foot — Moses leading with his staff
@@ -537,7 +540,7 @@ function drawHUD() {
   // "to the Red Sea" progress (top-left)
   meter(14, 14, 150, '🌊 Red Sea', progress / 100, '#2f86c8', '#0e4d80');
   // army danger (top-right): fills red as they close in
-  const danger = 1 - gap / 100;
+  const danger = 1 - gapShown / 100;
   meter(W - 164, 14, 150, '🐎 Army', danger, '#d77a3a', '#9a3a1a', true);
 }
 function meter(x, y, w, label, frac, c1, c2, right) {
@@ -655,6 +658,9 @@ function loop(ts) {
   speed += (targetSpeed - speed) * Math.min(1, dt * 4);
   scroll += speed * dt;
 
+  // ease the shown gap toward the real one so the Israelites glide forward/back
+  gapShown += (gap - gapShown) * Math.min(1, dt * 3);
+
   // hooves kick dust
   if (state === 'run' || state === 'finale') {
     if (Math.random() < 0.4) spawnDust(playerX() - 24, groundY(), 1, speed * 0.4);
@@ -754,7 +760,7 @@ function updateBadges() {
 function startGame(key) {
   pace = PACES[key] || PACES.medium;
   state = 'run';
-  gap = 62; progress = 0; correctCount = 0; streak = 0; bestStreak = 0;
+  gap = 62; gapShown = 62; progress = 0; correctCount = 0; streak = 0; bestStreak = 0;
   queue = []; answered = false; dust = []; surgeT = 0; stumbleT = 0; finaleT = 0;
   startOverlay.classList.add('hidden');
   overOverlay.classList.add('hidden');

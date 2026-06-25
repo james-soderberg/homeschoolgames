@@ -44,12 +44,12 @@
       "environment","government","temperature","independence","immediately","license","judgment","existence","especially","experience",
       "equipment","persuade","ancient","opinion","original","scissors","rhinoceros","february","wednesday"
     ],
-    // ---------- expert / spelling-bee brain-benders ----------
+    // ---------- expert / spelling-bee brain-benders (short but devious) ----------
     einstein: [
-      "photosynthesis","effervescent","onomatopoeia","conscientious","surveillance","hippopotamus","entrepreneur","idiosyncrasy","chrysanthemum","hemorrhage",
-      "paraphernalia","kaleidoscope","juxtaposition","connoisseur","quintessential","unparalleled","archipelago","encyclopedia","metamorphosis","electromagnetic",
-      "bioluminescence","pneumonia","mnemonic","tyrannosaurus","pterodactyl","mediterranean","gobbledygook","pharaoh","perpendicular","simultaneous",
-      "extraordinary","sophisticated","philosophical","refrigerator","thermometer","exaggeration","hallucination","bureaucracy","sesquipedalian"
+      "psyche","fuchsia","tsunami","yacht","bourgeois","epitome","facade","pharaoh","asthma","diaphragm",
+      "mnemonic","bivouac","schism","zephyr","sergeant","colonel","receipt","maneuver","isthmus","quartz",
+      "bouquet","plateau","seize","aisle","debris","subtle","khaki","czar","gnaw","knead",
+      "wraith","sleigh","hygiene","syringe","pneumonia","gnome","feign","beige","freight","jeopardy"
     ]
   };
 
@@ -166,27 +166,27 @@
     rhinoceros:"🦏 The big animal with a horn on its nose", february:"❄️ The short, cold second month (don't drop the r)",
     wednesday:"📅 The day in the middle of the week (a silent d)",
 
-    // ---- einstein: expert brain-benders ----
-    photosynthesis:"🌿 How plants turn sunlight into food", effervescent:"🫧 Bubbly and fizzy, like soda",
-    onomatopoeia:"💥 A word that sounds like its meaning, like \"buzz\"", conscientious:"✅ Careful, thorough, and hard-working",
-    surveillance:"📹 Closely watching someone or something", hippopotamus:"🦛 The huge river animal from Africa",
-    entrepreneur:"💼 A person who starts their own business", idiosyncrasy:"🎭 A quirky habit unique to one person",
-    chrysanthemum:"🌼 A round, many-petaled autumn flower", hemorrhage:"🩸 Heavy bleeding from a broken vessel",
-    paraphernalia:"🎒 All the bits of gear for some activity", kaleidoscope:"🔮 A tube of mirrors that makes color patterns",
-    juxtaposition:"↔️ Placing two things side by side to compare", connoisseur:"🍷 An expert with refined taste",
-    quintessential:"💯 The most perfect example of something", unparalleled:"🏆 So good that nothing else compares",
-    archipelago:"🏝️ A chain or group of many islands", encyclopedia:"📚 A big book of facts on every subject",
-    metamorphosis:"🦋 A total change, like caterpillar to butterfly", electromagnetic:"🧲 Relating to electricity and magnetism",
-    bioluminescence:"✨ Light made by living things, like fireflies", pneumonia:"🫁 A serious illness that fills the lungs (silent p)",
-    mnemonic:"🧠 A trick or rhyme that helps you remember (silent m)", tyrannosaurus:"🦖 The giant T. rex dinosaur",
-    pterodactyl:"🦅 A flying reptile from the dinosaur age (silent p)", mediterranean:"🌊 The famous sea between Europe and Africa",
-    gobbledygook:"🤪 Confusing, nonsense language", pharaoh:"👑 A king of ancient Egypt",
-    perpendicular:"📐 Meeting at a perfect right angle", simultaneous:"⏱️ Happening at exactly the same time",
-    extraordinary:"🌟 Far beyond ordinary — remarkable", sophisticated:"🎩 Refined, complex, and worldly",
-    philosophical:"🤔 Relating to deep thinking about life", refrigerator:"🧊 The kitchen machine that keeps food cold",
-    thermometer:"🌡️ The tool that measures temperature", exaggeration:"📈 Making something sound bigger than it is",
-    hallucination:"👻 Seeing something that isn't really there", bureaucracy:"🏛️ A system run by many officials and rules",
-    sesquipedalian:"📏 A long word that means \"fond of long words\"!"
+    // ---- einstein: short but tricky spelling-bee words ----
+    psyche:"🧠 The human soul, spirit, or mind", fuchsia:"🌸 A vivid pinkish-purple color",
+    tsunami:"🌊 A giant ocean wave set off by an earthquake", yacht:"⛵ A sleek boat for sailing or racing",
+    bourgeois:"🎩 Relating to the middle class", epitome:"💯 A perfect example of something",
+    facade:"🏛️ The front face of a building", pharaoh:"👑 A king of ancient Egypt",
+    asthma:"🫁 A condition that makes breathing hard", diaphragm:"🌬️ The muscle below the lungs that helps you breathe",
+    mnemonic:"🧠 A trick or rhyme that helps you remember (silent m)", bivouac:"⛺ A temporary camp with no tents",
+    schism:"🪓 A split into opposing groups", zephyr:"🍃 A gentle, mild breeze",
+    sergeant:"🎖️ A rank of officer in the army or police", colonel:"🪖 A senior army officer (it sounds like \"kernel\")",
+    receipt:"🧾 A slip that proves you paid (silent p)", maneuver:"🤸 A skillful or tricky movement",
+    isthmus:"🗺️ A narrow strip of land joining two bigger ones", quartz:"💎 A hard, glassy mineral",
+    bouquet:"💐 A bunch of flowers", plateau:"🏔️ A flat, raised stretch of high land",
+    seize:"✊ To grab hold of suddenly", aisle:"🚶 A walkway between rows of seats",
+    debris:"🪨 Scattered broken pieces (silent s)", subtle:"🤏 So slight it's hard to notice (silent b)",
+    khaki:"🟤 A dull yellow-brown color", czar:"👑 A Russian emperor of old",
+    gnaw:"🦫 To chew on something over and over (silent g)", knead:"🍞 To press and fold dough (silent k)",
+    wraith:"👻 A ghost or phantom", sleigh:"🛷 A sled pulled over the snow",
+    hygiene:"🧼 Keeping clean to stay healthy", syringe:"💉 A tube with a needle for giving shots",
+    pneumonia:"🫁 A serious illness that fills the lungs (silent p)", gnome:"🧙 A little garden figure or earth spirit (silent g)",
+    feign:"🎭 To fake or pretend (silent g)", beige:"🟫 A pale sandy tan color",
+    freight:"🚂 Goods carried by train, ship, or truck", jeopardy:"⚠️ Danger or risk of harm"
   };
 
   function pick(level, avoid) {
