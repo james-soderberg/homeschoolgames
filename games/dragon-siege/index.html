@@ -1748,9 +1748,11 @@ function slay(th){
   updateHud();
 
   if (th.kind==='troop'){
-    // an arrow homes in while the doomed soldier keeps marching
-    const ax=castleW()*0.3, ay=wallTopY()-2;
-    loose(ax, ay, th.sx, th.sy+22, 'arrow', ()=>{
+    // once a foe is into the last stretch (~80% of the way to the wall) the
+    // defenders hurl a STONE instead of loosing an arrow — either way it drops
+    const close = th.x < castleW() + 0.20*(W - castleW());
+    const ax = close ? castleW()*0.5 : castleW()*0.3, ay = wallTopY()-2;
+    loose(ax, ay, th.sx, th.sy+22, close ? 'stone' : 'arrow', ()=>{
       th.state='dying'; th.fallT=0; emit(th.x,th.y-10,'dust',8);
     }, th);
   } else if (th.kind==='rock'){
@@ -1883,7 +1885,7 @@ function loose(x,y,tx,ty,kind,onArrive,target){
   // arrows at the foot army and ballista bolts at rocks/dragons alike.
   // a `target` makes the shot home in on a foe that is still moving.
   // firearrow (big flaming tower-top shot) flies slowest so it reads as a heavy, cool shot
-  const dur = kind==='bolt'?0.52 : kind==='firearrow'?0.95 : 0.58;
+  const dur = kind==='bolt'?0.52 : kind==='firearrow'?0.95 : kind==='stone'?0.5 : 0.58;
   projectiles.push({ x,y, sx:x,sy:y, tx,ty, p:0, dur, kind, onArrive, target });
 }
 function updateProjectiles(dt){
@@ -1911,6 +1913,13 @@ function drawProjectiles(){
       ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(6,0); ctx.stroke();
       ctx.fillStyle='#e8e2d0'; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(1,-3); ctx.lineTo(1,3); ctx.fill();
       ctx.strokeStyle='#9a8a5a'; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(-12,-2); ctx.moveTo(-9,0); ctx.lineTo(-12,2); ctx.stroke();
+    } else if (pr.kind==='stone'){ // a hurled rock, tumbling end over end
+      ctx.rotate(pr.p*14);
+      ctx.fillStyle='#6b6258';
+      ctx.beginPath();
+      for (let a=0;a<7;a++){ const an=a/7*6.28, rr=6*(0.78+0.28*Math.sin(a*2.3)); a?ctx.lineTo(Math.cos(an)*rr,Math.sin(an)*rr):ctx.moveTo(Math.cos(an)*rr,Math.sin(an)*rr); }
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle='#4a443c'; ctx.beginPath(); ctx.arc(1.5,1.5,2,0,6.28); ctx.fill();   // shading
     } else if (pr.kind==='firearrow'){ // big flaming arrow from the tower top
       // flame aura around the shaft
       ctx.globalCompositeOperation='lighter';
