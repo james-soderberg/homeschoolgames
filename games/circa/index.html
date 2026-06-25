@@ -229,72 +229,90 @@
       margin-bottom: 1.5rem;
     }
     .center-label {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      color: var(--ink-light);
-      margin-bottom: 0.6rem;
+      color: var(--card-border);
+      margin-bottom: 0.7rem;
     }
     .circa-card.center {
       display: inline-flex;
-      max-width: 260px;
+      width: 300px; max-width: 84vw;
       cursor: default;
-      border-width: 2.5px;
-      box-shadow: 0 4px 16px rgba(196,160,64,0.2);
+      border-width: 3px;
+      box-shadow: 0 10px 30px rgba(196,160,64,0.28);
     }
-    .circa-card.center:hover { transform: none; box-shadow: 0 4px 16px rgba(196,160,64,0.2); }
+    .circa-card.center::before { height: 4px; opacity: 1; }
+    .circa-card.center:hover { transform: none; box-shadow: 0 10px 30px rgba(196,160,64,0.28); }
 
     /* Instruction / feedback line */
     .solo-instruction {
       text-align: center;
-      margin-bottom: 1rem;
-      min-height: 1.8rem;
-      font-size: 0.95rem;
-      font-weight: 500;
+      margin-bottom: 1.2rem;
+      min-height: 3.6rem;        /* reserve room for the 2-line verdict so the hand doesn't shift */
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      font-size: 1.05rem;
+      font-weight: 600;
+      font-family: var(--font-serif);
     }
 
     /* Hand grid */
     .hand-label-solo {
-      font-size: 0.72rem;
-      font-weight: 600;
-      letter-spacing: 0.1em;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--ink-light);
-      margin-bottom: 0.75rem;
+      margin-bottom: 0.85rem;
+      text-align: center;
+      position: relative;
     }
+    .hand-label-solo::before, .hand-label-solo::after {
+      content: ""; position: absolute; top: 50%; width: 60px; height: 1px;
+      background: var(--card-rule);
+    }
+    .hand-label-solo::before { right: calc(50% + 70px); }
+    .hand-label-solo::after  { left:  calc(50% + 70px); }
     .hand-grid {
       display: grid;
-      /* fixed 3-up so a 6-card hand reads as a tidy 3 × 2 — never a lopsided 4 + 1/4 + 2 */
-      grid-template-columns: repeat(3, 1fr);
-      gap: 0.85rem;
-      margin-bottom: 1.25rem;
+      /* a 4-card hand fans across one big row */
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1.1rem;
+      margin: 0 auto 1.25rem;
+      max-width: 1080px;
+      align-items: stretch;
     }
-    @media (max-width: 620px) {
-      .hand-grid { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 820px) {
+      .hand-grid { grid-template-columns: repeat(2, 1fr); max-width: 560px; }
     }
-    @media (max-width: 380px) {
-      .hand-grid { grid-template-columns: 1fr; }
+    @media (max-width: 400px) {
+      .hand-grid { grid-template-columns: 1fr; max-width: 320px; }
     }
 
     /* ---- Circa card (shared) ---- */
     .circa-card {
       background: var(--card-bg);
       border: 2px solid var(--card-border);
-      border-radius: 8px;
-      padding: 0.85rem 0.9rem 0.75rem;
+      border-radius: 14px;
+      padding: 1rem 1rem 0.9rem;
       cursor: pointer;
-      transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s;
+      transition: transform 0.14s, box-shadow 0.14s, border-color 0.14s;
       position: relative;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.10);
-      min-height: 130px;
+      box-shadow: 0 3px 10px rgba(26,23,20,0.12);
+      min-height: 230px;
       display: flex;
       flex-direction: column;
       user-select: none;
     }
+    /* subtle gilt top accent on each card */
+    .circa-card::before {
+      content: ""; position: absolute; left: 14px; right: 14px; top: 0; height: 3px;
+      border-radius: 0 0 3px 3px; background: var(--card-rule); opacity: 0.8;
+    }
     .circa-card:hover:not(.disabled):not(.no-hover) {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 18px rgba(196,160,64,0.25);
+      transform: translateY(-6px) scale(1.015);
+      box-shadow: 0 14px 30px rgba(196,160,64,0.30);
       border-color: #8B6A20;
     }
     .circa-card.selected {
@@ -344,7 +362,7 @@
       align-items: center;
       justify-content: center;
       gap: 0;
-      min-height: 150px;
+      min-height: 340px;   /* reserve enough for the reveal so nothing below jumps */
     }
     .showdown-slot { display: flex; align-items: center; justify-content: center; }
     .showdown-gap {
@@ -383,8 +401,8 @@
     }
     .circa-card.in-showdown { z-index: 5; box-shadow: 0 12px 28px rgba(26,23,20,0.22); }
     .circa-card.dimmed { opacity: 0.4; transition: opacity 0.3s; }
-    /* equal-size cards while comparing */
-    .showdown.revealing .circa-card { width: 200px; max-width: none; min-height: 165px; }
+    /* equal WIDTH while comparing — don't touch height (avoids a vertical jump) */
+    .showdown.revealing .circa-card { width: 264px; max-width: none; }
 
     /* ---- living BC->AD timeline (reveal) ---- */
     .timeline-wrap {
@@ -456,19 +474,19 @@
     .circa-card.no-hover { cursor: default; }
 
     .card-img {
-      width: 100%; height: 78px; margin-bottom: 0.45rem;
-      border-radius: 6px; overflow: hidden; background: var(--card-rule, #e8e0cf);
+      width: 100%; height: 130px; margin-bottom: 0.6rem;
+      border-radius: 9px; overflow: hidden; background: var(--card-rule, #e8e0cf);
       box-shadow: inset 0 0 0 1px rgba(26,23,20,0.08);
     }
     .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .circa-card.center .card-img { height: 96px; }
+    .circa-card.center .card-img { height: 150px; }
     .card-title {
       font-family: var(--font-serif);
-      font-size: 0.92rem;
+      font-size: 1.05rem;
       font-weight: 600;
       color: var(--card-text);
-      line-height: 1.25;
-      margin-bottom: 0.4rem;
+      line-height: 1.28;
+      margin-bottom: 0.45rem;
       text-align: center;
     }
     .card-rule {
@@ -479,11 +497,12 @@
     .card-desc {
       font-family: var(--font-serif);
       font-style: italic;
-      font-size: 0.78rem;
+      font-size: 0.9rem;
       color: var(--card-sub);
-      line-height: 1.45;
+      line-height: 1.5;
       flex: 1;
       text-align: center;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
     }
     .card-year-tag {
       margin-top: 0.5rem;
@@ -700,7 +719,7 @@
 
   <!-- ===================== SOLO SCREEN ===================== -->
   <div class="solo-screen" id="soloScreen">
-   <div class="game-layout">
+   <div class="game-layout game-layout-wide">
     <div class="game-main">
 
     <div class="solo-header">
@@ -720,7 +739,6 @@
         <div class="showdown-gap" id="showdownGap"></div>
         <div class="showdown-slot" id="pickSlot"></div>
       </div>
-      <div class="timeline-wrap" id="timelineWrap"></div>
     </div>
 
     <!-- Feedback -->
@@ -732,6 +750,9 @@
 
     <!-- Action bar -->
     <div class="action-bar" id="soloActionBar"></div>
+
+    <!-- Timeline lives at the bottom so it never pushes the hand when it opens -->
+    <div class="timeline-wrap" id="timelineWrap"></div>
 
     </div><!-- /.game-main -->
     <aside class="hsg-rail" id="streakRail"></aside>
@@ -1101,7 +1122,7 @@ let soloHand = [];
 let soloCenterCard = null;
 let soloStreak = 0;
 let soloRoundNum = 0;
-let handSize = 6;
+let handSize = 4;
 let soloAwaitingNext = false;
 let soloSourceDeck = null;   // set by the era picker; null = whole deck
 
@@ -1796,7 +1817,7 @@ function renderEraTiles() {
 
 function startSoloWithEra(key, tileEl) {
   mode = 'solo';
-  handSize = 6;
+  handSize = 4;
   soloSourceDeck = deckForEra(key);
   tlBounds = eraTimelineBounds(key, soloSourceDeck);
   if (window.HSGSound) HSGSound.tick();
@@ -1819,7 +1840,7 @@ function showFriendsSetup() {
 
 function startFriendsGame() {
   mode = 'pass';
-  handSize = 6;
+  handSize = 4;
   document.getElementById('setupScreen').style.display = 'none';
   startPassGame();
 }
