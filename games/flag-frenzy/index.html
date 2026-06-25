@@ -422,12 +422,19 @@ const CONT_COLOR = { Africa:'#7A5C00', Americas:'#2A5C3F', Asia:'#8B2020', Europ
 // threat: he creeps forward on every answer and surges on a wrong one; if he reaches
 // you, the run ends and your best streak is banked. Each new lap repositions him a
 // little closer and speeds him up, so the chase escalates the longer you survive.
-const PACE = { step: 7.7, fixStart: -22, fixCreep: 2.6, fixSurge: 6 };
+// Tuning (lap 1): head start 25; a MISS advances Fix by creep+surge = 8.6, so two
+// early misses are survivable (25 → 16.4 → 7.8) and the THIRD just barely catches you
+// (7.8 → −0.8). A CORRECT answer moves you +step (7.7) but Fix +fixGain (4.85), so you
+// only net +2.85 of lead — about a third of a miss, i.e. it takes ~3 right answers to
+// gain back the ground one mistake costs. Correct-gain and miss-cost are decoupled so
+// each can be tuned independently. Later laps start Fix closer / faster (the *For fns).
+const PACE = { step: 7.7, fixStart: -25, fixCreep: 2.6, fixSurge: 6, fixGain: 4.85 };
 const BOARD_KEY = 'atw_streak_board';   // local top-10 best streaks
 const NAME_KEY  = 'atw_name';
-function fixStartFor(l) { return Math.max(-6, PACE.fixStart + (l - 1) * 3); }   // closer each lap
+function fixStartFor(l) { return Math.min(-5, PACE.fixStart + (l - 1) * 3.5); } // Fix resets ~3.5 closer each lap (catches into view), floored 5 behind
+function closeFor(l)    { return Math.min(PACE.step - 0.6, PACE.fixGain + (l - 1) * 0.3); } // Fix's gain on a CORRECT answer
 function creepFor(l)    { return Math.min(5.0, PACE.fixCreep + (l - 1) * 0.25); }
-function surgeFor(l)    { return PACE.fixSurge + (l - 1) * 0.7; }
+function surgeFor(l)    { return PACE.fixSurge + (l - 1) * 0.85; }              // misses bite harder each lap → less margin
 
 // ---------------- DOM ----------------
 const sceneWrap = document.getElementById('sceneWrap');
@@ -797,7 +804,7 @@ function answer(idx) {
     correctCount++; streak++; if (streak > bestStreak) bestStreak = streak;
     btn.classList.add('correct');
     progress += PACE.step;
-    fixPos += creepFor(lap);                        // Fix keeps coming, but you out-pace him
+    fixPos += closeFor(lap);                         // Fix keeps coming; you net only ~⅓ of a miss ahead
     surgeT = 0.5;
     if (window.HSGSound) HSGSound.correct();
     if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
