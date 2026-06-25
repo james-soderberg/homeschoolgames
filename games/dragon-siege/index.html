@@ -192,6 +192,20 @@
 
     .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: -9999px; }
 
+    /* pause button, floating top-right of the battlefield */
+    .pause-btn {
+      position: absolute; top: 10px; right: 12px; z-index: 9;
+      width: 38px; height: 38px; border-radius: 10px;
+      background: rgba(20,15,26,0.7); color: #fdf7ec;
+      border: 2px solid rgba(253,247,236,0.5);
+      font-size: 1.05rem; cursor: pointer; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, transform 0.1s;
+    }
+    .pause-btn:hover { background: rgba(40,30,52,0.92); border-color: var(--gold); }
+    .pause-btn:active { transform: scale(0.94); }
+    .pause-btn.hidden { display: none; }
+
     .hint { text-align: center; font-size: 0.86rem; color: var(--ink-light); margin-top: 0.9rem; line-height: 1.5; }
     .hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.8rem; }
 
@@ -233,6 +247,15 @@
     <canvas id="scene"></canvas>
     <div class="bubble-layer" id="bubbleLayer"></div>
     <div class="wave-flash" id="waveFlash"></div>
+    <button class="pause-btn hidden" id="pauseBtn" title="Pause (Esc)" aria-label="Pause">⏸</button>
+
+    <!-- Pause overlay -->
+    <div class="bf-overlay hidden" id="pauseOverlay">
+      <div class="crest">⏸️</div>
+      <h2>Paused</h2>
+      <p id="pauseHint">Take a breath. The siege will wait.</p>
+      <button class="play-btn" id="resumeBtn">Resume ▶</button>
+    </div>
 
     <!-- Start overlay -->
     <div class="bf-overlay" id="startOverlay">
@@ -421,6 +444,8 @@ const heartsBadge = document.getElementById('heartsBadge');
 const startOverlay= document.getElementById('startOverlay');
 const overOverlay = document.getElementById('overOverlay');
 const waveFlashEl = document.getElementById('waveFlash');
+const pauseBtn    = document.getElementById('pauseBtn');
+const pauseOverlay= document.getElementById('pauseOverlay');
 
 // ---------- Canvas sizing ----------
 let W = 720, H = 480, dpr = 1;
@@ -446,13 +471,15 @@ function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 
 // ---------- State ----------
 let realmKey='easy', realm=REALMS.easy;
-let threats=[], projectiles=[], particles=[], decals=[], floaters=[];
+let threats=[], projectiles=[], particles=[], decals=[], floaters=[], groundArrows=[];
 let active=null;
 let lives=START_LIVES, slain=0, level=1, bestStreak=0;
 // level/wave roster: squads queued for the current level, plus the phase
 // machine that paces spawning and the breather between levels
 let squadQueue=[], phase='spawning', interT=0, squadGapT=0;
 let running=false, lastTs=0, rafId=null, sceneTime=0;
+let paused=false, arcade=false, secretBuf='';     // pause + secret point-and-shoot "arcade" mode
+let instantShot=false;                            // when an arcade arrow connects, kill effects fire now (no 2nd arrow)
 let defeat=false, defeatT=0, defeatBoomAcc=0;     // losing cinematic: the castle burns down
 let shake=0, flashA=0, flashColor='255,120,40';
 let nextId=1, troopCount=0;
@@ -853,7 +880,8 @@ function spawnDragon(){
   const th = {
     id:nextId++, kind:'dragon', boss:true, word, typed:0, state:'live',
     p:0, dur, x:W+60, y:H*0.30, flap:rand(0,6.28),
-    tx:castleW()+40, ty:H*0.38, amp:rand(20,40), retreatT:0, breathT:0   // flies a bit lower so its word stays on-screen
+    tx:castleW()+40, ty:H*0.38, amp:rand(20,40), retreatT:0, breathT:0,  // flies a bit lower so its word stays on-screen
+    hits:10, arrows:[]                                                   // arcade: takes 10 arrows to bring down
   };
   addThreat(th);
   flashWave('A Dragon Descends!', '🐉 Boss');
@@ -1167,6 +1195,7 @@ function placeBubble(th){
 // Layering: front-most sits above those behind it; the active label tops all.
 const MAX_LABELS = 3;
 function resolveBubbles(){
+  if (arcade){ for (const th of threats) if (th.bubble) th.bubble.style.visibility='hidden'; return; }  // point-and-shoot: no words
   const list = threats.filter(th => th.bubble && th._bx != null);
   list.sort((x, y) => x.sx - y.sx);     // closest to the castle (smallest x) first
   let troopShown = 0;
@@ -1594,6 +1623,16 @@ function drawDragon(th,t){
   ctx.fillStyle='#ffd54a'; ctx.beginPath(); ctx.arc(-43,-7,2.2,0,6.28); ctx.fill();
   // near wing (over body)
   drawWing(ctx, flap+0.15, '#5a2a44');
+  // arrows piling up in it (arcade — one per hit, up to ten)
+  if (th.arrows){
+    for (const a of th.arrows){
+      ctx.save(); ctx.translate(a.lx, a.ly); ctx.rotate(a.ang);
+      ctx.strokeStyle='#4a3118'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(4,0); ctx.stroke();
+      ctx.fillStyle='#caa24a'; ctx.beginPath(); ctx.moveTo(5,0); ctx.lineTo(1,-2.5); ctx.lineTo(1,2.5); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle='#e8e2d0'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-11,0); ctx.lineTo(-14,-2.5); ctx.moveTo(-11,0); ctx.lineTo(-14,2.5); ctx.stroke();
+      ctx.restore();
+    }
+  }
   // breath telegraph: embers gather at the maw just before it strikes
   if (th.state==='live' && th.p>0.8) { for(let i=0;i<2;i++) emit(x-50*s, y-2*s, 'fire', 1, 1); }
   ctx.restore();
@@ -1655,29 +1694,74 @@ function acquire(ch){
   }
   return best;
 }
+// ---- arcade (point-and-shoot) ----
+function bodyY(th){
+  if (th.kind==='giant')    return th.y-90;
+  if (th.kind==='dragon')   return th.y;
+  if (th.kind==='catapult') return th.y-30;
+  if (th.kind==='troop')    return th.mounted ? th.y-30 : th.y-18;
+  return th.y;                                   // rock
+}
+// Arcade shot: a single (slow) arrow flies from the top tower toward where you
+// clicked. It only kills if it actually strikes a foe along the way (handled in
+// updateProjectiles) — clicking near/behind a foe can connect, but a clean miss
+// just thuds into the ground. You have to lead moving foes.
+function arcadeShoot(cx, cy){
+  const ox=castleW()*0.6, oy=towerTopY()+10;
+  loose(ox, oy, cx, cy, 'arrow', ()=>{ emit(cx, cy, 'dust', 5); });
+  const pr = projectiles[projectiles.length-1]; if (pr) pr.arcadeShot = true;
+  if (window.HSGSound) HSGSound.tick();
+}
+// ---- pause + the secret arcade entry ----
+function togglePause(force){
+  if (!running || defeat) return;
+  const want = (force===undefined) ? !paused : force;
+  if (want===paused) return;
+  paused = want;
+  if (paused){ pauseOverlay.classList.remove('hidden'); }
+  else { pauseOverlay.classList.add('hidden'); secretBuf=''; lastTs=0; focusCatcher(); }
+}
+function enterArcade(){
+  secretBuf=''; paused=false; pauseOverlay.classList.add('hidden');
+  arcade=true;                  // startGame keeps this flag; clearing happens at the menu
+  startGame('impossible');
+  flashWave('Arcade Mode', '🕹 Click foes to shoot!');
+}
 function advance(th, ch){
   if (ch===th.word[th.typed]){
     th.typed++;
-    if (th.typed>=th.word.length){
-      if (th.words && th.wordIdx < th.words.length-1){
-        // one of several words done — stagger the foe and move to the next,
-        // then release the lock so you can pick off other foes and come back
-        th.wordIdx++; th.typed=0; th.word=th.words[th.wordIdx];
-        renderBubble(th);
-        if (th.kind==='catapult') catapultWordDown(th); else giantWordDown(th);
-        clearActive();
-      } else if (th.mounted && !th.wounded){
-        woundKnight(th);     // first hit only wounds a horseman…
-        clearActive();       // …then release the lock, like the giant
-      } else {
-        slay(th);
-      }
-    } else {
-      renderBubble(th);
-    }
+    if (th.typed>=th.word.length) landHit(th);
+    else renderBubble(th);
   } else {
     th.bubble.classList.remove('miss'); void th.bubble.offsetWidth; th.bubble.classList.add('miss');
   }
+}
+// One landed hit on a foe — finishing a typed word OR a click in arcade mode.
+// Multi-word foes (giant 5, catapult 3, knight 2) take one hit each.
+function landHit(th){
+  // arcade: a dragon soaks ten arrows before it goes down
+  if (arcade && th.kind==='dragon' && (th.state==='live' || th.state==='siege')){
+    th.hits = (th.hits!=null ? th.hits : 10) - 1;
+    if (th.hits > 0){ dragonHit(th); return; }
+    // tenth hit falls through to slay below
+  }
+  if (th.words && th.wordIdx < th.words.length-1){
+    // one of several words done — stagger the foe and move to the next
+    th.wordIdx++; th.typed=0; th.word=th.words[th.wordIdx];
+    renderBubble(th);
+    if (th.kind==='catapult') catapultWordDown(th); else giantWordDown(th);
+    clearActive();
+  } else if (th.mounted && !th.wounded){
+    woundKnight(th);     // first hit only wounds a horseman…
+    clearActive();       // …then release the lock, like the giant
+  } else {
+    slay(th);
+  }
+}
+// a normal arrow thunks into the flying dragon (one of ten) — damage, not a kill
+function dragonHit(th){
+  th.arrows.push({ lx:rand(-26,16), ly:rand(-12,12), ang:rand(-0.3,0.3) });
+  emit(th.x, th.y, 'dust', 4); emit(th.x, th.y, 'spark', 4);
 }
 // each word landed on the giant looses an arrow and makes it flinch
 function giantWordDown(th){
@@ -1691,15 +1775,17 @@ function giantWordDown(th){
 // first hit on a mounted knight: an arrow thunks home, it skids back hard, then
 // freezes ~1s (like a staggered giant) before charging again with a fresh word.
 function woundKnight(th){
-  th.wounded = true;
-  th.kb = 1020;                     // recoil/skid backward — a big 3× shove
-  th.pauseT = 1.0;                  // then pause ~1s before it starts moving again
-  const ax=castleW()*0.3, ay=wallTopY()-2;
-  loose(ax, ay, th.sx, th.sy+28, 'arrow', ()=>{ th.arrowStuck = true; }, th);
-  emit(th.x, th.y-30, 'dust', 8);
-  th.word = pickWord(WORDS[realm.pool], usedLetters());   // a new word to finish the job
-  th.typed = 0;
-  renderBubble(th);
+  th.wounded = true;                // set now so a 2nd hit kills rather than re-wounding
+  const ax = arcade ? castleW()*0.6 : castleW()*0.3, ay = arcade ? towerTopY()+10 : wallTopY()-2;
+  // the knight only REACTS when the arrow actually lands: skid back, stagger, new word
+  loose(ax, ay, th.sx, th.sy+28, 'arrow', ()=>{
+    th.arrowStuck = true;
+    th.kb = 1020;                   // recoil/skid backward — a big 3× shove
+    th.pauseT = 1.0;                // then pause ~1s before it starts moving again
+    th.word = pickWord(WORDS[realm.pool], usedLetters());   // a new word to finish the job
+    th.typed = 0; renderBubble(th);
+    emit(th.x, th.y-30, 'dust', 8);
+  }, th);
 }
 // the catapult lobs a small rock from its arm toward the castle
 function catapultFire(th){
@@ -1748,10 +1834,11 @@ function slay(th){
   updateHud();
 
   if (th.kind==='troop'){
-    // once a foe is into the last stretch (~80% of the way to the wall) the
-    // defenders hurl a STONE instead of loosing an arrow — either way it drops
-    const close = th.x < castleW() + 0.20*(W - castleW());
-    const ax = close ? castleW()*0.5 : castleW()*0.3, ay = wallTopY()-2;
+    // Arcade: every shot is a tower arrow (harder). Otherwise, once a foe is in
+    // the last stretch (~80% to the wall) the defenders hurl a STONE, else arrow.
+    const close = !arcade && th.x < castleW() + 0.20*(W - castleW());
+    const ax = arcade ? castleW()*0.6 : (close ? castleW()*0.5 : castleW()*0.3);
+    const ay = arcade ? towerTopY()+10 : wallTopY()-2;
     loose(ax, ay, th.sx, th.sy+22, close ? 'stone' : 'arrow', ()=>{
       th.state='dying'; th.fallT=0; emit(th.x,th.y-10,'dust',8);
     }, th);
@@ -1767,14 +1854,14 @@ function slay(th){
       th.state='falling'; th.vy=0;
     }, th);
   } else if (th.kind==='dragon'){
-    // it KEEPS FLYING (state 'struck') while flaming arrows chase it; only when the
-    // LAST arrow lands does it catch fire and plummet, then burn out on the ground
+    // it KEEPS FLYING (state 'struck') while a final volley of NORMAL arrows lands;
+    // on the last one it catches fire and plummets, then burns out on the ground
     const bx=castleW()*0.6, by=towerTopY()+10;
     if (th.bubble){ th.bubble.remove(); th.bubble=null; }   // slay() already set state='struck'
     for (let k=0;k<3;k++) setTimeout(()=>{
       if (!threats.includes(th)) return;
       const last = (k===2);
-      loose(bx, by, th.sx+rand(-12,12), th.sy+rand(-10,10), 'firearrow', last ? ()=>{
+      loose(bx, by, th.sx+rand(-12,12), th.sy+rand(-10,10), 'arrow', last ? ()=>{
         th.state='falling'; th.vy=0; th.r=40; th.onFire=true;   // now it drops, ablaze
         burst(th.x, th.y, 'air');
       } : null, th);
@@ -1881,11 +1968,16 @@ function dragonInferno(){
 // PROJECTILES (castle → foe)
 // ===================================================================
 function loose(x,y,tx,ty,kind,onArrive,target){
+  // When an arcade arrow has just connected, the castle's own follow-up shots
+  // resolve INSTANTLY (their effect fires now) so there's no extra flying arrow.
+  if (instantShot){ if (onArrive) onArrive(); return; }
   // everything your castle looses flies slowly enough to watch land —
   // arrows at the foot army and ballista bolts at rocks/dragons alike.
   // a `target` makes the shot home in on a foe that is still moving.
-  // firearrow (big flaming tower-top shot) flies slowest so it reads as a heavy, cool shot
-  const dur = kind==='bolt'?0.52 : kind==='firearrow'?0.95 : kind==='stone'?0.5 : 0.58;
+  // firearrow (big flaming tower-top shot) flies slowest; arcade arrows fly at
+  // HALF speed so you must lead moving foes.
+  const dur = kind==='bolt'?0.52 : kind==='firearrow'?0.95 : kind==='stone'?0.5
+            : (kind==='arrow' && arcade)?1.16 : 0.58;
   projectiles.push({ x,y, sx:x,sy:y, tx,ty, p:0, dur, kind, onArrive, target });
 }
 function updateProjectiles(dt){
@@ -1899,10 +1991,41 @@ function updateProjectiles(dt){
     pr.p += dt/pr.dur;
     const p=clamp(pr.p,0,1);
     pr.x=lerp(pr.sx,pr.tx,p); pr.y=lerp(pr.sy,pr.ty,p);
+    // arcade arrow: it only kills if it actually strikes a foe on its way to the
+    // click point — the first live foe within range gets hit, then the arrow's spent
+    if (pr.arcadeShot){
+      let struck=null;
+      for (const th of threats){
+        if (th.state!=='live' && th.state!=='siege') continue;
+        if (Math.hypot(th.x-pr.x, bodyY(th)-pr.y) < 24){ struck=th; break; }
+      }
+      if (struck){ instantShot=true; landHit(struck); instantShot=false; projectiles.splice(i,1); continue; }
+    }
     if (pr.kind==='bolt' && Math.random()<0.6) emit(pr.x,pr.y,'spark',1,0.5);
     else if (pr.kind==='firearrow'){ emit(pr.x,pr.y,'fire',1,1.2); if (Math.random()<0.5) emit(pr.x,pr.y,'spark',1,0.6); }
-    if (p>=1){ if (pr.onArrive) pr.onArrive(); projectiles.splice(i,1); }
+    if (p>=1){
+      // a missed arrow (no foe target) sticks in the ground for ~30s
+      if ((pr.kind==='arrow'||pr.kind==='stone') && !pr.target){
+        groundArrows.push({ x:pr.tx, y:groundY()-2, ang:Math.atan2(pr.ty-pr.sy, pr.tx-pr.sx), t:0 });
+        if (groundArrows.length>80) groundArrows.shift();
+      }
+      if (pr.onArrive) pr.onArrive(); projectiles.splice(i,1);
+    }
   }
+}
+function updateGroundArrows(dt){
+  for (let i=groundArrows.length-1;i>=0;i--){ groundArrows[i].t+=dt; if (groundArrows[i].t>30) groundArrows.splice(i,1); }
+}
+function drawGroundArrows(){
+  for (const g of groundArrows){
+    ctx.globalAlpha = g.t>28 ? clamp((30-g.t)/2,0,1) : 1;     // fade out in the final 2s
+    ctx.save(); ctx.translate(g.x, g.y); ctx.rotate(g.ang);
+    ctx.strokeStyle='#5a3d22'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(5,0); ctx.stroke();
+    ctx.fillStyle='#caa24a'; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(2,-2.5); ctx.lineTo(2,2.5); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle='#e8e2d0'; ctx.lineWidth=1.4; ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(-15,-2.5); ctx.moveTo(-12,0); ctx.lineTo(-15,2.5); ctx.stroke();
+    ctx.restore();
+  }
+  ctx.globalAlpha=1;
 }
 function drawProjectiles(){
   for (const pr of projectiles){
@@ -2247,6 +2370,7 @@ function flashWave(title, sub){
 // ===================================================================
 function tick(ts){
   if (!running) return;
+  if (paused){ rafId=requestAnimationFrame(tick); return; }   // frozen — hold the last frame
   if (!lastTs) lastTs=ts;
   let dt=(ts-lastTs)/1000; lastTs=ts;
   if (dt>0.05) dt=0.05;
@@ -2262,6 +2386,7 @@ function tick(ts){
     updateProjectiles(dt);
   }
   updateParticles(dt);
+  updateGroundArrows(dt);
   if (shake>0) shake=Math.max(0, shake-dt*40);
   if (flashA>0) flashA=Math.max(0, flashA-dt*1.6);
   if (treb.fireT>0) treb.fireT=Math.max(0, treb.fireT-dt*1.9);
@@ -2273,6 +2398,7 @@ function tick(ts){
   drawBackground(sceneTime);
   drawCastle(sceneTime);
   drawTrebuchet(sceneTime);
+  drawGroundArrows();          // spent arrows littering the field
   drawThreats(sceneTime);
   drawSiegeBreath();
   drawProjectiles();
@@ -2333,7 +2459,7 @@ function drawDefeatOverlay(){
   }
 }
 function finishDefeat(){
-  defeat=false; running=false; if(rafId) cancelAnimationFrame(rafId);
+  defeat=false; running=false; paused=false; pauseBtn.classList.add('hidden'); if(rafId) cancelAnimationFrame(rafId);
   document.getElementById('fsSlain').textContent=slain;
   document.getElementById('fsBest').textContent=bestStreak;
   document.getElementById('fsWave').textContent=level;
@@ -2353,27 +2479,31 @@ function startGame(key){
   clearField();
   lives=START_LIVES; slain=0; bestStreak=0; troopCount=0;
   squadGapT=0; sceneTime=0; phase='spawning'; interT=0;
-  shake=0; flashA=0; defeat=false; defeatT=0;
+  shake=0; flashA=0; defeat=false; defeatT=0; paused=false;
   document.getElementById('overTitle').textContent='The Castle Is Lost';
   rail.reset();
   setupCanvas();
   updateHud();
   startOverlay.classList.add('hidden');
   overOverlay.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
+  pauseBtn.classList.remove('hidden');
   running=true; lastTs=0; focusCatcher();
   startLevel(1);                 // builds the first wave + a lively opening
   rafId=requestAnimationFrame(tick);
 }
 function clearField(){
   threats.forEach(t=>{ if(t.bubble) t.bubble.remove(); });
-  threats=[]; projectiles=[]; particles=[]; decals=[]; floaters=[]; active=null;
+  threats=[]; projectiles=[]; particles=[]; decals=[]; floaters=[]; groundArrows=[]; active=null;
 }
 function quitToMenu(){
   endRun(false);
-  running=false; defeat=false; if (rafId) cancelAnimationFrame(rafId);
+  running=false; defeat=false; paused=false; arcade=false; if (rafId) cancelAnimationFrame(rafId);
   clearField();
   ctx.clearRect(0,0,W,H);
   overOverlay.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
+  pauseBtn.classList.add('hidden');
   startOverlay.classList.remove('hidden');
 }
 function endRun(showModal){
@@ -2384,25 +2514,47 @@ function endRun(showModal){
 // ===================================================================
 // INPUT
 // ===================================================================
-function focusCatcher(){ try{ catcher.focus({preventScroll:true}); }catch(e){} }
-catcher.addEventListener('input', ()=>{ const v=catcher.value; for (const ch of v) handleChar(ch); catcher.value=''; });
+function focusCatcher(){ if (arcade) return; try{ catcher.focus({preventScroll:true}); }catch(e){} }
+catcher.addEventListener('input', ()=>{ const v=catcher.value; catcher.value=''; if (paused||arcade) return; for (const ch of v) handleChar(ch); });
 document.addEventListener('keydown', e=>{
   if (!running) return;
   if (e.metaKey||e.ctrlKey||e.altKey) return;
+  if (e.key==='Escape'){ e.preventDefault(); togglePause(); return; }   // pause toggle (never a word letter)
+  if (paused){
+    // secret: type "arcade" while paused to drop into point-and-shoot mode
+    if (!arcade && e.key.length===1 && /[a-z]/i.test(e.key)){
+      secretBuf = (secretBuf + e.key.toLowerCase()).slice(-6);
+      if (secretBuf==='arcade') enterArcade();
+    }
+    return;
+  }
+  if (arcade) return;                                  // arcade is point-and-shoot — no typing
   if (e.key.length!==1) return;
   if (document.activeElement===catcher) return;
   if (/^[a-zA-Z' -]$/.test(e.key)){ e.preventDefault(); handleChar(e.key); }
 });
-bf.addEventListener('mousedown', e=>{ if (running){ e.preventDefault(); focusCatcher(); } });
-bf.addEventListener('touchstart', ()=>{ if (running) focusCatcher(); }, {passive:true});
+// pointer = shoot in arcade, otherwise raise the mobile keyboard
+function bfPointer(e){
+  if (!running || paused) return;
+  if (arcade){
+    const r = bf.getBoundingClientRect();
+    const pt = e.touches ? e.touches[0] : e;
+    arcadeShoot(pt.clientX - r.left, pt.clientY - r.top);
+  } else { focusCatcher(); }
+}
+bf.addEventListener('mousedown', e=>{ if (running && !paused){ e.preventDefault(); bfPointer(e); } });
+bf.addEventListener('touchstart', e=>{ bfPointer(e); }, {passive:true});
 catcher.addEventListener('blur', ()=>{ if (running) setTimeout(focusCatcher,0); });
 document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ lastTs=0; } else if (running){ lastTs=0; focusCatcher(); } });
 
 document.querySelectorAll('.realm-btn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(btn.dataset.realm); });
+  btn.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); arcade=false; startGame(btn.dataset.realm); });
 });
+pauseBtn.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); togglePause(); });
+document.getElementById('resumeBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); togglePause(false); });
 document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(realmKey); });
 document.getElementById('changeRealmBtn').addEventListener('click', ()=>{
+  arcade=false; pauseBtn.classList.add('hidden');
   overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
 });
 
