@@ -223,6 +223,7 @@
   <div class="siege-top">
     <h1>Dragon Siege</h1>
     <div class="stat-group">
+      <div class="stat-badge" id="levelBadge">🏰 Lv 1</div>
       <div class="stat-badge" id="slainBadge">⚔️ 0</div>
       <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️❤️❤️</div>
     </div>
@@ -261,7 +262,7 @@
       <div class="final-stats">
         <div class="fs"><b id="fsSlain">0</b><span>Slain</span></div>
         <div class="fs"><b id="fsBest">0</b><span>Best Streak</span></div>
-        <div class="fs"><b id="fsWave">1</b><span>Wave</span></div>
+        <div class="fs"><b id="fsWave">1</b><span>Level</span></div>
       </div>
       <div class="overlay-actions">
         <button class="play-btn" id="againBtn">Defend Again ⚔️</button>
@@ -305,6 +306,15 @@
 
 // ---------- Word pools, graded by realm ----------
 const WORDS = {
+  // simple kid words for Easy — short, phonetic, sight-word friendly
+  kids: [
+    "cat","hat","dog","sun","run","red","big","bed","cup","top",
+    "box","fox","pig","hen","bug","map","net","pen","jam","mud",
+    "bat","bus","cow","egg","fan","hop","log","mom","dad","sit",
+    "home","ball","book","tree","fish","cake","star","frog","duck","bird",
+    "milk","door","hand","jump","play","rain","sock","ship","king","gold",
+    "moon","leaf","nest","ring","sand","wind","cart","gate","horn","drum"
+  ],
   squire: [
     "king","gold","oath","page","lord","iron","fire","wolf","bow","axe",
     "helm","moat","gate","keep","oak","vow","raid","duke","clan","mace",
@@ -321,8 +331,17 @@ const WORDS = {
   dragonlord: [
     "fortress","catapult","crossbow","gauntlet","chainmail","blacksmith","battlement","portcullis","trebuchet","longbowman",
     "knighthood","sorcerer","enchanted","dragonfire","stronghold","vanquished","conquered","broadsword","guardian","cathedral",
-    "excalibur","chivalry","drawbridge","besieged","alliance","rebellion","fellowship","sovereign","barbarian","apprentice",
-    "holy grail","round table","iron throne","castle gate","by my sword","dragon fire","hold the line","raise the bridge"
+    "excalibur","chivalry","drawbridge","besieged","alliance","rebellion","fellowship","sovereign","barbarian","apprentice"
+  ],
+  // the hardest pool — long, tricky-to-spell warfare vocabulary for Impossible
+  warlord: [
+    "annihilation","catastrophe","indomitable","impregnable","fortification","insurmountable",
+    "conflagration","reconnaissance","unconquerable","necromancer","pandemonium","juggernaut",
+    "belligerent","subjugation","malevolence","insurrection","besiegement","chivalrous",
+    "treacherous","relentless","onslaught","devastating","merciless","incinerate",
+    "cannonade","stratagem","catapulting","vanquished","unyielding","formidable",
+    "battlement","crossbowmen","reinforcements","counterattack","skirmisher","mercenaries",
+    "cataclysm","barbarians","siegeworks","halberdier"
   ]
 };
 const BOSS_WORDS = [
@@ -339,11 +358,52 @@ const GIANT_PHRASES = [
   "raze the castle","i smell a knight","stomp and roar","bring the walls down"
 ];
 
+// Each realm targets a typing-speed (WPM) band. The thing that actually sets how
+// fast you must type to survive is the foes' march speed × how long the words
+// are: a faster approach OR longer words both demand more WPM. So each realm is
+// calibrated by  required_wpm ≈ marchSpeed × avgWordLength / 5.5.
+//
+// Difficulty climbs purely with level via marchSpeed = marchBase + (level-1)*marchStep,
+// tuned so LEVEL 1 sits at the BOTTOM of the band and LEVEL 5 reaches the TOP —
+// then it keeps climbing past it. The `targetWpm` note on each realm is just
+// documentation of the intended band (L1 → L5):
+//   easy        10 → 20 wpm   (kids words,      avg ~3.6 chars)
+//   medium      20 → 40 wpm   (knight words,    avg ~6.6 chars)
+//   hard        40 → 60 wpm   (dragonlord words, avg ~9 chars)
+//   impossible  60+   wpm     (warlord words,   avg ~11 chars) — left as-is
+const EASY_BOSS_WORDS = ["dragon","castle","knight","wizard","monster","attack","sword","fire","wings","giant","flame","beast"];
 const REALMS = {
-  easy:       { pool:"squire",     troopSpeed:[15,22], rockDur:[11.5,9.0], dragonDur:[9.0,7.0], spawn:[3.4,2.2], group:[1,1], rockChance:0.34, dragonGap:16, giantGap:18 },
-  medium:     { pool:"knight",     troopSpeed:[19,28], rockDur:[10.0,7.0], dragonDur:[8.0,6.0], spawn:[2.8,1.7], group:[1,2], rockChance:0.42, dragonGap:12, giantGap:14 },
-  hard:       { pool:"dragonlord", troopSpeed:[24,34], rockDur:[8.5,6.0],  dragonDur:[7.0,5.2], spawn:[2.3,1.3], group:[1,2], rockChance:0.50, dragonGap:9,  giantGap:11 },
-  impossible: { pool:"dragonlord", troopSpeed:[34,48], rockDur:[6.2,4.4],  dragonDur:[5.2,3.8], spawn:[1.7,0.9], group:[2,3], rockChance:0.60, dragonGap:6,  giantGap:8  }
+  // genuinely gentle: slow foes, sparse squads, no bosses until L6 (see buildLevelEasy)
+  easy: {
+    pool:"kids", bossWords:EASY_BOSS_WORDS, targetWpm:"beginner",
+    marchBase:10, marchStep:2.0,
+    rockBase:12, rockStep:0.15, rockMin:9,
+    dragonBase:10, dragonStep:0.15, dragonMin:7,
+    mountedFrom:1, siegeInterval:3.5
+  },
+  // = the build you tested as "easy" (gentle layout + this speed), now labelled Medium
+  medium: {
+    pool:"knight", bossWords:BOSS_WORDS, targetWpm:"was the old 'easy'",
+    marchBase:15, marchStep:4.0,
+    rockBase:11, rockStep:0.2, rockMin:8,
+    dragonBase:9, dragonStep:0.2, dragonMin:6.5,
+    mountedFrom:1, siegeInterval:2.0
+  },
+  hard: {
+    pool:"dragonlord", bossWords:BOSS_WORDS, targetWpm:"40-60",
+    marchBase:22, marchStep:2.8,             // L1≈40 wpm … L5≈60 wpm (mirrors Medium at 2× the pace)
+    rockBase:9, rockStep:0.2, rockMin:6.5,
+    dragonBase:7, dragonStep:0.2, dragonMin:5.5,
+    mountedFrom:1, siegeInterval:1.2
+  },
+  // left exactly as the build you liked — only the words are the hardest pool
+  impossible: {
+    pool:"warlord", bossWords:BOSS_WORDS, targetWpm:"60+",
+    marchBase:30, marchStep:0.8,
+    rockBase:11, rockStep:0.2, rockMin:8,
+    dragonBase:9, dragonStep:0.2, dragonMin:6.5,
+    mountedFrom:1, siegeInterval:2.0
+  }
 };
 
 const START_LIVES = 5;
@@ -355,6 +415,7 @@ const canvas      = document.getElementById('scene');
 const ctx         = canvas.getContext('2d');
 const bubbleLayer = document.getElementById('bubbleLayer');
 const catcher     = document.getElementById('catcher');
+const levelBadge  = document.getElementById('levelBadge');
 const slainBadge  = document.getElementById('slainBadge');
 const heartsBadge = document.getElementById('heartsBadge');
 const startOverlay= document.getElementById('startOverlay');
@@ -387,8 +448,10 @@ function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').repl
 let realmKey='easy', realm=REALMS.easy;
 let threats=[], projectiles=[], particles=[], decals=[], floaters=[];
 let active=null;
-let lives=START_LIVES, slain=0, wave=1, bestStreak=0;
-let lastBossSlain=0, lastGiantSlain=0, spawnAcc=0, spawnInterval=2.9;
+let lives=START_LIVES, slain=0, level=1, bestStreak=0;
+// level/wave roster: squads queued for the current level, plus the phase
+// machine that paces spawning and the breather between levels
+let squadQueue=[], phase='spawning', interT=0, squadGapT=0;
 let running=false, lastTs=0, rafId=null, sceneTime=0;
 let defeat=false, defeatT=0, defeatBoomAcc=0;     // losing cinematic: the castle burns down
 let shake=0, flashA=0, flashColor='255,120,40';
@@ -709,52 +772,88 @@ function pickWord(pool, avoid){
   return choice(cands.length ? cands : pool).toLowerCase();  // fall back if every letter is taken
 }
 
-function spawnTroop(offset){
+function spawnTroop(offset, forceMounted){
   troopCount++;
-  const mounted = (troopCount % 5 === 0);            // every fifth foe is a horseman
-  let sp = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
-  if (mounted) sp *= 2;                              // twice as fast as a foot soldier
+  // explicit knights (squad-authored) or, otherwise, every fifth foe is a horseman
+  const mounted = forceMounted || ((level >= realm.mountedFrom) && (troopCount % 5 === 0));
+  let sp = marchSpeed();
+  if (mounted) sp *= 2.6;                            // a galloping knight far outpaces a foot soldier
   const word = pickWord(WORDS[realm.pool], usedLetters());
   const th = {
     id:nextId++, kind:'troop', mounted,
     variant: mounted ? 'knight' : choice(TROOP_KINDS),
     word, typed:0, state:'live',
     x: W + 30 + (offset||0), y: groundY()-2 + rand(-4,4),
-    speed: sp, t0: rand(0,6.28), bob:0,
+    speed: sp, t0: rand(0,6.28), bob:0, pauseT:0,
+    entering:true, entryX: entryXFor(offset||0),     // sprint onto the field, then walk
     fallT:0, wounded:false, arrowStuck:false, kb:0
   };
   addThreat(th);
   return th;
 }
+// Foes spawn off the right edge and SPRINT in to the front of the trebuchet
+// before settling into their normal march — so the field always has words to
+// type instead of a slow, empty edge-in. The entry line spreads gently with the
+// squad offset so a group lines up across the right of the field.
+const SPRINT_SPEED = 160;
+function entryXFor(off){ return clamp(W - 150 + off*0.18, W*0.40, W - 26); }
 function spawnRock(){
-  const dur = lerp(realm.rockDur[0], realm.rockDur[1], diffT());
-  const word = pickWord(WORDS[realm.pool], usedLetters());
   // Launch from the arm of the trebuchet on the right, so you SEE it flung…
   const tp = trebReleasePoint();
-  const sx = tp.x + rand(-8,8), sy = tp.y + rand(-8,8);
+  treb.fireT = 1;                                  // swing the arm
+  spawnRockFrom(tp.x + rand(-8,8), tp.y + rand(-8,8), { r:[16,22] });
+}
+// A boulder arcing from (sx,sy) down onto the castle. opts.r = [min,max] radius,
+// opts.dur overrides the flight time. Used by the trebuchet and the catapult.
+function spawnRockFrom(sx, sy, opts){
+  opts = opts || {};
+  const dur = opts.dur || rockDuration();
+  const word = pickWord(opts.pool || WORDS[realm.pool], usedLetters());
   // …and arc over the field down onto the castle, with the apex kept on-screen.
   const tx = rand(castleW()*0.1, castleW()*0.7), ty = rand(wallTopY()-10, groundY()-30);
   const cx = lerp(tx, sx, 0.45);
   const cy = rand(H*0.08, H*0.18);
-  // swing the arm and throw up debris where it's flung
-  treb.fireT = 1;
-  emit(sx, sy, 'dust', 10);
-  emit(sx, sy, 'spark', 9);
+  emit(sx, sy, 'dust', 8);
+  emit(sx, sy, 'spark', 7);
+  const rr = opts.r || [16,22];
   const th = {
     id:nextId++, kind:'rock', word, typed:0, state:'live',
     sx0:sx, sy0:sy, tx, ty, cx, cy,
-    p:0, dur, x:sx, y:sy, rot:0, r:rand(16,22),
+    p:0, dur, x:sx, y:sy, rot:0, r:rand(rr[0],rr[1]),
     jag: Array.from({length:9},()=>rand(0.78,1.18))
   };
   addThreat(th);
+  return th;
+}
+// ---- the catapult: two soldiers push it to mid-field, then it lobs small rocks.
+// Three words to wreck it; the third arrow burns it up and kills the pushers.
+function spawnCatapult(){
+  const pool = WORDS[realm.pool];
+  const words = []; const avoid = usedLetters(); let guard = 0;
+  while (words.length < 3 && guard++ < 400){
+    const w = pickWord(pool, avoid);
+    if (!words.some(x => x[0]===w[0])){ words.push(w); avoid.add(w[0]); }
+  }
+  while (words.length < 3) words.push(choice(pool).toLowerCase());
+  const stopX = lerp(castleW(), W, 0.5);            // halts at the halfway point
+  const th = {
+    id:nextId++, kind:'catapult', boss:true, state:'live',
+    words, wordIdx:0, word:words[0], typed:0,
+    x:W+80, y:groundY()-2, speed: marchSpeed()*0.4, t0:rand(0,6.28), bob:0, hurtT:0,
+    entering:true, entryX: stopX + 130,             // roll most of the way, then push the last stretch
+    stopX, arrows:[],
+    firing:false, fireAcc:0, arms:0
+  };
+  addThreat(th);
+  flashWave('A Catapult Rolls In!', '🪨 Three words to wreck it');
 }
 function spawnDragon(){
-  const dur = lerp(realm.dragonDur[0], realm.dragonDur[1], diffT());
-  const word = pickWord(BOSS_WORDS, usedLetters());
+  const dur = dragonDuration();
+  const word = pickWord(realm.bossWords, usedLetters());
   const th = {
     id:nextId++, kind:'dragon', boss:true, word, typed:0, state:'live',
-    p:0, dur, x:W+60, y:H*0.22, flap:rand(0,6.28),
-    tx:castleW()+40, ty:H*0.30, amp:rand(30,60), retreatT:0, breathT:0
+    p:0, dur, x:W+60, y:H*0.30, flap:rand(0,6.28),
+    tx:castleW()+40, ty:H*0.38, amp:rand(20,40), retreatT:0, breathT:0   // flies a bit lower so its word stays on-screen
   };
   addThreat(th);
   flashWave('A Dragon Descends!', '🐉 Boss');
@@ -768,11 +867,12 @@ function spawnGiant(){
     if (!words.some(x => x[0]===w[0])){ words.push(w); avoid.add(w[0]); }
   }
   while (words.length < 5){ words.push(choice(pool).toLowerCase()); }
-  const speed = lerp(realm.troopSpeed[0], realm.troopSpeed[1], diffT());
+  const speed = marchSpeed();
   const th = {
     id:nextId++, kind:'giant', boss:true, state:'live',
     words, wordIdx:0, word:words[0], typed:0,
-    x:W+60, y:groundY()-2, speed, t0:rand(0,6.28), bob:0, hurtT:0, hoverT:0, arrows:[]
+    x:W+60, y:groundY()-2, speed, t0:rand(0,6.28), bob:0, hurtT:0, pauseT:0, hoverT:0, arrows:[],
+    entering:true, entryX: entryXFor(0)               // a giant charges in, then lumbers
   };
   addThreat(th);
   flashWave('A Giant Approaches!', '🗿 Five words to fell it');
@@ -786,7 +886,12 @@ function addThreat(th){
   threats.push(th);
 }
 
-function diffT(){ return clamp((slain + (wave-1)*3)/55, 0, 1); }
+// ---- level-driven difficulty ----
+// Everything scales off the current level number, so each level is a small,
+// predictable step up rather than a continuous creep.
+function marchSpeed(){ return realm.marchBase + (level-1)*realm.marchStep; }
+function rockDuration(){ return Math.max(realm.rockMin, realm.rockBase - (level-1)*realm.rockStep); }
+function dragonDuration(){ return Math.max(realm.dragonMin, realm.dragonBase - (level-1)*realm.dragonStep); }
 
 function renderBubble(th){
   const w=th.word, d=w.slice(0,th.typed), nx=w.slice(th.typed,th.typed+1), rest=w.slice(th.typed+1);
@@ -830,9 +935,44 @@ function updateThreats(dt, t){
       }
       continue;
     }
-    if (th.state==='down'){ // a fallen body left on the battlefield
+    if (th.state==='down'){ // a fallen body / spent boulder left on the battlefield
       th.downT += dt;
       if (th.downT>30){ removeThreat(th,i); }   // finally cleared after ~30s
+      continue;
+    }
+    if (th.state==='falling'){ // a struck boulder, or a flaming dragon, dropping straight down
+      th.vy = Math.min((th.vy||0) + 320*dt, 170);  // gentle gravity, slow terminal drop
+      th.y += th.vy*dt;
+      if (!th.onFire) th.rot += dt*3;              // rocks tumble; a burning dragon falls flat
+      else { emit(th.x, th.y, 'fire', 2, 1.4); if (Math.random()<0.4) emit(th.x, th.y, 'smoke', 1, 1.1); }
+      th.sx=th.x; th.sy=th.y-22;
+      crushCheck(th);                              // crush soldiers it falls onto
+      if (th.y >= groundY()-6){                    // it lands
+        th.y = groundY()-6;
+        crushCheck(th);
+        if (th.onFire){ th.state='burning'; th.burnT=0; }   // burns out on the ground over 2s
+        else { th.state='down'; th.downT=0; }               // a rock just lies there ~30s
+        emit(th.x, groundY()-6, 'dust', 14);
+        shake=Math.max(shake,6);
+      }
+      continue;
+    }
+    if (th.state==='burning'){ // a wreck going up in flames for exactly 2s
+      th.burnT += dt;
+      // a dragon's carcass is huge — its blaze covers a much wider area
+      const big = th.kind==='dragon';
+      const w = big ? 80 : 22, killR = big ? 85 : 50, n = big ? 6 : 3;
+      // people caught in the blaze die a beat (~1s) after it ignites — looks cooler
+      if (th.burnT>=1.0){
+        for (let j=threats.length-1;j>=0;j--){
+          const s=threats[j];
+          if (s!==th && s.state==='live' && s.kind==='troop' && Math.abs(s.x-th.x)<killR) crushFoe(s,j);
+        }
+      }
+      // tall, flickering flames licking up across the whole footprint of the wreck
+      for (let k=0;k<n;k++) emit(th.x+rand(-w,w), th.y-rand(0, big?28:12), 'fire', 1, rand(1.4, big?2.4:2.0));
+      if (Math.random()<0.6) emit(th.x+rand(-w,w), th.y-rand(24,56), 'smoke', 1, 1.2);
+      if (th.burnT>=2.0){ emit(th.x, th.y-10, 'debris', big?16:10); removeThreat(th,i); }
       continue;
     }
     if (th.state==='retreat'){ // driven off by arrows — fast, panicked escape
@@ -869,14 +1009,20 @@ function updateThreats(dt, t){
       // relentless flame pooling on the walls
       emit(castleW()*0.5+rand(-26,26), wallTopY()+rand(-8,24), 'fire', 2, 1.6);
       th.burnAcc += dt;
-      if (th.burnAcc>=1){ th.burnAcc-=1; dragonInferno(); damageCastle(castleW()*0.42, wallTopY(), 'fire'); }
+      if (th.burnAcc>=realm.siegeInterval){ th.burnAcc-=realm.siegeInterval; dragonInferno(); damageCastle(castleW()*0.42, wallTopY(), 'fire'); }
       placeBubble(th);
       continue;
     }
 
     if (th.kind==='troop'){
-      th.x -= th.speed*dt;
-      if (th.kb){ th.x += th.kb*dt; th.kb -= th.kb*Math.min(1,dt*6); if (Math.abs(th.kb)<8) th.kb=0; }
+      if (th.entering){
+        th.x -= Math.max(SPRINT_SPEED, th.speed)*dt;       // rush onto the field
+        if (th.x <= th.entryX) th.entering=false;
+      } else {
+        if (th.pauseT>0){ th.pauseT -= dt; }               // staggered after a knockback — frozen ~1s
+        else { th.x -= th.speed*dt; }
+        if (th.kb){ th.x += th.kb*dt; th.kb -= th.kb*Math.min(1,dt*6); if (Math.abs(th.kb)<8) th.kb=0; }  // skid back
+      }
       th.bob = Math.sin(t*(th.mounted?11:7) + th.t0);
       th.sx=th.x; th.sy=th.y - (th.mounted?74:44);
       // only a LIVE soldier breaches the wall; a doomed (struck) one keeps
@@ -884,11 +1030,34 @@ function updateThreats(dt, t){
       if (th.state==='live' && th.x <= cw+6){ impactTroop(th,i); continue; }
     }
     else if (th.kind==='giant'){
-      th.x -= th.speed*dt;                 // marches at a soldier's pace
+      if (th.pauseT>0){
+        th.pauseT -= dt;                   // staggered by an arrow — frozen ~1s
+      } else if (th.entering){
+        th.x -= Math.max(SPRINT_SPEED, th.speed)*dt;       // charges in…
+        if (th.x <= th.entryX) th.entering=false;
+      } else {
+        th.x -= th.speed*dt;               // …then lumbers at a soldier's pace
+      }
       th.bob = Math.sin(t*3 + th.t0);
       if (th.hurtT>0) th.hurtT -= dt;
       th.sx=th.x; th.sy=th.y - 186;        // word floats high, above its head
       if (th.state==='live' && th.x <= cw+18){ impactGiant(th,i); continue; }
+    }
+    else if (th.kind==='catapult'){
+      if (th.arms>0) th.arms = Math.max(0, th.arms - dt*1.8);   // arm-swing decay
+      if (th.hurtT>0) th.hurtT -= dt;
+      if (th.state==='live'){
+        if (th.entering){
+          th.x -= Math.max(SPRINT_SPEED, th.speed)*dt;          // soldiers run it onto the field…
+          if (th.x <= th.entryX){ th.entering=false; th.firing=true; th.fireAcc=3.0; }  // …and it's firing from here on
+        } else {
+          th.x -= th.speed*dt;                                  // keeps pushing forward, ever closer
+          th.fireAcc -= dt; if (th.fireAcc<=0){ th.fireAcc = rand(6,9); catapultFire(th); }  // occasional shots throughout
+          if (th.x <= cw+10){ impactCatapult(th,i); continue; } // crashes into the wall if you let it
+        }
+      }
+      th.bob = Math.sin(t*4 + th.t0) * (th.firing?0.4:1);
+      th.sx=th.x; th.sy=th.y - 70;                              // word floats above it
     }
     else if (th.kind==='rock'){
       th.p += dt/th.dur;
@@ -905,10 +1074,11 @@ function updateThreats(dt, t){
       th.p += dt/th.dur;
       const p=clamp(th.p,0,1);
       th.x = lerp(W+60, th.tx, p);
-      th.y = lerp(H*0.22, th.ty, p) + Math.sin(p*Math.PI*3)*th.amp;
+      th.y = lerp(H*0.30, th.ty, p) + Math.sin(p*Math.PI*3)*th.amp;
       th.flap += dt*9;
       th.sx=th.x; th.sy=th.y-46;
-      if (p>=1){ impactDragon(th,i); continue; }
+      // a struck (already-killed) dragon keeps flying its last moment but won't siege
+      if (th.state==='live' && p>=1){ impactDragon(th,i); continue; }
     }
     placeBubble(th);
   }
@@ -926,50 +1096,94 @@ function pruneCorpses(){
   if (oldest) removeThreat(oldest);
 }
 
+// A boulder still in the air (falling) flattens any live foot/mounted soldier it
+// drops onto, and knocks one word off a giant it strikes (so a 5-word giant is
+// left with 4). Each rock can only strike a given giant once. Landed rocks
+// (state 'down') never crush — soldiers march past them.
+function crushCheck(rock){
+  if (!rock.hitIds) rock.hitIds = {};
+  for (let j=threats.length-1;j>=0;j--){
+    const s=threats[j];
+    if (s===rock || s.state!=='live') continue;
+    // A falling thing must come down essentially ON the target. These are small,
+    // fixed horizontal tolerances (just a touch of generosity) so a near miss —
+    // landing a bit in front of or behind a foe — does NOT count. It's meant to
+    // be a precise, satisfying drop, not a wide area-of-effect.
+    if (s.kind==='troop'){
+      if (Math.abs(s.x - rock.x) < 22 && rock.y > s.y-32){ crushFoe(s, j); }
+    } else if (s.kind==='giant' && !rock.hitIds[s.id]){
+      if (Math.abs(s.x - rock.x) < 20 && rock.y > s.y-170 && rock.y < s.y+10){
+        rock.hitIds[s.id]=true;
+        rockHitGiant(s);
+      }
+    } else if (s.kind==='catapult' && !rock.hitIds[s.id]){
+      if (Math.abs(s.x - rock.x) < 18 && rock.y > s.y-60){
+        rock.hitIds[s.id]=true;
+        smashCatapult(s);
+      }
+    }
+  }
+}
+function crushFoe(s, idx){
+  slain++;                                  // a kill, but not a typed one — no streak credit
+  if (active===s) clearActive();
+  if (s.bubble){ s.bubble.remove(); s.bubble=null; }
+  s.state='dying'; s.fallT=0;
+  s.rot = s.mounted ? 0 : (s.rot||0);
+  emit(s.x, s.y-12, 'dust', 12);
+  emit(s.x, s.y-12, 'debris', 6);
+  if (window.HSGSound) HSGSound.correct();
+  updateHud();
+}
+// a boulder strike completes one of the giant's words; the last word fells it
+function rockHitGiant(g){
+  if (g.wordIdx < g.words.length-1){
+    g.wordIdx++; g.typed=0; g.word=g.words[g.wordIdx];
+    renderBubble(g);
+    giantWordDown(g);                       // an arrow thunks home and it flinches
+    if (active===g) clearActive();
+  } else {
+    slay(g);                                // its final word — the boulder fells it
+  }
+}
+
 function placeBubble(th){
   if (!th.bubble) return;
   th._bx = th.sx;
   if (th.kind==='dragon' && th.state==='siege'){
     // it's hovering at the very top — drop the word BELOW it so it stays on-screen
-    th._by = th.y + 44;
+    th._by = th.y + 80;
   } else {
-    const off = th.kind==='dragon'?60 : th.kind==='rock'?34 : th.kind==='giant'?10 : 46;
+    const off = th.kind==='dragon'?76 : th.kind==='rock'?34 : th.kind==='giant'?10 : 46;
     th._by = th.sy - off + (th.bob ? th.bob*2 : 0);
   }
+  th._by = Math.max(22, th._by);     // never let a label run off the top of the screen
   th.bubble.style.transform='translate('+th._bx+'px,'+th._by+'px) translate(-50%,-50%)';
 }
 
-// Keep word labels readable: the one you're typing (active) is always shown
-// and on top; otherwise the foe nearest the castle wins, and any label it
-// would overlap is hidden until the foe in front of it is cleared.
+// Special foes (rock, giant, dragon, catapult) ALWAYS show their word. Plain
+// soldiers are capped to the three nearest the castle (plus whichever you're
+// typing) so the field stays readable but you still get a few targeting options.
+// Layering: front-most sits above those behind it; the active label tops all.
+const MAX_LABELS = 3;
 function resolveBubbles(){
   const list = threats.filter(th => th.bubble && th._bx != null);
-  list.sort((x, y) => {
-    if (x === active) return -1;
-    if (y === active) return 1;
-    return x.sx - y.sx;            // closest to the castle (smallest x) first
-  });
-  const placed = [];
-  let z = 300;
-  for (const th of list){
+  list.sort((x, y) => x.sx - y.sx);     // closest to the castle (smallest x) first
+  let troopShown = 0;
+  list.forEach((th, idx) => {
     const b = th.bubble;
-    const hw = (b.offsetWidth || 70)/2 + 5;
-    const hh = (b.offsetHeight || 24)/2 + 3;
-    const r = { l: th._bx-hw, r: th._bx+hw, t: th._by-hh, b: th._by+hh };
-    let blocked = false;
-    if (th !== active){
-      for (const p of placed){ if (rectsOverlap(r, p)){ blocked = true; break; } }
-    }
-    if (blocked){
-      b.style.visibility = 'hidden';
-    } else {
+    let visible;
+    if (th.kind !== 'troop')      visible = true;               // bosses & boulders always visible
+    else if (th === active)       visible = true;               // the word you're typing
+    else { visible = troopShown < MAX_LABELS; if (visible) troopShown++; }
+    if (visible){
       b.style.visibility = 'visible';
-      b.style.zIndex = z--;
-      placed.push(r);
+      b.style.zIndex = (th === active) ? 999 : (300 - idx);
+    } else {
+      b.style.visibility = 'hidden';
     }
-  }
+  });
 }
-function rectsOverlap(a, b){ return a.l < b.r && a.r > b.l && a.t < b.b && a.b > b.t; }
 function removeThreat(th, idx){
   if (th.bubble) th.bubble.remove();
   if (active===th) active=null;
@@ -985,6 +1199,7 @@ function drawThreats(t){
     else if (th.kind==='troop') (th.mounted ? drawHorseman : drawTroop)(th,t);
     else if (th.kind==='rock') drawRock(th,t);
     else if (th.kind==='dragon') drawDragon(th,t);
+    else if (th.kind==='catapult') drawCatapult(th,t);
   }
 }
 // A big, flickering torrent of fire from a sieging dragon's maw down to the wall.
@@ -1228,32 +1443,134 @@ function drawGiant(th,t){
 }
 function drawRock(th,t){
   const x=th.x,y=th.y;
-  ctx.save(); ctx.translate(x,y); ctx.rotate(th.rot);
-  // glow
-  const g=ctx.createRadialGradient(0,0,2,0,0,th.r*2.2);
-  g.addColorStop(0,'rgba(255,150,40,0.8)'); g.addColorStop(1,'rgba(255,80,20,0)');
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,th.r*2.2,0,6.28); ctx.fill();
-  // jagged rock
-  ctx.fillStyle='#3a3330'; ctx.beginPath();
+  const landed = th.state==='down';
+  let alpha=1;
+  if (landed && th.downT>28) alpha=clamp((30-th.downT)/2,0,1);   // fade out in its final 2s
+  ctx.save(); ctx.translate(x,y);
+  // a resting boulder casts a flat ground shadow
+  if (landed){
+    ctx.globalAlpha=alpha*0.32; ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.ellipse(0, th.r*0.75, th.r*1.2, th.r*0.34, 0,0,6.28); ctx.fill();
+  }
+  ctx.globalAlpha=alpha;
+  ctx.rotate(th.rot);
+  // hot glow only while it's airborne
+  if (!landed){
+    const g=ctx.createRadialGradient(0,0,2,0,0,th.r*2.2);
+    g.addColorStop(0,'rgba(255,150,40,0.8)'); g.addColorStop(1,'rgba(255,80,20,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,th.r*2.2,0,6.28); ctx.fill();
+  }
+  // jagged rock — cools to grey once it has come to rest
+  ctx.fillStyle = landed ? '#5a554c' : '#3a3330';
+  ctx.beginPath();
   for (let i=0;i<th.jag.length;i++){ const a=i/th.jag.length*6.28; const rr=th.r*th.jag[i];
     const px=Math.cos(a)*rr, py=Math.sin(a)*rr; i?ctx.lineTo(px,py):ctx.moveTo(px,py); }
   ctx.closePath(); ctx.fill();
-  // lava cracks
-  ctx.strokeStyle='rgba(255,120,40,0.9)'; ctx.lineWidth=1.5;
+  // glowing lava cracks while hot; dark seams once cooled
+  ctx.strokeStyle = landed ? 'rgba(0,0,0,0.35)' : 'rgba(255,120,40,0.9)';
+  ctx.lineWidth=1.5;
   ctx.beginPath(); ctx.moveTo(-th.r*0.5,-2); ctx.lineTo(0,3); ctx.lineTo(th.r*0.5,-3); ctx.stroke();
   ctx.restore();
+  ctx.globalAlpha=1;
+}
+// A catapult — half the trebuchet's size — pushed by one soldier. It rolls
+// forward lobbing small rocks; the arm whips over like the trebuchet's when it
+// fires. Each word sticks a flaming arrow in it; the third sets it ablaze.
+function drawCatapult(th,t){
+  const x=th.x, y=th.y;
+  const burning = th.state==='burning';
+  const pusherDead = burning && (th.burnT||0) >= 1.0;   // he falls ~1s into the blaze, not instantly
+  ctx.save(); ctx.translate(x,y);
+  // ground shadow
+  ctx.fillStyle='rgba(0,0,0,0.30)'; ctx.beginPath(); ctx.ellipse(0,2,44,8,0,0,6.28); ctx.fill();
+  // one soldier pushing from behind (he perishes in the fire when it's wrecked)
+  drawPusher(40, pusherDead, t, th.t0);
+
+  // ---- the machine, mirrored so the arm whips over toward the castle ----
+  ctx.save(); ctx.scale(-1, 1);
+  const wood = burning ? '#2a211a' : '#5a3d22', woodD = burning ? '#1c160f' : '#3a2a18';
+  for (const wx of [-16, 14]){
+    ctx.fillStyle='#2c1f12'; ctx.beginPath(); ctx.arc(wx,-8,10,0,6.28); ctx.fill();
+    ctx.strokeStyle='#7a5a36'; ctx.lineWidth=3; ctx.stroke();
+    ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(wx-7,-8); ctx.lineTo(wx+7,-8); ctx.moveTo(wx,-15); ctx.lineTo(wx,-1); ctx.stroke();
+  }
+  ctx.fillStyle=woodD; roundRect(-26,-16,52,7,2); ctx.fill();              // base beam
+  const fire = clamp(th.arms||0,0,1);
+  const armA = lerp(0.55, -1.25, Math.sin(fire*Math.PI));                  // whip on fire
+  ctx.strokeStyle=woodD; ctx.lineWidth=5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-2,-12); ctx.lineTo(-2,-30); ctx.stroke();   // upright support
+  ctx.save(); ctx.translate(-2,-30); ctx.rotate(armA);
+  ctx.strokeStyle=wood; ctx.lineWidth=5; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-28,0); ctx.stroke();   // arm
+  ctx.fillStyle='#3a3330'; ctx.beginPath(); ctx.arc(-28,0,5,0,6.28); ctx.fill();   // sling cup
+  if (fire<0.12 && !burning){ ctx.fillStyle='#34302c'; ctx.beginPath(); ctx.arc(-28,4,5,0,6.28); ctx.fill(); }   // loaded rock
+  ctx.restore();
+  ctx.lineCap='butt';
+  ctx.restore();   // end mirror
+
+  // ---- flaming arrows stuck in it (one per word landed) ----
+  if (th.arrows){
+    for (const a of th.arrows){
+      ctx.save(); ctx.translate(a.lx, a.ly); ctx.rotate(a.ang);
+      ctx.strokeStyle='#4a3118'; ctx.lineWidth=3; ctx.lineCap='round';
+      ctx.beginPath(); ctx.moveTo(-14,0); ctx.lineTo(6,0); ctx.stroke();           // shaft
+      ctx.fillStyle='#caa24a'; ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(2,-3); ctx.lineTo(2,3); ctx.closePath(); ctx.fill();   // head
+      ctx.globalCompositeOperation='lighter';                                      // a small flame on the shaft
+      ctx.fillStyle='rgba(255,150,40,0.7)'; ctx.beginPath(); ctx.ellipse(-5,-3,7,4,0,0,6.28); ctx.fill();
+      ctx.fillStyle='rgba(255,230,150,0.85)'; ctx.beginPath(); ctx.ellipse(-3,-2,3.4,2.2,0,0,6.28); ctx.fill();
+      ctx.globalCompositeOperation='source-over';
+      ctx.lineCap='butt'; ctx.restore();
+    }
+  }
+  ctx.restore();
+}
+function drawPusher(px, dead, t, ph){
+  ctx.save(); ctx.translate(px,0);
+  if (dead){
+    // fallen pusher lying on the ground
+    ctx.fillStyle='rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.ellipse(0,1,13,3,0,0,6.28); ctx.fill();
+    ctx.fillStyle='#5f8c3f'; roundRect(-9,-5,18,5,2); ctx.fill();
+    ctx.fillStyle='#d8b48a'; ctx.beginPath(); ctx.arc(11,-3,4,0,6.28); ctx.fill();
+    ctx.restore(); return;
+  }
+  const lean = Math.sin(t*6+ph)*1.2;
+  // legs (braced, pushing stride)
+  ctx.strokeStyle='#2b2b2f'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(-1,-6); ctx.lineTo(-6,0); ctx.moveTo(3,-6); ctx.lineTo(7,0); ctx.stroke();
+  // body leaning into the push (toward the castle, left)
+  ctx.save(); ctx.rotate(-0.35);
+  ctx.fillStyle='#5f8c3f'; roundRect(-5,-22+lean,10,18,3); ctx.fill();
+  ctx.fillStyle='#d8b48a'; ctx.beginPath(); ctx.arc(0,-26+lean,4.5,0,6.28); ctx.fill();
+  ctx.restore();
+  // arms reaching to the catapult
+  ctx.strokeStyle='#5f8c3f'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(-2,-16); ctx.lineTo(-16,-11); ctx.stroke();
+  ctx.restore();                          // balance the ctx.save() at the top
 }
 function drawDragon(th,t){
-  const x=th.x,y=th.y, s=th.boss?1:0.8;
-  const flap=Math.sin(th.flap)*0.6;
+  const x=th.x,y=th.y, s=(th.boss?1:0.8)*1.5;   // 1.5× the original size
+  // a slain dragon plummets ('falling'), then lies dead ('down') or ablaze ('burning')
+  const fallen = th.state==='falling' || th.state==='down' || th.state==='burning';
+  const flap = fallen ? 0 : Math.sin(th.flap)*0.6;
   // when fleeing victorious it turns to face the way it's flying (right)
   const faceDir = th.state==='flee' ? -1 : 1;
-  ctx.save(); ctx.translate(x,y); ctx.scale(s*faceDir, s);
+  // falls straight down without spinning, and lies flat and horizontal once down
+  const rot = 0;
+  let alpha=1;
+  if (th.state==='down' && th.downT>28) alpha=clamp((30-th.downT)/2,0,1);  // fade out in its last 2s
+  ctx.save(); ctx.globalAlpha=alpha; ctx.translate(x,y); ctx.rotate(rot); ctx.scale(s*faceDir, s);
   // facing left (toward castle): default art faces left
-  // glow
-  const g=ctx.createRadialGradient(0,0,4,0,0,70);
-  g.addColorStop(0,'rgba(180,40,30,0.35)'); g.addColorStop(1,'rgba(180,40,30,0)');
-  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,70,0,6.28); ctx.fill();
+  // a downed/burning carcass casts a flat shadow instead of a fiery glow
+  if (th.state==='down' || th.state==='burning'){
+    ctx.save(); ctx.rotate(-rot);
+    ctx.globalAlpha=alpha*0.3; ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.ellipse(0, 24, 40, 9, 0,0,6.28); ctx.fill();
+    ctx.restore(); ctx.globalAlpha=alpha;
+  } else if (!fallen){
+    // glow
+    const g=ctx.createRadialGradient(0,0,4,0,0,70);
+    g.addColorStop(0,'rgba(180,40,30,0.35)'); g.addColorStop(1,'rgba(180,40,30,0)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,70,0,6.28); ctx.fill();
+  }
   // tail
   ctx.strokeStyle='#3a2438'; ctx.lineWidth=10; ctx.lineCap='round';
   ctx.beginPath(); ctx.moveTo(14,2); ctx.quadraticCurveTo(48, -6+Math.sin(th.flap*0.8)*6, 60, 12); ctx.stroke();
@@ -1332,7 +1649,7 @@ function acquire(ch){
     // to the wall, then airborne foes by how far along their flight they are.
     let key;
     if (th.state==='siege') key = -3000;
-    else if (th.kind==='troop' || th.kind==='giant') key = th.x;
+    else if (th.kind==='troop' || th.kind==='giant' || th.kind==='catapult') key = th.x;
     else key = (1-th.p)*1000 - 2000;
     if (key<bestKey){ bestKey=key; best=th; }
   }
@@ -1347,10 +1664,11 @@ function advance(th, ch){
         // then release the lock so you can pick off other foes and come back
         th.wordIdx++; th.typed=0; th.word=th.words[th.wordIdx];
         renderBubble(th);
-        giantWordDown(th);
+        if (th.kind==='catapult') catapultWordDown(th); else giantWordDown(th);
         clearActive();
       } else if (th.mounted && !th.wounded){
-        woundKnight(th);     // first hit only wounds a horseman
+        woundKnight(th);     // first hit only wounds a horseman…
+        clearActive();       // …then release the lock, like the giant
       } else {
         slay(th);
       }
@@ -1364,17 +1682,18 @@ function advance(th, ch){
 // each word landed on the giant looses an arrow and makes it flinch
 function giantWordDown(th){
   th.hurtT = 0.25;
-  const ax=castleW()*0.4, ay=wallTopY()-2;
+  const ax=castleW()*0.6, ay=towerTopY()+10;   // loosed from the top of the tower, like the dragon volley
   // an arrow flies in and stays buried in the giant
   const stick = { lx: rand(-13,13), ly: rand(-116,-94), ang: rand(-0.3,0.2) };   // chest
-  loose(ax, ay, th.x, th.y-104, 'arrow', ()=>{ th.arrows.push(stick); }, th);
+  loose(ax, ay, th.x, th.y-104, 'firearrow', ()=>{ th.arrows.push(stick); th.pauseT = 1.0; }, th);  // the hit freezes it ~1s
   emit(th.x, th.y-104, 'dust', 7);
 }
-// first hit on a mounted knight: an arrow thunks home, it skids back, and a
-// fresh word appears — you must finish that one to actually drop it.
+// first hit on a mounted knight: an arrow thunks home, it skids back hard, then
+// freezes ~1s (like a staggered giant) before charging again with a fresh word.
 function woundKnight(th){
   th.wounded = true;
-  th.kb = 340;                      // recoil/skid backward
+  th.kb = 1020;                     // recoil/skid backward — a big 3× shove
+  th.pauseT = 1.0;                  // then pause ~1s before it starts moving again
   const ax=castleW()*0.3, ay=wallTopY()-2;
   loose(ax, ay, th.sx, th.sy+28, 'arrow', ()=>{ th.arrowStuck = true; }, th);
   emit(th.x, th.y-30, 'dust', 8);
@@ -1382,7 +1701,39 @@ function woundKnight(th){
   th.typed = 0;
   renderBubble(th);
 }
-
+// the catapult lobs a small rock from its arm toward the castle
+function catapultFire(th){
+  th.arms = 1;                                    // kick the arm-swing animation
+  const ox = th.x - 10, oy = th.y - 50;           // released over the top, toward the castle
+  emit(ox, oy, 'dust', 5);
+  // small, short-word shots (always the easy kids pool) so they're quick to catch
+  spawnRockFrom(ox, oy, { r:[9,13], dur: rockDuration()*0.85, pool: WORDS.kids });
+}
+// each catapult word lands a flaming tower arrow that stays stuck in it — no
+// obscuring smoke; the fire only takes over once it's hit the third time.
+function catapultWordDown(th){
+  th.hurtT = 0.25;
+  const ax=castleW()*0.6, ay=towerTopY()+10;
+  const stick = { lx: rand(-26,-8), ly: rand(-26,-6), ang: rand(-0.2,0.3) };   // buried in the FRONT face
+  // no target → flies to this fixed front-body point (homing would drag it up to the word label)
+  loose(ax, ay, th.x-18, th.y-18, 'firearrow', ()=>{ th.arrows.push(stick); });
+}
+// the catapult is set ablaze — it burns for exactly 2s then disperses
+function igniteCatapult(c){
+  c.state='burning'; c.burnT=0;
+  emit(c.x, c.y-30, 'fire', 26, 1.6); emit(c.x, c.y-30, 'smoke', 8);
+  shake = Math.max(shake, 8);
+}
+// destroyed by a falling boulder / dragon landing on it
+function smashCatapult(c){
+  if (c.state!=='live') return;
+  slain++; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+  if (window.HSGSound) HSGSound.correct();
+  if (active===c) clearActive();
+  if (c.bubble){ c.bubble.remove(); c.bubble=null; }
+  updateHud();
+  igniteCatapult(c);
+}
 // ===================================================================
 // OUTCOMES
 // ===================================================================
@@ -1396,10 +1747,6 @@ function slay(th){
   if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
   updateHud();
 
-  // wave every 8 kills
-  const nw=Math.floor(slain/8)+1;
-  if (nw>wave){ wave=nw; flashWave('Wave '+wave, 'Hold the line'); }
-
   if (th.kind==='troop'){
     // an arrow homes in while the doomed soldier keeps marching
     const ax=castleW()*0.3, ay=wallTopY()-2;
@@ -1407,27 +1754,42 @@ function slay(th){
       th.state='dying'; th.fallT=0; emit(th.x,th.y-10,'dust',8);
     }, th);
   } else if (th.kind==='rock'){
-    // a ballista bolt chases the still-arcing boulder, then bursts it midair
+    // a ballista bolt chases the still-arcing boulder and strikes it — but it
+    // doesn't shatter. Knocked from the sky, it tumbles straight down and comes
+    // to rest on the field for ~30s. While it's still falling it crushes any
+    // soldier it drops onto, so time the shot to land it on the enemy. Once it
+    // settles, troops simply march past the cooled rock.
     const bx=castleW()*0.6, by=towerTopY()+20;
     loose(bx, by, th.sx, th.sy, 'bolt', ()=>{
-      burst(th.x, th.y, 'air'); removeThreat(th);
+      burst(th.x, th.y, 'air');
+      th.state='falling'; th.vy=0;
     }, th);
   } else if (th.kind==='dragon'){
-    // volley peppers it; it roars and is driven off
+    // it KEEPS FLYING (state 'struck') while flaming arrows chase it; only when the
+    // LAST arrow lands does it catch fire and plummet, then burn out on the ground
     const bx=castleW()*0.6, by=towerTopY()+10;
-    for (let i=0;i<3;i++) setTimeout(()=>{ if(threats.includes(th)) loose(bx,by, th.sx+rand(-12,12), th.sy+rand(-10,10), 'bolt', null, th); }, i*90);
-    burst(th.sx, th.sy, 'air');
-    if (th.bubble){ th.bubble.remove(); th.bubble=null; }
-    th.state='retreat'; th.retreatT=0;
+    if (th.bubble){ th.bubble.remove(); th.bubble=null; }   // slay() already set state='struck'
+    for (let k=0;k<3;k++) setTimeout(()=>{
+      if (!threats.includes(th)) return;
+      const last = (k===2);
+      loose(bx, by, th.sx+rand(-12,12), th.sy+rand(-10,10), 'firearrow', last ? ()=>{
+        th.state='falling'; th.vy=0; th.r=40; th.onFire=true;   // now it drops, ablaze
+        burst(th.x, th.y, 'air');
+      } : null, th);
+    }, k*120);
   } else if (th.kind==='giant'){
     // the killing fifth arrow buries itself, then the giant slowly topples forward
-    const ax=castleW()*0.4, ay=wallTopY()-2;
+    const ax=castleW()*0.6, ay=towerTopY()+10;   // from the top of the tower
     const stick = { lx: rand(-13,13), ly: rand(-116,-94), ang: rand(-0.3,0.2) };   // chest
-    loose(ax, ay, th.x, th.y-104, 'arrow', ()=>{
+    loose(ax, ay, th.x, th.y-104, 'firearrow', ()=>{
       th.arrows.push(stick);
       th.state='dying'; th.fallT=0; th.rot=0;
       emit(th.x, th.y-60, 'dust', 14);
     }, th);
+  } else if (th.kind==='catapult'){
+    // the third flaming arrow sets it ablaze — it burns up and the pusher dies
+    const ax=castleW()*0.6, ay=towerTopY()+10;
+    loose(ax, ay, th.x-18, th.y-18, 'firearrow', ()=>{ igniteCatapult(th); });   // into the front face
   }
 }
 
@@ -1460,6 +1822,13 @@ function impactGiant(th, i){
   th.burnAcc=0; th.hoverT=0;
   if (th.bubble) renderBubble(th);   // keep your typing progress, stay typeable
   flashWave('The Giant Breaches the Gate!', '🔥 Fell it — fast!');
+}
+function impactCatapult(th, i){
+  // it rolled all the way to the wall — a heavy hit, and it's wrecked in the crash
+  if (active===th) clearActive();
+  if (th.bubble){ th.bubble.remove(); th.bubble=null; }
+  damageCastle(castleW()-6, th.y-30, 'big');
+  igniteCatapult(th);
 }
 
 function damageCastle(x, y, size){
@@ -1513,7 +1882,9 @@ function loose(x,y,tx,ty,kind,onArrive,target){
   // everything your castle looses flies slowly enough to watch land —
   // arrows at the foot army and ballista bolts at rocks/dragons alike.
   // a `target` makes the shot home in on a foe that is still moving.
-  projectiles.push({ x,y, sx:x,sy:y, tx,ty, p:0, dur: kind==='bolt'?0.52:0.58, kind, onArrive, target });
+  // firearrow (big flaming tower-top shot) flies slowest so it reads as a heavy, cool shot
+  const dur = kind==='bolt'?0.52 : kind==='firearrow'?0.95 : 0.58;
+  projectiles.push({ x,y, sx:x,sy:y, tx,ty, p:0, dur, kind, onArrive, target });
 }
 function updateProjectiles(dt){
   for (let i=projectiles.length-1;i>=0;i--){
@@ -1521,12 +1892,13 @@ function updateProjectiles(dt){
     // track a moving foe so the shot actually connects where it now stands
     if (pr.target && threats.includes(pr.target)){
       pr.tx = pr.target.sx;
-      pr.ty = pr.target.sy + (pr.target.kind==='troop' ? 22 : pr.target.kind==='giant' ? 96 : 0);
+      pr.ty = pr.target.sy + (pr.target.kind==='troop' ? 22 : pr.target.kind==='giant' ? 96 : pr.target.kind==='dragon' ? 60 : 0);
     }
     pr.p += dt/pr.dur;
     const p=clamp(pr.p,0,1);
     pr.x=lerp(pr.sx,pr.tx,p); pr.y=lerp(pr.sy,pr.ty,p);
     if (pr.kind==='bolt' && Math.random()<0.6) emit(pr.x,pr.y,'spark',1,0.5);
+    else if (pr.kind==='firearrow'){ emit(pr.x,pr.y,'fire',1,1.2); if (Math.random()<0.5) emit(pr.x,pr.y,'spark',1,0.6); }
     if (p>=1){ if (pr.onArrive) pr.onArrive(); projectiles.splice(i,1); }
   }
 }
@@ -1539,6 +1911,21 @@ function drawProjectiles(){
       ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(6,0); ctx.stroke();
       ctx.fillStyle='#e8e2d0'; ctx.beginPath(); ctx.moveTo(6,0); ctx.lineTo(1,-3); ctx.lineTo(1,3); ctx.fill();
       ctx.strokeStyle='#9a8a5a'; ctx.beginPath(); ctx.moveTo(-9,0); ctx.lineTo(-12,-2); ctx.moveTo(-9,0); ctx.lineTo(-12,2); ctx.stroke();
+    } else if (pr.kind==='firearrow'){ // big flaming arrow from the tower top
+      // flame aura around the shaft
+      ctx.globalCompositeOperation='lighter';
+      ctx.fillStyle='rgba(255,140,40,0.55)'; ctx.beginPath(); ctx.ellipse(-6,0, 20, 7, 0,0,6.28); ctx.fill();
+      ctx.fillStyle='rgba(255,230,150,0.7)'; ctx.beginPath(); ctx.ellipse(2,0, 10, 4, 0,0,6.28); ctx.fill();
+      ctx.globalCompositeOperation='source-over';
+      // thick shaft + glowing head
+      ctx.shadowColor='rgba(255,150,50,0.95)'; ctx.shadowBlur=14;
+      ctx.strokeStyle='#6b4a2a'; ctx.lineWidth=4.5;
+      ctx.beginPath(); ctx.moveTo(-22,0); ctx.lineTo(13,0); ctx.stroke();
+      ctx.fillStyle='#ffe79a'; ctx.beginPath(); ctx.moveTo(16,0); ctx.lineTo(5,-7); ctx.lineTo(5,7); ctx.closePath(); ctx.fill();
+      ctx.shadowBlur=0;
+      // fletching
+      ctx.strokeStyle='#caa24a'; ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.moveTo(-22,0); ctx.lineTo(-28,-5); ctx.moveTo(-22,0); ctx.lineTo(-28,5); ctx.stroke();
     } else { // bolt — bigger, glowing
       ctx.shadowColor='rgba(255,180,60,0.9)'; ctx.shadowBlur=8;
       ctx.strokeStyle='#ffd27a'; ctx.lineWidth=3;
@@ -1616,41 +2003,227 @@ function drawParticles(){
 }
 
 // ===================================================================
-// SPAWN MANAGER
+// LEVEL / WAVE MANAGER
 // ===================================================================
-function manageSpawns(dt){
-  spawnAcc += dt;
-  spawnInterval = lerp(realm.spawn[0], realm.spawn[1], diffT());
-  if (spawnAcc < spawnInterval) return;
-  spawnAcc = 0;
+// Each level is a finite wave: a roster of foes is built up front, spawned one
+// at a time at the level's pace, and the level is "complete" once the roster is
+// empty AND every foe on the field has been cleared. Then a short breather, and
+// the next (bigger, slightly faster) wave begins. Lives carry over, so you keep
+// climbing until a wave finally overwhelms you.
 
-  // dragon due?
-  if (slain - lastBossSlain >= realm.dragonGap && !threats.some(t=>t.kind==='dragon')){
-    lastBossSlain = slain;
-    spawnDragon();
+// ---- foes arrive in SQUADS ----
+// A level is a list of squads; each squad is a little cluster released together
+// (with horizontal offsets so they pack up — a couple in front, a couple behind).
+// The next squad rolls in once the field has thinned out, so the wave reads as
+// distinct groups rather than an even drip. Levels 1-3 are hand-authored; level
+// 4 and up scale the level-3 template up.
+function unit(t, off){ return { t, off: off||0 }; }
+function troopRow(n, start, step){
+  const a=[]; for (let i=0;i<n;i++) a.push(unit('troop', (start||0) + i*(step||120)));
+  return a;
+}
+// Difficulty ladder by layout:
+//   easy   → buildLevelEasy     (very sparse, bosses only from L6)
+//   medium → buildLevelMedium   (the build you tested as "easy")
+//   hard / impossible → buildLevelStandard (dense)
+function buildLevel(n){
+  // Easy, Medium AND Hard share the same gentle wave pattern — they differ only
+  // in march speed + word pool. Only Impossible uses the dense standard layout.
+  let squads = (realmKey==='easy')   ? buildLevelEasy(n)
+             : (realmKey==='medium' || realmKey==='hard') ? buildLevelMedium(n)
+             : buildLevelStandard(n);
+  // a dragon arrives every other level, starting at level 2 (2,4,6,…) —
+  // append a finale dragon to any even level that doesn't already field one
+  if (n>=2 && n%2===0 && !squads.some(sq => sq.units.some(u => u.t==='dragon'))){
+    squads = squads.concat([{ units:[ unit('dragon') ] }]);
+  }
+  return squads;
+}
+// EASY: pairs/trios of foot soldiers only through L5; first giant L6, first
+// knights L7, first dragon L8. Combined with the slow Easy march speed this is
+// a true beginner ramp.
+function buildLevelEasy(n){
+  if (n===1) return [ { units: troopRow(2,0,170) }, { units: troopRow(2,0,170) }, { units: troopRow(2,0,170) } ];
+  if (n===2) return [ { units: troopRow(2,0,170) }, { solo:true, units:[unit('catapult')] }, { units: troopRow(2,0,170) }, { units: [ ...troopRow(2,0,180), unit('rock') ] } ];
+  if (n===3) return [ { units: troopRow(2,0,170) }, { units: troopRow(3,0,160) }, { units: [ ...troopRow(2,0,180), unit('rock') ] } ];
+  if (n===4) return [ { units: troopRow(3,0,160) }, { units: [ unit('knight',0), unit('knight',280) ] }, { units: [ ...troopRow(2,0,180), unit('rock') ] } ]; // first knights
+  if (n===5) return [ { units: troopRow(3,0,160) }, { units: [ unit('knight',0), unit('knight',280) ] }, { units: [ ...troopRow(2,0,180), unit('rock') ] }, { units: troopRow(3,0,160) } ];
+  if (n===6) return [ { units: troopRow(3,0,160) }, { units: [ ...troopRow(2,0,170), unit('giant') ] }, { units: [ ...troopRow(2,0,180), unit('rock') ] } ];   // first giant
+  if (n===7) return [ { units: troopRow(3,0,160) }, { units: [ unit('knight',0), unit('knight',280) ] }, { units: [ ...troopRow(3,0,160), unit('rock') ] }, { units: troopRow(3,0,160) } ]; // first knights
+  if (n===8) return [ { units: troopRow(4,0,150) }, { units: [ unit('knight',0), unit('knight',280) ] }, { units: [ ...troopRow(2,0,170), unit('giant') ] }, { units: [ unit('dragon') ] } ]; // first dragon
+  // L9+ : grow gently
+  const tier = n - 8, squads = [];
+  squads.push({ units: troopRow(Math.min(5, 4+tier), 0, 150) });
+  squads.push({ units: Array.from({length:Math.min(3, 2+Math.floor(tier/2))}, (_,i)=>unit('knight', i*260)) });
+  squads.push({ solo:true, units: [ unit('catapult') ] });
+  const giants = 1 + Math.floor(tier/2);
+  for (let g=0; g<giants; g++) squads.push({ units: [ ...troopRow(2, 0, 160), unit('giant') ] });
+  squads.push({ units: [ ...troopRow(Math.min(5, 4+tier), 0, 150), unit('rock') ] });
+  const dragons = 1 + Math.floor(tier/2);
+  for (let d=0; d<dragons; d++) squads.push({ units: [ unit('dragon') ] });
+  return squads;
+}
+// MEDIUM: the gentle layout you tested as "easy" — few foes per squad; first
+// giant L5, first knights L6, first dragon L7.
+function buildLevelMedium(n){
+  if (n===1) return [
+    { units: troopRow(2, 0, 160) },
+    { solo:true, units: [ unit('catapult') ] },                     // a catapult, alone, to learn it
+    { units: troopRow(2, 0, 160) },
+    { units: [ ...troopRow(2, 0, 170), unit('rock') ] }              // a boulder to practice dropping
+  ];
+  if (n===2) return [
+    { units: troopRow(2, 0, 160) },
+    { units: troopRow(3, 0, 150) },
+    { units: [ ...troopRow(2, 0, 170), unit('rock') ] }
+  ];
+  if (n===3) return [
+    { units: troopRow(3, 0, 150) },
+    { units: [ unit('knight',0), unit('knight',260) ] },             // first knights
+    { units: [ ...troopRow(2, 0, 170), unit('rock') ] }
+  ];
+  if (n===4) return [
+    { units: troopRow(3, 0, 150) },
+    { solo:true, units: [ unit('catapult') ] },
+    { units: troopRow(3, 0, 150) },
+    { units: [ ...troopRow(2, 0, 170), unit('rock') ] }
+  ];
+  if (n===5) return [
+    { units: troopRow(3, 0, 150) },
+    { units: [ ...troopRow(2, 0, 160), unit('giant') ] },            // first giant
+    { units: [ ...troopRow(2, 0, 170), unit('rock') ] }
+  ];
+  if (n===6) return [
+    { units: troopRow(3, 0, 150) },
+    { units: [ unit('knight',0), unit('knight',260) ] },             // first knights
+    { solo:true, units: [ unit('catapult') ] },
+    { units: troopRow(3, 0, 150) }
+  ];
+  if (n===7) return [
+    { units: troopRow(4, 0, 140) },
+    { units: [ unit('knight',0), unit('knight',260) ] },
+    { units: [ ...troopRow(2, 0, 160), unit('giant') ] },
+    { units: [ unit('dragon') ] }                                    // first dragon
+  ];
+  // L8+ : grow gently
+  const tier = n - 7, squads = [];
+  squads.push({ units: troopRow(Math.min(5, 4+tier), 0, 130) });
+  squads.push({ units: Array.from({length:Math.min(3, 2+Math.floor(tier/2))}, (_,i)=>unit('knight', i*240)) });
+  const giants = 1 + Math.floor(tier/2);
+  for (let g=0; g<giants; g++) squads.push({ units: [ ...troopRow(2, 0, 150), unit('giant') ] });
+  squads.push({ units: [ ...troopRow(Math.min(5, 4+tier), 0, 130), unit('rock') ] });
+  const dragons = 1 + Math.floor(tier/2);
+  for (let d=0; d<dragons; d++) squads.push({ units: [ unit('dragon') ] });
+  return squads;
+}
+function buildLevelStandard(n){
+  if (n===1) return [
+    { units: troopRow(2, 0, 120) },                                  // a scouting pair out front
+    { units: [ ...troopRow(3, 0, 110), ...troopRow(3, 380, 110) ] }, // the main body: 3 ahead, 3 behind
+    { units: [ ...troopRow(3, 0, 150), unit('rock') ]              } // stragglers + a boulder to drop on them
+  ];
+  if (n===2) return [
+    { units: troopRow(2, 0, 120) },
+    { units: [ unit('knight',0), unit('knight',220), unit('knight',440) ] },   // a cavalry charge
+    { solo:true, units: [ unit('catapult') ] },                               // a catapult, rolling in alone
+    { units: [ ...troopRow(3, 0, 110), unit('knight',380), unit('rock') ] },
+    { units: [ unit('dragon') ] }                                              // …and a dragon to finish
+  ];
+  if (n===3) return [
+    { units: troopRow(4, 0, 110) },
+    { units: [ ...troopRow(2, 0, 150), unit('giant') ] },           // first giant, with an escort
+    { units: [ ...troopRow(3, 0, 120), unit('rock') ] },
+    { units: [ ...troopRow(2, 0, 150), unit('giant') ] },           // second giant
+    { units: [ ...troopRow(2, 0, 140), unit('rock') ] },
+    { units: [ unit('dragon') ] }                                   // dragon finale
+  ];
+  return buildScaledLevel(n);
+}
+// Level 4+ : grow the level-3 shape — more troops/knights, more giants, more
+// rocks, and a rising number of dragons to close.
+function buildScaledLevel(n){
+  const tier = n - 3;                       // 1,2,3…
+  const squads = [];
+  squads.push({ units: troopRow(Math.min(8, 4+tier), 0, 100) });
+  const knights = Math.min(5, 2 + Math.floor(tier/1));
+  squads.push({ units: Array.from({length:knights}, (_,i)=>unit('knight', i*200)) });
+  const giants = 2 + Math.floor(tier/2);
+  for (let g=0; g<giants; g++)
+    squads.push({ units: [ ...troopRow(3, 0, 120), unit('giant') ] });
+  squads.push({ solo:true, units: [ unit('catapult') ] });
+  squads.push({ units: [ ...troopRow(Math.min(8, 4+tier), 0, 100), unit('rock'), unit('rock') ] });
+  squads.push({ units: [ ...troopRow(Math.min(6, 3+tier), 0, 110), unit('rock') ] });
+  const dragons = 1 + Math.floor(tier/2);
+  for (let d=0; d<dragons; d++) squads.push({ units: [ unit('dragon') ] });
+  return squads;
+}
+function releaseSquad(sq){
+  for (const u of sq.units){
+    if (u.t==='troop')       spawnTroop(u.off);
+    else if (u.t==='knight') spawnTroop(u.off, true);
+    else if (u.t==='rock')   spawnRock();
+    else if (u.t==='giant')  spawnGiant();
+    else if (u.t==='dragon') spawnDragon();
+    else if (u.t==='catapult') spawnCatapult();
+  }
+}
+// how many foes still have a typeable word on screen right now
+function liveCount(){
+  let n=0;
+  for (const t of threats) if (t.state==='live' || t.state==='siege') n++;
+  return n;
+}
+function fieldClear(){
+  // a level ends only when nothing is still attacking (corpses/retreating foes,
+  // falling/landed boulders and in-flight arrows don't count)
+  return liveCount()===0;
+}
+const SQUAD_MIN_GAP = 1.2;   // a brief beat between groups so they read as waves
+const SQUAD_MAX_GAP = 3.5;   // …but reinforcements never stall longer than this
+function manageLevel(dt){
+  if (phase==='intermission'){
+    interT -= dt;
+    if (interT<=0) startLevel(level+1);
     return;
   }
-  // giant due? (a slow four-word mini-boss; only one at a time)
-  if (slain - lastGiantSlain >= realm.giantGap && !threats.some(t=>t.kind==='giant')){
-    lastGiantSlain = slain;
-    spawnGiant();
+  if (squadQueue.length){
+    squadGapT += dt;
+    const lc = liveCount();
+    // never leave the field empty mid-wave — send the next squad in at once
+    if (lc===0){ releaseSquad(squadQueue.shift()); squadGapT=0; return; }
+    // a 'solo' squad (e.g. a catapult) holds back until the field is clear, so it
+    // rolls in alone — nicer to watch — instead of mixed in with soldiers
+    if (squadQueue[0].solo) return;
+    // otherwise wait a beat, then reinforce once the field thins (or time's up)
+    if (squadGapT >= SQUAD_MIN_GAP && (lc <= 1 || squadGapT >= SQUAD_MAX_GAP)){
+      releaseSquad(squadQueue.shift()); squadGapT=0;
+    }
     return;
   }
-  // a single trebuchet shot (only one rock in the air per shot)
-  if (Math.random() < realm.rockChance && !threats.some(t=>t.kind==='rock')){
-    spawnRock();
-    return;
-  }
-  // otherwise a patch of troops, well spread out so their words don't stack
-  // and you can pick which one to pick off first
-  const n = randi(realm.group[0], realm.group[1]);
-  for (let k=0;k<n;k++) spawnTroop(k*rand(220,320));
+  // whole wave sent and the field is cleared → level complete
+  if (fieldClear()) levelComplete();
+}
+function startLevel(n){
+  level = n;
+  squadQueue = buildLevel(n);
+  phase = 'spawning';
+  squadGapT = SQUAD_MAX_GAP;        // first squad marches in right away
+  updateHud();
+  flashWave('Level '+n, n===1 ? 'To arms!' : 'A bigger wave approaches!');
+}
+function levelComplete(){
+  phase = 'intermission';
+  interT = 2.6;                    // breather before the next wave
+  flashWave('Level '+level+' Complete!', 'Wave '+(level+1)+' incoming…');
+  if (window.HSGSound && HSGSound.streak) HSGSound.streak(Math.min(level+3, 8));
+  if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 26 });
 }
 
 // ===================================================================
 // HUD / FLASHES
 // ===================================================================
 function updateHud(){
+  if (levelBadge) levelBadge.textContent='🏰 Lv '+level;
   slainBadge.textContent='⚔️ '+slain;
   let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives?'❤️':'<span class="spent">🤍</span>';
   heartsBadge.innerHTML=h;
@@ -1675,7 +2248,7 @@ function tick(ts){
     defeatT += dt;
     runDefeatFx(dt);            // the keep burns, worse and worse
   } else {
-    manageSpawns(dt);
+    manageLevel(dt);
     updateThreats(dt, sceneTime);
     updateProjectiles(dt);
   }
@@ -1754,7 +2327,7 @@ function finishDefeat(){
   defeat=false; running=false; if(rafId) cancelAnimationFrame(rafId);
   document.getElementById('fsSlain').textContent=slain;
   document.getElementById('fsBest').textContent=bestStreak;
-  document.getElementById('fsWave').textContent=wave;
+  document.getElementById('fsWave').textContent=level;
   document.getElementById('overTitle').textContent='The Castle Is Lost';
   document.getElementById('overCrest').textContent='🔥';
   overOverlay.classList.remove('hidden');
@@ -1769,8 +2342,8 @@ function finishDefeat(){
 function startGame(key){
   realmKey=key; realm=REALMS[key];
   clearField();
-  lives=START_LIVES; slain=0; wave=1; bestStreak=0; troopCount=0;
-  lastBossSlain=0; lastGiantSlain=0; spawnAcc=0; spawnInterval=realm.spawn[0]; sceneTime=0;
+  lives=START_LIVES; slain=0; bestStreak=0; troopCount=0;
+  squadGapT=0; sceneTime=0; phase='spawning'; interT=0;
   shake=0; flashA=0; defeat=false; defeatT=0;
   document.getElementById('overTitle').textContent='The Castle Is Lost';
   rail.reset();
@@ -1778,18 +2351,8 @@ function startGame(key){
   updateHud();
   startOverlay.classList.add('hidden');
   overOverlay.classList.add('hidden');
-  flashWave('Wave 1', 'To arms!');
   running=true; lastTs=0; focusCatcher();
-  // open with a wave already advancing: four foot soldiers spread out…
-  [0.5, 0.62, 0.74, 0.86].forEach(fr=>{
-    const s = spawnTroop(0);            // counts 1–4 → foot soldiers
-    s.x = castleW() + (W - castleW()) * fr;
-  });
-  // …and a knight bringing up the rear (the 5th spawn is mounted)
-  const kn = spawnTroop(0);
-  kn.x = castleW() + (W - castleW()) * 0.96;
-  // first trebuchet shot lands a few seconds in
-  setTimeout(()=>{ if (running && !defeat) spawnRock(); }, 3000);
+  startLevel(1);                 // builds the first wave + a lively opening
   rafId=requestAnimationFrame(tick);
 }
 function clearField(){

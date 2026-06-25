@@ -7,7 +7,12 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    .catch-page { max-width: 640px; margin: 0 auto; padding: 1.25rem 1rem 3rem; }
+    /* Wide board, MAIN column centered by mirroring the streak rail with a
+       phantom spacer on the left (same trick as Letter Snake / Dragon Siege). */
+    .game-layout-wide { max-width: min(1800px, 96vw); gap: 1rem; justify-content: center; }
+    .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
+    @media (max-width: 1000px) { .game-layout-wide::before { display: none; } }
+    .catch-page { margin: 0 auto; padding: 1.25rem 1rem 3rem; width: 100%; }
     .catch-top {
       display: flex; align-items: center; justify-content: space-between;
       gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem;
@@ -22,37 +27,43 @@
     .hearts { letter-spacing: 0.06em; }
     .hearts .spent { filter: grayscale(1) opacity(0.4); }
 
-    /* the word the player is assembling */
-    .word-rail {
-      display: flex; align-items: center; justify-content: center;
-      gap: 0.6rem; margin-bottom: 0.6rem; flex-wrap: wrap;
+    /* clue + blank slots that reveal as you catch the letters in order */
+    .word-rail { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; margin-bottom: 0.7rem; }
+    .clue-line {
+      display: flex; align-items: center; gap: 0.6rem; max-width: 52ch; text-align: center;
+      font-family: var(--font-serif); font-size: 1.65rem; font-weight: 700; color: var(--ink);
+      line-height: 1.3;
     }
-    .word-slots { display: flex; gap: 0.3rem; flex-wrap: wrap; justify-content: center; }
+    .clue-label {
+      font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--gold-dark, #b07d2b);
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.25rem 0.6rem; flex-shrink: 0;
+    }
+    .hear-btn {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      width: 2.1rem; height: 2.1rem; font-size: 1rem; cursor: pointer; line-height: 1; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .hear-btn:hover { background: #e3dccb; }
+    .word-slots { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
     .slot {
-      min-width: 1.5rem; height: 2.4rem; padding: 0 0.35rem;
+      min-width: 1.7rem; height: 2.7rem; padding: 0 0.4rem;
       display: flex; align-items: center; justify-content: center;
-      font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.5rem;
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 1.7rem;
       border-bottom: 4px solid var(--border); color: var(--ink-light);
       text-transform: lowercase; transition: color .15s, border-color .15s, transform .15s;
     }
     .slot.done { color: var(--green); border-color: var(--green); }
-    .slot.next { color: var(--red); border-color: var(--gold); transform: translateY(-3px); }
-    .slot.next::after { content: ''; }
-    .hear-btn {
-      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
-      width: 2.4rem; height: 2.4rem; font-size: 1.1rem; cursor: pointer; line-height: 1;
-      display: inline-flex; align-items: center; justify-content: center;
-    }
-    .hear-btn:hover { background: #e3dccb; }
+    .slot.next { border-color: var(--gold); transform: translateY(-3px); }
 
     .stage {
-      position: relative; width: 100%;
-      border-radius: 16px; overflow: hidden;
-      border: 2.5px solid var(--border);
-      box-shadow: 0 8px 26px rgba(26,23,20,0.18);
-      background: #eef6fb;
-      touch-action: none;
+      position: relative; width: 100%; border-radius: 16px; overflow: hidden;
+      border: 2.5px solid var(--border); box-shadow: 0 8px 26px rgba(26,23,20,0.18);
+      background: #eef6fb; touch-action: none;
+      height: min(72vh, 680px); min-height: 460px;
     }
+    @media (max-width: 600px) { .stage { height: 62vh; min-height: 380px; } }
     #catchCanvas { display: block; width: 100%; height: 100%; }
 
     .bf-overlay {
@@ -94,7 +105,7 @@
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-layout-wide">
 <div class="catch-page game-main">
 
   <div class="catch-top">
@@ -106,7 +117,10 @@
   </div>
 
   <div class="word-rail">
-    <button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button>
+    <div class="clue-line">
+      <button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button>
+      <span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span>
+    </div>
     <div class="word-slots" id="wordSlots"></div>
   </div>
 
@@ -115,16 +129,17 @@
     <div class="bf-overlay" id="startOverlay">
       <div class="crest">🪣</div>
       <h2>Letter Catch</h2>
-      <p>Slide the basket to catch each letter <strong>in order</strong> and spell the word — dodge the wrong ones! Pick a level:</p>
+      <p>Read the <strong>clue</strong>, then slide the basket to catch the letters <strong>in spelling order</strong> — dodge the wrong ones! Pick a level:</p>
       <div class="level-row">
-        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Sprout</span><span class="l-desc">Short words • gentle</span></span></button>
-        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Scout</span><span class="l-desc">Longer words • quicker</span></span></button>
-        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Scholar</span><span class="l-desc">Tricky words • fast</span></span></button>
+        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Easy</span><span class="l-desc">Grades 1–3</span></span></button>
+        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Medium</span><span class="l-desc">Grades 4–7</span></span></button>
+        <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Hard</span><span class="l-desc">High school+</span></span></button>
+        <button class="level-btn" data-level="einstein"><span class="l-icon">🧠</span><span><span class="l-name">Einstein</span><span class="l-desc">Spelling-bee level</span></span></button>
       </div>
     </div>
   </div>
 
-  <p class="hint">Move the basket with your <strong>mouse / finger</strong> or <kbd>←</kbd> <kbd>→</kbd>. Catch the <span style="color:var(--red);font-weight:700">red</span> letter next.</p>
+  <p class="hint">Move the basket with your <strong>mouse / finger</strong> or <kbd>←</kbd> <kbd>→</kbd>. Catch the letters in spelling order — the slots reveal as you go.</p>
 
   <div class="control-row"><button class="reset-link" onclick="quitToMenu()">Change Level</button></div>
 
@@ -141,20 +156,41 @@
 <script src="../../assets/js/spelling-words.js"></script>
 <script>
 // ============================================================
-// LETTER CATCH — catch falling letters in order to spell the word.
+// LETTER CATCH — read the clue, then catch the falling letters
+// IN SPELLING ORDER to fill the blank slots. Dodge the wrong ones.
+// Big board, like Letter Snake / Dragon Siege.
+//
+// Each completed word is a new "level": letters fall a little faster
+// and more wrong letters mix in. The goal is to see how many words
+// you can spell before running out of hearts.
 // ============================================================
 const LEVELS = {
-  easy:   { fall:[70,120],  spawn:[0.95,0.7], needRatio:0.5 },
-  medium: { fall:[95,150],  spawn:[0.8,0.55], needRatio:0.42 },
-  hard:   { fall:[120,185], spawn:[0.7,0.45], needRatio:0.36 }
+  // baseFall = fall speed of word #1; fallStep = +fraction faster per word.
+  // needRatio0 = chance a spawned tile is the letter you need right now
+  // (high = easy: few wrong letters to dodge). It eases down each word.
+  easy:     { baseFall:[48,80],  baseSpawn:1.05, fallStep:0.040, needRatio0:0.70 },
+  medium:   { baseFall:[64,104], baseSpawn:0.92, fallStep:0.050, needRatio0:0.62 },
+  hard:     { baseFall:[82,134], baseSpawn:0.80, fallStep:0.060, needRatio0:0.56 },
+  einstein: { baseFall:[96,150], baseSpawn:0.72, fallStep:0.060, needRatio0:0.50 }
 };
 const MAX_MISTAKES = 3;
+const READ_SECONDS = 2.6;          // pause to read the clue before letters fall
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
+
+// Tricky look-alike / sound-alike letters. When a decoy spawns we often pull
+// one from the NEEDED letter's confusable set, so an 'e' you want hides among
+// stray 'a's, a 'b' among 'd's & 'p's, etc. — you must really know the spelling.
+const CONFUSE = {
+  a:'eo', e:'ai', i:'eyl', o:'ua', u:'ov', y:'ie',
+  b:'dp', d:'bpq', p:'bqd', q:'pgd', g:'qjy', c:'ks', k:'cq', s:'cz',
+  m:'n', n:'mh', h:'n', v:'wu', w:'vu', f:'t', t:'f', j:'gi', l:'it', r:'n', x:'ks', z:'s'
+};
 
 const stage    = document.getElementById('stage');
 const canvas   = document.getElementById('catchCanvas');
 const ctx      = canvas.getContext('2d');
 const wordSlots= document.getElementById('wordSlots');
+const clueText = document.getElementById('clueText');
 const scoreBadge = document.getElementById('scoreBadge');
 const heartsBadge= document.getElementById('heartsBadge');
 const startOverlay = document.getElementById('startOverlay');
@@ -163,30 +199,43 @@ let W=560, H=460, dpr=1;
 function setupCanvas(){
   const r = stage.getBoundingClientRect();
   W = Math.max(300, r.width);
-  H = Math.round(Math.min(480, Math.max(360, W*0.78)));
-  stage.style.height = H+'px';
+  H = Math.max(360, r.height);   // fill the full (tall) stage
   dpr = Math.min(window.devicePixelRatio||1, 2);
   canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
   ctx.setTransform(dpr,0,0,dpr,0,0);
 }
-window.addEventListener('resize', ()=>{ setupCanvas(); });
+window.addEventListener('resize', ()=>{ setupCanvas(); if(!running) render(); });
 
 const rand=(a,b)=>a+Math.random()*(b-a);
 const lerp=(a,b,t)=>a+(b-a)*t;
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 
 let level='easy', cfg=LEVELS.easy;
-let word='', typed=0, score=0, mistakes=0, bestStreak=0;
+let word='', clueStr='', typed=0, score=0, mistakes=0, bestStreak=0;
 let tiles=[], basketX=280, basketTargetX=280;
-let running=false, lastTs=0, rafId=null, spawnAcc=0, sinceNeeded=0, shakeT=0, flashT=0;
+let running=false, reading=false, readT=0;
+let lastTs=0, rafId=null, spawnAcc=0, sinceNeeded=0, shakeT=0, flashT=0;
 let nextId=1;
+
+// difficulty for the CURRENT word — ramps up as `score` (words done) grows
+function diff(){
+  const w=score;
+  const fallMul = Math.min(1 + cfg.fallStep*w, 2.1);
+  return {
+    fall: [cfg.baseFall[0]*fallMul, cfg.baseFall[1]*fallMul],
+    spawn: cfg.baseSpawn * clamp(1 - 0.016*w, 0.58, 1),
+    needRatio: clamp(cfg.needRatio0 - 0.016*w, 0.32, cfg.needRatio0)
+  };
+}
 
 const rail = HSGStreak.init({ gameId:'letter-catch', gameName:'Letter Catch', minStreak:2,
   mount: document.getElementById('streakRail') });
 
-const BASKET_W = ()=> Math.max(70, W*0.16);
-const BASKET_Y = ()=> H-44;
-const TILE = ()=> Math.max(34, W*0.075);
+// basket / tiles scale to the (big) board but stay readable.
+// the basket hugs the letter size (~1.5 tiles wide) so you catch one at a time.
+const TILE = ()=> clamp(Math.min(W,H)*0.10, 44, 78);
+const BASKET_W = ()=> clamp(TILE()*1.5, 64, 112);
+const BASKET_Y = ()=> H-52;
 
 // ---- words / speech ----
 function speak(w){
@@ -201,18 +250,24 @@ function speak(w){
 }
 function newWord(){
   word = HSGSpellWords.pick(level).toLowerCase();
+  clueStr = HSGSpellWords.clue(word) || ('It has ' + word.length + ' letters');
   typed = 0;
   tiles = [];
   sinceNeeded = 0;
+  spawnAcc = 0;
+  clueText.textContent = clueStr;
   renderSlots();
   speak(word);
+  // pause so the player can read the clue & figure out the word before it falls
+  reading = true; readT = READ_SECONDS;
 }
+// blank slots that reveal only the letters you've caught in order
 function renderSlots(){
   wordSlots.innerHTML='';
   for (let i=0;i<word.length;i++){
     const s=document.createElement('span');
     s.className='slot'+(i<typed?' done':(i===typed?' next':''));
-    s.textContent = word[i];
+    s.textContent = i<typed ? word[i] : '';   // hidden until caught in order
     wordSlots.appendChild(s);
   }
 }
@@ -221,10 +276,10 @@ function renderSlots(){
 function startGame(lv){
   level=lv; cfg=LEVELS[lv];
   score=0; mistakes=0; bestStreak=0;
+  setupCanvas();
   basketX=basketTargetX=W/2;
   shakeT=0; flashT=0; spawnAcc=0;
   rail.reset();
-  setupCanvas();
   updateHud();
   startOverlay.classList.add('hidden');
   newWord();
@@ -232,13 +287,15 @@ function startGame(lv){
   rafId=requestAnimationFrame(tick);
 }
 function quitToMenu(){
-  running=false; if(rafId) cancelAnimationFrame(rafId);
+  running=false; reading=false; if(rafId) cancelAnimationFrame(rafId); rafId=null;
   rail.value=bestStreak; rail.end();
   tiles=[]; ctx.clearRect(0,0,W,H);
+  clueText.textContent='Pick a level to start!';
+  wordSlots.innerHTML='';
   startOverlay.classList.remove('hidden');
 }
 function gameOver(){
-  running=false; if(rafId) cancelAnimationFrame(rafId);
+  running=false; reading=false; if(rafId) cancelAnimationFrame(rafId); rafId=null;
   rail.value=bestStreak; rail.end();
   HSGSound.finish(false);
   HSGfx.showSummary({
@@ -250,16 +307,22 @@ function gameOver(){
 // ---- spawning ----
 function spawnTile(forceNeeded){
   const need = word[typed] || 'a';
+  const d = diff();
   let ch;
-  if (forceNeeded || Math.random() < cfg.needRatio){ ch = need; sinceNeeded = 0; }
+  if (forceNeeded || Math.random() < d.needRatio){ ch = need; sinceNeeded = 0; }
   else {
-    // a decoy: often another letter from the word, sometimes random
-    if (Math.random()<0.5 && word.length>1){ ch = word[Math.floor(Math.random()*word.length)]; }
-    else ch = ALPHA[Math.floor(Math.random()*26)];
-    if (ch===need && Math.random()<0.6) ch = ALPHA[Math.floor(Math.random()*26)];
+    // a decoy — biased toward letters that are easy to confuse with the one you
+    // need, so it's genuinely tricky to spot the right next letter.
+    const conf = CONFUSE[need];
+    const r = Math.random();
+    if (conf && r < 0.55){ ch = conf[Math.floor(Math.random()*conf.length)]; }        // look-alike of the needed letter
+    else if (r < 0.8 && word.length>1){ ch = word[Math.floor(Math.random()*word.length)]; } // another letter from the word
+    else ch = ALPHA[Math.floor(Math.random()*26)];                                     // pure random
+    // never let a decoy actually BE the needed letter (that'd be a free catch)
+    if (ch===need){ const c2=conf||'xz'; ch = c2[Math.floor(Math.random()*c2.length)]; }
   }
   const t = TILE();
-  tiles.push({ id:nextId++, ch, x:rand(t, W-t), y:-t, vy:rand(cfg.fall[0],cfg.fall[1]), size:t });
+  tiles.push({ id:nextId++, ch, x:rand(t, W-t), y:-t, vy:rand(d.fall[0],d.fall[1]), size:t });
 }
 
 // ---- core catch resolution (testable) ----
@@ -283,10 +346,11 @@ function wordComplete(){
   HSGSound.correct();
   if (HSGfx.milestone(rail.value)) HSGSound.streak(rail.value);
   else HSGfx.confetti({count:24});
-  flashT=0.35;
+  flashT=0.45;
   updateHud();
-  setTimeout(()=>{ if(running) newWord(); }, 420);
-  tiles=[]; // clear the field for the next word
+  // next word is the next "level": newWord() clears the field and starts the
+  // read-the-clue pause; the green flash & confetti play over it.
+  newWord();
 }
 function mistakeMade(){
   mistakes++;
@@ -308,13 +372,24 @@ function tick(ts){
   if(!lastTs) lastTs=ts;
   let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05) dt=0.05;
 
-  // basket easing toward target
+  // basket easing toward target (player can line up while reading)
   basketX += (basketTargetX-basketX)*Math.min(1, dt*16);
   basketX = clamp(basketX, BASKET_W()/2, W-BASKET_W()/2);
 
-  // spawning
+  // read-the-clue pause: no letters fall yet, just count down
+  if (reading){
+    readT -= dt;
+    if (readT<=0){ reading=false; spawnAcc=0; sinceNeeded=0; }
+    if (shakeT>0) shakeT=Math.max(0,shakeT-dt);
+    if (flashT>0) flashT=Math.max(0,flashT-dt);
+    render();
+    rafId=requestAnimationFrame(tick);
+    return;
+  }
+
+  // spawning (interval shortens a touch as more words are cleared)
   spawnAcc += dt; sinceNeeded += dt;
-  const interval = lerp(cfg.spawn[0], cfg.spawn[1], clamp(score/20,0,1));
+  const interval = diff().spawn;
   if (spawnAcc>=interval){ spawnAcc=0; spawnTile(false); }
   if (sinceNeeded>1.5 && !tiles.some(t=>t.ch===word[typed])) spawnTile(true);
 
@@ -322,10 +397,13 @@ function tick(ts){
   const by=BASKET_Y(), bw=BASKET_W();
   for (let i=tiles.length-1;i>=0;i--){
     const t=tiles[i];
+    if(!t) break;                       // field was rebuilt under us — stop
     t.y += t.vy*dt;
     if (t.y + t.size*0.5 >= by-6 && t.y < by+10 && Math.abs(t.x-basketX) <= bw/2){
       tiles.splice(i,1);
-      resolveCatch(t.ch);
+      const res = resolveCatch(t.ch);
+      // a completed word (or game over) replaces/clears `tiles`; don't keep iterating it
+      if (res==='complete' || !running) break;
       continue;
     }
     if (t.y - t.size > H){ tiles.splice(i,1); }
@@ -334,7 +412,7 @@ function tick(ts){
   if (shakeT>0) shakeT=Math.max(0,shakeT-dt);
   if (flashT>0) flashT=Math.max(0,flashT-dt);
   render();
-  rafId=requestAnimationFrame(tick);
+  if (running) rafId=requestAnimationFrame(tick);
 }
 
 function render(){
@@ -346,13 +424,13 @@ function render(){
   const g=ctx.createLinearGradient(0,0,0,H);
   g.addColorStop(0,'#eaf5fb'); g.addColorStop(1,'#dcecf5');
   ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
-  // soft clouds
+  // soft clouds, spread across the wider sky
   ctx.fillStyle='rgba(255,255,255,0.55)';
-  for(const c of [[W*0.2,H*0.2,30],[W*0.7,H*0.16,38],[W*0.5,H*0.32,26]]){
+  for(const c of [[W*0.15,H*0.16,34],[W*0.45,H*0.10,42],[W*0.7,H*0.22,30],[W*0.88,H*0.13,36]]){
     ctx.beginPath(); ctx.ellipse(c[0],c[1],c[2],c[2]*0.6,0,0,6.28); ctx.fill();
   }
   // ground strip
-  ctx.fillStyle='#cfe3d4'; ctx.fillRect(0,H-26,W,26);
+  ctx.fillStyle='#cfe3d4'; ctx.fillRect(0,H-30,W,30);
 
   // falling tiles
   for (const t of tiles) drawTile(t);
@@ -362,6 +440,26 @@ function render(){
 
   ctx.restore();
   if (flashT>0){ ctx.fillStyle='rgba(120,210,140,'+(flashT*0.5)+')'; ctx.fillRect(0,0,W,H); }
+  if (reading && running) drawReadyBanner();
+}
+// "Word N — read the clue!" with a countdown, shown over the board during the pause
+function drawReadyBanner(){
+  const n = Math.ceil(readT);
+  ctx.save();
+  ctx.fillStyle='rgba(20,28,38,0.30)'; ctx.fillRect(0,0,W,H);
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const big = Math.round(clamp(W*0.05,26,46));
+  ctx.fillStyle='#1A1714';
+  ctx.font="800 "+big+"px system-ui, -apple-system, sans-serif";
+  ctx.fillText('Word '+(score+1), W/2, H*0.40);
+  ctx.fillStyle='#3a3128';
+  ctx.font="700 "+Math.round(clamp(W*0.028,16,24))+"px system-ui, -apple-system, sans-serif";
+  ctx.fillText('Read the clue — get ready!', W/2, H*0.40 + big*0.95);
+  // big countdown digit
+  ctx.fillStyle='#C4A040';
+  ctx.font="800 "+Math.round(clamp(W*0.11,60,120))+"px Georgia, 'Times New Roman', serif";
+  ctx.fillText(String(n), W/2, H*0.62);
+  ctx.restore();
 }
 function drawTile(t){
   const s=t.size, x=t.x-s/2, y=t.y-s/2;
@@ -375,18 +473,18 @@ function drawTile(t){
   ctx.restore();
 }
 function drawBasket(cx, cy){
-  const w=BASKET_W(), h=34;
+  const w=BASKET_W(), h=38;
   ctx.save();
   // bowl
   ctx.fillStyle='#a9743b';
   ctx.beginPath();
   ctx.moveTo(cx-w/2, cy);
   ctx.lineTo(cx+w/2, cy);
-  ctx.lineTo(cx+w/2-10, cy+h);
-  ctx.lineTo(cx-w/2+10, cy+h);
+  ctx.lineTo(cx+w/2-12, cy+h);
+  ctx.lineTo(cx-w/2+12, cy+h);
   ctx.closePath(); ctx.fill();
   // rim
-  ctx.fillStyle='#caa24a'; roundRect(cx-w/2-4, cy-8, w+8, 12, 6); ctx.fill();
+  ctx.fillStyle='#caa24a'; roundRect(cx-w/2-4, cy-9, w+8, 13, 6); ctx.fill();
   // weave lines
   ctx.strokeStyle='rgba(0,0,0,0.18)'; ctx.lineWidth=2;
   for(let i=1;i<4;i++){ const yy=cy+i*h/4; ctx.beginPath(); ctx.moveTo(cx-w/2+i*2, yy); ctx.lineTo(cx+w/2-i*2, yy); ctx.stroke(); }
