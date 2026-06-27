@@ -1,448 +1,302 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Who Said It? — HomeschoolGames</title>
-  <link rel="stylesheet" href="../../assets/css/site.css">
-  <style>
-    @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.07); } 100% { transform: scale(1); } }
-    @keyframes shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-9px); } 40% { transform: translateX(9px); } 60% { transform: translateX(-6px); } 80% { transform: translateX(6px); } }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes winPop { 0% { transform: scale(0.4) rotate(-8deg); opacity: 0; } 60% { transform: scale(1.12) rotate(3deg); } 100% { transform: scale(1) rotate(0); opacity: 1; } }
-    @keyframes sparkle { 0% { transform: scale(0); opacity: 0; } 40% { opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Who Said It? — HomeschoolGames</title>
+<link rel="stylesheet" href="../../assets/css/site.css">
+<style>
+  .wsi-page { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  .wsi-top { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+  .wsi-top h1 { margin:0; font-size:1.7rem; }
+  .stat-badge { background: var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .95rem; font-weight:700; font-size:.9rem; font-family:var(--font-sans); color:var(--ink); white-space:nowrap; }
+  .stat-badge b { color: var(--gold); }
 
-    /* ---- two-column layout: quiz + hall of fame rail ---- */
-    .hof-layout {
-      display: flex; gap: 2.25rem; max-width: 1180px; margin: 0 auto;
-      padding: 1.5rem 1.25rem 3rem; align-items: flex-start;
-    }
-    .quiz-page { flex: 1 1 0; min-width: 0; max-width: 600px; }
-    .hof-rail { flex: 0 0 430px; }
+  /* two columns: quiz + wall */
+  .wsi-layout { display:flex; gap:1.5rem; align-items:flex-start; }
+  .quiz-col { flex:1 1 auto; min-width:0; }
+  .wall-col { flex:0 0 360px; }
 
-    .quiz-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; gap: 0.75rem; flex-wrap: wrap; }
-    .quiz-top h1 { margin: 0; font-size: 1.8rem; }
-    .stat-badge {
-      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
-      padding: 0.45rem 1rem; font-weight: 700; font-size: 0.92rem; font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
-    }
-    .stat-badge b { color: var(--gold); }
+  /* the quote + portrait card */
+  .quiz-card { background:#fff; border:2px solid var(--border); border-radius:18px; box-shadow:0 4px 16px rgba(26,23,20,.1);
+    padding:1.4rem 1.4rem 1.2rem; text-align:center; }
+  .portrait-wrap { width:200px; height:240px; margin:0 auto .9rem; border-radius:14px; overflow:hidden;
+    border:3px solid var(--border); background:#ece5d6; box-shadow:0 6px 18px rgba(26,23,20,.2); position:relative; }
+  .portrait-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+  .portrait-wrap.win { border-color: var(--gold); animation: pop .5s cubic-bezier(.34,1.56,.64,1); }
+  .portrait-wrap.miss { border-color: var(--red); }
+  @keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
+  .quote-text { font-family:var(--font-serif); font-size:1.55rem; line-height:1.35; color:var(--ink); margin:.2rem auto .5rem; max-width:30ch; }
+  .quote-text::before{ content:'“'; } .quote-text::after{ content:'”'; }
+  .quote-blurb { font-family:var(--font-sans); color:var(--ink-light); font-size:.92rem; margin:0 0 .2rem; }
+  .ask { font-family:var(--font-sans); font-weight:700; letter-spacing:.04em; color:var(--ink-light); font-size:.8rem;
+    text-transform:uppercase; margin:1rem 0 .7rem; }
 
-    .quote-card {
-      background: white; border: 2px solid var(--border); border-radius: 14px;
-      padding: 1.75rem 1.5rem 1.5rem; text-align: center; margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(26,23,20,0.07); animation: fadeIn 0.3s ease;
-    }
-    .quote-text {
-      font-family: var(--font-serif); font-size: clamp(1.5rem, 4.5vw, 2.1rem); font-weight: 600; font-style: italic;
-      color: var(--ink); line-height: 1.35; margin-bottom: 0.9rem;
-    }
-    .quote-text::before { content: "\201C"; }
-    .quote-text::after  { content: "\201D"; }
-    .quote-blurb { font-size: 1rem; color: var(--ink-light); line-height: 1.5; max-width: 42ch; margin: 0 auto; }
+  .option-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+  .option-btn { display:flex; align-items:center; gap:.55rem; text-align:left; background:#fff; border:2px solid var(--border);
+    border-radius:12px; padding:.7rem .8rem; font-family:var(--font-serif); font-size:1.02rem; color:var(--ink); cursor:pointer;
+    transition:transform .1s, border-color .12s, background .12s; }
+  .option-btn:hover:not(:disabled){ transform:translateY(-2px); border-color:var(--gold); }
+  .option-btn:disabled{ cursor:default; }
+  .key-hint { flex:0 0 auto; width:22px; height:22px; border-radius:6px; background:var(--cream-dark); border:1px solid var(--border);
+    font-family:var(--font-sans); font-weight:700; font-size:.8rem; display:grid; place-items:center; color:var(--ink-light); }
+  .option-btn.correct{ border-color:var(--green); background:#f0faf3; }
+  .option-btn.reveal-correct{ border-color:var(--green); background:#f0faf3; }
+  .option-btn.wrong{ border-color:var(--red); background:#fdf0f0; }
 
-    /* the reveal: who said it, with their portrait */
-    .reveal { display: none; margin-top: 1.1rem; flex-direction: column; align-items: center; gap: 0.5rem; animation: fadeIn 0.3s ease; }
-    .reveal.show { display: flex; }
-    .reveal-portrait {
-      width: 92px; height: 92px; border-radius: 14px; overflow: hidden;
-      border: 3px solid var(--border); box-shadow: 0 3px 10px rgba(26,23,20,0.16); background: #efe7d6;
-    }
-    .reveal.win .reveal-portrait { border-color: var(--gold); animation: winPop 0.5s cubic-bezier(.34,1.56,.64,1); }
-    .reveal-portrait svg { display: block; width: 100%; }
-    .reveal-name { font-family: var(--font-serif); font-size: 1.25rem; font-weight: 600; color: var(--ink); }
-    .reveal-era { font-size: 0.85rem; color: var(--ink-light); font-family: var(--font-sans); }
-    .reveal-tag { font-family: var(--font-sans); font-size: 0.85rem; font-weight: 700; }
-    .reveal-tag.win { color: var(--green); }
-    .reveal-tag.dup { color: var(--ink-light); }
-    .reveal-tag.miss { color: var(--red); }
+  .feedback { min-height:1.4rem; font-family:var(--font-sans); font-weight:700; margin:.9rem 0 .2rem; font-size:1rem; }
+  .reveal-line { font-family:var(--font-sans); color:var(--ink-light); font-size:.9rem; min-height:1.1rem; }
+  .reveal-line b { color:var(--ink); font-family:var(--font-serif); font-size:1.05rem; }
+  .next-btn { margin-top:1rem; background:var(--gold); color:var(--ink); border:none; border-radius:99px; padding:.7rem 1.8rem;
+    font-family:var(--font-sans); font-weight:800; font-size:1rem; cursor:pointer; box-shadow:0 4px 0 #a07f2c; }
+  .next-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #a07f2c; }
 
-    .prompt { text-align: center; font-family: var(--font-sans); font-size: 0.95rem; font-weight: 600; color: var(--ink-light); letter-spacing: 0.02em; margin-bottom: 0.9rem; }
-    .feedback { min-height: 1.6rem; text-align: center; font-size: 1.05rem; font-weight: 600; margin-bottom: 0.5rem; }
+  /* Wall of Fame */
+  .wall-panel { background:#fff; border:2px solid var(--border); border-radius:16px; box-shadow:0 4px 16px rgba(26,23,20,.1); overflow:hidden; }
+  .wall-head { padding:.9rem 1rem .75rem; border-bottom:1.5px solid var(--border); display:flex; align-items:baseline; justify-content:space-between; gap:.5rem; }
+  .wall-head h2 { margin:0; font-size:1.1rem; font-family:var(--font-serif); }
+  .wall-count { font-family:var(--font-sans); font-weight:700; font-size:.9rem; color:var(--ink-light); }
+  .wall-count b { color:var(--gold); }
+  .wall-bar { height:6px; background:var(--cream-dark); }
+  .wall-bar > i { display:block; height:100%; width:0; background:var(--gold); transition:width .5s ease; }
+  .wall-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding:10px; }
+  .wall-cell { border-radius:9px; overflow:hidden; border:2px solid var(--border); background:#efe7d6; text-align:center; }
+  .wall-pic { aspect-ratio:1/1; background:#d8cfbe; position:relative; overflow:hidden; }
+  .wall-pic img { width:100%; height:100%; object-fit:cover; display:block; }
+  .wall-cell.locked .wall-pic::after { content:'?'; position:absolute; inset:0; display:grid; place-items:center;
+    font-family:var(--font-serif); font-size:1.5rem; font-weight:700; color:#a59cae; background:#353143; }
+  .wall-nm { font-family:var(--font-sans); font-size:8px; font-weight:700; color:var(--ink); padding:2px 1px 3px; line-height:1.05; min-height:2.1em; }
+  .wall-cell.locked .wall-nm { color:transparent; }
+  .wall-cell.justwon { animation: pop .5s cubic-bezier(.34,1.56,.64,1); border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,162,74,.4); }
+  .wall-note { font-family:var(--font-sans); font-size:.8rem; color:var(--ink-light); text-align:center; padding:.3rem 1rem .9rem; }
+  .credit { font-size:.72rem; color:var(--ink-light); text-align:center; margin-top:1rem; }
+  .credit a { color:inherit; }
 
-    .option-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
-    .option-btn {
-      background: white; border: 2.5px solid var(--border); border-radius: 12px; padding: 0.9rem 0.75rem;
-      font-family: var(--font-serif); cursor: pointer; transition: border-color 0.12s, background 0.12s, transform 0.1s;
-      box-shadow: 0 2px 6px rgba(26,23,20,0.07); min-height: 62px; display: flex; align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
-    }
-    .option-btn .key-hint {
-      font-family: var(--font-sans); font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; color: var(--ink-light);
-      background: var(--cream-dark); border-radius: 5px; padding: 0.1rem 0.4rem; flex-shrink: 0;
-    }
-    .option-btn .option-val { font-size: 1.2rem; font-weight: 600; color: var(--ink); line-height: 1.15; }
-    .option-btn:hover:not(:disabled) { border-color: var(--gold); background: #FFFDF4; transform: translateY(-2px); }
-    .option-btn.correct { background: #EAF4EE; border-color: var(--green); animation: pop 0.3s ease; }
-    .option-btn.correct .option-val, .option-btn.correct .key-hint { color: var(--green); }
-    .option-btn.wrong { background: #FAE8E8; border-color: var(--red); animation: shake 0.4s ease; }
-    .option-btn.wrong .option-val, .option-btn.wrong .key-hint { color: var(--red); }
-    .option-btn.reveal-correct { background: #EAF4EE; border-color: var(--green); }
-    .option-btn.reveal-correct .option-val, .option-btn.reveal-correct .key-hint { color: var(--green); }
-    .option-btn:disabled { cursor: default; transform: none; }
-
-    #nextBtn {
-      display: block; width: 100%; background: var(--gold); color: var(--ink); border: none; border-radius: 12px;
-      padding: 1.05rem; font-size: 1.1rem; font-weight: 700; font-family: var(--font-sans); cursor: pointer; margin-bottom: 1rem; transition: background 0.15s;
-    }
-    #nextBtn:hover { background: #b08e30; }
-
-    .control-row { display: flex; justify-content: center; margin-top: 0.25rem; }
-    .reset-link { background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem; }
-    .reset-link:hover { color: var(--ink); }
-
-    /* ---- Hall of Fame gallery ---- */
-    .hof-panel { background: #fff; border: 2px solid var(--border); border-radius: 16px; box-shadow: 0 4px 16px rgba(26,23,20,0.1); overflow: hidden; }
-    .hof-head { padding: 0.9rem 1rem 0.75rem; border-bottom: 1.5px solid var(--border); display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
-    .hof-head h2 { margin: 0; font-size: 1.15rem; font-family: var(--font-serif); }
-    .hof-count { font-family: var(--font-sans); font-weight: 700; font-size: 0.9rem; color: var(--ink-light); }
-    .hof-count b { color: var(--gold); }
-    .hof-bar { height: 6px; background: var(--cream-dark); }
-    .hof-bar > i { display: block; height: 100%; width: 0; background: var(--gold); transition: width 0.5s ease; }
-
-    .hof-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 7px; padding: 10px; }
-    .hof-cell { position: relative; border-radius: 9px; overflow: hidden; border: 2px solid var(--border); background: #efe7d6; text-align: center; }
-    .hof-cell .fig { transition: fill 0.55s ease; }
-    .hof-cell .hof-bg { transition: fill 0.55s ease; }
-    .hof-frame { line-height: 0; }
-    .hof-frame svg { display: block; width: 100%; }
-    .hof-name { font-family: var(--font-sans); font-size: 8.5px; font-weight: 700; color: var(--ink); padding: 2px 1px 3px; line-height: 1.05; min-height: 1.7em; }
-
-    /* locked = dark silhouette + ??? */
-    .hof-cell.locked .fig { fill: #353143 !important; stroke: #353143 !important; }
-    .hof-cell.locked .hof-bg { fill: #c9c2d4 !important; }
-    .hof-cell.locked .hof-name { color: #8c86a0; }
-    .hof-cell.locked .hof-q { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-serif); font-size: 2rem; font-weight: 700; color: rgba(255,255,255,0.7); }
-    .hof-cell:not(.locked) .hof-q { display: none; }
-
-    .hof-cell.justwon { animation: pop 0.5s cubic-bezier(.34,1.56,.64,1); border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,162,74,0.4); }
-    .hof-cell.flashpip { position: relative; }
-    .hof-cell.flashpip::after { content: "✨"; position: absolute; top: -4px; right: -2px; font-size: 1.1rem; animation: sparkle 0.7s ease forwards; }
-
-    .hof-empty-note { font-family: var(--font-sans); font-size: 0.8rem; color: var(--ink-light); text-align: center; padding: 0.4rem 1rem 0.9rem; }
-
-    @media (max-width: 1080px) {
-      .hof-layout { flex-direction: column; align-items: center; }
-      .quiz-page, .hof-rail { width: 100%; max-width: 600px; flex: none; }
-      .hof-grid { grid-template-columns: repeat(6, 1fr); }
-    }
-    @media (max-width: 480px) {
-      .option-grid { grid-template-columns: 1fr; }
-      .hof-grid { grid-template-columns: repeat(4, 1fr); }
-    }
-  </style>
+  @media (max-width: 860px){
+    .wsi-layout { flex-direction:column; align-items:stretch; }
+    .wall-col { flex:none; width:100%; }
+    .wall-grid { grid-template-columns:repeat(6,1fr); }
+  }
+  @media (max-width: 520px){ .option-grid{ grid-template-columns:1fr; } .wall-grid{ grid-template-columns:repeat(4,1fr); } }
+</style>
 </head>
 <body>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
-  <nav class="site-nav">
-    <a href="../../subjects/history.html">← History</a>
-  </nav>
+  <nav class="site-nav"><a href="../../index.html">← All Games</a></nav>
 </header>
 
-<div class="hof-layout">
-  <div class="quiz-page">
+<div class="wsi-page">
+  <div class="wsi-top">
+    <h1>Who Said It?</h1>
+    <div class="stat-badge">Wall of Fame <b id="wallStat">0</b> / <span id="wallGoal">0</span></div>
+  </div>
 
-    <div class="quiz-top">
-      <h1>Who Said It?</h1>
-      <div class="stat-badge">Collected <b id="collectStat">0</b> / <span id="totalStat">0</span></div>
+  <div class="wsi-layout">
+    <!-- quiz -->
+    <div class="quiz-col">
+      <div class="quiz-card">
+        <div class="portrait-wrap" id="portraitWrap"><img id="portrait" alt="Portrait"></div>
+        <p class="quote-text" id="quoteText"></p>
+        <p class="quote-blurb" id="quoteBlurb"></p>
+        <div class="ask">Who said it?</div>
+        <div class="option-grid" id="optionGrid"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="reveal-line" id="revealLine"></div>
+        <button class="next-btn" id="nextBtn" style="display:none">Next Quote →</button>
+      </div>
+      <p class="credit">Portraits are public-domain &amp; freely-licensed images from
+        <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>.</p>
     </div>
 
-    <div class="quote-card">
-      <div class="quote-text" id="quoteText">Loading…</div>
-      <div class="quote-blurb" id="quoteBlurb"></div>
-
-      <div class="reveal" id="reveal">
-        <div class="reveal-portrait" id="revealPortrait"></div>
-        <div class="reveal-name" id="revealName"></div>
-        <div class="reveal-era" id="revealEra"></div>
-        <div class="reveal-tag" id="revealTag"></div>
+    <!-- wall of fame -->
+    <div class="wall-col">
+      <div class="wall-panel">
+        <div class="wall-head"><h2>🏛️ Wall of Fame</h2>
+          <span class="wall-count"><b id="wallCount">0</b> / <span id="wallTotal">0</span></span></div>
+        <div class="wall-bar"><i id="wallBar"></i></div>
+        <div class="wall-grid" id="wallGrid"></div>
+        <div class="wall-note" id="wallNote">Name a speaker right to add their portrait.</div>
       </div>
     </div>
-
-    <div class="prompt">Who said it?</div>
-    <div class="feedback" id="feedback"></div>
-    <div class="option-grid" id="optionGrid"></div>
-
-    <button id="nextBtn" onclick="advance()" style="display:none">Next Quote →</button>
-
-    <div class="control-row">
-      <button class="reset-link" onclick="resetHall()">Reset Hall of Fame</button>
-    </div>
-
-  </div><!-- /.quiz-page -->
-
-  <aside class="hof-rail">
-    <div class="hof-panel">
-      <div class="hof-head">
-        <h2>🏛️ Hall of Fame</h2>
-        <span class="hof-count"><b id="hofCount">0</b> / <span id="hofTotal">0</span></span>
-      </div>
-      <div class="hof-bar"><i id="hofBar"></i></div>
-      <div class="hof-grid" id="hofGrid"></div>
-      <div class="hof-empty-note" id="hofNote">Guess a quote right to add that person to your Hall of Fame.</div>
-    </div>
-  </aside>
+  </div>
 </div>
 
-<footer class="site-footer">
-  <a href="../../index.html">homeschoolgames.app</a>
-</footer>
-
-<script src="../../assets/js/portrait.js"></script>
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/whosaidit-people.js"></script>
 <script>
 // ============================================================
-// WHO SAID IT? — collect famous people into a Hall of Fame.
-// Guess a quote's speaker right and their silhouette fills in
-// with a cartoon portrait. The collection persists locally.
+// WHO SAID IT? — read a famous quote, see the real person, and
+// pick who said it. Each correct guess fills a slot on the Wall
+// of Fame; fill the whole wall to win. Questions are drawn from
+// a 250-person bank, so no single game uses them all.
 // ============================================================
-
-// Each person: a quote (or two), a one-line context, an era label, a birth year
-// (for ordering the gallery + picking era-plausible wrong answers), and a face.
-const PEOPLE = [
-  {name:"Socrates", era:"Ancient Greece", year:-470, face:{skin:'tan',hair:'#8a8076',hairStyle:'bald',facial:'beardFull',facialColor:'#9a9088',clothes:'#b9a37a',collar:'#a98f6a'},
-    quotes:[{q:"The unexamined life is not worth living.", b:"A philosopher's defense at his own trial."}]},
-  {name:"Hippocrates", era:"Ancient Greece", year:-460, face:{skin:'tan',hair:'#cfc8bc',hairStyle:'bald',facial:'beardFull',facialColor:'#cfc8bc',clothes:'#b9a37a'},
-    quotes:[{q:"Let food be thy medicine.", b:"The father of medicine."}]},
-  {name:"Aristotle", era:"Ancient Greece", year:-384, face:{skin:'tan',hair:'#6a5a44',hairStyle:'short',facial:'beardChin',facialColor:'#6a5a44',clothes:'#c2b48f'},
-    quotes:[{q:"Man is by nature a political animal.", b:"A tutor to Alexander the Great."}]},
-  {name:"Archimedes", era:"Ancient Greece", year:-287, face:{skin:'tan',hair:'#b0a89a',hairStyle:'short',facial:'beardFull',facialColor:'#b0a89a',clothes:'#a98f6a'},
-    quotes:[{q:"Give me a place to stand and I will move the earth.", b:"A Greek thinker on the power of the lever."}]},
-  {name:"Julius Caesar", era:"Ancient Rome", year:-100, face:{skin:'olive',hair:'#3a2f26',hairStyle:'caesar',facial:'none',hat:'laurel',clothes:'#b23b3b',collar:'#eee'},
-    quotes:[{q:"I came, I saw, I conquered.", b:"A Roman general's report after a swift victory."}]},
-  {name:"Isaac Newton", era:"Scientific Revolution", year:1643, face:{skin:'fair',hair:'#7a6a55',hairStyle:'long',facial:'none',clothes:'#5a3f6a',collar:'#e8e2d4'},
-    quotes:[{q:"If I have seen further it is by standing on the shoulders of giants.", b:"On gravity, motion, and humility."}]},
-  {name:"Benjamin Franklin", era:"Founding Era", year:1706, face:{skin:'fair',hair:'#9a9082',hairStyle:'baldTop',facial:'none',glasses:'oval',clothes:'#6a4a2a'},
-    quotes:[{q:"Well done is better than well said.", b:"From the almanac of a printer-statesman."}]},
-  {name:"Patrick Henry", era:"Founding Era", year:1736, face:{skin:'fair',hair:'#6a5440',hairStyle:'short',facial:'none',clothes:'#3a4a66'},
-    quotes:[{q:"Give me liberty, or give me death!", b:"A fiery cry in a Virginia church, 1775."}]},
-  {name:"Thomas Paine", era:"Founding Era", year:1737, face:{skin:'fair',hair:'#5a4a38',hairStyle:'short',facial:'none',clothes:'#5a3a3a'},
-    quotes:[{q:"These are the times that try men's souls.", b:"From a pamphlet read to weary Continental troops."}]},
-  {name:"John Paul Jones", era:"Founding Era", year:1747, face:{skin:'fair',hair:'#6a5a44',hairStyle:'short',facial:'none',hat:'bicorne',clothes:'#1a2a55',collar:'#d4af37'},
-    quotes:[{q:"I have not yet begun to fight.", b:"A naval captain, with his ship sinking beneath him."}]},
-  {name:"Thomas Jefferson", era:"Founding Era", year:1743, face:{skin:'fair',hair:'#b06a44',hairStyle:'sweptBack',facial:'none',clothes:'#3a4a66'},
-    quotes:[{q:"We hold these truths to be self-evident, that all men are created equal.", b:"The opening creed of the Declaration."}]},
-  {name:"Sojourner Truth", era:"1800s America", year:1797, face:{skin:'deep',hair:'#2a2a2a',hairStyle:'short',facial:'none',hat:'headscarf',scarf:'#e8e4d8',clothes:'#3a3a55',shawl:'#cfc8bc'},
-    quotes:[{q:"Ain't I a woman?", b:"An abolitionist's challenge at a women's convention."}]},
-  {name:"Abraham Lincoln", era:"1800s America", year:1809, face:{skin:'fair',hair:'#23201c',hairStyle:'short',facial:'beardChin',facialColor:'#23201c',hat:'tophat',clothes:'#222'},
-    quotes:[{q:"Four score and seven years ago...", b:"Spoken on a battlefield turned cemetery."},
-            {q:"A house divided against itself cannot stand.", b:"On a nation split over slavery."}]},
-  {name:"David Farragut", era:"1800s America", year:1801, face:{skin:'fair',hair:'#cfc8bc',hairStyle:'baldTop',facial:'whiskers',facialColor:'#cfc8bc',hat:'bicorne',clothes:'#1a2a55',collar:'#d4af37'},
-    quotes:[{q:"Damn the torpedoes, full speed ahead!", b:"A Union admiral charging into Mobile Bay."}]},
-  {name:"Chief Joseph", era:"1800s America", year:1840, face:{skin:'brown',hair:'#1c1c1c',hairStyle:'braids',facial:'none',hat:'feather',clothes:'#8a6a3a'},
-    quotes:[{q:"I will fight no more forever.", b:"A Nez Perce leader's surrender in the snow."}]},
-  {name:"Susan B. Anthony", era:"Reform Era", year:1820, face:{skin:'fair',hair:'#9a9082',hairStyle:'updo',facial:'none',clothes:'#3a2a3a',collar:'#d8c9a8'},
-    quotes:[{q:"Failure is impossible.", b:"A suffragist's last public words."}]},
-  {name:"Thomas Edison", era:"Age of Invention", year:1847, face:{skin:'fair',hair:'#b8b2a6',hairStyle:'short',facial:'none',clothes:'#3a3a3a',bowtie:'#7a2a2a'},
-    quotes:[{q:"Genius is one percent inspiration, ninety-nine percent perspiration.", b:"The inventor of the practical light bulb."},
-            {q:"I have not failed. I've just found ten thousand ways that won't work.", b:"On the long road to a working invention."}]},
-  {name:"Theodore Roosevelt", era:"Age of Invention", year:1858, face:{skin:'fair',hair:'#5a4a38',hairStyle:'short',facial:'mustacheBush',facialColor:'#5a4a38',glasses:'round',clothes:'#3a4a3a'},
-    quotes:[{q:"Speak softly and carry a big stick.", b:"A Rough Rider's rule for diplomacy."}]},
-  {name:"Marie Curie", era:"Age of Invention", year:1867, face:{skin:'fair',hair:'#3a2f26',hairStyle:'bun',facial:'none',clothes:'#3a3a4a',collar:'#2a2a38'},
-    quotes:[{q:"Nothing in life is to be feared, it is only to be understood.", b:"A two-time Nobel laureate in radioactivity."}]},
-  {name:"Mahatma Gandhi", era:"20th Century", year:1869, face:{skin:'brown',hair:'#2a2a2a',hairStyle:'bald',facial:'mustacheThin',facialColor:'#3a3a3a',glasses:'round',clothes:'#efe7d6',shawl:'#f4f1e8'},
-    quotes:[{q:"You must be the change you wish to see in the world.", b:"The leader of India's nonviolent struggle."}]},
-  {name:"Albert Einstein", era:"20th Century", year:1879, face:{skin:'fair',hair:'#dad4c8',hairStyle:'wild',facial:'mustacheBush',facialColor:'#dad4c8',clothes:'#5a5a5a'},
-    quotes:[{q:"Imagination is more important than knowledge.", b:"From the mind behind relativity."}]},
-  {name:"Winston Churchill", era:"20th Century", year:1874, face:{skin:'fair',hair:'#c8c2b6',hairStyle:'receding',facial:'none',clothes:'#222',bowtie:'#3a4a8a'},
-    quotes:[{q:"We shall fight on the beaches.", b:"Defiance as Britain stood nearly alone."}]},
-  {name:"Franklin D. Roosevelt", era:"20th Century", year:1882, face:{skin:'fair',hair:'#a39a8a',hairStyle:'short',facial:'none',glasses:'oval',clothes:'#2a2a38'},
-    quotes:[{q:"The only thing we have to fear is fear itself.", b:"An inaugural address in the depths of the Depression."}]},
-  {name:"Eleanor Roosevelt", era:"20th Century", year:1884, face:{skin:'fair',hair:'#9a8f7e',hairStyle:'updo',facial:'none',clothes:'#4a3a55',collar:'#e8e2d4'},
-    quotes:[{q:"No one can make you feel inferior without your consent.", b:"A first lady and champion of human rights."}]},
-  {name:"John F. Kennedy", era:"Modern America", year:1917, face:{skin:'fair',hair:'#7a5a3a',hairStyle:'sidePart',facial:'none',clothes:'#2a3a55'},
-    quotes:[{q:"Ask not what your country can do for you.", b:"A young president's call to service."}]},
-  {name:"Martin Luther King Jr.", era:"Civil Rights", year:1929, face:{skin:'brown',hair:'#1c1c1c',hairStyle:'short',facial:'mustache',facialColor:'#1c1c1c',clothes:'#222'},
-    quotes:[{q:"I have a dream.", b:"From the steps of the Lincoln Memorial, 1963."},
-            {q:"Injustice anywhere is a threat to justice everywhere.", b:"Written from a Birmingham jail cell."}]},
-  {name:"Neil Armstrong", era:"Space Age", year:1930, face:{skin:'fair',hair:'#7a6a52',hairStyle:'short',facial:'none',hat:'helmet',clothes:'#e8eaee'},
-    quotes:[{q:"That's one small step for man, one giant leap for mankind.", b:"First words from another world."}]},
-];
-
-const STORE_KEY = 'hsg_hof_who-said-it';
+const WALL_SIZE = 24;          // slots to fill to win (kept small, not all 250)
 const KEYS = ['A','B','C','D'];
-const DELAY_OK = 2600, DELAY_NEW = 3400, DELAY_NO = 4000;
+const DELAY_OK = 1700, DELAY_NO = 2600;
 
-// flatten quotes -> a draw deck, each tagged with its person
-const DECK = [];
-PEOPLE.forEach(p => p.quotes.forEach(qq => DECK.push({ who: p.name, quote: qq.q, blurb: qq.b, person: p })));
-const byName = {};
-PEOPLE.forEach(p => byName[p.name] = p);
+function slug(n){ return n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+function imgFor(p){ return '../../assets/img/whosaidit/' + slug(p.n) + '.jpg'; }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
-let collected = loadCollected();
-let answered = false, currentCard = null, queue = [], advanceTimer = null;
+const PEOPLE = WSI_PEOPLE.slice();
+const brokenImg = new Set();   // people whose portrait failed to load — never used as the answer
+let answerPool = shuffle(PEOPLE);   // order to draw answers from
+let collected = [];            // people filling the wall this game (in order)
+const collectedNames = new Set();
+let answered = false, current = null, advanceTimer = null;
 
-function loadCollected() {
-  try { const a = JSON.parse(localStorage.getItem(STORE_KEY)); return new Set(Array.isArray(a) ? a.filter(n => byName[n]) : []); }
-  catch (e) { return new Set(); }
+// ---- preload the portrait, skipping any that 404 ----
+function loadPortrait(p){
+  return new Promise(resolve=>{
+    const im = new Image();
+    im.onload = ()=>resolve(true);
+    im.onerror = ()=>{ brokenImg.add(p.n); resolve(false); };
+    im.src = imgFor(p);
+  });
 }
-function saveCollected() { try { localStorage.setItem(STORE_KEY, JSON.stringify([...collected])); } catch (e) {} }
 
-function shuffle(arr) {
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
-  return a;
-}
-
-// Draw a quote, preferring people not yet collected so you make progress.
-function drawCard() {
-  if (queue.length === 0) {
-    const uncollected = DECK.filter(c => !collected.has(c.who));
-    queue = shuffle(uncollected.length ? uncollected : DECK);
+// ---- pick the next answer: someone not yet on the wall, with a working portrait ----
+async function pickAnswer(){
+  for(let guard=0; guard<PEOPLE.length+5; guard++){
+    if(answerPool.length===0) answerPool = shuffle(PEOPLE.filter(p=>!collectedNames.has(p.n) && !brokenImg.has(p.n)));
+    if(answerPool.length===0) answerPool = shuffle(PEOPLE.filter(p=>!brokenImg.has(p.n)));
+    const cand = answerPool.pop();
+    if(!cand || collectedNames.has(cand.n) || brokenImg.has(cand.n)) continue;
+    if(await loadPortrait(cand)) return cand;
   }
-  return queue.pop();
+  return PEOPLE.find(p=>!brokenImg.has(p.n)) || PEOPLE[0];
 }
 
-// 4 name options: the speaker + 3 era-plausible distractors (closest by year).
-function buildOptions(card) {
-  const others = PEOPLE.filter(p => p.name !== card.who);
-  const near = others.slice().sort((a, b) => Math.abs(a.year - card.person.year) - Math.abs(b.year - card.person.year));
-  const pool = shuffle(near.slice(0, Math.min(8, near.length))).slice(0, 3).map(p => p.name);
-  while (pool.length < 3) { const r = others[Math.floor(Math.random() * others.length)].name; if (!pool.includes(r)) pool.push(r); }
-  return shuffle([card.who, ...pool]);
+// 4 names: the speaker + 3 era-near distractors (closest by year)
+function buildOptions(ans){
+  const others = PEOPLE.filter(p=>p.n!==ans.n);
+  const near = others.slice().sort((a,b)=>Math.abs(a.y-ans.y)-Math.abs(b.y-ans.y)).slice(0, 14);
+  const pool = shuffle(near).slice(0,3).map(p=>p.n);
+  while(pool.length<3){ const r=others[Math.floor(Math.random()*others.length)].n; if(!pool.includes(r)) pool.push(r); }
+  return shuffle([ans.n, ...pool]);
 }
 
-// ---------- Hall of Fame gallery ----------
-function cellHTML(p) {
-  const owned = collected.has(p.name);
-  return '<div class="hof-cell' + (owned ? '' : ' locked') + '" data-name="' + p.name + '">' +
-      '<div class="hof-frame">' + HSGPortrait.svg(p.face) + '<div class="hof-q">?</div></div>' +
-      '<div class="hof-name">' + (owned ? p.name : '???') + '</div>' +
-    '</div>';
+// ---------- Wall of Fame ----------
+function buildWall(){
+  const grid = document.getElementById('wallGrid');
+  let html='';
+  for(let i=0;i<WALL_SIZE;i++){
+    const p = collected[i];
+    html += '<div class="wall-cell'+(p?'':' locked')+'">'+
+      '<div class="wall-pic">'+(p?'<img src="'+imgFor(p)+'" alt="'+p.n+'">':'')+'</div>'+
+      '<div class="wall-nm">'+(p?p.n:'')+'</div></div>';
+  }
+  grid.innerHTML = html;
+  document.getElementById('wallGoal').textContent = WALL_SIZE;
+  document.getElementById('wallTotal').textContent = WALL_SIZE;
+  updateWallCount();
 }
-function buildGallery() {
-  document.getElementById('hofGrid').innerHTML = PEOPLE.map(cellHTML).join('');
-  document.getElementById('hofTotal').textContent = PEOPLE.length;
-  document.getElementById('totalStat').textContent = PEOPLE.length;
-  updateCounts();
+function updateWallCount(){
+  const c = collected.length;
+  document.getElementById('wallCount').textContent = c;
+  document.getElementById('wallStat').textContent = c;
+  document.getElementById('wallBar').style.width = (c/WALL_SIZE*100)+'%';
+  const note = document.getElementById('wallNote');
+  if(c===0) note.textContent='Name a speaker right to add their portrait.';
+  else if(c>=WALL_SIZE) note.textContent='🏆 Wall complete — you filled it!';
+  else note.textContent=(WALL_SIZE-c)+' more to fill the wall.';
 }
-function updateCounts() {
-  const c = collected.size, t = PEOPLE.length;
-  document.getElementById('hofCount').textContent = c;
-  document.getElementById('collectStat').textContent = c;
-  document.getElementById('hofBar').style.width = (c / t * 100) + '%';
-  const note = document.getElementById('hofNote');
-  if (c === 0) note.textContent = 'Guess a quote right to add that person to your Hall of Fame.';
-  else if (c >= t) note.textContent = '🏆 Hall of Fame complete — you collected everyone!';
-  else note.textContent = (t - c) + ' more to collect.';
-}
-function unlockCell(name) {
-  const cell = document.querySelector('.hof-cell[data-name="' + CSS.escape(name) + '"]');
-  if (!cell) return;
-  cell.classList.remove('locked');
-  cell.querySelector('.hof-name').textContent = name;
-  cell.classList.add('justwon', 'flashpip');
-  setTimeout(() => cell.classList.remove('justwon', 'flashpip'), 800);
+function addToWall(p){
+  collected.push(p); collectedNames.add(p.n);
+  const cells = document.querySelectorAll('.wall-cell');
+  const cell = cells[collected.length-1];
+  if(cell){
+    cell.classList.remove('locked');
+    cell.querySelector('.wall-pic').innerHTML = '<img src="'+imgFor(p)+'" alt="'+p.n+'">';
+    cell.querySelector('.wall-nm').textContent = p.n;
+    cell.classList.add('justwon'); setTimeout(()=>cell.classList.remove('justwon'),700);
+  }
+  updateWallCount();
 }
 
 // ---------- round flow ----------
-function nextCard() {
+async function nextCard(){
   clearTimeout(advanceTimer);
   answered = false;
-  currentCard = drawCard();
-  const options = buildOptions(currentCard);
-
-  document.getElementById('quoteText').textContent = currentCard.quote;
-  document.getElementById('quoteBlurb').textContent = currentCard.blurb;
-  document.getElementById('reveal').className = 'reveal';
   document.getElementById('feedback').textContent = '';
+  document.getElementById('revealLine').innerHTML = '';
   document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('portraitWrap').className = 'portrait-wrap';
 
+  current = await pickAnswer();
+  document.getElementById('portrait').src = imgFor(current);
+  document.getElementById('quoteText').textContent = current.q;
+  document.getElementById('quoteBlurb').textContent = current.b;
+
+  const options = buildOptions(current);
   const grid = document.getElementById('optionGrid');
   grid.innerHTML = '';
-  options.forEach((who, i) => {
+  options.forEach((who,i)=>{
     const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.dataset.idx = i; btn.dataset.who = who;
-    btn.innerHTML = '<span class="key-hint">' + KEYS[i] + '</span><span class="option-val"></span>';
-    btn.querySelector('.option-val').textContent = who;
-    btn.addEventListener('click', () => handleAnswer(who, btn));
+    btn.className='option-btn'; btn.dataset.idx=i; btn.dataset.who=who;
+    btn.innerHTML='<span class="key-hint">'+KEYS[i]+'</span><span></span>';
+    btn.lastChild.textContent = who;
+    btn.addEventListener('click', ()=>handleAnswer(who, btn));
     grid.appendChild(btn);
   });
 }
 
-function handleAnswer(chosen, clickedBtn) {
-  if (answered) return;
-  answered = true;
+function handleAnswer(chosen, btn){
+  if(answered) return; answered = true;
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach(b=>b.disabled=true);
+  const correct = chosen === current.n;
 
-  const allBtns = document.querySelectorAll('.option-btn');
-  allBtns.forEach(b => b.disabled = true);
-
-  const person = currentCard.person;
-  const isCorrect = chosen === currentCard.who;
-  let isNew = false;
-
-  if (isCorrect) {
-    clickedBtn.classList.add('correct');
-    isNew = !collected.has(person.name);
-    if (isNew) {
-      collected.add(person.name); saveCollected();
-      unlockCell(person.name); updateCounts();
-      HSGSound.correct(); if (HSGfx && HSGfx.milestone) { /* confetti handled below */ }
-    } else {
-      HSGSound.correct();
-    }
-    document.getElementById('feedback').innerHTML = isNew
-      ? '<span style="color:var(--green)">🎉 New! Portrait collected</span>'
-      : '<span style="color:var(--green)">✓ Correct!</span>';
+  if(correct){
+    btn.classList.add('correct');
+    if(window.HSGSound) HSGSound.correct();
+    document.getElementById('portraitWrap').classList.add('win');
+    document.getElementById('feedback').innerHTML = '<span style="color:var(--green)">✓ Correct!</span>';
+    addToWall(current);
+    if(window.HSGfx && HSGfx.confetti) HSGfx.confetti({count:18});
   } else {
-    HSGSound.wrong();
-    clickedBtn.classList.add('wrong');
-    allBtns.forEach(b => { if (b.dataset.who === currentCard.who) b.classList.add('reveal-correct'); });
+    if(window.HSGSound) HSGSound.wrong();
+    btn.classList.add('wrong');
+    btns.forEach(b=>{ if(b.dataset.who===current.n) b.classList.add('reveal-correct'); });
+    document.getElementById('portraitWrap').classList.add('miss');
     document.getElementById('feedback').innerHTML = '<span style="color:var(--red)">✗ Not quite</span>';
   }
+  document.getElementById('revealLine').innerHTML = 'It was <b>'+current.n+'</b> · '+current.e;
 
-  // reveal the speaker with their portrait
-  const rev = document.getElementById('reveal');
-  document.getElementById('revealPortrait').innerHTML = HSGPortrait.svg(person.face);
-  document.getElementById('revealName').textContent = person.name;
-  document.getElementById('revealEra').textContent = person.era;
-  const tag = document.getElementById('revealTag');
-  if (isCorrect && isNew) { tag.textContent = '✓ Added to your Hall of Fame'; tag.className = 'reveal-tag win'; }
-  else if (isCorrect) { tag.textContent = '✓ Already in your Hall of Fame'; tag.className = 'reveal-tag dup'; }
-  else { tag.textContent = collected.has(person.name) ? 'Already collected' : 'Get them right to collect this portrait'; tag.className = 'reveal-tag miss'; }
-  rev.className = 'reveal show' + (isNew ? ' win' : '');
+  if(collected.length >= WALL_SIZE){ setTimeout(winGame, DELAY_OK); return; }
 
-  if (isNew && collected.size >= PEOPLE.length && HSGfx && HSGfx.showSummary) {
-    // full collection — celebrate after the reveal
-    setTimeout(celebrateComplete, DELAY_NEW);
-  }
-
-  const nextBtn = document.getElementById('nextBtn');
-  nextBtn.textContent = 'Next Quote →';
-  nextBtn.style.display = 'block';
-  scheduleAdvance(isCorrect ? (isNew ? DELAY_NEW : DELAY_OK) : DELAY_NO);
+  const nb = document.getElementById('nextBtn');
+  nb.style.display='inline-block';
+  advanceTimer = setTimeout(()=>{ if(answered) nextCard(); }, correct?DELAY_OK:DELAY_NO);
 }
 
-function celebrateComplete() {
-  if (HSGfx && HSGfx.showSummary) {
-    HSGfx.showSummary({ title: '🏛️ Hall of Fame complete!', correct: PEOPLE.length, total: PEOPLE.length, best: PEOPLE.length, onPlayAgain: nextCard });
-  }
+function winGame(){
+  if(window.HSGfx && HSGfx.showSummary){
+    HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:WALL_SIZE, best:WALL_SIZE, onPlayAgain:resetGame });
+  } else { resetGame(); }
+}
+function resetGame(){
+  collected = []; collectedNames.clear();
+  answerPool = shuffle(PEOPLE.filter(p=>!brokenImg.has(p.n)));
+  buildWall(); nextCard();
 }
 
-function scheduleAdvance(ms) { clearTimeout(advanceTimer); advanceTimer = setTimeout(advance, ms); }
-function advance() { clearTimeout(advanceTimer); if (!answered) return; nextCard(); }
-
-function resetHall() {
-  if (!window.confirm('Clear your Hall of Fame? This erases every portrait you have collected.')) return;
-  collected = new Set(); saveCollected(); queue = [];
-  buildGallery(); nextCard();
-}
-
-document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && answered) { e.preventDefault(); advance(); return; }
-  if (answered) return;
-  const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
-  if (idx === -1) return;
-  const btn = document.querySelector('.option-btn[data-idx="' + idx + '"]');
-  if (btn && !btn.disabled) btn.click();
+document.getElementById('nextBtn').addEventListener('click', ()=>{ if(answered) nextCard(); });
+document.addEventListener('keydown', e=>{
+  if((e.key==='Enter'||e.key===' ') && answered){ e.preventDefault(); nextCard(); return; }
+  if(answered) return;
+  const i=['a','b','c','d'].indexOf(e.key.toLowerCase());
+  if(i<0) return;
+  const b=document.querySelector('.option-btn[data-idx="'+i+'"]');
+  if(b && !b.disabled) b.click();
 });
 
-buildGallery();
+buildWall();
 nextCard();
 </script>
-
 </body>
 </html>

@@ -168,10 +168,10 @@ const LEVELS = {
   // baseFall = fall speed of word #1; fallStep = +fraction faster per word.
   // needRatio0 = chance a spawned tile is the letter you need right now
   // (high = easy: few wrong letters to dodge). It eases down each word.
-  easy:     { baseFall:[48,80],  baseSpawn:1.05, fallStep:0.040, needRatio0:0.70 },
-  medium:   { baseFall:[64,104], baseSpawn:0.92, fallStep:0.050, needRatio0:0.62 },
-  hard:     { baseFall:[82,134], baseSpawn:0.80, fallStep:0.060, needRatio0:0.56 },
-  einstein: { baseFall:[96,150], baseSpawn:0.72, fallStep:0.060, needRatio0:0.50 }
+  easy:     { baseFall:[48,80],  baseSpawn:1.05, fallStep:0.040, needRatio0:0.55 },
+  medium:   { baseFall:[64,104], baseSpawn:0.92, fallStep:0.050, needRatio0:0.47 },
+  hard:     { baseFall:[82,134], baseSpawn:0.80, fallStep:0.060, needRatio0:0.40 },
+  einstein: { baseFall:[96,150], baseSpawn:0.72, fallStep:0.060, needRatio0:0.34 }
 };
 const MAX_MISTAKES = 3;
 const READ_SECONDS = 2.6;          // pause to read the clue before letters fall
@@ -224,7 +224,7 @@ function diff(){
   return {
     fall: [cfg.baseFall[0]*fallMul, cfg.baseFall[1]*fallMul],
     spawn: cfg.baseSpawn * clamp(1 - 0.016*w, 0.58, 1),
-    needRatio: clamp(cfg.needRatio0 - 0.016*w, 0.32, cfg.needRatio0)
+    needRatio: clamp(cfg.needRatio0 - 0.016*w, 0.24, cfg.needRatio0)
   };
 }
 
@@ -315,9 +315,9 @@ function spawnTile(forceNeeded){
     // need, so it's genuinely tricky to spot the right next letter.
     const conf = CONFUSE[need];
     const r = Math.random();
-    if (conf && r < 0.55){ ch = conf[Math.floor(Math.random()*conf.length)]; }        // look-alike of the needed letter
-    else if (r < 0.8 && word.length>1){ ch = word[Math.floor(Math.random()*word.length)]; } // another letter from the word
-    else ch = ALPHA[Math.floor(Math.random()*26)];                                     // pure random
+    if (conf && r < 0.32){ ch = conf[Math.floor(Math.random()*conf.length)]; }         // look-alike of the needed letter
+    else if (r < 0.55 && word.length>1){ ch = word[Math.floor(Math.random()*word.length)]; } // another letter from the word
+    else ch = ALPHA[Math.floor(Math.random()*26)];                                     // a varied spread of the alphabet
     // never let a decoy actually BE the needed letter (that'd be a free catch)
     if (ch===need){ const c2=conf||'xz'; ch = c2[Math.floor(Math.random()*c2.length)]; }
   }

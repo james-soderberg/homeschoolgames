@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bible Trivia — Chariot Chase — HomeschoolGames</title>
+  <title>Race to the Red Sea — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
     .chase-page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
@@ -79,6 +79,7 @@
     .tag-events  { background: #FFE9C0; color: #7A5C00; }
     .tag-numbers { background: #D4EEF5; color: #1A5C6B; }
     .tag-places  { background: #E4F2E8; color: #2A5C3F; }
+    .tag-words   { background: #F6DCD2; color: #7A3526; }
     .qtext {
       font-family: var(--font-serif); font-weight: 600;
       font-size: clamp(1.15rem, 3.4vw, 1.55rem); line-height: 1.3; color: var(--ink);
@@ -144,12 +145,13 @@
     <!-- Start overlay -->
     <div class="ov" id="startOverlay">
       <div class="crest">🐎</div>
-      <h2>Chariot Chase</h2>
-      <p>Pharaoh's army is right behind you! Answer to outrun them and reach the Red Sea.</p>
+      <h2>Race to the Red Sea</h2>
+      <p>Pharaoh's army is right behind you! Answer Bible questions to outrun them and reach the Red Sea. Pick your difficulty:</p>
       <div class="pace-row">
-        <button class="pace-btn" data-pace="easy">Stroll<span class="p-sub">Relaxed</span></button>
-        <button class="pace-btn" data-pace="medium">Gallop<span class="p-sub">Normal</span></button>
-        <button class="pace-btn" data-pace="hard">Full Flight<span class="p-sub">Fast</span></button>
+        <button class="pace-btn" data-pace="easy">Easy<span class="p-sub">Grades 3–7</span></button>
+        <button class="pace-btn" data-pace="medium">Medium<span class="p-sub">High school</span></button>
+        <button class="pace-btn" data-pace="hard">Hard<span class="p-sub">Adult</span></button>
+        <button class="pace-btn" data-pace="einstein">Einstein<span class="p-sub">Expert</span></button>
       </div>
     </div>
 
@@ -164,7 +166,7 @@
       </div>
       <div class="overlay-actions">
         <button class="play-btn" id="againBtn">Run Again 🐎</button>
-        <button class="play-btn secondary" id="menuBtn">Change Pace</button>
+        <button class="play-btn secondary" id="menuBtn">Change Level</button>
       </div>
     </div>
 
@@ -215,49 +217,435 @@
 // ============================================================
 
 // ---------------- Question deck ----------------
-const DECK = [
-  {q:"Who built an ark to survive the great flood?", a:"Noah", wrong:["Moses","Abraham","Elijah"], cat:"people"},
-  {q:"Who was thrown into a den of lions but left unharmed?", a:"Daniel", wrong:["Jonah","Joseph","Elisha"], cat:"people"},
-  {q:"Who led the Israelites out of slavery in Egypt?", a:"Moses", wrong:["Aaron","Joshua","Samuel"], cat:"people"},
-  {q:"Who was swallowed by a great fish for three days?", a:"Jonah", wrong:["Job","Amos","Hosea"], cat:"people"},
-  {q:"Who interpreted Pharaoh's dreams and rose to rule Egypt?", a:"Joseph", wrong:["Daniel","Jacob","Moses"], cat:"people"},
-  {q:"Which disciple denied Jesus three times?", a:"Peter", wrong:["John","Judas","Thomas"], cat:"people"},
-  {q:"Who was the first king of Israel?", a:"Saul", wrong:["David","Samuel","Solomon"], cat:"people"},
-  {q:"Whose strength was tied to his uncut hair?", a:"Samson", wrong:["Gideon","Goliath","Saul"], cat:"people"},
-  {q:"Which prophet was taken to heaven in a chariot of fire?", a:"Elijah", wrong:["Elisha","Enoch","Isaiah"], cat:"people"},
-  {q:"Who baptized Jesus in the Jordan River?", a:"John the Baptist", wrong:["Peter","Andrew","Paul"], cat:"people"},
-  {q:"Which woman hid the Israelite spies in Jericho?", a:"Rahab", wrong:["Ruth","Esther","Deborah"], cat:"people"},
-  {q:"At which city did the walls fall after Israel marched around them?", a:"Jericho", wrong:["Babylon","Nineveh","Bethel"], cat:"events"},
-  {q:"What did the Israelites cross on dry ground while fleeing Egypt?", a:"The Red Sea", wrong:["The Jordan River","The Dead Sea","The Nile"], cat:"events"},
-  {q:"On what mountain did Moses receive the Ten Commandments?", a:"Mount Sinai", wrong:["Mount Carmel","Mount Nebo","Mount Zion"], cat:"events"},
-  {q:"What event filled the apostles with the Holy Spirit?", a:"Pentecost", wrong:["Passover","The Ascension","The Transfiguration"], cat:"events"},
-  {q:"What was the first plague God sent upon Egypt?", a:"Water turned to blood", wrong:["Locusts","Darkness","Frogs"], cat:"events"},
-  {q:"What food did God provide for Israel each morning in the wilderness?", a:"Manna", wrong:["Quail","Barley","Honey"], cat:"events"},
-  {q:"For how many days and nights did it rain during the flood?", a:"40", wrong:["7","12","100"], cat:"numbers"},
-  {q:"How many disciples did Jesus choose as apostles?", a:"12", wrong:["7","10","40"], cat:"numbers"},
-  {q:"With how many men did Gideon defeat the Midianite army?", a:"300", wrong:["600","1,000","100"], cat:"numbers"},
-  {q:"How many years did Israel wander in the wilderness?", a:"40", wrong:["7","12","70"], cat:"numbers"},
-  {q:"How many people were saved aboard Noah's ark?", a:"8", wrong:["2","12","40"], cat:"numbers"},
-  {q:"For how many pieces of silver was Jesus betrayed?", a:"30", wrong:["20","40","50"], cat:"numbers"},
-  {q:"How many books are in the Bible (Protestant canon)?", a:"66", wrong:["72","39","27"], cat:"numbers"},
-  {q:"Jesus healed ten lepers; how many returned to give thanks?", a:"1", wrong:["3","7","10"], cat:"numbers"},
-  {q:"In what town was Jesus born?", a:"Bethlehem", wrong:["Nazareth","Jerusalem","Jericho"], cat:"places"},
-  {q:"In what garden did Jesus pray the night he was arrested?", a:"Gethsemane", wrong:["Eden","Golgotha","Bethany"], cat:"places"},
-  {q:"What was the garden home of Adam and Eve?", a:"Eden", wrong:["Gethsemane","Canaan","Goshen"], cat:"places"},
-  {q:"To what great city was Jonah told to go and preach?", a:"Nineveh", wrong:["Tarshish","Babylon","Jericho"], cat:"places"},
-  {q:"On what island was John exiled when he received Revelation?", a:"Patmos", wrong:["Crete","Cyprus","Malta"], cat:"places"},
-  {q:"Where was Jesus crucified, outside Jerusalem?", a:"Golgotha", wrong:["Gethsemane","Bethany","Bethlehem"], cat:"places"},
-];
-const CAT_LABEL = { people:"People", events:"Events", numbers:"Numbers", places:"Places" };
+// Categories: people · places · events · numbers · words (teachings & key verses).
+// Answers follow the Protestant canon (KJV/most translations). Every "wrong"
+// option is a genuine, plausible-but-incorrect distractor.
+const DECK = {
+  easy: [
+    {"q":"Who built the big boat (ark)?","a":"Noah","wrong":["Moses","David","Jonah"],"cat":"people"},
+    {"q":"Who was swallowed by a big fish?","a":"Jonah","wrong":["Noah","David","Daniel"],"cat":"people"},
+    {"q":"Who fought the giant Goliath with a sling?","a":"David","wrong":["Moses","Noah","Jonah"],"cat":"people"},
+    {"q":"Who was safe in the lions' den?","a":"Daniel","wrong":["David","Noah","Moses"],"cat":"people"},
+    {"q":"Who was the baby put in a basket in the river?","a":"Moses","wrong":["Jesus","David","Noah"],"cat":"people"},
+    {"q":"Who led God's people through the Red Sea?","a":"Moses","wrong":["Noah","David","Daniel"],"cat":"people"},
+    {"q":"Who was the baby born in a manger in Bethlehem?","a":"Jesus","wrong":["Moses","David","John"],"cat":"people"},
+    {"q":"Who was the first man God made?","a":"Adam","wrong":["Noah","Moses","David"],"cat":"people"},
+    {"q":"Who was the first woman God made?","a":"Eve","wrong":["Mary","Sarah","Ruth"],"cat":"people"},
+    {"q":"Who made the whole world?","a":"God","wrong":["Moses","Noah","David"],"cat":"people"},
+    {"q":"Who walked on the water?","a":"Jesus","wrong":["Moses","Noah","David"],"cat":"people"},
+    {"q":"Who calmed the storm on the sea?","a":"Jesus","wrong":["Noah","Moses","Jonah"],"cat":"people"},
+    {"q":"Who fed people with bread and fish?","a":"Jesus","wrong":["Moses","David","Noah"],"cat":"people"},
+    {"q":"Who rose from the grave on Easter?","a":"Jesus","wrong":["Moses","David","Daniel"],"cat":"people"},
+    {"q":"Who was Jesus' mother?","a":"Mary","wrong":["Eve","Sarah","Ruth"],"cat":"people"},
+    {"q":"Who saw the burning bush?","a":"Moses","wrong":["Noah","David","Jonah"],"cat":"people"},
+    {"q":"Who was the shepherd boy who became king?","a":"David","wrong":["Moses","Noah","Daniel"],"cat":"people"},
+    {"q":"Who put the animals two-by-two on the ark?","a":"Noah","wrong":["Moses","David","Adam"],"cat":"people"},
+    {"q":"Who said 'Let there be light'?","a":"God","wrong":["Moses","Noah","Jesus"],"cat":"people"},
+    {"q":"Who lived in the Garden of Eden with Eve?","a":"Adam","wrong":["Noah","Moses","David"],"cat":"people"},
+    {"q":"What did Noah build to stay safe in the flood?","a":"An ark","wrong":["A tent","A boat house","A castle"],"cat":"events"},
+    {"q":"How did the animals go into the ark?","a":"Two by two","wrong":["One by one","All at once","Three by three"],"cat":"events"},
+    {"q":"What did baby Jesus sleep in?","a":"A manger","wrong":["A crib","A basket","A bed"],"cat":"events"},
+    {"q":"In what town was baby Jesus born?","a":"Bethlehem","wrong":["Egypt","Eden","Heaven"],"cat":"events"},
+    {"q":"What shone in the sky over baby Jesus?","a":"A star","wrong":["The moon","A rainbow","The sun"],"cat":"events"},
+    {"q":"What big animal swallowed Jonah?","a":"A big fish","wrong":["A lion","A bear","A bird"],"cat":"events"},
+    {"q":"What animals were with Daniel in the den?","a":"Lions","wrong":["Bears","Wolves","Tigers"],"cat":"events"},
+    {"q":"What did baby Moses float in on the river?","a":"A basket","wrong":["A boat","A raft","A barrel"],"cat":"events"},
+    {"q":"What did God make on the first day when He said 'Let there be light'?","a":"Light","wrong":["Water","Trees","Stars"],"cat":"events"},
+    {"q":"What did God split so Moses and the people could cross?","a":"The Red Sea","wrong":["A river","A lake","A pond"],"cat":"events"},
+    {"q":"What did Moses see burning that did not burn up?","a":"A bush","wrong":["A tree","A flower","A vine"],"cat":"events"},
+    {"q":"What did Jesus walk on?","a":"Water","wrong":["Sand","Clouds","Fire"],"cat":"events"},
+    {"q":"Jesus fed a big crowd with bread and what?","a":"Fish","wrong":["Eggs","Apples","Grapes"],"cat":"events"},
+    {"q":"What did Jesus calm when the disciples were scared in the boat?","a":"The storm","wrong":["The lions","The fire","The flood"],"cat":"events"},
+    {"q":"Where did the first man and woman live?","a":"The garden","wrong":["The ark","Bethlehem","Egypt"],"cat":"events"},
+    {"q":"Who came to see baby Jesus from the fields at night?","a":"Shepherds","wrong":["Kings","Fishermen","Farmers"],"cat":"events"},
+    {"q":"On what did Jesus die for us?","a":"The cross","wrong":["A tree","A hill","A boat"],"cat":"events"},
+    {"q":"What special day is when Jesus rose alive again?","a":"Easter","wrong":["Christmas","Sunday","Friday"],"cat":"events"},
+    {"q":"How many disciples did Jesus pick to follow Him?","a":"Twelve","wrong":["Two","Three","Ten"],"cat":"events"},
+    {"q":"Who is the Good Shepherd who cares for us?","a":"Jesus","wrong":["David","Moses","Noah"],"cat":"events"},
+    {"q":"How many disciples did Jesus have?","a":"12","wrong":["2","3","10"],"cat":"numbers"},
+    {"q":"How many of each animal did Noah take on the ark?","a":"2","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"How many days and nights did it rain on Noah's ark?","a":"40","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"How many commandments did God give Moses?","a":"10","wrong":["2","3","12"],"cat":"numbers"},
+    {"q":"How many days was Jonah inside the big fish?","a":"3","wrong":["2","10","12"],"cat":"numbers"},
+    {"q":"How many people did God put in the Garden of Eden?","a":"2","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"How many days did Jesus go without food in the desert?","a":"40","wrong":["2","3","10"],"cat":"numbers"},
+    {"q":"How many years did Moses' people wander in the desert?","a":"40","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"How many fish did Jesus use to feed the big crowd?","a":"2","wrong":["3","10","40"],"cat":"numbers"},
+    {"q":"How many plagues did God send on Egypt?","a":"10","wrong":["2","3","12"],"cat":"numbers"},
+    {"q":"How many gifts did the wise men bring baby Jesus?","a":"3","wrong":["2","10","12"],"cat":"numbers"},
+    {"q":"How many stone tablets did Moses carry down the mountain?","a":"2","wrong":["3","10","40"],"cat":"numbers"},
+    {"q":"How many days did Moses stay on the mountain with God?","a":"40","wrong":["2","3","10"],"cat":"numbers"},
+    {"q":"How many sons did Noah have?","a":"3","wrong":["2","10","12"],"cat":"numbers"},
+    {"q":"Noah took the animals onto the ark how many at a time?","a":"2","wrong":["3","10","40"],"cat":"numbers"},
+    {"q":"How many crosses stood on the hill when Jesus died?","a":"3","wrong":["2","10","12"],"cat":"numbers"},
+    {"q":"The Ten Commandments — how many rules is that?","a":"10","wrong":["2","3","40"],"cat":"numbers"},
+    {"q":"How many men did Jesus pick to be his special helpers?","a":"12","wrong":["2","3","40"],"cat":"numbers"},
+    {"q":"Adam and Eve — that is how many people?","a":"2","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"How many days was Jesus in the tomb before Easter?","a":"3","wrong":["2","10","40"],"cat":"numbers"},
+    {"q":"Where was baby Jesus born?","a":"Bethlehem","wrong":["Egypt","Heaven","The Red Sea"],"cat":"places"},
+    {"q":"Where did Moses lead the people through the water?","a":"The Red Sea","wrong":["Bethlehem","Heaven","Egypt"],"cat":"places"},
+    {"q":"Where did Adam and Eve live?","a":"The Garden of Eden","wrong":["Bethlehem","Egypt","The Red Sea"],"cat":"places"},
+    {"q":"Where do we say God lives?","a":"Heaven","wrong":["Egypt","Bethlehem","The Red Sea"],"cat":"places"},
+    {"q":"Where were Moses and the people kept as slaves?","a":"Egypt","wrong":["Heaven","Bethlehem","The Garden of Eden"],"cat":"places"},
+    {"q":"What sea split apart so the people could walk across?","a":"The Red Sea","wrong":["The Garden of Eden","Egypt","Heaven"],"cat":"places"},
+    {"q":"Where was the manger that baby Jesus slept in?","a":"Bethlehem","wrong":["Egypt","The Red Sea","Heaven"],"cat":"places"},
+    {"q":"In what garden did God put the first man and woman?","a":"The Garden of Eden","wrong":["Bethlehem","Heaven","Egypt"],"cat":"places"},
+    {"q":"Where did the shepherds go to see baby Jesus?","a":"Bethlehem","wrong":["Egypt","The Red Sea","The Garden of Eden"],"cat":"places"},
+    {"q":"From what land did Moses lead the people away?","a":"Egypt","wrong":["Bethlehem","Heaven","The Red Sea"],"cat":"places"},
+    {"q":"Where is the happy place God's people go to be with Him?","a":"Heaven","wrong":["Egypt","The Red Sea","Bethlehem"],"cat":"places"},
+    {"q":"Where did the Christmas star shine over?","a":"Bethlehem","wrong":["The Red Sea","Egypt","Heaven"],"cat":"places"},
+    {"q":"What place did the people cross on dry ground?","a":"The Red Sea","wrong":["The Garden of Eden","Heaven","Bethlehem"],"cat":"places"},
+    {"q":"Where do angels live with God?","a":"Heaven","wrong":["Bethlehem","Egypt","The Red Sea"],"cat":"places"},
+    {"q":"What little town is Jesus' birthplace?","a":"Bethlehem","wrong":["Egypt","Heaven","The Red Sea"],"cat":"places"},
+    {"q":"Where did Adam name all the animals?","a":"The Garden of Eden","wrong":["Bethlehem","The Red Sea","Egypt"],"cat":"places"},
+    {"q":"Where did baby Moses float in a basket?","a":"Egypt","wrong":["Heaven","Bethlehem","The Garden of Eden"],"cat":"places"},
+    {"q":"What sea did God hold back with a strong wind?","a":"The Red Sea","wrong":["Egypt","Bethlehem","The Garden of Eden"],"cat":"places"},
+    {"q":"Where will we one day see Jesus forever?","a":"Heaven","wrong":["Egypt","Bethlehem","The Red Sea"],"cat":"places"},
+    {"q":"Where did Mary and Joseph travel to before Jesus was born?","a":"Bethlehem","wrong":["The Red Sea","Heaven","The Garden of Eden"],"cat":"places"},
+    {"q":"The Lord is my ____.","a":"shepherd","wrong":["sheep","rock","light"],"cat":"words"},
+    {"q":"\"Let there be ____.\"","a":"light","wrong":["water","land","rain"],"cat":"words"},
+    {"q":"Jesus ____ me, this I know.","a":"loves","wrong":["saves","calls","sees"],"cat":"words"},
+    {"q":"Noah built a big ____.","a":"ark","wrong":["boat","tower","house"],"cat":"words"},
+    {"q":"Jesus is the Good ____.","a":"Shepherd","wrong":["King","Teacher","Father"],"cat":"words"},
+    {"q":"Jesus walked on the ____.","a":"water","wrong":["road","land","hill"],"cat":"words"},
+    {"q":"David fought the giant ____.","a":"Goliath","wrong":["Jonah","Moses","Noah"],"cat":"words"},
+    {"q":"Daniel was safe in the ____ den.","a":"lions","wrong":["bears","wolves","snakes"],"cat":"words"},
+    {"q":"Jonah was swallowed by a big ____.","a":"fish","wrong":["bird","boat","wave"],"cat":"words"},
+    {"q":"Baby Jesus slept in a ____.","a":"manger","wrong":["basket","cradle","crib"],"cat":"words"},
+    {"q":"The wise men followed a ____.","a":"star","wrong":["moon","cloud","sun"],"cat":"words"},
+    {"q":"Adam and ____ lived in the garden.","a":"Eve","wrong":["Mary","Ruth","Sarah"],"cat":"words"},
+    {"q":"Moses crossed the ____ Sea.","a":"Red","wrong":["Blue","Dead","Deep"],"cat":"words"},
+    {"q":"Baby Moses floated in a ____.","a":"basket","wrong":["boat","bowl","box"],"cat":"words"},
+    {"q":"God spoke to Moses from a burning ____.","a":"bush","wrong":["tree","fire","cloud"],"cat":"words"},
+    {"q":"Jesus rose again on ____.","a":"Easter","wrong":["Christmas","Friday","Monday"],"cat":"words"},
+    {"q":"Jesus was born in ____.","a":"Bethlehem","wrong":["Egypt","Eden","Heaven"],"cat":"words"},
+    {"q":"The animals went in two by ____.","a":"two","wrong":["three","four","ten"],"cat":"words"},
+    {"q":"God saw that it was ____.","a":"good","wrong":["done","light","new"],"cat":"words"},
+    {"q":"Jesus fed the people with fish and ____.","a":"bread","wrong":["fruit","cake","corn"],"cat":"words"}
+  ],
+  medium: [
+    {"q":"Who led Israel to victory over the Canaanite commander Sisera, ruling as a prophetess and judge?","a":"Deborah","wrong":["Miriam","Huldah","Jael"],"cat":"people"},
+    {"q":"Which judge defeated the Midianites with only 300 men carrying torches and trumpets?","a":"Gideon","wrong":["Jephthah","Ehud","Samson"],"cat":"people"},
+    {"q":"Who rebuilt the wall of Jerusalem after returning from exile as cupbearer to King Artaxerxes?","a":"Nehemiah","wrong":["Ezra","Zerubbabel","Mordecai"],"cat":"people"},
+    {"q":"Who was the first Christian martyr, stoned while seeing the heavens opened?","a":"Stephen","wrong":["James","Philip","Antipas"],"cat":"people"},
+    {"q":"Which seller of purple cloth from Thyatira was baptized after Paul preached at Philippi?","a":"Lydia","wrong":["Dorcas","Priscilla","Phoebe"],"cat":"people"},
+    {"q":"Who encouraged the apostles to accept Saul and was nicknamed 'son of encouragement'?","a":"Barnabas","wrong":["Silas","Timothy","Apollos"],"cat":"people"},
+    {"q":"Which prophet challenged the prophets of Baal on Mount Carmel?","a":"Elijah","wrong":["Elisha","Micaiah","Obadiah"],"cat":"people"},
+    {"q":"Who succeeded Elijah and received a double portion of his spirit?","a":"Elisha","wrong":["Gehazi","Jehu","Hazael"],"cat":"people"},
+    {"q":"Which king of Judah was healed and given fifteen more years after Isaiah prayed?","a":"Hezekiah","wrong":["Josiah","Asa","Jotham"],"cat":"people"},
+    {"q":"Who was the boy king of Judah that repaired the temple and renewed the covenant after finding the Book of the Law?","a":"Josiah","wrong":["Joash","Hezekiah","Uzziah"],"cat":"people"},
+    {"q":"Which prophet was thrown into a cistern and prophesied during Jerusalem's fall to Babylon?","a":"Jeremiah","wrong":["Ezekiel","Habakkuk","Zephaniah"],"cat":"people"},
+    {"q":"Who interpreted Nebuchadnezzar's dream of the great statue?","a":"Daniel","wrong":["Shadrach","Mordecai","Ezekiel"],"cat":"people"},
+    {"q":"Which tax collector did Jesus call down from a sycamore tree in Jericho?","a":"Zacchaeus","wrong":["Levi","Bartimaeus","Nicodemus"],"cat":"people"},
+    {"q":"Who was the Pharisee that came to Jesus by night and later helped bury Him?","a":"Nicodemus","wrong":["Joseph of Arimathea","Gamaliel","Simon the Pharisee"],"cat":"people"},
+    {"q":"Which runaway slave did Paul send back to his master in a personal letter?","a":"Onesimus","wrong":["Tychicus","Epaphras","Archippus"],"cat":"people"},
+    {"q":"Who was raised from the dead by Peter in Joppa, also called Tabitha?","a":"Dorcas","wrong":["Eutychus","Lydia","Rhoda"],"cat":"people"},
+    {"q":"Which Old Testament figure was taken up to heaven without dying, having 'walked with God'?","a":"Enoch","wrong":["Elijah","Methuselah","Melchizedek"],"cat":"people"},
+    {"q":"Who was Abraham's nephew that settled near Sodom?","a":"Lot","wrong":["Laban","Nahor","Eliezer"],"cat":"people"},
+    {"q":"Which son of Jacob persuaded his brothers to sell Joseph rather than kill him?","a":"Judah","wrong":["Reuben","Levi","Simeon"],"cat":"people"},
+    {"q":"Who was the Moabite woman who married Boaz and became an ancestor of David?","a":"Ruth","wrong":["Orpah","Naomi","Tamar"],"cat":"people"},
+    {"q":"Why was Moses barred from entering the Promised Land?","a":"He struck the rock","wrong":["He married a Cushite","He broke the tablets","He doubted at the bush"],"cat":"events"},
+    {"q":"How did Gideon's 300 men rout the Midianites?","a":"Trumpets and torches","wrong":["A night cavalry raid","A flooding river","A long siege"],"cat":"events"},
+    {"q":"What did King Belshazzar see during his feast?","a":"Writing on the wall","wrong":["A burning lampstand","A falling star","A ghostly army"],"cat":"events"},
+    {"q":"How did Samson destroy the Philistine temple?","a":"Pushed down the pillars","wrong":["Burned it to ashes","Flooded its courts","Broke down its gates"],"cat":"events"},
+    {"q":"What freed Paul and Silas from the Philippian jail?","a":"An earthquake","wrong":["An angel","A bribe","A royal pardon"],"cat":"events"},
+    {"q":"How did Peter escape Herod's prison?","a":"An angel freed him","wrong":["An earthquake struck","A guard was bribed","A tunnel was dug"],"cat":"events"},
+    {"q":"What happened to Ananias and Sapphira for lying?","a":"They fell dead","wrong":["They were exiled","They went blind","They were imprisoned"],"cat":"events"},
+    {"q":"How did the apostle James, John's brother, die?","a":"Killed by Herod's sword","wrong":["Stoned by a mob","Crucified in Rome","Exiled to Patmos"],"cat":"events"},
+    {"q":"What scattered the Jerusalem believers across Judea?","a":"Persecution after Stephen","wrong":["A severe famine","A Roman census","The temple's collapse"],"cat":"events"},
+    {"q":"What happened to Zechariah for doubting Gabriel?","a":"He became mute","wrong":["He went blind","He was paralyzed","He fainted away"],"cat":"events"},
+    {"q":"What did Elisha do first with Elijah's mantle?","a":"Parted the Jordan","wrong":["Healed a leper","Raised a boy","Multiplied oil"],"cat":"events"},
+    {"q":"How was Elijah taken up from the earth?","a":"In a whirlwind","wrong":["In a fiery furnace","In a great earthquake","In a blinding cloud"],"cat":"events"},
+    {"q":"What caused Uzzah's sudden death?","a":"Touching the ark","wrong":["Entering the Holy Place","Eating the showbread","Lifting the lampstand"],"cat":"events"},
+    {"q":"What did Israel build while Moses was on Sinai?","a":"A golden calf","wrong":["A bronze serpent","A stone altar","A wooden ark"],"cat":"events"},
+    {"q":"What healed the snake-bitten Israelites in the desert?","a":"Looking at the bronze serpent","wrong":["Drinking from the rock","Eating the manna","Touching the ark"],"cat":"events"},
+    {"q":"What did Nehemiah return to Jerusalem to rebuild?","a":"The city walls","wrong":["The temple","Solomon's palace","The great altar"],"cat":"events"},
+    {"q":"What event caused human languages to be confused?","a":"The Tower of Babel","wrong":["The great Flood","The golden calf","Sodom's destruction"],"cat":"events"},
+    {"q":"What was Jesus' first miracle, at the Cana wedding?","a":"Turned water to wine","wrong":["Healed the steward","Fed the guests","Raised a servant"],"cat":"events"},
+    {"q":"What was torn in two at the moment Jesus died?","a":"The temple veil","wrong":["His burial cloth","The high priest's robe","The eastern gate"],"cat":"events"},
+    {"q":"Why did God send Jonah to Nineveh?","a":"To preach repentance","wrong":["To crown a king","To rebuild a temple","To rescue captives"],"cat":"events"},
+    {"q":"How many years did Methuselah live?","a":"969","wrong":["930","950","777"],"cat":"numbers"},
+    {"q":"How many books are in the New Testament?","a":"27","wrong":["39","24","66"],"cat":"numbers"},
+    {"q":"For how many pieces of silver did Joseph's brothers sell him?","a":"20","wrong":["30","12","100"],"cat":"numbers"},
+    {"q":"How many years did Jacob serve Laban for Leah and Rachel?","a":"14","wrong":["7","21","12"],"cat":"numbers"},
+    {"q":"How many years did it take Solomon to build the temple?","a":"7","wrong":["20","13","40"],"cat":"numbers"},
+    {"q":"How many years did Jeremiah prophesy the Babylonian exile would last?","a":"70","wrong":["40","400","50"],"cat":"numbers"},
+    {"q":"How many believers were gathered in the upper room before Pentecost?","a":"120","wrong":["12","70","500"],"cat":"numbers"},
+    {"q":"How many were added to the church on the day of Pentecost?","a":"3,000","wrong":["5,000","120","500"],"cat":"numbers"},
+    {"q":"How old was Josiah when he became king of Judah?","a":"8","wrong":["12","16","7"],"cat":"numbers"},
+    {"q":"How many times did Naaman dip in the Jordan to be cleansed of leprosy?","a":"7","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"How many men remained in Gideon's army when he defeated Midian?","a":"300","wrong":["600","3,000","10,000"],"cat":"numbers"},
+    {"q":"How many children did God give Job after his trials?","a":"10","wrong":["7","14","20"],"cat":"numbers"},
+    {"q":"How many days had Lazarus been in the tomb when Jesus raised him?","a":"4","wrong":["3","7","1"],"cat":"numbers"},
+    {"q":"Of the ten lepers Jesus healed, how many returned to thank Him?","a":"1","wrong":["3","7","10"],"cat":"numbers"},
+    {"q":"How many people were saved on Noah's ark?","a":"8","wrong":["7","12","2"],"cat":"numbers"},
+    {"q":"How old was Abraham when Isaac was born?","a":"100","wrong":["75","90","99"],"cat":"numbers"},
+    {"q":"For how many pieces of silver did Judas betray Jesus?","a":"30","wrong":["20","40","50"],"cat":"numbers"},
+    {"q":"For how many days did Jesus appear to His disciples between resurrection and ascension?","a":"40","wrong":["3","7","50"],"cat":"numbers"},
+    {"q":"How many years did King David reign over Israel?","a":"40","wrong":["33","20","70"],"cat":"numbers"},
+    {"q":"How many sons did Jacob have?","a":"12","wrong":["10","13","7"],"cat":"numbers"},
+    {"q":"On which mountain did Moses receive the Ten Commandments?","a":"Mount Sinai","wrong":["Mount Nebo","Mount Carmel","Mount Hor"],"cat":"places"},
+    {"q":"On which mountain did Elijah defeat the prophets of Baal?","a":"Mount Carmel","wrong":["Mount Tabor","Mount Gilboa","Mount Sinai"],"cat":"places"},
+    {"q":"From which mountain did Moses view the Promised Land before he died?","a":"Mount Nebo","wrong":["Mount Hor","Mount Gerizim","Mount Sinai"],"cat":"places"},
+    {"q":"Saul was blinded by a heavenly light on the road to which city?","a":"Damascus","wrong":["Antioch","Tarsus","Jerusalem"],"cat":"places"},
+    {"q":"What was the Apostle Paul's hometown?","a":"Tarsus","wrong":["Antioch","Ephesus","Lystra"],"cat":"places"},
+    {"q":"God told Jonah to preach against which great city?","a":"Nineveh","wrong":["Babylon","Tyre","Damascus"],"cat":"places"},
+    {"q":"Toward which distant place did Jonah flee instead of obeying God?","a":"Tarshish","wrong":["Nineveh","Sidon","Tyre"],"cat":"places"},
+    {"q":"Which river did the Israelites cross to enter the Promised Land?","a":"Jordan River","wrong":["Nile River","Euphrates River","Jabbok River"],"cat":"places"},
+    {"q":"In which city were Jesus' followers first called 'Christians'?","a":"Antioch","wrong":["Jerusalem","Damascus","Ephesus"],"cat":"places"},
+    {"q":"Lydia, the seller of purple, was originally from which city?","a":"Thyatira","wrong":["Philippi","Ephesus","Colossae"],"cat":"places"},
+    {"q":"In Revelation, which church was rebuked for being lukewarm?","a":"Laodicea","wrong":["Sardis","Pergamum","Smyrna"],"cat":"places"},
+    {"q":"From which city of the Chaldeans did God first call Abram (Abraham)?","a":"Ur","wrong":["Sodom","Babylon","Nineveh"],"cat":"places"},
+    {"q":"On which mountain did Noah's ark come to rest?","a":"Mount Ararat","wrong":["Mount Sinai","Mount Hor","Mount Nebo"],"cat":"places"},
+    {"q":"In which valley did David fight Goliath?","a":"Valley of Elah","wrong":["Valley of Hinnom","Valley of Jezreel","Kidron Valley"],"cat":"places"},
+    {"q":"In which town did Jesus turn water into wine?","a":"Cana","wrong":["Capernaum","Bethany","Nain"],"cat":"places"},
+    {"q":"In which village did Jesus raise Lazarus from the dead?","a":"Bethany","wrong":["Bethphage","Cana","Nain"],"cat":"places"},
+    {"q":"On the road to which village did two disciples meet the risen Jesus?","a":"Emmaus","wrong":["Bethany","Jericho","Bethphage"],"cat":"places"},
+    {"q":"In which capital city does the book of Esther take place?","a":"Susa","wrong":["Babylon","Nineveh","Ecbatana"],"cat":"places"},
+    {"q":"On which body of water did Jesus calm the storm?","a":"Sea of Galilee","wrong":["Dead Sea","Mediterranean Sea","Red Sea"],"cat":"places"},
+    {"q":"Whose walls fell down after Israel marched around the city?","a":"Jericho","wrong":["Ai","Gibeon","Hebron"],"cat":"places"},
+    {"q":"Who said, \"Am I my brother's keeper?\" (Genesis 4:9)","a":"Cain","wrong":["Abel","Lamech","Esau"],"cat":"words"},
+    {"q":"Who answered the LORD, \"Here am I; send me\" (Isaiah 6:8)?","a":"Isaiah","wrong":["Jeremiah","Samuel","Ezekiel"],"cat":"words"},
+    {"q":"Complete the verse: \"The LORD is my shepherd; I shall not ___\" (Psalm 23:1)","a":"want","wrong":["fear","fall","faint"],"cat":"words"},
+    {"q":"Who wrote, \"I have fought a good fight, I have finished my course, I have kept the faith\" (2 Timothy 4:7)?","a":"Paul","wrong":["Peter","Timothy","Stephen"],"cat":"words"},
+    {"q":"Who said, \"Speak; for thy servant heareth\" (1 Samuel 3:10)?","a":"Samuel","wrong":["Eli","David","Saul"],"cat":"words"},
+    {"q":"Complete the verse: \"Trust in the LORD with all thine heart; and lean not unto thine own ___\" (Proverbs 3:5)","a":"understanding","wrong":["wisdom","strength","riches"],"cat":"words"},
+    {"q":"Who confessed, \"Thou art the Christ, the Son of the living God\" (Matthew 16:16)?","a":"Peter","wrong":["Andrew","Nathanael","John"],"cat":"words"},
+    {"q":"Who told the mockers, \"The God of heaven, he will prosper us; therefore we his servants will arise and build\" (Nehemiah 2:20)?","a":"Nehemiah","wrong":["Ezra","Zerubbabel","Haggai"],"cat":"words"},
+    {"q":"Who prayed, \"Lord, lay not this sin to their charge\" (Acts 7:60)?","a":"Stephen","wrong":["Paul","Barnabas","James"],"cat":"words"},
+    {"q":"Who said to the lame man, \"Silver and gold have I none; but such as I have give I thee\" (Acts 3:6)?","a":"Peter","wrong":["John","Philip","Paul"],"cat":"words"},
+    {"q":"Who answered the angel, \"Behold the handmaid of the Lord; be it unto me according to thy word\" (Luke 1:38)?","a":"Mary","wrong":["Elisabeth","Anna","Martha"],"cat":"words"},
+    {"q":"Who exclaimed, \"Whence is this to me, that the mother of my Lord should come to me?\" (Luke 1:43)?","a":"Elisabeth","wrong":["Mary","Anna","Salome"],"cat":"words"},
+    {"q":"Complete the verse: \"I can do all things through Christ which ___ me\" (Philippians 4:13)","a":"strengtheneth","wrong":["loveth","calleth","keepeth"],"cat":"words"},
+    {"q":"Who declared, \"As for me and my house, we will serve the LORD\" (Joshua 24:15)?","a":"Joshua","wrong":["Moses","Caleb","Gideon"],"cat":"words"},
+    {"q":"Who said, \"Whither thou goest, I will go; and where thou lodgest, I will lodge\" (Ruth 1:16)?","a":"Ruth","wrong":["Naomi","Orpah","Esther"],"cat":"words"},
+    {"q":"Who cried to her husband, \"Give me children, or else I die\" (Genesis 30:1)?","a":"Rachel","wrong":["Leah","Sarah","Hannah"],"cat":"words"},
+    {"q":"Who affirmed, \"I know that my redeemer liveth\" (Job 19:25)?","a":"Job","wrong":["David","Solomon","Isaiah"],"cat":"words"},
+    {"q":"Complete the verse: \"In the beginning was the Word, and the Word was with God, and the Word was ___\" (John 1:1)","a":"God","wrong":["light","life","truth"],"cat":"words"},
+    {"q":"Who taunted David, \"Am I a dog, that thou comest to me with staves?\" (1 Samuel 17:43)?","a":"Goliath","wrong":["Saul","Abner","Achish"],"cat":"words"},
+    {"q":"Who asked Jesus, \"How can a man be born when he is old?\" (John 3:4)?","a":"Nicodemus","wrong":["Nathanael","Thomas","Joseph of Arimathaea"],"cat":"words"}
+  ],
+  hard: [
+    {"q":"Which left-handed Benjamite judge assassinated Eglon, the obese king of Moab?","a":"Ehud","wrong":["Othniel","Shamgar","Tola"],"cat":"people"},
+    {"q":"Which judge struck down 600 Philistines with an oxgoad?","a":"Shamgar","wrong":["Ehud","Othniel","Abdon"],"cat":"people"},
+    {"q":"Which judge made a rash vow and sacrificed his own daughter?","a":"Jephthah","wrong":["Gideon","Barak","Ibzan"],"cat":"people"},
+    {"q":"Which king of Judah was struck with leprosy for unlawfully burning incense in the temple?","a":"Uzziah","wrong":["Jotham","Ahaz","Amaziah"],"cat":"people"},
+    {"q":"Which king of Israel reigned only seven days, then burned the palace down over himself?","a":"Zimri","wrong":["Tibni","Elah","Shallum"],"cat":"people"},
+    {"q":"Which prophet was commanded to marry Gomer, an unfaithful wife?","a":"Hosea","wrong":["Amos","Joel","Micah"],"cat":"people"},
+    {"q":"Which prophetess did King Josiah's officials consult about the rediscovered Book of the Law?","a":"Huldah","wrong":["Deborah","Miriam","Noadiah"],"cat":"people"},
+    {"q":"Which queen killed the royal heirs to seize the throne of Judah?","a":"Athaliah","wrong":["Jezebel","Maacah","Michal"],"cat":"people"},
+    {"q":"Who hid the infant Joash from Athaliah's slaughter of the princes?","a":"Jehosheba","wrong":["Jehoiada","Huldah","Abigail"],"cat":"people"},
+    {"q":"Which grandson of Aaron halted a plague by spearing Zimri and the Midianite woman Cozbi?","a":"Phinehas","wrong":["Eleazar","Ithamar","Nadab"],"cat":"people"},
+    {"q":"Who succeeded Aaron as high priest of Israel?","a":"Eleazar","wrong":["Ithamar","Phinehas","Abihu"],"cat":"people"},
+    {"q":"Which high priest's sons, Hophni and Phinehas, died the day the ark was captured?","a":"Eli","wrong":["Ahimelech","Abiathar","Zadok"],"cat":"people"},
+    {"q":"Which of David's mighty men killed a lion in a pit on a snowy day?","a":"Benaiah","wrong":["Abishai","Eleazar","Shammah"],"cat":"people"},
+    {"q":"Which swift-footed brother of Joab was killed by Abner in battle?","a":"Asahel","wrong":["Abishai","Amasa","Joab"],"cat":"people"},
+    {"q":"Who became the first king of the Northern Kingdom after Israel split from Judah?","a":"Jeroboam","wrong":["Rehoboam","Omri","Nadab"],"cat":"people"},
+    {"q":"Which prophet confronted David over his sin with Bathsheba?","a":"Nathan","wrong":["Gad","Ahijah","Samuel"],"cat":"people"},
+    {"q":"Which cupbearer to King Artaxerxes led the rebuilding of Jerusalem's walls?","a":"Nehemiah","wrong":["Ezra","Zerubbabel","Mordecai"],"cat":"people"},
+    {"q":"Which man was chosen by lot to replace Judas Iscariot among the apostles?","a":"Matthias","wrong":["Barsabbas","Barnabas","Stephen"],"cat":"people"},
+    {"q":"Which eloquent Alexandrian Jew preached at Ephesus knowing only the baptism of John?","a":"Apollos","wrong":["Aquila","Sosthenes","Crispus"],"cat":"people"},
+    {"q":"Which sorcerer, also called Bar-Jesus, was struck blind by Paul on Cyprus?","a":"Elymas","wrong":["Simon Magus","Sceva","Hymenaeus"],"cat":"people"},
+    {"q":"At which place did Joshua make the sun stand still during a battle?","a":"Gibeon","wrong":["Jericho","Ai","Hebron"],"cat":"events"},
+    {"q":"What did Jacob do immediately after wrestling with God at Peniel?","a":"Limped on his hip","wrong":["Built an altar","Wept aloud","Fell asleep"],"cat":"events"},
+    {"q":"What event prompted Moses to flee from Egypt to Midian?","a":"He killed an Egyptian","wrong":["He broke the tablets","He defied Pharaoh's order","He refused a wife"],"cat":"events"},
+    {"q":"How did Ehud kill the Moabite king Eglon?","a":"Stabbed with a hidden dagger","wrong":["Drove a tent peg in him","Crushed him with a stone","Struck him with an ox goad"],"cat":"events"},
+    {"q":"What happened to Uzzah when he touched the ark of the covenant?","a":"God struck him dead","wrong":["He was struck with leprosy","He went blind","He was carried to heaven"],"cat":"events"},
+    {"q":"What did Gideon use to test God's will with the morning dew?","a":"A wool fleece","wrong":["A clay jar","A cloak","A sheaf of grain"],"cat":"events"},
+    {"q":"What sign did Hezekiah receive that he would recover from illness?","a":"Shadow moved back ten steps","wrong":["A rainbow appeared","Fire fell from heaven","Water turned to blood"],"cat":"events"},
+    {"q":"What did Elisha throw into the spring at Jericho to heal its water?","a":"Salt","wrong":["Flour","Oil","Ashes"],"cat":"events"},
+    {"q":"What happened to the prophet Jonah's gourd plant the day after it grew?","a":"A worm withered it","wrong":["Lightning burned it","Cattle ate it","A storm uprooted it"],"cat":"events"},
+    {"q":"What did Nebuchadnezzar do during his period of madness?","a":"Ate grass like an ox","wrong":["Wandered the desert mute","Lived among lions","Slept in a tomb"],"cat":"events"},
+    {"q":"What happened to Aaron's sons Nadab and Abihu before the Lord?","a":"Fire consumed them","wrong":["The earth swallowed them","A plague struck them","Lightning blinded them"],"cat":"events"},
+    {"q":"How was Absalom caught before Joab killed him?","a":"His hair caught in a tree","wrong":["His mule threw him","He fell in a pit","His chariot overturned"],"cat":"events"},
+    {"q":"What did Belshazzar see during his feast in Babylon?","a":"A hand writing on the wall","wrong":["A burning chariot","A falling star","A talking statue"],"cat":"events"},
+    {"q":"What was the immediate result when the seventy elders received Moses' spirit?","a":"They prophesied","wrong":["They built the tabernacle","They fell asleep","They sang psalms"],"cat":"events"},
+    {"q":"What happened to Lot's wife as they fled Sodom?","a":"Became a pillar of salt","wrong":["Was struck blind","Turned to stone","Burned in the fire"],"cat":"events"},
+    {"q":"Which plague on Egypt killed the livestock in the fields?","a":"The fifth plague","wrong":["The third plague","The seventh plague","The ninth plague"],"cat":"events"},
+    {"q":"What did Achan hide that caused Israel's defeat at Ai?","a":"Babylonian garment and silver","wrong":["A golden idol","Foreign spices","Enemy weapons"],"cat":"events"},
+    {"q":"What did the men of Beth Shemesh do that brought God's judgment?","a":"Looked into the ark","wrong":["Touched the ark","Moved the ark by cart","Sacrificed on the ark"],"cat":"events"},
+    {"q":"On Paul's first journey, what did the Lystrans try to do to him and Barnabas?","a":"Offer sacrifices to them","wrong":["Imprison them","Crown them kings","Drive them out by force"],"cat":"events"},
+    {"q":"What happened to Eutychus while Paul preached late at Troas?","a":"He fell from a window","wrong":["He was struck dumb","He fainted from fasting","He was healed of fever"],"cat":"events"},
+    {"q":"How many years did Israel serve Cushan-rishathaim before Othniel delivered them (Judges 3:8)?","a":"8 years","wrong":["18 years","20 years","40 years"],"cat":"numbers"},
+    {"q":"How many sons did Gideon (Jerubbaal) have (Judges 8:30)?","a":"70 sons","wrong":["30 sons","40 sons","50 sons"],"cat":"numbers"},
+    {"q":"How many years did Manasseh reign in Jerusalem (2 Kings 21:1)?","a":"55 years","wrong":["29 years","41 years","31 years"],"cat":"numbers"},
+    {"q":"How old was Josiah when he became king of Judah (2 Kings 22:1)?","a":"8 years old","wrong":["12 years old","16 years old","7 years old"],"cat":"numbers"},
+    {"q":"How many years did it take Solomon to build the temple (1 Kings 6:38)?","a":"7 years","wrong":["13 years","20 years","4 years"],"cat":"numbers"},
+    {"q":"How many years did Solomon take to build his own palace (1 Kings 7:1)?","a":"13 years","wrong":["7 years","11 years","20 years"],"cat":"numbers"},
+    {"q":"How many years after the Exodus did Solomon begin building the temple (1 Kings 6:1)?","a":"480 years","wrong":["400 years","430 years","450 years"],"cat":"numbers"},
+    {"q":"How long did Israel's sojourn in Egypt last (Exodus 12:40)?","a":"430 years","wrong":["400 years","450 years","390 years"],"cat":"numbers"},
+    {"q":"How many cities were given to the Levites in total (Numbers 35:7)?","a":"48 cities","wrong":["42 cities","24 cities","13 cities"],"cat":"numbers"},
+    {"q":"How many cities of refuge were appointed in Israel (Numbers 35:13)?","a":"6 cities","wrong":["3 cities","12 cities","7 cities"],"cat":"numbers"},
+    {"q":"For how many days did the twelve spies explore the land of Canaan (Numbers 13:25)?","a":"40 days","wrong":["7 days","30 days","12 days"],"cat":"numbers"},
+    {"q":"About how many men of Israel fell in the first failed attack on Ai (Joshua 7:5)?","a":"36 men","wrong":["30 men","50 men","70 men"],"cat":"numbers"},
+    {"q":"How many kings did Joshua defeat west of the Jordan (Joshua 12:24)?","a":"31 kings","wrong":["21 kings","33 kings","30 kings"],"cat":"numbers"},
+    {"q":"What was Goliath's height (1 Samuel 17:4)?","a":"Six cubits and a span","wrong":["Three cubits and a span","Five cubits and a span","Seven cubits and a span"],"cat":"numbers"},
+    {"q":"How much did Goliath's coat of mail weigh (1 Samuel 17:5)?","a":"5,000 shekels of bronze","wrong":["600 shekels of bronze","3,000 shekels of bronze","10,000 shekels of bronze"],"cat":"numbers"},
+    {"q":"How many years did Saul reign over Israel (Acts 13:21)?","a":"40 years","wrong":["32 years","22 years","42 years"],"cat":"numbers"},
+    {"q":"How many sons did Jesse have, of whom David was the youngest (1 Samuel 17:12)?","a":"8 sons","wrong":["6 sons","10 sons","12 sons"],"cat":"numbers"},
+    {"q":"How old was Abraham when he died (Genesis 25:7)?","a":"175 years","wrong":["180 years","147 years","120 years"],"cat":"numbers"},
+    {"q":"How old was Methuselah when he died (Genesis 5:27)?","a":"969 years","wrong":["950 years","962 years","905 years"],"cat":"numbers"},
+    {"q":"How old was Joseph when he died (Genesis 50:26)?","a":"110 years","wrong":["120 years","100 years","147 years"],"cat":"numbers"},
+    {"q":"By which river or canal did Ezekiel receive his visions among the exiles?","a":"Chebar","wrong":["Ulai","Hiddekel","Jordan"],"cat":"places"},
+    {"q":"Beside which river did Daniel see his vision of the ram and the goat (Daniel 8)?","a":"Ulai","wrong":["Chebar","Abana","Jordan"],"cat":"places"},
+    {"q":"In which province was the palace of Shushan (Susa) located, according to Daniel 8?","a":"Elam","wrong":["Media","Persia","Babylonia"],"cat":"places"},
+    {"q":"Jeroboam set up one golden calf in Dan and the other in which city?","a":"Bethel","wrong":["Shechem","Shiloh","Gilgal"],"cat":"places"},
+    {"q":"In which city did Omri reign over Israel before he built Samaria?","a":"Tirzah","wrong":["Jezreel","Penuel","Ramah"],"cat":"places"},
+    {"q":"The Shunammite woman whose son Elisha raised lived in which town?","a":"Shunem","wrong":["Zarephath","Dothan","Endor"],"cat":"places"},
+    {"q":"In which town was Elisha living when chariots of fire surrounded the city?","a":"Dothan","wrong":["Samaria","Gilgal","Shunem"],"cat":"places"},
+    {"q":"Elijah was sustained by a widow in which town belonging to Sidon?","a":"Zarephath","wrong":["Shunem","Zoar","Sychar"],"cat":"places"},
+    {"q":"By which brook was Elijah fed by ravens?","a":"Cherith","wrong":["Besor","Kishon","Jabbok"],"cat":"places"},
+    {"q":"The army of Sisera was swept away by which river?","a":"Kishon","wrong":["Jabbok","Arnon","Besor"],"cat":"places"},
+    {"q":"Jacob wrestled with God after crossing which ford or river?","a":"Jabbok","wrong":["Arnon","Kishon","Kidron"],"cat":"places"},
+    {"q":"In the land of which region did Job live?","a":"Uz","wrong":["Edom","Nod","Midian"],"cat":"places"},
+    {"q":"The Tower of Babel was built on a plain in which land?","a":"Shinar","wrong":["Canaan","Goshen","Havilah"],"cat":"places"},
+    {"q":"The ark of the covenant remained about twenty years in which town, in the house of Abinadab?","a":"Kiriath-jearim","wrong":["Beth-shemesh","Shiloh","Gibeon"],"cat":"places"},
+    {"q":"Delilah came from which valley?","a":"Valley of Sorek","wrong":["Valley of Elah","Valley of Eshcol","Valley of Achor"],"cat":"places"},
+    {"q":"In which city were Barnabas hailed as Zeus and Paul as Hermes?","a":"Lystra","wrong":["Iconium","Derbe","Perga"],"cat":"places"},
+    {"q":"In Luke 3:1, Lysanias was tetrarch of which region?","a":"Abilene","wrong":["Ituraea","Trachonitis","Galilee"],"cat":"places"},
+    {"q":"Besides Ituraea, Philip the tetrarch ruled which region (Luke 3:1)?","a":"Trachonitis","wrong":["Abilene","Galilee","Perea"],"cat":"places"},
+    {"q":"On which island was Paul shipwrecked on his way to Rome?","a":"Malta","wrong":["Crete","Cyprus","Cos"],"cat":"places"},
+    {"q":"In which city did the silversmiths riot over the goddess Artemis?","a":"Ephesus","wrong":["Corinth","Philippi","Thessalonica"],"cat":"places"},
+    {"q":"Who said, \"Am I in the place of God? for ye thought evil against me; but God meant it unto good\" (Genesis 50:19-20)?","a":"Joseph","wrong":["Jacob","Judah","Reuben"],"cat":"words"},
+    {"q":"In her prayer, who declared, \"There is none holy as the LORD: for there is none beside thee\" (1 Samuel 2:2)?","a":"Hannah","wrong":["Miriam","Deborah","Abigail"],"cat":"words"},
+    {"q":"Who confessed, \"I have sinned... I have played the fool, and have erred exceedingly\" (1 Samuel 26:21)?","a":"Saul","wrong":["David","Nabal","Jonathan"],"cat":"words"},
+    {"q":"Who asked the LORD, \"Doth Job fear God for nought?\" (Job 1:9)?","a":"Satan","wrong":["Eliphaz","Bildad","Zophar"],"cat":"words"},
+    {"q":"Who challenged the people, \"How long halt ye between two opinions?\" (1 Kings 18:21)?","a":"Elijah","wrong":["Elisha","Micaiah","Jehu"],"cat":"words"},
+    {"q":"Who greeted the prophet with, \"Hast thou found me, O mine enemy?\" (1 Kings 21:20)?","a":"Ahab","wrong":["Jezebel","Jehu","Joram"],"cat":"words"},
+    {"q":"After the golden calf, who cried, \"Who is on the LORD's side? let him come unto me\" (Exodus 32:26)?","a":"Moses","wrong":["Aaron","Joshua","Phinehas"],"cat":"words"},
+    {"q":"Who proclaimed, \"As for me and my house, we will serve the LORD\" (Joshua 24:15)?","a":"Joshua","wrong":["Caleb","Samuel","Gideon"],"cat":"words"},
+    {"q":"Who answered in the night, \"Speak; for thy servant heareth\" (1 Samuel 3:10)?","a":"Samuel","wrong":["Eli","Saul","Nathan"],"cat":"words"},
+    {"q":"Who confronted David with the words, \"Thou art the man\" (2 Samuel 12:7)?","a":"Nathan","wrong":["Gad","Zadok","Abiathar"],"cat":"words"},
+    {"q":"Who responded to the LORD's call, \"Here am I; send me\" (Isaiah 6:8)?","a":"Isaiah","wrong":["Jeremiah","Ezekiel","Micah"],"cat":"words"},
+    {"q":"Who taunted his foe, \"Am I a dog, that thou comest to me with staves?\" (1 Samuel 17:43)?","a":"Goliath","wrong":["Saul","Achish","Abner"],"cat":"words"},
+    {"q":"In the temple, who said, \"Lord, now lettest thou thy servant depart in peace... for mine eyes have seen thy salvation\" (Luke 2:29-30)?","a":"Simeon","wrong":["Zacharias","Nicodemus","Joseph"],"cat":"words"},
+    {"q":"Who answered the prisoner's claim about truth with, \"What is truth?\" (John 18:38)?","a":"Pilate","wrong":["Herod","Caiaphas","Felix"],"cat":"words"},
+    {"q":"Which king told Paul, \"Almost thou persuadest me to be a Christian\" (Acts 26:28)?","a":"Agrippa","wrong":["Felix","Festus","Gallio"],"cat":"words"},
+    {"q":"Complete the verse: \"A prudent man foreseeth the evil, and hideth himself: but the simple pass on, and are ___\" (Proverbs 22:3).","a":"punished","wrong":["deceived","ashamed","destroyed"],"cat":"words"},
+    {"q":"Complete the verse: \"Where there is no vision, the people ___\" (Proverbs 29:18).","a":"perish","wrong":["stumble","wander","scatter"],"cat":"words"},
+    {"q":"Complete the verse: \"Now faith is the substance of things hoped for, the evidence of things not ___\" (Hebrews 11:1).","a":"seen","wrong":["known","found","told"],"cat":"words"},
+    {"q":"Complete the verse: \"A soft answer turneth away ___: but grievous words stir up anger\" (Proverbs 15:1).","a":"wrath","wrong":["strife","malice","fury"],"cat":"words"},
+    {"q":"Complete the verse: \"And the ark rested in the seventh month... upon the mountains of ___\" (Genesis 8:4).","a":"Ararat","wrong":["Sinai","Nebo","Horeb"],"cat":"words"}
+  ],
+  einstein: [
+    {"q":"Who was the father of the child named Maher-Shalal-Hash-Baz?","a":"Isaiah","wrong":["Hosea","Amos","Micah"],"cat":"people"},
+    {"q":"Who went down into a pit on a snowy day and killed a lion?","a":"Benaiah","wrong":["Abishai","Eleazar","Shammah"],"cat":"people"},
+    {"q":"Who prayed that God would enlarge his territory and was more honorable than his brothers?","a":"Jabez","wrong":["Othniel","Caleb","Achan"],"cat":"people"},
+    {"q":"Which messenger from Philippi nearly died while bringing Paul the church's gift?","a":"Epaphroditus","wrong":["Epaphras","Tychicus","Onesimus"],"cat":"people"},
+    {"q":"Whom did Moses urge to be Israel's guide ('our eyes') in the wilderness?","a":"Hobab","wrong":["Jethro","Reuel","Balak"],"cat":"people"},
+    {"q":"Who was nominated alongside Matthias to replace Judas, also surnamed Justus?","a":"Joseph Barsabbas","wrong":["Barnabas","Stephen","Silas"],"cat":"people"},
+    {"q":"Who was the sorcerer at Paphos, also called Bar-Jesus, whom Paul struck blind?","a":"Elymas","wrong":["Simon Magus","Sceva","Demetrius"],"cat":"people"},
+    {"q":"Who was struck dead for reaching out to steady the ark of God?","a":"Uzzah","wrong":["Ahio","Obed-Edom","Nadab"],"cat":"people"},
+    {"q":"Who struck down six hundred Philistines with an oxgoad?","a":"Shamgar","wrong":["Ehud","Samson","Jephthah"],"cat":"people"},
+    {"q":"Who was the son of Zadok who outran the Cushite to bring David news of the battle?","a":"Ahimaaz","wrong":["Joab","Jonathan","Hushai"],"cat":"people"},
+    {"q":"Who was Timothy's grandmother, commended for her sincere faith?","a":"Lois","wrong":["Eunice","Priscilla","Drusilla"],"cat":"people"},
+    {"q":"What was the name of the high priest's servant whose ear Peter cut off?","a":"Malchus","wrong":["Caiaphas","Annas","Alexander"],"cat":"people"},
+    {"q":"Who fell from a third-story window after dozing during Paul's long sermon at Troas?","a":"Eutychus","wrong":["Trophimus","Tychicus","Sopater"],"cat":"people"},
+    {"q":"Which judge of Israel had thirty sons who rode thirty donkeys and controlled thirty towns?","a":"Jair","wrong":["Ibzan","Abdon","Tola"],"cat":"people"},
+    {"q":"Who hid a hundred prophets in two caves from Jezebel while serving as Ahab's palace administrator?","a":"Obadiah","wrong":["Elijah","Jehu","Micaiah"],"cat":"people"},
+    {"q":"Which false prophet made iron horns and told Ahab he would gore the Arameans?","a":"Zedekiah","wrong":["Micaiah","Hananiah","Pashhur"],"cat":"people"},
+    {"q":"Who was Abraham's servant of Damascus, his heir before a son was born?","a":"Eliezer","wrong":["Lot","Ishmael","Aner"],"cat":"people"},
+    {"q":"Whom did the prophet Hosea marry at God's command?","a":"Gomer","wrong":["Tamar","Keturah","Abigail"],"cat":"people"},
+    {"q":"Which king of Judah became leprous after burning incense in the temple?","a":"Uzziah","wrong":["Jotham","Ahaz","Asa"],"cat":"people"},
+    {"q":"Which king of Judah was only seven years old when he began to reign?","a":"Joash","wrong":["Josiah","Manasseh","Uzziah"],"cat":"people"},
+    {"q":"What did Jacob name the place where he wrestled with God until daybreak?","a":"Peniel","wrong":["Bethel","Mahanaim","Mizpah"],"cat":"events"},
+    {"q":"When the crowd at Lystra mistook Paul for a god, which god's name did they call him?","a":"Mercurius (Hermes)","wrong":["Jupiter (Zeus)","Apollo","Hercules"],"cat":"events"},
+    {"q":"How long did Saul wait at Gilgal before unlawfully offering the sacrifice himself?","a":"Seven days","wrong":["Three days","Fourteen days","Forty days"],"cat":"events"},
+    {"q":"Which judge made a rash vow that led to offering up his own daughter?","a":"Jephthah","wrong":["Gideon","Ehud","Othniel"],"cat":"events"},
+    {"q":"At which pool did Jesus heal a man who had been ill for thirty-eight years?","a":"Bethesda","wrong":["Siloam","Gihon","Bethsaida"],"cat":"events"},
+    {"q":"For how long did Israel eat manna, until they reached the borders of Canaan?","a":"Forty years","wrong":["Thirty-eight years","Four hundred thirty years","Seventy years"],"cat":"events"},
+    {"q":"For which king did God make the shadow go back ten degrees on the dial of Ahaz?","a":"Hezekiah","wrong":["Josiah","Jehoshaphat","Uzziah"],"cat":"events"},
+    {"q":"On whose threshing floor did the plague stop after David's census?","a":"Araunah (Ornan)","wrong":["Nacon","Obed-edom","Chidon"],"cat":"events"},
+    {"q":"How many men did Gideon keep to defeat the Midianites?","a":"Three hundred","wrong":["One hundred","Six hundred","Thirty-two thousand"],"cat":"events"},
+    {"q":"Over which place did Joshua command the sun to stand still?","a":"Gibeon","wrong":["Aijalon","Beth-horon","Jericho"],"cat":"events"},
+    {"q":"At which brook was Elijah fed by ravens during the drought?","a":"Cherith","wrong":["Kishon","Besor","Jabbok"],"cat":"events"},
+    {"q":"How many prophets of Baal did Elijah confront on Mount Carmel?","a":"450","wrong":["400","850","100"],"cat":"events"},
+    {"q":"Who was chosen by lot to replace Judas Iscariot among the apostles?","a":"Matthias","wrong":["Barsabbas (Justus)","Barnabas","Stephen"],"cat":"events"},
+    {"q":"What did Moses name the place where Israel buried those who craved meat?","a":"Kibroth-hattaavah","wrong":["Taberah","Massah","Meribah"],"cat":"events"},
+    {"q":"What did Moses name Rephidim after Israel tested the Lord and quarreled there?","a":"Massah and Meribah","wrong":["Marah","Kadesh","Taberah"],"cat":"events"},
+    {"q":"From which tribe was Caleb, the faithful spy who entered the land?","a":"Judah","wrong":["Ephraim","Benjamin","Reuben"],"cat":"events"},
+    {"q":"How many years after his conversion did Paul first go up to Jerusalem (Galatians 1:18)?","a":"Three years","wrong":["Fourteen years","Seven years","Forty years"],"cat":"events"},
+    {"q":"On which mountain did Aaron die and pass his garments to Eleazar?","a":"Mount Hor","wrong":["Mount Sinai","Mount Gilboa","Mount Tabor"],"cat":"events"},
+    {"q":"How many years did Methuselah live, the longest of any man recorded?","a":"969","wrong":["962","950","930"],"cat":"events"},
+    {"q":"Which apostle did Herod Agrippa kill with the sword?","a":"James","wrong":["John","Peter","Andrew"],"cat":"events"},
+    {"q":"How many trained servants did Abram lead to rescue Lot (Genesis 14:14)?","a":"318","wrong":["300","380","280"],"cat":"numbers"},
+    {"q":"How old was Sarah when she died (Genesis 23:1)?","a":"127 years","wrong":["120 years","130 years","137 years"],"cat":"numbers"},
+    {"q":"How many years did Lamech, the father of Noah, live (Genesis 5:31)?","a":"777 years","wrong":["969 years","950 years","962 years"],"cat":"numbers"},
+    {"q":"How many cubits long was Noah's ark (Genesis 6:15)?","a":"300 cubits","wrong":["250 cubits","350 cubits","200 cubits"],"cat":"numbers"},
+    {"q":"How old was Jacob when he stood before Pharaoh (Genesis 47:9)?","a":"130 years","wrong":["110 years","147 years","120 years"],"cat":"numbers"},
+    {"q":"How long did Israel's sojourn in Egypt last, according to Exodus 12:40?","a":"430 years","wrong":["400 years","450 years","420 years"],"cat":"numbers"},
+    {"q":"How many palm trees were at Elim where Israel camped (Exodus 15:27)?","a":"70 palm trees","wrong":["40 palm trees","72 palm trees","100 palm trees"],"cat":"numbers"},
+    {"q":"How many fighting men were counted in Israel's first wilderness census (Numbers 1:46)?","a":"603,550","wrong":["601,730","625,550","600,000"],"cat":"numbers"},
+    {"q":"How many died in the plague after Korah's rebellion (Numbers 16:49)?","a":"14,700","wrong":["24,000","15,700","14,000"],"cat":"numbers"},
+    {"q":"How many kings did Joshua and Israel defeat west of the Jordan (Joshua 12:24)?","a":"31 kings","wrong":["30 kings","33 kings","21 kings"],"cat":"numbers"},
+    {"q":"How many years did Eglon king of Moab oppress Israel (Judges 3:14)?","a":"18 years","wrong":["8 years","20 years","40 years"],"cat":"numbers"},
+    {"q":"How tall was Goliath of Gath (1 Samuel 17:4)?","a":"Six cubits and a span","wrong":["Four cubits and a span","Five cubits and a span","Seven cubits and a span"],"cat":"numbers"},
+    {"q":"How many men of Beth-shemesh were struck for looking into the ark (1 Samuel 6:19)?","a":"50,070","wrong":["50,000","14,700","24,000"],"cat":"numbers"},
+    {"q":"How many shekels did Absalom's annual haircut weigh by the king's weight (2 Samuel 14:26)?","a":"200 shekels","wrong":["100 shekels","300 shekels","150 shekels"],"cat":"numbers"},
+    {"q":"How many talents of gold came to Solomon in one year (1 Kings 10:14)?","a":"666 talents","wrong":["420 talents","600 talents","777 talents"],"cat":"numbers"},
+    {"q":"How many in Israel had not bowed to Baal, the Lord told Elijah (1 Kings 19:18)?","a":"7,000","wrong":["700","3,000","70,000"],"cat":"numbers"},
+    {"q":"How many in the Assyrian camp did the angel of the Lord slay (2 Kings 19:35)?","a":"185,000","wrong":["180,000","150,000","120,000"],"cat":"numbers"},
+    {"q":"How many days did it take to rebuild Jerusalem's wall under Nehemiah (Nehemiah 6:15)?","a":"52 days","wrong":["42 days","46 days","70 days"],"cat":"numbers"},
+    {"q":"How many years had Herod's temple been in building when the Jews challenged Jesus (John 2:20)?","a":"46 years","wrong":["40 years","42 years","36 years"],"cat":"numbers"},
+    {"q":"How long had the infirm man at the pool of Bethesda been sick (John 5:5)?","a":"38 years","wrong":["18 years","28 years","40 years"],"cat":"numbers"},
+    {"q":"In Genesis 2:11, which river of Eden 'compasseth the whole land of Havilah, where there is gold'?","a":"Pishon","wrong":["Gihon","Hiddekel","Euphrates"],"cat":"places"},
+    {"q":"Jacob called the heap of witness 'Galeed'; what did Laban name the same heap in Aramaic (Genesis 31:47)?","a":"Jegar-sahadutha","wrong":["Mahanaim","Peniel","Bethel"],"cat":"places"},
+    {"q":"From which city 'by the river' did Balak summon Balaam (Numbers 22:5)?","a":"Pethor","wrong":["Bozrah","Aroer","Kir-hareseth"],"cat":"places"},
+    {"q":"Israel camped where there were twelve wells of water and seventy palm trees (Exodus 15:27). What was the place called?","a":"Elim","wrong":["Marah","Rephidim","Rithmah"],"cat":"places"},
+    {"q":"Beside which water did Gideon's army shrink to 300 men by the way they lapped (Judges 7:1)?","a":"Well of Harod","wrong":["En-gedi","En-rogel","En-dor"],"cat":"places"},
+    {"q":"What spring did God open for Samson after his thirst at the jawbone hill (Judges 15:19)?","a":"En-hakkore","wrong":["En-gedi","En-dor","En-rogel"],"cat":"places"},
+    {"q":"Over which valley did Joshua command the moon to stand still (Joshua 10:12)?","a":"Valley of Aijalon","wrong":["Valley of Achor","Valley of Elah","Valley of Eshcol"],"cat":"places"},
+    {"q":"Which city of refuge was located in Bashan (Deuteronomy 4:43; Joshua 20:8)?","a":"Golan","wrong":["Bezer","Ramoth-gilead","Kedesh"],"cat":"places"},
+    {"q":"Samuel set up the stone 'Ebenezer' between Mizpeh and which place (1 Samuel 7:12)?","a":"Shen","wrong":["Sechu","Gibeah","Ramah"],"cat":"places"},
+    {"q":"Which city did Achish king of Gath give to David to dwell in (1 Samuel 27:6)?","a":"Ziklag","wrong":["Adullam","Keilah","Ziph"],"cat":"places"},
+    {"q":"On which mountain were Saul and his sons found slain by the Philistines (1 Samuel 31:8)?","a":"Mount Gilboa","wrong":["Mount Tabor","Mount Gerizim","Mount Carmel"],"cat":"places"},
+    {"q":"Which city served as the northern kingdom's capital before Omri built Samaria (1 Kings 15:33; 16:23)?","a":"Tirzah","wrong":["Shechem","Penuel","Shiloh"],"cat":"places"},
+    {"q":"By which brook did ravens feed Elijah during the drought (1 Kings 17:3-6)?","a":"Cherith","wrong":["Kishon","Besor","Jabbok"],"cat":"places"},
+    {"q":"In which Sidonian town did a widow sustain Elijah (1 Kings 17:9)?","a":"Zarephath","wrong":["Shunem","Achzib","Aphek"],"cat":"places"},
+    {"q":"Beside which river did Ezekiel see his visions among the captives (Ezekiel 1:1)?","a":"Chebar","wrong":["Ulai","Ahava","Gozan"],"cat":"places"},
+    {"q":"At which river did Daniel see the vision of the ram and the goat (Daniel 8:2-3)?","a":"Ulai","wrong":["Hiddekel","Chebar","Gihon"],"cat":"places"},
+    {"q":"At Lystra the crowd called Paul 'Mercurius' and Barnabas 'Jupiter.' In which region was Lystra (Acts 14:6,12)?","a":"Lycaonia","wrong":["Pisidia","Pamphylia","Cilicia"],"cat":"places"},
+    {"q":"From which port did Jonah take ship to flee toward Tarshish (Jonah 1:3)?","a":"Joppa","wrong":["Tyre","Sidon","Ezion-geber"],"cat":"places"},
+    {"q":"Which city was Sennacherib besieging when he sent his threat to Hezekiah (2 Kings 18:14,17)?","a":"Lachish","wrong":["Libnah","Azekah","Gath"],"cat":"places"},
+    {"q":"Where was King Josiah slain in battle against Pharaoh-Necho (2 Kings 23:29)?","a":"Megiddo","wrong":["Carchemish","Riblah","Hamath"],"cat":"places"},
+    {"q":"Who said, \"Is thy servant a dog, that he should do this great thing?\" (2 Kings 8:13)","a":"Hazael","wrong":["Naaman","Gehazi","Ben-hadad"],"cat":"words"},
+    {"q":"Who taunted Jehu with, \"Had Zimri peace, who slew his master?\" (2 Kings 9:31)","a":"Jezebel","wrong":["Athaliah","Maachah","Bathsheba"],"cat":"words"},
+    {"q":"Who confessed, \"I have played the fool, and have erred exceedingly\"? (1 Samuel 26:21)","a":"Saul","wrong":["David","Jonathan","Abner"],"cat":"words"},
+    {"q":"Who asked, \"Behold the fire and the wood: but where is the lamb for a burnt offering?\" (Genesis 22:7)","a":"Isaac","wrong":["Ishmael","Jacob","Esau"],"cat":"words"},
+    {"q":"Who greeted Elijah with, \"Hast thou found me, O mine enemy?\" (1 Kings 21:20)","a":"Ahab","wrong":["Jezebel","Ahaziah","Jehoram"],"cat":"words"},
+    {"q":"Who cried, \"Where is the LORD God of Elijah?\" (2 Kings 2:14)","a":"Elisha","wrong":["Gehazi","Obadiah","Joshua"],"cat":"words"},
+    {"q":"Who told Paul, \"Almost thou persuadest me to be a Christian\"? (Acts 26:28)","a":"Agrippa","wrong":["Festus","Felix","Gallio"],"cat":"words"},
+    {"q":"Who said, \"Silver and gold have I none; but such as I have give I thee\"? (Acts 3:6)","a":"Peter","wrong":["John","Stephen","Philip"],"cat":"words"},
+    {"q":"Who said, \"Let us also go, that we may die with him\"? (John 11:16)","a":"Thomas","wrong":["Peter","Philip","Andrew"],"cat":"words"},
+    {"q":"Who asked, \"Can there any good thing come out of Nazareth?\" (John 1:46)","a":"Nathanael","wrong":["Philip","Andrew","Thomas"],"cat":"words"},
+    {"q":"Who declared, \"What I have written I have written\"? (John 19:22)","a":"Pilate","wrong":["Herod","Caiaphas","Annas"],"cat":"words"},
+    {"q":"Who said to David, \"Thou art the man\"? (2 Samuel 12:7)","a":"Nathan","wrong":["Gad","Samuel","Zadok"],"cat":"words"},
+    {"q":"Who demanded, \"How long halt ye between two opinions?\" (1 Kings 18:21)","a":"Elijah","wrong":["Elisha","Micaiah","Samuel"],"cat":"words"},
+    {"q":"Who prayed, \"Lord, now lettest thou thy servant depart in peace\"? (Luke 2:29)","a":"Simeon","wrong":["Zacharias","Cleopas","Nathanael"],"cat":"words"},
+    {"q":"Who told Nathanael, \"We have found him, of whom Moses in the law, and the prophets, did write\"? (John 1:45)","a":"Philip","wrong":["Andrew","Peter","Thomas"],"cat":"words"},
+    {"q":"Who answered a messenger, \"What hast thou to do with peace? turn thee behind me\"? (2 Kings 9:19)","a":"Jehu","wrong":["Joram","Ahaziah","Bidkar"],"cat":"words"},
+    {"q":"Complete: \"He must increase, but I must ___\" (John 3:30)","a":"decrease","wrong":["diminish","vanish","depart"],"cat":"words"},
+    {"q":"Complete: \"And Cain ... dwelt in the land of ___, on the east of Eden\" (Genesis 4:16)","a":"Nod","wrong":["Nob","Uz","Havilah"],"cat":"words"},
+    {"q":"Complete: \"Hitherto hath the LORD helped us. And he called the name of it ___\" (1 Samuel 7:12)","a":"Ebenezer","wrong":["Bethel","Gilgal","Mizpeh"],"cat":"words"},
+    {"q":"Complete: \"And he called the name of the place ___: because there they buried the people that lusted\" (Numbers 11:34)","a":"Kibroth-hattaavah","wrong":["Taberah","Massah","Meribah"],"cat":"words"}
+  ],
+};
+const CAT_LABEL = { people:"People", events:"Events", numbers:"Numbers", places:"Places", words:"Words" };
 const KEYS = ['A','B','C','D'];
 
-// ---------------- Pace presets ----------------
-// drain = gap lost per second while a question waits; gain/loss per answer;
-// step = progress toward the sea per correct answer (100 = arrival).
-const PACES = {
-  easy:   { drain: 1.6, gain: 16, loss: 13, step: 9.5, label: 'Stroll' },
-  medium: { drain: 2.6, gain: 14, loss: 17, step: 8.5, label: 'Gallop' },
-  hard:   { drain: 3.6, gain: 12, loss: 21, step: 7.5, label: 'Full Flight' },
+// ---------------- Difficulty + pace ----------------
+// Difficulty no longer sets the speed — the harder questions are the challenge.
+// Every level starts at the same gentle "Stroll"; only Einstein begins a touch
+// quicker ("Trot"). drain = gap lost per second a question waits; gain/loss per
+// answer; step = progress toward the sea per correct answer (100 = arrival).
+const STROLL = { drain: 1.6, gain: 16, loss: 13, step: 9.5 };
+const TROT   = { drain: 2.2, gain: 15, loss: 14, step: 9.0 };
+const PACES = { easy: STROLL, medium: STROLL, hard: STROLL, einstein: TROT };
+const LEVEL_META = {
+  easy:     { label: 'Easy',     sub: 'Grades 3–7' },
+  medium:   { label: 'Medium',   sub: 'High school' },
+  hard:     { label: 'Hard',     sub: 'Adult' },
+  einstein: { label: 'Einstein', sub: 'Expert' },
 };
 const BEST_KEY = 'bible_trivia_chase_best';
 
@@ -273,6 +661,7 @@ const answersEl = document.getElementById('answers');
 // ---------------- State ----------------
 let W = 800, H = 420, dpr = 1;
 let state = 'menu';          // menu | run | finale | caught | win
+let level = 'medium';
 let pace = PACES.medium;
 let gap = 62;                // 0..100 lead over the army (0 = caught)
 let gapShown = 62;           // eased visual gap — the Israelites glide forward rather than snapping
@@ -695,7 +1084,7 @@ function loop(ts) {
 // ============================================================
 // Question flow
 // ============================================================
-function drawCard() { if (!queue.length) queue = shuffle(DECK); return queue.pop(); }
+function drawCard() { if (!queue.length) queue = shuffle(DECK[level] || DECK.medium); return queue.pop(); }
 
 function nextQuestion() {
   answered = false;
@@ -758,7 +1147,8 @@ function updateBadges() {
 // Lifecycle
 // ============================================================
 function startGame(key) {
-  pace = PACES[key] || PACES.medium;
+  level = DECK[key] ? key : 'medium';
+  pace = PACES[level];
   state = 'run';
   gap = 62; gapShown = 62; progress = 0; correctCount = 0; streak = 0; bestStreak = 0;
   queue = []; answered = false; dust = []; surgeT = 0; stumbleT = 0; finaleT = 0;
@@ -821,7 +1211,7 @@ document.querySelectorAll('.pace-btn').forEach(b => {
 document.getElementById('againBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
 document.getElementById('winAgainBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
 document.getElementById('menuBtn').addEventListener('click', toMenu);
-function paceKey() { return Object.keys(PACES).find(k => PACES[k] === pace) || 'medium'; }
+function paceKey() { return level; }
 
 document.addEventListener('keydown', e => {
   if (state !== 'run' || answered) return;

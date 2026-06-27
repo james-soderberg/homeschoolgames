@@ -3,281 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bible Quiz — HomeschoolGames</title>
+  <title>Bible Quiz — Paul's Voyage — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
-  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
-  <link rel="stylesheet" href="../../assets/css/quest-rail.css">
   <style>
-    @keyframes pop {
-      0%   { transform: scale(1); }
-      40%  { transform: scale(1.07); }
-      100% { transform: scale(1); }
-    }
-    @keyframes shake {
-      0%,100% { transform: translateX(0); }
-      20%     { transform: translateX(-9px); }
-      40%     { transform: translateX(9px); }
-      60%     { transform: translateX(-6px); }
-      80%     { transform: translateX(6px); }
-    }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    .voy-page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
-    .quiz-page {
-      max-width: 580px;
-      margin: 0 auto;
-      padding: 1.5rem 1.25rem 3rem;
+    .voy-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.9rem; gap: 0.75rem; flex-wrap: wrap;
     }
-
-    /* Top bar */
-    .quiz-top {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.25rem;
-      gap: 0.75rem;
-      flex-wrap: wrap;
-    }
-
-    .quiz-top h1 {
-      margin: 0;
-      font-size: 1.8rem;
-    }
-
-    .stat-group {
-      display: flex;
-      gap: 0.5rem;
-    }
-
+    .voy-top h1 { margin: 0; font-size: 1.8rem; }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
     .stat-badge {
-      background: var(--cream-dark);
-      border: 1.5px solid var(--border);
-      border-radius: 99px;
-      padding: 0.45rem 1rem;
-      font-weight: 700;
-      font-size: 0.92rem;
-      font-family: var(--font-sans);
-      color: var(--ink);
-      white-space: nowrap;
-      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.45rem 0.95rem; font-weight: 700; font-size: 0.9rem;
+      font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
     }
 
-    .stat-badge.hot {
-      background: var(--gold);
-      border-color: var(--gold);
-      color: var(--ink);
+    /* ============ Scene (canvas) ============ */
+    .scene-wrap {
+      position: relative; width: 100%;
+      height: min(72vh, 680px); min-height: 460px;
+      border-radius: 16px 16px 0 0; overflow: hidden;
+      border: 2.5px solid #234a63; border-bottom: none;
+      box-shadow: 0 10px 30px rgba(20,33,46,0.32);
+      background: #8fc3e6; user-select: none; touch-action: manipulation;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .scene-wrap::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      box-shadow: inset 0 0 90px 12px rgba(12,30,50,0.22); z-index: 4;
     }
 
-    /* Verse card */
-    .verse-card {
-      background: white;
-      border: 2px solid var(--border);
-      border-radius: 14px;
-      padding: 1.75rem 1.5rem 1.5rem;
-      text-align: center;
-      margin-bottom: 1rem;
-      box-shadow: 0 2px 8px rgba(26,23,20,0.07);
-      animation: fadeIn 0.3s ease;
+    /* ============ Start overlay ============ */
+    .ov {
+      position: absolute; inset: 0; z-index: 12;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 1.5rem; background: rgba(14,32,52,0.84);
+      backdrop-filter: blur(2px); color: #fff;
     }
-
-    .cat-pill {
-      display: inline-block;
-      padding: 0.18rem 0.75rem;
-      border-radius: 99px;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 1rem;
-      font-family: var(--font-sans);
+    .ov.hidden { display: none; }
+    .ov .crest { font-size: 3.2rem; line-height: 1; margin-bottom: 0.3rem; animation: bobCrest 2.4s ease-in-out infinite; }
+    @keyframes bobCrest { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
+    .ov h2 { font-family: var(--font-serif); font-size: 2rem; margin: 0 0 0.4rem; color: #fff; }
+    .ov p { color: #d8e8f4; margin: 0 0 1.2rem; max-width: 38ch; }
+    .pace-row { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+    .pace-btn, .play-btn {
+      background: var(--gold); color: var(--ink); border: none; border-radius: 12px;
+      padding: 0.8rem 1.4rem; font-size: 1.05rem; font-weight: 800; font-family: var(--font-sans);
+      cursor: pointer; transition: transform 0.1s, background 0.15s; box-shadow: 0 5px 0 #a07f2c;
     }
-    .cat-story     { background: #FFF3D0; color: #7A5C00; }
-    .cat-verse     { background: #D4EEF5; color: #1A5C6B; }
-    .cat-character { background: #E4DAF2; color: #4A2C6B; }
-    .cat-wild      { background: #E4F2E8; color: #2A5C3F; }
-    .cat-trap      { background: #FAE0E0; color: #8B2020; }
+    .pace-btn:hover, .play-btn:hover { background: #d6b34e; }
+    .pace-btn:active, .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07f2c; }
+    .play-btn.secondary { background: #fff; box-shadow: 0 5px 0 #c9bfa8; }
+    .pace-btn { display: flex; flex-direction: column; gap: 0.15rem; min-width: 100px; }
+    .pace-btn .p-sub { font-size: 0.68rem; font-weight: 600; opacity: 0.75; text-transform: uppercase; letter-spacing: 0.05em; }
 
-    .verse-text {
-      font-family: var(--font-serif);
-      font-size: clamp(1.5rem, 5vw, 2.1rem);
-      font-weight: 600;
-      font-style: italic;
-      color: var(--ink);
-      line-height: 1.35;
-      margin-bottom: 0.9rem;
+    /* ============ Question / landing panel ============ */
+    .qpanel {
+      border: 2.5px solid #234a63; border-top: 2px dashed #5e9cc4; border-radius: 0 0 16px 16px;
+      background: #f6fbff; padding: 1rem 1.1rem 1.15rem; box-shadow: 0 8px 22px rgba(20,33,46,0.14);
     }
-    .verse-text::before { content: "\201C"; }
-    .verse-text::after  { content: "\201D"; }
-
-    .verse-blurb {
-      font-size: 1rem;
-      color: var(--ink-light);
-      line-height: 1.5;
-      max-width: 42ch;
-      margin: 0 auto;
+    .qtag {
+      display: inline-block; padding: 0.16rem 0.7rem; border-radius: 99px;
+      font-size: 0.66rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      font-family: var(--font-sans); margin-bottom: 0.55rem;
     }
-
-    /* Reveal title (shown after answering) */
-    .reveal-name {
-      font-family: var(--font-serif);
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--gold);
-      margin-top: 1rem;
-      min-height: 0;
+    .tag-story     { background: #FFF3D0; color: #7A5C00; }
+    .tag-verse     { background: #D4EEF5; color: #1A5C6B; }
+    .tag-character { background: #E4DAF2; color: #4A2C6B; }
+    .tag-wild      { background: #E4F2E8; color: #2A5C3F; }
+    .tag-trap      { background: #FAE0E0; color: #8B2020; }
+    .tag-port      { background: #FCE4C4; color: #8A4A12; }
+    .qtext {
+      font-family: var(--font-serif); font-weight: 600; font-style: italic;
+      font-size: clamp(1.15rem, 3.4vw, 1.55rem); line-height: 1.3; color: var(--ink);
+      margin-bottom: 0.35rem;
     }
-
-    .prompt {
-      text-align: center;
-      font-family: var(--font-sans);
-      font-size: 0.95rem;
-      font-weight: 600;
-      color: var(--ink-light);
-      letter-spacing: 0.02em;
-      margin-bottom: 0.9rem;
+    .qtext.quoted::before { content: "\201C"; }
+    .qtext.quoted::after  { content: "\201D"; }
+    .qtext.plain { font-style: normal; }
+    .qblurb {
+      font-size: 0.95rem; color: var(--ink-light); line-height: 1.5; margin-bottom: 0.6rem; max-width: 64ch;
     }
-
-    /* Feedback */
-    .feedback {
-      min-height: 1.9rem;
-      text-align: center;
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin-bottom: 0.6rem;
+    .qprompt {
+      font-family: var(--font-sans); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em;
+      text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.7rem;
     }
-
-    /* Options grid */
-    .option-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0.75rem;
-      margin-bottom: 1rem;
+    .qreveal {
+      font-family: var(--font-serif); font-size: 1rem; font-weight: 600; color: var(--gold);
+      min-height: 1.3rem; margin-bottom: 0.55rem;
     }
-
-    .option-btn {
-      background: white;
-      border: 2.5px solid var(--border);
-      border-radius: 12px;
-      padding: 0.9rem 0.75rem;
-      font-family: var(--font-serif);
-      cursor: pointer;
-      transition: border-color 0.12s, background 0.12s, transform 0.1s;
-      box-shadow: 0 2px 6px rgba(26,23,20,0.07);
-      min-height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      text-align: center;
+    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .ans {
+      display: flex; align-items: center; gap: 0.55rem; text-align: left;
+      background: #fff; border: 2.5px solid var(--border); border-radius: 11px;
+      padding: 0.7rem 0.8rem; font-family: var(--font-serif); cursor: pointer;
+      transition: border-color 0.12s, background 0.12s, transform 0.08s;
+      box-shadow: 0 2px 5px rgba(20,33,46,0.06); min-height: 54px;
     }
-
-    .option-btn .key-hint {
-      font-family: var(--font-sans);
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      color: var(--ink-light);
-      background: var(--cream-dark);
-      border-radius: 5px;
-      padding: 0.1rem 0.4rem;
-      flex-shrink: 0;
+    .ans .k {
+      flex-shrink: 0; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800;
+      color: var(--ink-light); background: var(--cream-dark); border-radius: 6px; padding: 0.12rem 0.45rem;
     }
+    .ans .v { font-size: 1.05rem; font-weight: 600; color: var(--ink); line-height: 1.2; }
+    .ans:hover:not(:disabled) { border-color: var(--gold); background: #FFFDF4; transform: translateY(-2px); }
+    .ans:disabled { cursor: default; }
+    .ans.correct { background: #EAF4EE; border-color: var(--green); }
+    .ans.correct .v, .ans.correct .k { color: var(--green); }
+    .ans.wrong { background: #FAE8E8; border-color: var(--red); }
+    .ans.wrong .v, .ans.wrong .k { color: var(--red); }
+    .ans.reveal { background: #EAF4EE; border-color: var(--green); }
+    .ans.reveal .v, .ans.reveal .k { color: var(--green); }
 
-    .option-btn .option-val {
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: var(--ink);
-      line-height: 1.15;
-    }
+    /* landing action buttons live in the answers slot */
+    .land-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+    .land-actions .play-btn { flex: 1; min-width: 180px; text-align: center; }
+    .land-stats { display: flex; gap: 1.4rem; margin: 0.2rem 0 0.9rem; }
+    .land-stats .fs { display: flex; flex-direction: column; }
+    .land-stats .fs b { font-family: var(--font-serif); font-size: 1.7rem; color: var(--gold); line-height: 1; }
+    .land-stats .fs span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-light); margin-top: 0.2rem; }
 
-    .option-btn:hover:not(:disabled) {
-      border-color: var(--gold);
-      background: #FFFDF4;
-      transform: translateY(-2px);
-    }
-
-    .option-btn.correct {
-      background: #EAF4EE;
-      border-color: var(--green);
-      animation: pop 0.3s ease;
-    }
-    .option-btn.correct .option-val { color: var(--green); }
-    .option-btn.correct .key-hint { color: var(--green); }
-
-    .option-btn.wrong {
-      background: #FAE8E8;
-      border-color: var(--red);
-      animation: shake 0.4s ease;
-    }
-    .option-btn.wrong .option-val { color: var(--red); }
-    .option-btn.wrong .key-hint { color: var(--red); }
-
-    .option-btn.reveal-correct {
-      background: #EAF4EE;
-      border-color: var(--green);
-    }
-    .option-btn.reveal-correct .option-val { color: var(--green); }
-    .option-btn.reveal-correct .key-hint { color: var(--green); }
-
-    .option-btn:disabled { cursor: default; transform: none; }
-
-    /* Next button */
-    #nextBtn {
-      display: block;
-      width: 100%;
-      background: var(--gold);
-      color: var(--ink);
-      border: none;
-      border-radius: 12px;
-      padding: 1.05rem;
-      font-size: 1.1rem;
-      font-weight: 700;
-      font-family: var(--font-sans);
-      cursor: pointer;
-      margin-bottom: 1rem;
-      transition: background 0.15s;
-    }
-    #nextBtn:hover { background: #b08e30; }
-
-    .control-row {
-      display: flex;
-      justify-content: center;
-      margin-top: 0.25rem;
-    }
-
+    .voy-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin-top: 0.9rem; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.5rem; }
     .reset-link {
-      background: none;
-      border: none;
-      color: var(--ink-light);
-      font-size: 0.85rem;
-      cursor: pointer;
-      font-family: var(--font-sans);
-      text-decoration: underline;
-      padding: 0.3rem 0.5rem;
+      background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer;
+      font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem;
     }
     .reset-link:hover { color: var(--ink); }
 
-    /* Filter chips */
-    .filter-rows { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
-    .filter-row { display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center; }
-    .filter-label {
-      font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
-      color: var(--ink-light); margin-right: 0.15rem; min-width: 3.6rem;
-    }
-    .chip {
-      padding: 0.32rem 0.8rem; border: 1.5px solid var(--border); border-radius: 99px;
-      background: #fff; font-size: 0.8rem; font-weight: 600; font-family: var(--font-sans);
-      color: var(--ink-light); cursor: pointer; transition: all 0.12s;
-    }
-    .chip.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-    .chip:hover:not(.active) { border-color: var(--ink-light); color: var(--ink); }
-
     @media (max-width: 480px) {
-      .option-grid { grid-template-columns: 1fr; }
-      .option-btn { min-height: 56px; }
-      .filter-label { min-width: 100%; margin-bottom: -0.1rem; }
+      .answers { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -290,57 +146,66 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout--quest">
-<div class="quiz-page game-main">
+<div class="voy-page">
 
-  <div class="quiz-top">
+  <div class="voy-top">
     <h1>Bible Quiz</h1>
     <div class="stat-group">
-      <div class="stat-badge" id="scoreBadge">0 / 0</div>
+      <div class="stat-badge" id="scoreBadge">0 correct</div>
+      <div class="stat-badge" id="bestBadge">Best 0</div>
     </div>
   </div>
 
-  <div class="filter-rows">
-    <div class="filter-row" id="diffRow"><span class="filter-label">Level</span></div>
-    <div class="filter-row" id="catRow"><span class="filter-label">Type</span></div>
+  <div class="scene-wrap" id="sceneWrap">
+    <canvas id="scene"></canvas>
+
+    <!-- Start overlay -->
+    <div class="ov" id="startOverlay">
+      <div class="crest">⛵</div>
+      <h2>Paul's Voyage</h2>
+      <p>Retrace Paul's journeys all the way to Rome. Name the book each clue comes from — five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
+      <div class="pace-row">
+        <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3–7</span></button>
+        <button class="pace-btn" data-level="medium">Medium<span class="p-sub">High school</span></button>
+        <button class="pace-btn" data-level="hard">Hard<span class="p-sub">Adult</span></button>
+        <button class="pace-btn" data-level="einstein">Einstein<span class="p-sub">Expert</span></button>
+      </div>
+    </div>
   </div>
 
-  <div class="verse-card">
-    <span class="cat-pill" id="catPill">Story</span>
-    <div class="verse-text" id="verseText">Loading…</div>
-    <div class="verse-blurb" id="verseBlurb"></div>
-    <div class="reveal-name" id="revealName"></div>
+  <div class="qpanel" id="qpanel">
+    <span class="qtag tag-story" id="qtag">Story</span>
+    <div class="qtext quoted" id="qtext">Choose your winds to set sail.</div>
+    <div class="qblurb" id="qblurb"></div>
+    <div class="qprompt" id="qprompt">Which book of the Bible is this from?</div>
+    <div class="qreveal" id="qreveal"></div>
+    <div class="answers" id="answers"></div>
   </div>
 
-  <div class="prompt">Which book of the Bible is this from?</div>
-
-  <div class="feedback" id="feedback"></div>
-
-  <div class="option-grid" id="optionGrid"></div>
-
-  <button id="nextBtn" onclick="advance()" style="display:none">Next Verse →</button>
+  <p class="voy-hint">Tap a book or press <b>A · B · C · D</b>. Any book the passage truly comes from counts. Five right verses carry you to each port!</p>
 
   <div class="control-row">
-    <button class="reset-link" onclick="resetAll()">Start Over</button>
+    <button class="reset-link" onclick="toMenu()">Quit to harbor</button>
   </div>
 
-</div><!-- /.quiz-page -->
-
-  <aside class="hsg-rail" id="questRail"></aside>
-</div><!-- /.game-layout -->
+</div>
 
 <footer class="site-footer">
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/quest-rail.js"></script>
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script>
 // ============================================================
-// BIBLE BOOK QUIZ
+// BIBLE QUIZ — PAUL'S VOYAGE (a leg-by-leg journey to Rome)
+// A verse appears; you name the book it comes from. Five verses
+// make one LEG of the voyage; finish a leg and the ship reaches the
+// next port, where a short animated vignette teaches what actually
+// happened there (Acts). Six ports lie between Antioch and Rome.
 // ============================================================
 
+// ---------------- Question deck (which book is this from?) ----------------
 const DECK = [
   // TORAH GROUP
   {name:"Noah's Ark", books:["Genesis"], verse:"Come thou and all thy house into the ark.", blurb:"An ark built to survive the flood.", tier:"gimme", cat:"story"},
@@ -454,254 +319,899 @@ const CANON = [
   "1 John","2 John","3 John","Jude","Revelation",
 ];
 
-const CAT_LABEL = {
-  story: "Story", verse: "Verse", character: "Character",
-  wild: "Many Books", trap: "Tricky",
-};
-
+const CAT_LABEL = { story:"Story", verse:"Verse", character:"Character", wild:"Many Books", trap:"Tricky" };
 const KEYS = ['A','B','C','D'];
-const TARGET = 25;
-const DELAY_OK = 2500, DELAY_NO = 4000;
+const CORRECT_TO_LAND = 5;   // correct verses needed to reach the next port (bar fills 20% each)
 
-const TIERS = [
-  {id:'all', label:'All'}, {id:'gimme', label:'Easy'},
-  {id:'medium', label:'Medium'}, {id:'niche', label:'Hard'},
+// ---------------- The voyage: ordered ports, each with a teaching vignette ----------------
+const ITINERARY = [
+  { port:"Cyprus", acts:"Acts 13", title:"Elymas Struck Blind", vignette:"cyprus",
+    text:"On the island of Cyprus a sorcerer named Elymas tried to turn the governor from the faith — and was struck blind, groping for someone to lead him. The governor saw it and believed. So began Paul's very first missionary journey." },
+  { port:"Philippi", acts:"Acts 16", title:"Prison Doors Flung Open", vignette:"philippi",
+    text:"At Philippi, Paul and Silas were beaten and jailed, yet at midnight they sang hymns. A great earthquake shook the doors open — but they stayed, and the jailer and his whole household were saved. Lydia, a seller of purple, had been Europe's first convert." },
+  { port:"Athens", acts:"Acts 17", title:"The Unknown God", vignette:"athens",
+    text:"In Athens, Paul stood on Mars' Hill surrounded by idols and pointed to an altar inscribed 'TO THE UNKNOWN GOD.' He told the philosophers of the one true God 'in whom we live, and move, and have our being.'" },
+  { port:"Ephesus", acts:"Acts 19", title:"Scrolls in the Fire", vignette:"ephesus",
+    text:"At Ephesus many believers burned their costly books of magic in the open. A riot erupted in the great theater — 'Great is Diana of the Ephesians!' Years later Paul would write this very city the letter of Ephesians." },
+  { port:"Malta", acts:"Acts 27–28", title:"Shipwreck on Malta", vignette:"malta",
+    text:"A fierce storm wrecked the ship on the island of Malta, yet all 276 aboard reached shore alive, exactly as God had promised. When a viper fastened on Paul's hand, he simply shook it into the fire and felt no harm." },
+  { port:"Rome", acts:"Acts 28", title:"Paul Reaches Rome", vignette:"rome", final:true,
+    text:"At last Paul came to Rome. Though chained to a soldier, he preached the kingdom of God boldly, 'no man forbidding him,' and from that house he wrote his Prison Letters — Ephesians, Philippians, Colossians, and Philemon." },
 ];
-const CATS = [
-  {id:'all', label:'All'}, {id:'story', label:'Story'}, {id:'verse', label:'Verse'},
-  {id:'character', label:'Character'}, {id:'wild', label:'Many Books'}, {id:'trap', label:'Tricky'},
-];
 
-let correct = 0;
-let total = 0;
-let streak = 0;
-let bestStreak = 0;
-let answered = false;
-let currentCard = null;
-let queue = [];
-let selTier = 'all', selCat = 'all';
-let advanceTimer = null, pendingEnd = false;
+// ---------------- Difficulty levels ----------------
+// Each level picks a band of cards (by reading difficulty) AND how rough the seas run.
+const LEVELS = {
+  easy:     { key:'easy',     lvl:1, drain:0.8, loss:10, calm:18 },   // Grades 3–7
+  medium:   { key:'medium',   lvl:2, drain:1.6, loss:14, calm:15 },   // High school
+  hard:     { key:'hard',     lvl:3, drain:2.4, loss:18, calm:13 },   // Adult
+  einstein: { key:'einstein', lvl:4, drain:3.2, loss:22, calm:11 },   // Expert
+};
+// Reading-level bands, curated by how familiar each story is to a child.
+// Easy = Sunday-school classics; Medium = well-known; the rest = Hard;
+// multi-book people & trick cards = Einstein (you must know every book they appear in).
+const EASY_CARDS = new Set([
+  "Noah's Ark","Parting the Sea","Burning Bush","Golden Calf","Joseph's Coat","David and Goliath",
+  "Walls of Jericho","Samson's Strength","The Fiery Furnace","The Lions' Den","Swallowed by the Great Fish",
+  "The Lord is My Shepherd","Be Still","For God So Loved","Nativity","The Crucifixion",
+  "Calming the Storm","Walking on Water","Sermon on the Mount","Last Supper","Pentecost",
+]);
+const MEDIUM_CARDS = new Set([
+  "Sodom and Gomorrah","Wrestling the Angel","Shema","Gideon's 300","Hannah's Prayer","Absalom's Rebellion",
+  "Fire on the Mountain","Naaman's Leprosy","Chariot of Fire","If I Perish, I Perish","Trust in the Lord",
+  "To Every Thing a Season","Valley of Dry Bones","Damascus Road","Transfiguration","Armor of God",
+  "Fruit of the Spirit","I Can Do All Things","Bronze Serpent","The Talking Donkey","Isaiah's Coal",
+]);
+function cardLevel(card) {
+  if (card.cat === 'character' || card.cat === 'trap') return 4;
+  if (EASY_CARDS.has(card.name)) return 1;
+  if (MEDIUM_CARDS.has(card.name)) return 2;
+  return 3;
+}
+// Well-known books — keeps Easy wrong-answers recognizable rather than obscure.
+const EASY_BOOKS = new Set(["Genesis","Exodus","Joshua","Judges","1 Samuel","Psalms","Proverbs","Jonah","Daniel","Matthew","Mark","Luke","John","Acts","Revelation"]);
+const BEST_KEY = 'bible_quiz_voyage_best';
+const START_STORM = 14;
 
+// ---------------- DOM ----------------
+const sceneWrap = document.getElementById('sceneWrap');
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+const startOverlay = document.getElementById('startOverlay');
+const answersEl = document.getElementById('answers');
+const qtextEl = document.getElementById('qtext');
+
+// ---------------- State ----------------
+let W = 800, H = 420, dpr = 1;
+let state = 'menu';          // menu | sail | landing | done
+let level = LEVELS.easy;
+let storm = START_STORM, stormShown = START_STORM;
+let correctCount = 0, streak = 0, bestStreak = 0;
+let queue = [], current = null, answered = false;
+let scroll = 0, speed = 0, surgeT = 0, heel = 0, heelTarget = 0, shake = 0, sceneTime = 0;
+let lightningT = 0, revealT = 0;
+let spray = [];
+let lastTs = 0, rafId = null;
+let legIndex = 0;            // index of the port we are sailing toward
+let legCorrect = 0;        // correct answers this leg (fills the progress bar)
+let legWrong = 0;          // wrong answers this leg
+let landT = 0;             // seconds into the current landing vignette
+let confettiFired = false;
+
+function setupCanvas() {
+  const r = sceneWrap.getBoundingClientRect();
+  W = Math.max(320, r.width);
+  H = r.height;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', setupCanvas);
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
 function shuffle(arr) {
   const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
   return a;
 }
+function horizonY() { return H * 0.46; }
+function seaLevel() { return H * 0.66; }
+function getBest() { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; }
+function setBest(n) { try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) {} }
 
-function activeDeck() {
-  return DECK.filter(c =>
-    (selTier === 'all' || c.tier === selTier) &&
-    (selCat === 'all'  || c.cat === selCat));
+function lerpColor(a, b, t) {
+  const pa = [parseInt(a.slice(1,3),16), parseInt(a.slice(3,5),16), parseInt(a.slice(5,7),16)];
+  const pb = [parseInt(b.slice(1,3),16), parseInt(b.slice(3,5),16), parseInt(b.slice(5,7),16)];
+  const c = pa.map((v,i) => Math.round(v + (pb[i]-v)*t));
+  return 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
 }
 
-function drawCard() {
-  if (queue.length === 0) queue = shuffle(activeDeck());
-  return queue.pop();
-}
+// ============================================================
+// Open-sea scene (during a leg)
+// ============================================================
+function stormFrac() { return clamp01(stormShown / 100); }
 
-function buildFilters() {
-  const diffRow = document.getElementById('diffRow');
-  const catRow = document.getElementById('catRow');
-  TIERS.forEach(t => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (t.id === selTier ? ' active' : '');
-    b.textContent = t.label;
-    b.dataset.tier = t.id;
-    b.onclick = () => { if (selTier === t.id) return; selTier = t.id; HSGSound.tick(); startRound(); };
-    diffRow.appendChild(b);
+function drawSky(sf) {
+  const g = ctx.createLinearGradient(0, 0, 0, horizonY() + 20);
+  g.addColorStop(0, lerpColor('#bfe2f5', '#5a6675', sf));
+  g.addColorStop(0.6, lerpColor('#dcf0fb', '#7c8794', sf));
+  g.addColorStop(1, lerpColor('#f3ead2', '#9aa3ad', sf));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, horizonY() + 20);
+  const sunA = 0.95 * (1 - sf * 0.85);
+  if (sunA > 0.04) {
+    ctx.fillStyle = 'rgba(255,243,200,' + sunA.toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(W * 0.80, H * 0.20, 30, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,248,224,' + (sunA * 0.5).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(W * 0.80, H * 0.20, 48, 0, Math.PI * 2); ctx.fill();
+  }
+  if (sf > 0.12) {
+    ctx.fillStyle = 'rgba(70,78,90,' + (0.5 * sf).toFixed(3) + ')';
+    const off = -((scroll * 0.18) % 240);
+    for (let x = off - 240; x < W + 240; x += 240) cloud(x + 60, H * 0.16, 1.1 + sf * 0.5);
+  }
+}
+function cloud(cx, cy, s) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, 22 * s, 0, Math.PI * 2);
+  ctx.arc(cx + 26 * s, cy + 4, 28 * s, 0, Math.PI * 2);
+  ctx.arc(cx + 56 * s, cy, 20 * s, 0, Math.PI * 2);
+  ctx.arc(cx + 28 * s, cy - 12 * s, 20 * s, 0, Math.PI * 2);
+  ctx.fill();
+}
+function drawIslands(sf) {
+  const hy = horizonY();
+  ctx.fillStyle = lerpColor('#9ec4cf', '#6f8794', sf);
+  const off = -((scroll * 0.20) % 520);
+  for (let x = off - 520; x < W + 520; x += 520) {
+    island(x + 120, hy, 150, 34);
+    island(x + 360, hy, 90, 22);
+  }
+}
+function island(cx, baseY, w, h) {
+  ctx.beginPath();
+  ctx.moveTo(cx - w / 2, baseY);
+  ctx.quadraticCurveTo(cx - w * 0.18, baseY - h, cx, baseY - h * 0.86);
+  ctx.quadraticCurveTo(cx + w * 0.22, baseY - h * 1.08, cx + w / 2, baseY);
+  ctx.closePath(); ctx.fill();
+}
+function drawSea(sf, calm) {
+  const sl = horizonY();
+  const g = ctx.createLinearGradient(0, sl, 0, H);
+  g.addColorStop(0, lerpColor('#5fb0e0', '#2d6a93', sf));
+  g.addColorStop(1, lerpColor('#1f6aa0', '#103a5c', sf));
+  ctx.fillStyle = g; ctx.fillRect(0, sl, W, H - sl);
+  const amp = 3 + sf * 9;
+  const rows = 7;
+  for (let r = 0; r < rows; r++) {
+    const f = r / (rows - 1);
+    const y = sl + 14 + f * (H - sl - 10);
+    ctx.strokeStyle = 'rgba(255,255,255,' + (0.10 + f * 0.16).toFixed(3) + ')';
+    ctx.lineWidth = 1.4 + f * 1.4;
+    ctx.beginPath();
+    const ph = scroll * (0.5 + f) * 0.06 + r;
+    const period = 70 - f * 22;
+    for (let x = -10; x <= W + 10; x += 10) {
+      const yy = y + Math.sin(x * (Math.PI / period) + ph) * amp * (0.5 + f);
+      if (x === -10) ctx.moveTo(x, yy); else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+  }
+}
+function spawnSpray(x, y, n, sp) {
+  for (let i = 0; i < n; i++) spray.push({
+    x, y: y + rand(-4, 4), vx: rand(20, 80) + sp * 0.3, vy: -rand(20, 70),
+    life: rand(0.4, 0.9), max: 0.9, r: rand(2, 6)
   });
-  CATS.forEach(c => {
-    const b = document.createElement('button');
-    b.className = 'chip' + (c.id === selCat ? ' active' : '');
-    b.textContent = c.label;
-    b.dataset.cat = c.id;
-    b.onclick = () => { if (selCat === c.id) return; selCat = c.id; HSGSound.tick(); startRound(); };
-    catRow.appendChild(b);
-  });
+  if (spray.length > 220) spray.splice(0, spray.length - 220);
 }
-function syncFilterChips() {
-  document.querySelectorAll('#diffRow .chip').forEach(b => b.classList.toggle('active', b.dataset.tier === selTier));
-  document.querySelectorAll('#catRow .chip').forEach(b => b.classList.toggle('active', b.dataset.cat === selCat));
+function drawSpray(dt) {
+  for (let i = spray.length - 1; i >= 0; i--) {
+    const d = spray[i]; d.life -= dt;
+    if (d.life <= 0) { spray.splice(i, 1); continue; }
+    d.x += d.vx * dt; d.y += d.vy * dt; d.vy += 120 * dt;
+    ctx.fillStyle = 'rgba(255,255,255,' + ((d.life / d.max) * 0.7).toFixed(3) + ')';
+    ctx.beginPath(); ctx.arc(d.x, d.y, d.r * (1.4 - d.life), 0, Math.PI * 2); ctx.fill();
+  }
 }
+function drawRain(sf) {
+  if (sf < 0.45) return;
+  const n = Math.floor((sf - 0.45) * 150);
+  ctx.strokeStyle = 'rgba(200,220,235,' + (0.25 * sf).toFixed(3) + ')';
+  ctx.lineWidth = 1.2; ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const x = ((i * 137 + scroll * 3) % (W + 40)) - 20;
+    const y = ((i * 211 + sceneTime * 600) % H);
+    ctx.moveTo(x, y); ctx.lineTo(x - 6, y + 16);
+  }
+  ctx.stroke();
+}
+
+// ---- the ship ----
+function shipX() { return W * 0.40; }
+function drawShip(t, ox, oy, os) {
+  const cx = (ox == null) ? shipX() : ox;
+  const baseY = (oy == null) ? seaLevel() : oy;
+  const s = ((os == null) ? (H / 420) : os);
+  const bob = Math.sin(t * 1.6) * (3 + stormFrac() * 5) * (os ? 0.5 : 1);
+  const sailFull = clamp01(0.55 + surgeT * 0.8 - stormFrac() * 0.35);
+
+  ctx.save();
+  ctx.translate(cx, baseY + bob);
+  ctx.rotate(heel * (os ? 0.3 : 1));
+  ctx.scale(s, s);
+
+  ctx.fillStyle = 'rgba(10,30,50,0.18)';
+  ctx.beginPath(); ctx.ellipse(0, 22, 96, 9, 0, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = '#6b4a24';
+  ctx.beginPath();
+  ctx.moveTo(-86, 0);
+  ctx.quadraticCurveTo(-96, -22, -70, -22);
+  ctx.lineTo(64, -22);
+  ctx.quadraticCurveTo(92, -20, 96, 2);
+  ctx.quadraticCurveTo(40, 22, -40, 22);
+  ctx.quadraticCurveTo(-78, 20, -86, 0);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#8a6a36'; ctx.fillRect(-80, -10, 158, 6);
+  ctx.strokeStyle = '#8a6a36'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-78, -20); ctx.quadraticCurveTo(-100, -40, -82, -48); ctx.stroke();
+  ctx.strokeStyle = '#5a3c1c'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-70, -22); ctx.lineTo(64, -22); ctx.stroke();
+
+  const mastX = 6;
+  ctx.strokeStyle = '#5a3c1c'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(mastX, -22); ctx.lineTo(mastX, -118); ctx.stroke();
+  ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(mastX - 52, -104); ctx.lineTo(mastX + 52, -104); ctx.stroke();
+  const bulge = 26 * sailFull + 4;
+  ctx.fillStyle = '#f1e6cb';
+  ctx.beginPath();
+  ctx.moveTo(mastX - 50, -104);
+  ctx.quadraticCurveTo(mastX + bulge, -78, mastX - 50, -40);
+  ctx.lineTo(mastX + 50, -40);
+  ctx.quadraticCurveTo(mastX + 50 + bulge, -78, mastX + 50, -104);
+  ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'rgba(120,90,40,0.16)';
+  ctx.beginPath();
+  ctx.moveTo(mastX + 50, -104);
+  ctx.quadraticCurveTo(mastX + 50 + bulge, -78, mastX + 50, -40);
+  ctx.lineTo(mastX + 36, -40);
+  ctx.quadraticCurveTo(mastX + 36 + bulge * 0.8, -78, mastX + 36, -104);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(150,60,40,0.5)'; ctx.lineWidth = 4;
+  ctx.beginPath(); ctx.moveTo(mastX - 6, -100); ctx.quadraticCurveTo(mastX - 6 + bulge * 0.5, -72, mastX - 6, -44); ctx.stroke();
+  ctx.strokeStyle = 'rgba(60,40,20,0.55)'; ctx.lineWidth = 1.2;
+  ctx.beginPath(); ctx.moveTo(mastX, -118); ctx.lineTo(-70, -22); ctx.moveTo(mastX, -118); ctx.lineTo(60, -22); ctx.stroke();
+  ctx.fillStyle = '#b9433a';
+  ctx.beginPath(); ctx.moveTo(mastX, -118); ctx.lineTo(mastX + 22 + surgeT * 10, -114); ctx.lineTo(mastX, -110); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = '#5a3c1c'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(-72, -14); ctx.lineTo(-92, 14); ctx.stroke();
+  ctx.fillStyle = '#caa074'; ctx.beginPath(); ctx.arc(-30, -34, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#7a5a3a';
+  ctx.beginPath(); ctx.moveTo(-36, -22); ctx.quadraticCurveTo(-30, -30, -24, -22); ctx.lineTo(-26, -30); ctx.lineTo(-34, -30); ctx.closePath(); ctx.fill();
+  ctx.restore();
+}
+
+function drawSailing(dt) {
+  const sf = stormFrac();
+  drawSky(sf);
+  drawIslands(sf);
+  drawSea(sf);
+  drawSpray(dt);
+  drawShip(sceneTime);
+  if (surgeT > 0) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2;
+    const bx = shipX() + 90, by = seaLevel();
+    for (let i = 0; i < 5; i++) { const yy = by - 6 - i * 9; ctx.beginPath(); ctx.moveTo(bx, yy); ctx.lineTo(bx + 30 * surgeT + i * 6, yy); ctx.stroke(); }
+  }
+  drawRain(sf);
+  if (lightningT > 0) { ctx.fillStyle = 'rgba(255,255,255,' + (lightningT * 0.5).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H); }
+  drawHUD(false);
+}
+
+// ============================================================
+// HUD — itinerary ribbon + storm meter + leg progress
+// ============================================================
+function drawHUD(landing) {
+  // itinerary ribbon across the top
+  const n = ITINERARY.length;
+  const span = Math.min(W - 120, n * 70);
+  const step = span / (n - 1);
+  const x0 = W / 2 - span / 2;
+  const y = 26;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + span, y); ctx.stroke();
+  for (let i = 0; i < n; i++) {
+    const x = x0 + i * step;
+    const reached = i < legIndex || (landing && i <= legIndex);
+    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
+    ctx.fillStyle = reached ? '#ffd98a' : 'rgba(255,255,255,0.85)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(12,28,46,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+    if (!landing && i === legIndex) {
+      ctx.beginPath(); ctx.arc(x, y, 8 + Math.sin(sceneTime * 4) * 1.6, 0, Math.PI * 2);
+      ctx.strokeStyle = '#ffd98a'; ctx.lineWidth = 2; ctx.stroke();
+    }
+  }
+  // label
+  ctx.font = '800 13px Inter, system-ui, sans-serif';
+  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(12,28,46,0.9)';
+  const dest = ITINERARY[Math.min(legIndex, n - 1)].port;
+  ctx.fillText(landing ? ('Landing at ' + dest) : ('Leg ' + (legIndex + 1) + ' of ' + n + ' → ' + dest), W / 2, y + 22);
+  ctx.restore();
+
+  if (!landing) {
+    // progress to the next port — fills 20% per correct verse, so you can see the dock coming
+    meter(14, 44, 170, '⚓ To ' + ITINERARY[legIndex].port, legCorrect / CORRECT_TO_LAND, '#3fae6a', '#1d6f43');
+    meter(W - 184, 44, 170, '⛈ Storm', stormShown / 100, '#d77a3a', '#9a3a1a', true);
+  }
+}
+function meter(x, y, w, label, frac, c1, c2, right) {
+  frac = clamp01(frac);
+  ctx.save();
+  ctx.font = '700 11px Inter, system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(12,28,46,0.88)';
+  ctx.textAlign = right ? 'right' : 'left';
+  ctx.fillText(label, right ? x + w : x, y + 9);
+  const by = y + 15, bh = 9;
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  roundRect(x, by, w, bh, 4); ctx.fill();
+  const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, c1); g.addColorStop(1, c2);
+  ctx.fillStyle = g;
+  if (right) roundRect(x + w * (1 - frac), by, w * frac, bh, 4); else roundRect(x, by, w * frac, bh, 4);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(12,28,46,0.4)'; ctx.lineWidth = 1; roundRect(x, by, w, bh, 4); ctx.stroke();
+  ctx.restore();
+}
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, h / 2, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// ============================================================
+// Landing vignettes — what happened at each port
+// ============================================================
+function drawShoreBackdrop() {
+  // warm sky
+  const g = ctx.createLinearGradient(0, 0, 0, horizonY() + 20);
+  g.addColorStop(0, '#bfe2f5'); g.addColorStop(0.6, '#eaf3e0'); g.addColorStop(1, '#f6eccf');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, horizonY() + 20);
+  // sun
+  ctx.fillStyle = 'rgba(255,240,190,0.9)';
+  ctx.beginPath(); ctx.arc(W * 0.80, H * 0.18, 30, 0, Math.PI * 2); ctx.fill();
+  // sea behind the beach
+  const sl = horizonY();
+  const sg = ctx.createLinearGradient(0, sl, 0, H);
+  sg.addColorStop(0, '#5fb0e0'); sg.addColorStop(1, '#1f6aa0');
+  ctx.fillStyle = sg; ctx.fillRect(0, sl, W, H - sl);
+  // a wooden dock, and the ship gliding in to berth against it over ~1.4s
+  const dockY = H * 0.585, dockEndX = W * 0.30;
+  drawDock(dockY, dockEndX);
+  const dp = clamp01(landT / 1.4);
+  const ease = 1 - (1 - dp) * (1 - dp);
+  const sx = W * 0.62 - (W * 0.62 - (dockEndX + W * 0.06)) * ease;
+  drawShip(sceneTime, sx, H * 0.60, 0.6);
+  if (dp > 0.85) {   // a mooring rope once berthed
+    ctx.strokeStyle = 'rgba(70,50,30,0.75)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(sx - 44, H * 0.585); ctx.quadraticCurveTo(dockEndX - 4, H * 0.60, dockEndX - 16, dockY); ctx.stroke();
+  }
+  // beach across the foreground
+  ctx.fillStyle = '#dcc38a';
+  ctx.beginPath();
+  ctx.moveTo(0, H); ctx.lineTo(0, H * 0.88);
+  ctx.quadraticCurveTo(W * 0.5, H * 0.74, W, H * 0.82);
+  ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+  // wet shoreline highlight
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0, H * 0.88); ctx.quadraticCurveTo(W * 0.5, H * 0.74, W, H * 0.82); ctx.stroke();
+}
+
+// a simple robed figure standing (or seated/kneeling) at (x, gy)
+function drawFigure(x, gy, s, o) {
+  o = o || {};
+  ctx.save(); ctx.translate(x, gy); ctx.scale(s * (o.flip ? -1 : 1), s);
+  if (o.lean) ctx.rotate(o.lean);
+  ctx.fillStyle = 'rgba(40,30,15,0.18)';
+  ctx.beginPath(); ctx.ellipse(0, 2, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  const robe = o.robe || '#7a5a3a', skin = o.skin || '#e2b487', wrap = o.wrap || robe;
+  const top = o.seated ? -24 : -34;
+  if (!o.seated) {
+    ctx.strokeStyle = robe; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(o.kneel ? -6 : -3, 0); ctx.moveTo(0, -14); ctx.lineTo(o.kneel ? 6 : 3, o.kneel ? -3 : 0); ctx.stroke();
+  }
+  ctx.fillStyle = robe;
+  ctx.beginPath(); ctx.moveTo(-9, -14); ctx.quadraticCurveTo(0, -18, 9, -14); ctx.lineTo(6, top); ctx.lineTo(-6, top); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = skin; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  if (o.armRaise != null) { const a = o.armRaise; ctx.beginPath(); ctx.moveTo(2, top + 6); ctx.lineTo(2 + Math.cos(a) * 13, top + 6 - Math.sin(a) * 13); ctx.stroke(); }
+  if (o.armOut) { ctx.beginPath(); ctx.moveTo(-2, top + 6); ctx.lineTo(-13, top + 9); ctx.stroke(); }
+  if (o.armsFace) { ctx.beginPath(); ctx.moveTo(2, top + 5); ctx.lineTo(6, top - 4); ctx.moveTo(-2, top + 5); ctx.lineTo(-6, top - 4); ctx.stroke(); }
+  const hy = top - 6;
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, hy, 5.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = wrap; ctx.beginPath(); ctx.arc(0, hy - 1, 6, Math.PI, 0); ctx.fill(); ctx.fillRect(-6, hy - 1, 12, 2.5);
+  if (o.eyesX) {
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(-3.5, hy - 1.5); ctx.lineTo(-1, hy + 1); ctx.moveTo(-1, hy - 1.5); ctx.lineTo(-3.5, hy + 1);
+    ctx.moveTo(1, hy - 1.5); ctx.lineTo(3.5, hy + 1); ctx.moveTo(3.5, hy - 1.5); ctx.lineTo(1, hy + 1);
+    ctx.stroke();
+  }
+  if (o.staff) { ctx.strokeStyle = '#6b4a24'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(11, -50); ctx.lineTo(13, 2); ctx.stroke(); }
+  if (o.helmet) { ctx.fillStyle = o.helmet; ctx.beginPath(); ctx.arc(0, hy - 1.5, 6.5, Math.PI, 0); ctx.fill(); ctx.fillStyle = '#b03030'; ctx.fillRect(-1.5, hy - 13, 3, 11); }
+  ctx.restore();
+}
+
+function drawLanding(dt) {
+  drawShoreBackdrop();
+  const stop = ITINERARY[legIndex];
+  const fn = VIGNETTES[stop.vignette];
+  if (fn) fn(landT);
+  drawSpray(dt);
+  drawHUD(true);
+}
+
+const VIGNETTES = {
+  // Cyprus — the sorcerer Elymas struck blind
+  cyprus(vt) {
+    const gy = H * 0.82, s = H / 300;
+    const blind = clamp01((vt - 1.0) / 0.7);
+    // Paul, pointing
+    drawFigure(W * 0.40, gy, s, { robe: '#7a5a3a', wrap: '#d8d0c4', armRaise: 0.5, staff: false });
+    // dark burst over Elymas as he is blinded
+    if (blind > 0) {
+      ctx.save(); ctx.globalAlpha = blind * 0.5;
+      ctx.strokeStyle = '#3a3550'; ctx.lineWidth = 2;
+      for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(W * 0.62 + Math.cos(a) * 10, gy - 40 + Math.sin(a) * 10); ctx.lineTo(W * 0.62 + Math.cos(a) * (22 + blind * 8), gy - 40 + Math.sin(a) * (22 + blind * 8)); ctx.stroke(); }
+      ctx.restore();
+    }
+    // Elymas — groping, eyes X'd once blind
+    drawFigure(W * 0.62, gy, s, { robe: '#5a4a8a', wrap: '#3a3550', lean: -blind * 0.18, armsFace: blind > 0.4, eyesX: blind > 0.4 });
+    // the governor, watching, then bowing
+    drawFigure(W * 0.82, gy, s * 0.95, { robe: '#8a3a3a', wrap: '#caa24a', kneel: vt > 2.6, armRaise: vt > 2.6 ? null : 0.2 });
+  },
+
+  // Philippi — earthquake throws the prison doors open
+  philippi(vt) {
+    const gy = H * 0.82, s = H / 300;
+    const quake = vt > 1.4 && vt < 2.4;
+    if (quake) shake = Math.max(shake, 5 * (1 - (vt - 1.4) / 1.0));
+    const open = clamp01((vt - 1.6) / 0.8);   // doors swing open
+    // prison block
+    const px = W * 0.52, py = gy - 4, pw = 150, ph = 90;
+    ctx.fillStyle = '#9a8b76'; ctx.fillRect(px - pw / 2, py - ph, pw, ph);
+    ctx.fillStyle = '#83755f'; ctx.fillRect(px - pw / 2, py - ph, pw, 10);
+    // crack zig-zag once the quake hits
+    if (vt > 1.4) {
+      ctx.strokeStyle = '#4a4036'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(px + 8, py - ph);
+      ctx.lineTo(px - 4, py - ph * 0.7); ctx.lineTo(px + 10, py - ph * 0.45); ctx.lineTo(px - 2, py - ph * 0.15); ctx.stroke();
+    }
+    // barred doorway, swinging open
+    ctx.save();
+    ctx.translate(px - 34, py - 58);
+    ctx.rotate(-open * 0.9);
+    ctx.fillStyle = '#5a3c1c'; ctx.fillRect(0, 0, 30, 56);
+    ctx.strokeStyle = '#caa24a'; ctx.lineWidth = 2;
+    for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(i * 7.5, 2); ctx.lineTo(i * 7.5, 54); ctx.stroke(); }
+    ctx.restore();
+    // Paul & Silas inside, singing (notes rise)
+    drawFigure(px + 6, py - 6, s * 0.8, { robe: '#7a5a3a', wrap: '#d8d0c4', armRaise: 1.2 });
+    drawFigure(px + 34, py - 6, s * 0.8, { robe: '#3a6a7a', wrap: '#caa074', armRaise: 1.9 });
+    ctx.fillStyle = 'rgba(40,40,60,0.5)'; ctx.font = '14px serif';
+    for (let i = 0; i < 3; i++) { const ny = py - 70 - ((vt * 30 + i * 26) % 70); ctx.fillText('♪', px + 12 + i * 16 + Math.sin(vt * 3 + i) * 4, ny); }
+    // jailer, falling to his knees outside
+    if (vt > 2.2) drawFigure(px - 90, gy, s * 0.95, { robe: '#6a6a4a', wrap: '#3a3a2a', kneel: true });
+  },
+
+  // Athens — Paul preaching at Mars' Hill among the idols
+  athens(vt) {
+    const gy = H * 0.82, s = H / 300;
+    // rocky platform
+    ctx.fillStyle = '#b9a88a';
+    ctx.beginPath(); ctx.moveTo(W * 0.46, gy + 4); ctx.lineTo(W * 0.50, gy - 40); ctx.lineTo(W * 0.66, gy - 40); ctx.lineTo(W * 0.70, gy + 4); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(W * 0.50, gy - 40, W * 0.16, 5);
+    // columns + idol statues
+    drawColumn(W * 0.36, gy, 70);
+    drawColumn(W * 0.82, gy, 80);
+    drawFigure(W * 0.30, gy, s * 0.9, { robe: '#b8b0a4', wrap: '#b8b0a4', skin: '#cfc8bc', armRaise: 2.4 });   // grey idol
+    drawFigure(W * 0.88, gy, s * 0.9, { robe: '#b8b0a4', wrap: '#b8b0a4', skin: '#cfc8bc', armRaise: 0.7 });
+    // the altar TO THE UNKNOWN GOD
+    ctx.fillStyle = '#cdbb96'; ctx.fillRect(W * 0.555, gy - 16, 40, 16);
+    ctx.fillStyle = '#6a5a3a'; ctx.font = '700 7px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('TO THE', W * 0.575, gy - 9); ctx.fillText('UNKNOWN GOD', W * 0.575, gy - 2.5);
+    // Paul on the rock, gesturing
+    drawFigure(W * 0.58, gy - 40, s * 1.05, { robe: '#7a5a3a', wrap: '#d8d0c4', armRaise: 0.6 + Math.sin(vt * 2.5) * 0.2 });
+    // a couple of listeners below
+    drawFigure(W * 0.46, gy, s * 0.85, { robe: '#5a6a8a', flip: true, armRaise: 0.1 });
+    drawFigure(W * 0.72, gy, s * 0.85, { robe: '#6a5a4a' });
+  },
+
+  // Ephesus — books of magic burned; a riot in the theater
+  ephesus(vt) {
+    const gy = H * 0.82, s = H / 300;
+    // a faint great temple behind
+    drawColumn(W * 0.20, gy, 90); drawColumn(W * 0.30, gy, 90);
+    ctx.fillStyle = 'rgba(240,230,200,0.5)'; ctx.beginPath();
+    ctx.moveTo(W * 0.15, gy - 90); ctx.lineTo(W * 0.25, gy - 112); ctx.lineTo(W * 0.35, gy - 90); ctx.closePath(); ctx.fill();
+    // bonfire of scrolls, center
+    const fx = W * 0.55, fy = gy;
+    ctx.fillStyle = '#caa24a';
+    for (let i = -2; i <= 2; i++) { ctx.save(); ctx.translate(fx + i * 9, fy - 2); ctx.rotate(i * 0.2); ctx.fillRect(-5, -3, 10, 6); ctx.restore(); }
+    flame(fx, fy - 4, 30 + Math.sin(vt * 9) * 5, vt);
+    // smoke
+    ctx.fillStyle = 'rgba(80,70,60,0.18)';
+    for (let i = 0; i < 3; i++) { const sy = fy - 40 - ((vt * 24 + i * 24) % 70); ctx.beginPath(); ctx.arc(fx + Math.sin(vt + i) * 10, sy, 8 + i * 3, 0, Math.PI * 2); ctx.fill(); }
+    // a shouting crowd (riot)
+    const crowd = ['#5a6a8a', '#7a4a4a', '#4a6a5a', '#6a5a3a', '#8a6a4a'];
+    for (let i = 0; i < 5; i++) {
+      const x = W * (0.70 + i * 0.05);
+      drawFigure(x, gy, s * 0.85, { robe: crowd[i], armRaise: 1.4 + Math.sin(vt * 4 + i) * 0.3, flip: i % 2 === 0 });
+    }
+  },
+
+  // Malta — shipwreck on the rocks; the viper shaken into the fire
+  malta(vt) {
+    const gy = H * 0.82, s = H / 300;
+    if (vt < 1.2) shake = Math.max(shake, 3 * (1 - vt / 1.2));
+    // wrecked ship on the rocks at left, in surf
+    ctx.save();
+    ctx.translate(W * 0.16, H * 0.60); ctx.rotate(0.32); ctx.scale(0.62, 0.62);
+    ctx.fillStyle = '#5a3c1c';
+    ctx.beginPath(); ctx.moveTo(-80, 0); ctx.quadraticCurveTo(-92, -20, -64, -20); ctx.lineTo(40, -18); ctx.quadraticCurveTo(70, -8, 60, 14); ctx.quadraticCurveTo(-30, 22, -80, 0); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#3a2a14'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(0, -18); ctx.lineTo(28, -78); ctx.stroke();   // snapped mast
+    ctx.restore();
+    // splashing surf around the wreck
+    if (Math.random() < 0.5) spawnSpray(W * 0.18, H * 0.66, 1, 60);
+    // people wading ashore (moving right as time passes, then standing)
+    const w1 = Math.min(W * 0.30 + vt * 26, W * 0.40);
+    const w2 = Math.min(W * 0.26 + vt * 24, W * 0.34);
+    drawFigure(w1, gy, s * 0.9, { robe: '#6a6a8a', wrap: '#caa074', armRaise: 0.9 });
+    drawFigure(w2, gy + 6, s * 0.85, { robe: '#7a5a4a', armRaise: 1.2 });
+    // campfire on the sand at right
+    const fx = W * 0.74, fy = gy;
+    ctx.fillStyle = '#6b4a24';
+    ctx.fillRect(fx - 14, fy - 3, 10, 4); ctx.fillRect(fx + 4, fy - 3, 10, 4);
+    flame(fx, fy - 2, 22 + Math.sin(vt * 10) * 4, vt);
+    // Paul beside the fire, hand out; the viper drops into the flames
+    drawFigure(W * 0.62, gy, s, { robe: '#7a5a3a', wrap: '#d8d0c4', armRaise: 0.15 });
+    const drop = clamp01((vt - 1.6) / 0.7);
+    if (vt > 1.2 && drop < 1) {
+      const sx = W * 0.66, sy = gy - 36 + drop * 34;
+      ctx.strokeStyle = '#3a6a3a'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(sx, sy);
+      for (let i = 1; i <= 4; i++) ctx.lineTo(sx + Math.sin(i * 1.4 + vt * 6) * 5, sy + i * 5);
+      ctx.stroke();
+    }
+  },
+
+  // Rome — chained to a guard, writing the Prison Letters
+  rome(vt) {
+    const gy = H * 0.82, s = H / 300;
+    if (!confettiFired) { confettiFired = true; if (window.HSGfx) HSGfx.confetti({ count: 90, big: true }); if (window.HSGSound) HSGSound.finish(true); }
+    // a warm Roman backdrop: an arch and a column
+    ctx.fillStyle = '#d8c9a8';
+    ctx.fillRect(W * 0.18, gy - 120, 26, 120);
+    ctx.beginPath(); ctx.arc(W * 0.30, gy - 96, 36, Math.PI, 0); ctx.fill();
+    ctx.fillRect(W * 0.30 - 36, gy - 96, 10, 96); ctx.fillRect(W * 0.30 + 26, gy - 96, 10, 96);
+    drawColumn(W * 0.84, gy, 110);
+    // sunbeams
+    ctx.fillStyle = 'rgba(255,225,150,0.16)';
+    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(W * 0.6, 0); ctx.lineTo(W * 0.4 + i * 70, gy); ctx.lineTo(W * 0.46 + i * 70, gy); ctx.closePath(); ctx.fill(); }
+    // a Roman guard standing
+    drawFigure(W * 0.46, gy, s, { robe: '#8a3a3a', wrap: '#8a3a3a', helmet: '#b9a24a', skin: '#caa074' });
+    // the chain to Paul
+    ctx.strokeStyle = 'rgba(80,80,90,0.8)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(W * 0.49, gy - 38); ctx.quadraticCurveTo(W * 0.55, gy - 20, W * 0.60, gy - 30); ctx.stroke();
+    // Paul, seated, writing — the quill bobs
+    drawFigure(W * 0.64, gy, s, { robe: '#7a5a3a', wrap: '#d8d0c4', seated: true });
+    ctx.fillStyle = '#f3ead0'; ctx.save(); ctx.translate(W * 0.64, gy - 18); ctx.rotate(-0.1); ctx.fillRect(-2, 0, 30, 18); ctx.restore();
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.5;
+    const qx = W * 0.64 + 22 + Math.sin(vt * 6) * 3;
+    ctx.beginPath(); ctx.moveTo(qx, gy - 16); ctx.lineTo(qx + 5, gy - 28); ctx.stroke();
+  },
+};
+function drawDock(dockY, endX) {
+  ctx.fillStyle = '#8a6a40'; ctx.fillRect(0, dockY, endX, 9);          // planks
+  ctx.fillStyle = '#7a5a36'; ctx.fillRect(0, dockY - 3, endX, 3);     // edge highlight
+  ctx.fillStyle = '#6e5230';
+  for (let x = 26; x < endX; x += 48) ctx.fillRect(x - 3, dockY + 9, 6, H * 0.74 - dockY);   // posts
+}
+function drawColumn(x, gy, h) {
+  ctx.fillStyle = '#e6dcc0';
+  ctx.fillRect(x - 8, gy - h, 16, h);
+  ctx.fillRect(x - 12, gy - h - 6, 24, 8);
+  ctx.fillRect(x - 12, gy - 4, 24, 6);
+}
+function flame(x, y, h, vt) {
+  const g = ctx.createLinearGradient(0, y - h, 0, y);
+  g.addColorStop(0, '#ffd24a'); g.addColorStop(0.5, '#f08a2a'); g.addColorStop(1, '#c4451a');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.moveTo(x - 12, y);
+  ctx.quadraticCurveTo(x - 10, y - h * 0.6, x - 3 + Math.sin(vt * 12) * 2, y - h);
+  ctx.quadraticCurveTo(x, y - h * 0.5, x + 4 + Math.sin(vt * 10) * 2, y - h * 0.92);
+  ctx.quadraticCurveTo(x + 11, y - h * 0.55, x + 12, y);
+  ctx.closePath(); ctx.fill();
+}
+
+// ============================================================
+// Main loop
+// ============================================================
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000; lastTs = ts;
+  if (dt > 0.05) dt = 0.05;
+  sceneTime += dt;
+
+  surgeT = Math.max(0, surgeT - dt);
+  lightningT = Math.max(0, lightningT - dt * 2.2);
+
+  const targetSpeed = (state === 'landing') ? 26 : (90 + surgeT * 260 + stormFrac() * 40);
+  speed += (targetSpeed - speed) * Math.min(1, dt * 4);
+  scroll += speed * dt;
+
+  stormShown += (storm - stormShown) * Math.min(1, dt * 3);
+  heel += (heelTarget - heel) * Math.min(1, dt * 6);
+  heelTarget *= (1 - Math.min(1, dt * 2.5));
+  heelTarget += Math.sin(sceneTime * 1.4) * 0.0009 * (1 + stormFrac() * 3);
+
+  if (state === 'sail') {
+    if (Math.random() < 0.5) spawnSpray(shipX() + 90, seaLevel() + 6, 1, speed);
+    if (stormFrac() > 0.5 && Math.random() < 0.4) spawnSpray(rand(0, W), seaLevel() + rand(-10, 30), 1, 0);
+  }
+
+  ctx.save();
+  if (shake > 0) { ctx.translate(rand(-shake, shake), rand(-shake, shake)); shake = Math.max(0, shake - dt * 30); }
+
+  if (state === 'landing') {
+    landT += dt;
+    drawLanding(dt);
+  } else if (state === 'sail') {
+    if (!answered) {
+      storm = Math.min(96, storm + level.drain * dt);   // dawdling builds the storm (but never sinks you)
+    } else {
+      revealT -= dt;
+      if (revealT <= 0) afterReveal();
+    }
+    drawSailing(dt);
+  } else {
+    drawSailing(dt);   // menu
+  }
+  ctx.restore();
+}
+
+// ============================================================
+// Question flow
+// ============================================================
+function activeDeck() { return DECK.filter(c => cardLevel(c) === level.lvl); }
+function drawCard() { if (!queue.length) queue = shuffle(activeDeck()); return queue.pop(); }
+
+const NT_START = CANON.indexOf('Matthew');
+const isNT = (b) => CANON.indexOf(b) >= NT_START;
 
 function buildOptions(card) {
-  // One correct option drawn from the card's valid books...
   const answer = card.books[Math.floor(Math.random() * card.books.length)];
-  // ...and three distractors that are NOT valid for this card.
-  const pool = shuffle(CANON.filter(b => !card.books.includes(b)));
-  const options = shuffle([answer, ...pool.slice(0, 3)]);
-  return { answer, options };
+  let pool = CANON.filter(b => !card.books.includes(b));
+  if (level.lvl === 1) {
+    // Easy: wrong answers from the OTHER testament and well-known — clearly different
+    const opp = pool.filter(b => isNT(b) !== isNT(answer) && EASY_BOOKS.has(b));
+    if (opp.length >= 3) pool = opp;
+    else { const t = pool.filter(b => isNT(b) !== isNT(answer)); if (t.length >= 3) pool = t; }
+  } else if (level.lvl >= 3) {
+    // Hard/Einstein: wrong answers from the SAME testament; Einstein picks nearby books
+    let same = pool.filter(b => isNT(b) === isNT(answer));
+    if (level.lvl === 4) {
+      const ai = CANON.indexOf(answer);
+      same = same.sort((a, b) => Math.abs(CANON.indexOf(a) - ai) - Math.abs(CANON.indexOf(b) - ai)).slice(0, 8);
+    }
+    if (same.length >= 3) pool = same;
+  }
+  pool = shuffle(pool);
+  return { answer, options: shuffle([answer, ...pool.slice(0, 3)]) };
 }
 
-function nextCard() {
-  clearTimeout(advanceTimer);
-  pendingEnd = false;
+function setQuestionLayout() {
+  answersEl.style.gridTemplateColumns = '';
+  document.getElementById('qprompt').style.display = '';
+}
+
+function nextQuestion() {
+  setQuestionLayout();
   answered = false;
-  currentCard = drawCard();
-  if (!currentCard) {
-    document.getElementById('verseText').textContent = 'No verses match that combination';
-    document.getElementById('verseBlurb').textContent = 'Pick another level or type.';
-    document.getElementById('catPill').textContent = '—';
-    document.getElementById('catPill').className = 'cat-pill';
-    document.getElementById('optionGrid').innerHTML = '';
-    document.getElementById('revealName').textContent = '';
-    document.getElementById('feedback').textContent = '';
-    return;
-  }
-  const { answer, options } = buildOptions(currentCard);
-  currentCard._answer = answer;
-  currentCard._options = options;
+  current = drawCard();
+  const { answer, options } = buildOptions(current);
+  current._answer = answer; current._options = options;
 
-  const pill = document.getElementById('catPill');
-  pill.textContent = CAT_LABEL[currentCard.cat] || currentCard.cat;
-  pill.className = 'cat-pill cat-' + currentCard.cat;
-
-  document.getElementById('verseText').textContent = currentCard.verse;
-  document.getElementById('verseBlurb').textContent = currentCard.blurb;
-  document.getElementById('revealName').textContent = '';
-  document.getElementById('feedback').textContent = '';
-  document.getElementById('nextBtn').style.display = 'none';
-
-  const grid = document.getElementById('optionGrid');
-  grid.innerHTML = '';
-  options.forEach((book, i) => {
-    const btn = document.createElement('button');
-    btn.className = 'option-btn';
-    btn.dataset.idx = i;
-    btn.dataset.book = book;
-
-    const keyEl = document.createElement('span');
-    keyEl.className = 'key-hint';
-    keyEl.textContent = KEYS[i];
-
-    const valEl = document.createElement('span');
-    valEl.className = 'option-val';
-    valEl.textContent = book;
-
-    btn.appendChild(keyEl);
-    btn.appendChild(valEl);
-    btn.addEventListener('click', () => handleAnswer(book, btn));
-    grid.appendChild(btn);
-  });
-}
-
-function handleAnswer(chosen, clickedBtn) {
-  if (answered) return;
-  answered = true;
-  total++;
-  let endedStreak = 0;
-
-  const allBtns = document.querySelectorAll('.option-btn');
-  allBtns.forEach(b => b.disabled = true);
-
-  // Any of the card's books is a correct answer.
-  const isCorrect = currentCard.books.includes(chosen);
-
-  if (isCorrect) {
-    correct++;
-    streak++;
-    if (streak > bestStreak) bestStreak = streak;
-    quest.correct();
-    HSGSound.correct();
-    clickedBtn.classList.add('correct');
-    const msg = streak >= 10 ? `🔥 Correct — ${streak} in a row!`
-              : streak >= 5  ? `⭐ Correct — ${streak} in a row!`
-              :                `✓ Correct!`;
-    document.getElementById('feedback').innerHTML = `<span style="color:var(--green)">${msg}</span>`;
-    if (HSGfx.milestone(streak)) HSGSound.streak(streak);
+  const tag = document.getElementById('qtag');
+  tag.textContent = CAT_LABEL[current.cat] || current.cat;
+  tag.className = 'qtag tag-' + current.cat;
+  if (level.lvl === 1) {
+    // Easy: show the famous story/scene by name with its description — recognizable
+    qtextEl.classList.remove('quoted'); qtextEl.classList.add('plain');
+    qtextEl.textContent = current.name.replace(/ \(.*\)$/, '');
+    document.getElementById('qblurb').textContent = current.blurb;
+    document.getElementById('qprompt').textContent = 'Which book of the Bible tells this?';
   } else {
-    endedStreak = streak;
-    streak = 0;
-    quest.wrong();
-    HSGSound.wrong();
-    clickedBtn.classList.add('wrong');
-    // Reveal the one correct option in the grid.
-    allBtns.forEach(b => {
-      if (b.dataset.book === currentCard._answer) b.classList.add('reveal-correct');
-    });
-    document.getElementById('feedback').innerHTML =
-      `<span style="color:var(--red)">✗ This is from ${currentCard._answer}</span>`;
+    // Medium shows the quote plus a hint; Hard/Einstein show the quote alone
+    qtextEl.classList.add('quoted'); qtextEl.classList.remove('plain');
+    qtextEl.textContent = current.verse;
+    document.getElementById('qblurb').textContent = level.lvl === 2 ? current.blurb : '';
+    document.getElementById('qprompt').textContent = 'Which book of the Bible is this from?';
   }
+  document.getElementById('qreveal').textContent = '';
 
-  // Reveal the scene name, plus other books it appears in (for wilds/characters).
-  const others = currentCard.books.filter(b => b !== currentCard._answer);
-  let nameLine = currentCard.name.replace(/ \(.*\)$/, '');
-  if (others.length) {
-    nameLine += ` — also found in ${others.join(', ')}`;
-  }
-  document.getElementById('revealName').textContent = nameLine;
-
-  updateBadges();
-
-  // End after TARGET questions, but never mid-streak.
-  pendingEnd = (total >= TARGET && streak === 0);
-  const nextBtn = document.getElementById('nextBtn');
-  nextBtn.textContent = pendingEnd ? 'See results →' : 'Next Verse →';
-  nextBtn.style.display = 'block';
-  scheduleAdvance(isCorrect ? DELAY_OK : DELAY_NO);
-}
-
-function scheduleAdvance(ms) {
-  clearTimeout(advanceTimer);
-  advanceTimer = setTimeout(advance, ms);
-}
-function advance() {
-  clearTimeout(advanceTimer);
-  if (!answered) return;
-  if (pendingEnd) endSession();
-  else nextCard();
-}
-
-function endSession() {
-  HSGfx.showSummary({
-    title: `Bible Quiz — ${total} verses`,
-    correct, total, best: bestStreak,
-    onPlayAgain: startRound,
+  answersEl.innerHTML = '';
+  options.forEach((val, i) => {
+    const b = document.createElement('button');
+    b.className = 'ans'; b.dataset.idx = i; b.dataset.val = val;
+    b.innerHTML = '<span class="k">' + KEYS[i] + '</span><span class="v"></span>';
+    b.querySelector('.v').textContent = val;
+    b.addEventListener('click', () => answer_(i));
+    answersEl.appendChild(b);
   });
+}
+
+function answer_(idx) {
+  if (state !== 'sail' || answered) return;
+  const btns = [...answersEl.children];
+  const btn = btns[idx]; if (!btn) return;
+  answered = true;
+  btns.forEach(b => b.disabled = true);
+  const correct = current.books.includes(btn.dataset.val);
+
+  if (correct) {
+    correctCount++; streak++; if (streak > bestStreak) bestStreak = streak;
+    legCorrect++;
+    btn.classList.add('correct');
+    storm = Math.max(0, storm - level.calm);
+    surgeT = 0.6; heelTarget = 0.05;
+    if (window.HSGSound) HSGSound.correct();
+    if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
+    spawnSpray(shipX() + 90, seaLevel() + 4, 14, speed + 240);
+  } else {
+    streak = 0; legWrong++;
+    btn.classList.add('wrong');
+    btns.forEach(b => { if (current.books.includes(b.dataset.val)) b.classList.add('reveal'); });
+    storm = Math.min(96, storm + level.loss);
+    heelTarget = -0.16; shake = 8; lightningT = 1;
+    if (window.HSGSound) HSGSound.wrong();
+    if (window.HSGfx) HSGfx.flash('rgba(40,60,110,0.30)');
+  }
+  showReveal(correct);
+  updateBadges();
+  revealT = correct ? 0.95 : 1.7;
+}
+
+function showReveal(wasCorrect) {
+  const others = current.books.filter(b => b !== current._answer);
+  let line = (wasCorrect ? '✓ ' : '✗ This is from ' + current._answer + ' — ') + current.name.replace(/ \(.*\)$/, '');
+  if (others.length) line += ' (also in ' + others.join(', ') + ')';
+  const el = document.getElementById('qreveal');
+  el.textContent = line;
+  el.style.color = wasCorrect ? 'var(--green)' : 'var(--red)';
+}
+
+function afterReveal() {
+  if (legCorrect >= CORRECT_TO_LAND) arrive();
+  else nextQuestion();
+}
+
+// ============================================================
+// Landings & lifecycle
+// ============================================================
+function arrive() {
+  const stop = ITINERARY[legIndex];
+  state = 'landing'; landT = 0; confettiFired = false;
+  if (stop.vignette === 'malta') { shake = 10; if (window.HSGSound) HSGSound.wrong(); }
+  if (bestStreak > getBest()) setBest(bestStreak);
+  updateBadges();
+  fillLandingCard(stop);
+}
+
+function fillLandingCard(stop) {
+  const tag = document.getElementById('qtag');
+  tag.className = 'qtag tag-port';
+  tag.textContent = 'Landing ' + (legIndex + 1) + ' of ' + ITINERARY.length + ' · ' + stop.acts;
+
+  qtextEl.classList.remove('quoted'); qtextEl.classList.add('plain');
+  qtextEl.textContent = stop.port + ' — ' + stop.title;
+  document.getElementById('qblurb').textContent = stop.text;
+  document.getElementById('qprompt').style.display = 'none';
+
+  const reveal = document.getElementById('qreveal');
+  const note = legWrong === 0 ? '⚓ Smooth sailing — not a single wrong turn!'
+    : '⚓ Safe in port — after ' + legWrong + ' wrong turn' + (legWrong > 1 ? 's' : '') + '.';
+  reveal.textContent = note; reveal.style.color = 'var(--gold)';
+
+  answersEl.innerHTML = '';
+  answersEl.style.gridTemplateColumns = '1fr';
+  if (stop.final) {
+    const stats = document.createElement('div');
+    stats.className = 'land-stats';
+    stats.innerHTML = '<div class="fs"><b>' + correctCount + '</b><span>Correct</span></div>' +
+                      '<div class="fs"><b>' + bestStreak + '</b><span>Best Streak</span></div>' +
+                      '<div class="fs"><b>' + getBest() + '</b><span>All-time Best</span></div>';
+    answersEl.appendChild(stats);
+    const actions = document.createElement('div');
+    actions.className = 'land-actions';
+    actions.innerHTML = '<button class="play-btn" id="voyAgain">Sail Again ⛵</button>' +
+      '<a class="play-btn secondary" href="../../subjects/bible.html" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">← Bible</a>';
+    answersEl.appendChild(actions);
+    document.getElementById('voyAgain').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
+    state = 'done';
+  } else {
+    const next = ITINERARY[legIndex + 1];
+    const btn = document.createElement('button');
+    btn.className = 'play-btn'; btn.style.width = '100%';
+    btn.textContent = 'Sail on to ' + next.port + ' →';
+    btn.addEventListener('click', continueVoyage);
+    answersEl.appendChild(btn);
+  }
+}
+
+function continueVoyage() {
+  if (window.HSGSound) HSGSound.tick();
+  legIndex++;
+  legCorrect = 0; legWrong = 0;
+  storm = START_STORM;
+  state = 'sail';
+  nextQuestion();
+}
+
+function startGame(key) {
+  level = LEVELS[key] || LEVELS.easy;
+  state = 'sail';
+  storm = START_STORM; stormShown = START_STORM;
+  correctCount = 0; streak = 0; bestStreak = 0;
+  legIndex = 0; legCorrect = 0; legWrong = 0;
+  queue = []; answered = false; spray = []; surgeT = 0; heel = 0; heelTarget = 0;
+  confettiFired = false;
+  startOverlay.classList.add('hidden');
+  document.getElementById('qpanel').style.opacity = '1';
+  updateBadges();
+  nextQuestion();
 }
 
 function updateBadges() {
-  document.getElementById('scoreBadge').textContent = `${correct} / ${total}`;
+  document.getElementById('scoreBadge').textContent = correctCount + ' correct';
+  document.getElementById('bestBadge').textContent = 'Best ' + getBest();
 }
 
-function startRound() {
-  clearTimeout(advanceTimer);
-  quest.endRun();
-  correct = 0; total = 0; streak = 0; bestStreak = 0; queue = [];
-  answered = false; pendingEnd = false;
-  syncFilterChips();
-  updateBadges();
-  nextCard();
+function toMenu() {
+  state = 'menu';
+  storm = START_STORM; legIndex = 0; legCorrect = 0; legWrong = 0;
+  startOverlay.classList.remove('hidden');
+  setQuestionLayout();
+  qtextEl.textContent = 'Choose your winds to set sail.';
+  document.getElementById('qblurb').textContent = '';
+  document.getElementById('qreveal').textContent = '';
+  document.getElementById('qtag').textContent = 'Story';
+  document.getElementById('qtag').className = 'qtag tag-story';
+  answersEl.innerHTML = '';
 }
 
-function resetAll() { startRound(); }
+// ---------------- Wiring ----------------
+document.querySelectorAll('.pace-btn').forEach(b => {
+  b.addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.level); });
+});
+function paceKey() { return level.key; }
 
-// Keyboard: A/B/C/D to answer, Enter or Space for next.
 document.addEventListener('keydown', e => {
-  if ((e.key === 'Enter' || e.key === ' ') && answered) {
-    e.preventDefault();
-    advance();
-    return;
-  }
-  if (answered) return;
-  const idx = ['a','b','c','d'].indexOf(e.key.toLowerCase());
-  if (idx === -1) return;
-  const btn = document.querySelector(`.option-btn[data-idx="${idx}"]`);
-  if (btn && !btn.disabled) btn.click();
+  if (state !== 'sail' || answered) return;
+  const i = ['a', 'b', 'c', 'd'].indexOf(e.key.toLowerCase());
+  if (i === -1) return;
+  const btn = answersEl.children[i];
+  if (btn && !btn.disabled) { e.preventDefault(); answer_(i); }
 });
 
-const quest = HSGQuest.init({
-  gameId: 'bible-quiz', gameName: 'Bible Quiz',
-  theme: HSGQuest.themes.ark,
-  mount: document.getElementById('questRail')
-});
-
-buildFilters();
+setupCanvas();
 updateBadges();
-nextCard();
+rafId = requestAnimationFrame(loop);
 </script>
 
 </body>

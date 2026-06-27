@@ -181,8 +181,37 @@
     /* ---- SOLO game screen ---- */
     .solo-screen {
       display: none;
-      padding: 1.5rem 0;
+      padding: 0.6rem 0 0;
     }
+
+    /* ---- Solo play fills exactly one screen — no page scroll ---- */
+    body.solo-active { overflow: hidden; height: 100dvh; display: flex; flex-direction: column; }
+    body.solo-active .site-header { flex: 0 0 auto; }
+    body.solo-active .site-footer { display: none; }
+    body.solo-active #soloScreen { flex: 1 1 auto; min-height: 0; display: block; }
+
+    /* Center the game in the viewport. The streak rail sits to the right,
+       balanced by .game-layout's phantom spacer so it doesn't pull the
+       game off-center. */
+    #soloScreen .game-layout { max-width: 1500px; height: 100%; align-items: stretch; }
+    #soloScreen .game-main {
+      flex: 0 1 960px; max-width: 960px;
+      display: flex; flex-direction: column; min-height: 0; gap: 0.35rem;
+    }
+    #soloScreen .hsg-rail { align-self: flex-start; }
+
+    /* Compact the column and let the images scale to the screen height so the
+       whole hand fits without scrolling. */
+    #soloScreen .solo-header { margin-bottom: 0.4rem; }
+    #soloScreen .center-card-wrap { margin-bottom: 0.3rem; }
+    #soloScreen .center-label,
+    #soloScreen .center-label#centerLabel { margin-bottom: 0.35rem; }
+    #soloScreen .solo-instruction { margin: 0.2rem 0; }
+    #soloScreen .hand-label-solo { margin: 0.25rem 0; }
+    #soloScreen #soloHandGrid { flex: 0 1 auto; min-height: 0; margin-bottom: 0.4rem; }
+    #soloScreen .card-img { max-height: 24vh; }
+    #soloScreen .circa-card.center .card-img { max-height: 22vh; }
+    #soloScreen .card-desc { -webkit-line-clamp: 2; }
 
     /* Solo header bar */
     .solo-header {
@@ -474,12 +503,12 @@
     .circa-card.no-hover { cursor: default; }
 
     .card-img {
-      width: 100%; height: 130px; margin-bottom: 0.6rem;
+      /* ~4:3 of the card width so landscape photos barely crop */
+      width: 100%; aspect-ratio: 4 / 3; margin-bottom: 0.6rem;
       border-radius: 9px; overflow: hidden; background: var(--card-rule, #e8e0cf);
       box-shadow: inset 0 0 0 1px rgba(26,23,20,0.08);
     }
-    .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .circa-card.center .card-img { height: 150px; }
+    .card-img img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
     .card-title {
       font-family: var(--font-serif);
       font-size: 1.05rem;
@@ -719,7 +748,7 @@
 
   <!-- ===================== SOLO SCREEN ===================== -->
   <div class="solo-screen" id="soloScreen">
-   <div class="game-layout game-layout-wide">
+   <div class="game-layout">
     <div class="game-main">
 
     <div class="solo-header">
@@ -1140,6 +1169,7 @@ function startSoloGame() {
   }
 
   document.getElementById('soloScreen').style.display = 'block';
+  document.body.classList.add('solo-active');
   updateSoloStats();
   soloNextRound();
 }
@@ -1485,6 +1515,7 @@ function updateSoloStats() {
 
 function soloEndGame(reason) {
   document.getElementById('soloScreen').style.display = 'none';
+  document.body.classList.remove('solo-active');
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
 
