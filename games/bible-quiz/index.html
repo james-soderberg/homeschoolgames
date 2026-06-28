@@ -6,11 +6,18 @@
   <title>Bible Quiz — Paul's Voyage — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
-    .voy-page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    /* Fit the whole game to the viewport — no page scroll on desktop. */
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; overflow: hidden; }
+    .site-header, .site-footer { flex: 0 0 auto; }
+    .voy-page {
+      flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1180px; margin: 0 auto;
+      padding: 0.7rem 1.1rem 0.6rem; display: flex; flex-direction: column; gap: 0.5rem;
+    }
 
     .voy-top {
       display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 0.9rem; gap: 0.75rem; flex-wrap: wrap;
+      gap: 0.75rem; flex-wrap: wrap; flex: 0 0 auto;
     }
     .voy-top h1 { margin: 0; font-size: 1.8rem; }
     .stat-group { display: flex; gap: 0.5rem; align-items: center; }
@@ -20,14 +27,32 @@
       font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
     }
 
-    /* ============ Scene (canvas) ============ */
+    /* ============ Stage: canvas + journey map side by side ============ */
+    .stage { flex: 1 1 auto; min-height: 0; display: flex; gap: 0.7rem; }
+
     .scene-wrap {
-      position: relative; width: 100%;
-      height: min(72vh, 680px); min-height: 460px;
-      border-radius: 16px 16px 0 0; overflow: hidden;
-      border: 2.5px solid #234a63; border-bottom: none;
+      position: relative; flex: 1 1 auto; min-width: 0; height: 100%;
+      border-radius: 16px; overflow: hidden;
+      border: 2.5px solid #234a63;
       box-shadow: 0 10px 30px rgba(20,33,46,0.32);
       background: #8fc3e6; user-select: none; touch-action: manipulation;
+    }
+
+    /* journey map panel (right of the canvas, outside the scene's centering) */
+    .map-panel {
+      flex: 0 0 232px; width: 232px; display: flex; flex-direction: column; gap: 0.45rem;
+      background: #eef6fc; border: 2.5px solid #234a63; border-radius: 16px;
+      padding: 0.7rem 0.65rem; box-shadow: 0 10px 30px rgba(20,33,46,0.18);
+    }
+    .map-panel h3 {
+      margin: 0; text-align: center; font-family: var(--font-serif);
+      font-size: 1.02rem; color: var(--ink);
+    }
+    .map-wrap { flex: 1 1 auto; min-height: 0; position: relative; }
+    #mapCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .map-cap {
+      flex: 0 0 auto; text-align: center; font-family: var(--font-sans);
+      font-size: 0.8rem; font-weight: 700; color: #1d5a86; line-height: 1.25;
     }
     #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .scene-wrap::after {
@@ -61,8 +86,8 @@
 
     /* ============ Question / landing panel ============ */
     .qpanel {
-      border: 2.5px solid #234a63; border-top: 2px dashed #5e9cc4; border-radius: 0 0 16px 16px;
-      background: #f6fbff; padding: 1rem 1.1rem 1.15rem; box-shadow: 0 8px 22px rgba(20,33,46,0.14);
+      flex: 0 0 auto; border: 2.5px solid #234a63; border-radius: 16px;
+      background: #f6fbff; padding: 0.7rem 1.1rem 0.8rem; box-shadow: 0 8px 22px rgba(20,33,46,0.14);
     }
     .qtag {
       display: inline-block; padding: 0.16rem 0.7rem; border-radius: 99px;
@@ -77,30 +102,30 @@
     .tag-port      { background: #FCE4C4; color: #8A4A12; }
     .qtext {
       font-family: var(--font-serif); font-weight: 600; font-style: italic;
-      font-size: clamp(1.15rem, 3.4vw, 1.55rem); line-height: 1.3; color: var(--ink);
-      margin-bottom: 0.35rem;
+      font-size: clamp(1.1rem, 3vw, 1.45rem); line-height: 1.28; color: var(--ink);
+      margin-bottom: 0.3rem;
     }
     .qtext.quoted::before { content: "\201C"; }
     .qtext.quoted::after  { content: "\201D"; }
     .qtext.plain { font-style: normal; }
     .qblurb {
-      font-size: 0.95rem; color: var(--ink-light); line-height: 1.5; margin-bottom: 0.6rem; max-width: 64ch;
+      font-size: 0.92rem; color: var(--ink-light); line-height: 1.4; margin-bottom: 0.45rem; max-width: 70ch;
     }
     .qprompt {
-      font-family: var(--font-sans); font-size: 0.8rem; font-weight: 700; letter-spacing: 0.02em;
-      text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.7rem;
+      font-family: var(--font-sans); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.02em;
+      text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.5rem;
     }
     .qreveal {
-      font-family: var(--font-serif); font-size: 1rem; font-weight: 600; color: var(--gold);
-      min-height: 1.3rem; margin-bottom: 0.55rem;
+      font-family: var(--font-serif); font-size: 0.98rem; font-weight: 600; color: var(--gold);
+      min-height: 1.2rem; margin-bottom: 0.45rem;
     }
-    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; }
+    .answers { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
     .ans {
       display: flex; align-items: center; gap: 0.55rem; text-align: left;
       background: #fff; border: 2.5px solid var(--border); border-radius: 11px;
-      padding: 0.7rem 0.8rem; font-family: var(--font-serif); cursor: pointer;
+      padding: 0.55rem 0.8rem; font-family: var(--font-serif); cursor: pointer;
       transition: border-color 0.12s, background 0.12s, transform 0.08s;
-      box-shadow: 0 2px 5px rgba(20,33,46,0.06); min-height: 54px;
+      box-shadow: 0 2px 5px rgba(20,33,46,0.06); min-height: 48px;
     }
     .ans .k {
       flex-shrink: 0; font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800;
@@ -124,14 +149,24 @@
     .land-stats .fs b { font-family: var(--font-serif); font-size: 1.7rem; color: var(--gold); line-height: 1; }
     .land-stats .fs span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-light); margin-top: 0.2rem; }
 
-    .voy-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin-top: 0.9rem; }
-    .control-row { display: flex; justify-content: center; margin-top: 0.5rem; }
+    .control-row { display: flex; justify-content: center; flex: 0 0 auto; }
     .reset-link {
-      background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer;
-      font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem;
+      background: none; border: none; color: var(--ink-light); font-size: 0.82rem; cursor: pointer;
+      font-family: var(--font-sans); text-decoration: underline; padding: 0.15rem 0.5rem;
     }
     .reset-link:hover { color: var(--ink); }
 
+    /* On phones/short screens, stop fitting to the viewport — stack and allow scroll. */
+    @media (max-width: 760px) {
+      html, body { height: auto; }
+      body { display: block; overflow: auto; }
+      .voy-page { display: block; padding-bottom: 2rem; }
+      .stage { flex-direction: column; }
+      .scene-wrap { height: 52vh; min-height: 320px; }
+      .map-panel { flex: none; width: auto; }
+      .map-wrap { height: 150px; }
+      .qpanel { margin-top: 0.7rem; }
+    }
     @media (max-width: 480px) {
       .answers { grid-template-columns: 1fr; }
     }
@@ -156,21 +191,29 @@
     </div>
   </div>
 
-  <div class="scene-wrap" id="sceneWrap">
-    <canvas id="scene"></canvas>
+  <div class="stage">
+    <div class="scene-wrap" id="sceneWrap">
+      <canvas id="scene"></canvas>
 
-    <!-- Start overlay -->
-    <div class="ov" id="startOverlay">
-      <div class="crest">⛵</div>
-      <h2>Paul's Voyage</h2>
-      <p>Retrace Paul's journeys all the way to Rome. Name the book each clue comes from — five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
-      <div class="pace-row">
-        <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3–7</span></button>
-        <button class="pace-btn" data-level="medium">Medium<span class="p-sub">High school</span></button>
-        <button class="pace-btn" data-level="hard">Hard<span class="p-sub">Adult</span></button>
-        <button class="pace-btn" data-level="einstein">Einstein<span class="p-sub">Expert</span></button>
+      <!-- Start overlay -->
+      <div class="ov" id="startOverlay">
+        <div class="crest">⛵</div>
+        <h2>Paul's Voyage</h2>
+        <p>Retrace Paul's journeys all the way to Rome. Name the book each clue comes from — five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
+        <div class="pace-row">
+          <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3–7</span></button>
+          <button class="pace-btn" data-level="medium">Medium<span class="p-sub">High school</span></button>
+          <button class="pace-btn" data-level="hard">Hard<span class="p-sub">Adult</span></button>
+          <button class="pace-btn" data-level="einstein">Einstein<span class="p-sub">Expert</span></button>
+        </div>
       </div>
     </div>
+
+    <aside class="map-panel">
+      <h3>Paul's Journey</h3>
+      <div class="map-wrap"><canvas id="mapCanvas"></canvas></div>
+      <div class="map-cap" id="mapCap">Antioch — ready to set sail</div>
+    </aside>
   </div>
 
   <div class="qpanel" id="qpanel">
@@ -181,8 +224,6 @@
     <div class="qreveal" id="qreveal"></div>
     <div class="answers" id="answers"></div>
   </div>
-
-  <p class="voy-hint">Tap a book or press <b>A · B · C · D</b>. Any book the passage truly comes from counts. Five right verses carry you to each port!</p>
 
   <div class="control-row">
     <button class="reset-link" onclick="toMenu()">Quit to harbor</button>
@@ -381,6 +422,21 @@ const ctx = canvas.getContext('2d');
 const startOverlay = document.getElementById('startOverlay');
 const answersEl = document.getElementById('answers');
 const qtextEl = document.getElementById('qtext');
+const mapCanvas = document.getElementById('mapCanvas');
+const mapCtx = mapCanvas.getContext('2d');
+const mapCapEl = document.getElementById('mapCap');
+
+// Real geography of the journey for the side map (Antioch start + the six ports).
+const MAP_POINTS = [
+  { name: 'Antioch',  lon: 36.2, lat: 36.2 },
+  { name: 'Cyprus',   lon: 33.4, lat: 35.1 },
+  { name: 'Philippi', lon: 24.3, lat: 41.0 },
+  { name: 'Athens',   lon: 23.7, lat: 38.0 },
+  { name: 'Ephesus',  lon: 27.3, lat: 37.9 },
+  { name: 'Malta',    lon: 14.5, lat: 35.9 },
+  { name: 'Rome',     lon: 12.5, lat: 41.9 },
+];
+let mapW = 200, mapH = 260;
 
 // ---------------- State ----------------
 let W = 800, H = 420, dpr = 1;
@@ -408,6 +464,15 @@ function setupCanvas() {
   canvas.width = Math.round(W * dpr);
   canvas.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  setupMap();
+}
+function setupMap() {
+  const r = mapCanvas.getBoundingClientRect();
+  mapW = Math.max(120, r.width);
+  mapH = Math.max(120, r.height);
+  mapCanvas.width = Math.round(mapW * dpr);
+  mapCanvas.height = Math.round(mapH * dpr);
+  mapCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', setupCanvas);
 
@@ -617,38 +682,12 @@ function drawSailing(dt) {
 // HUD — itinerary ribbon + storm meter + leg progress
 // ============================================================
 function drawHUD(landing) {
-  // itinerary ribbon across the top
-  const n = ITINERARY.length;
-  const span = Math.min(W - 120, n * 70);
-  const step = span / (n - 1);
-  const x0 = W / 2 - span / 2;
-  const y = 26;
-  ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 2;
-  ctx.beginPath(); ctx.moveTo(x0, y); ctx.lineTo(x0 + span, y); ctx.stroke();
-  for (let i = 0; i < n; i++) {
-    const x = x0 + i * step;
-    const reached = i < legIndex || (landing && i <= legIndex);
-    ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = reached ? '#ffd98a' : 'rgba(255,255,255,0.85)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(12,28,46,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
-    if (!landing && i === legIndex) {
-      ctx.beginPath(); ctx.arc(x, y, 8 + Math.sin(sceneTime * 4) * 1.6, 0, Math.PI * 2);
-      ctx.strokeStyle = '#ffd98a'; ctx.lineWidth = 2; ctx.stroke();
-    }
-  }
-  // label
-  ctx.font = '800 13px Inter, system-ui, sans-serif';
-  ctx.textAlign = 'center'; ctx.fillStyle = 'rgba(12,28,46,0.9)';
-  const dest = ITINERARY[Math.min(legIndex, n - 1)].port;
-  ctx.fillText(landing ? ('Landing at ' + dest) : ('Leg ' + (legIndex + 1) + ' of ' + n + ' → ' + dest), W / 2, y + 22);
-  ctx.restore();
-
+  // The leg/route indicator now lives in the side map panel (drawMiniMap),
+  // so the canvas just carries the two gameplay meters.
   if (!landing) {
     // progress to the next port — fills 20% per correct verse, so you can see the dock coming
-    meter(14, 44, 170, '⚓ To ' + ITINERARY[legIndex].port, legCorrect / CORRECT_TO_LAND, '#3fae6a', '#1d6f43');
-    meter(W - 184, 44, 170, '⛈ Storm', stormShown / 100, '#d77a3a', '#9a3a1a', true);
+    meter(14, 16, 168, '⚓ To ' + ITINERARY[legIndex].port, legCorrect / CORRECT_TO_LAND, '#3fae6a', '#1d6f43');
+    meter(W - 182, 16, 168, '⛈ Storm', stormShown / 100, '#d77a3a', '#9a3a1a', true);
   }
 }
 function meter(x, y, w, label, frac, c1, c2, right) {
@@ -673,6 +712,95 @@ function roundRect(x, y, w, h, r) {
   ctx.beginPath();
   ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
   ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+// ============================================================
+// Side map — Paul's real route across the Mediterranean
+// ============================================================
+const MAP_LON0 = 10.5, MAP_LON1 = 38.0, MAP_LAT0 = 31.0, MAP_LAT1 = 43.5;
+function mapProj(p) {
+  const pad = 16;
+  return {
+    x: pad + ((p.lon - MAP_LON0) / (MAP_LON1 - MAP_LON0)) * (mapW - 2 * pad),
+    y: pad + ((MAP_LAT1 - p.lat) / (MAP_LAT1 - MAP_LAT0)) * (mapH - 2 * pad),
+  };
+}
+// where the ship is on the map right now, and how many ports are behind us
+function mapShipState() {
+  const atPort = (state === 'landing' || state === 'done');
+  const from = MAP_POINTS[Math.min(legIndex, 6)];
+  const to = MAP_POINTS[Math.min(legIndex + 1, 6)];
+  const t = atPort ? 1 : clamp01(legCorrect / CORRECT_TO_LAND);
+  const A = mapProj(from), B = mapProj(to);
+  return { x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t, reached: atPort ? legIndex + 1 : legIndex };
+}
+function drawMiniMap() {
+  const c = mapCtx, w = mapW, h = mapH;
+  c.clearRect(0, 0, w, h);
+  // sea
+  const sg = c.createLinearGradient(0, 0, 0, h);
+  sg.addColorStop(0, '#bfe0f2'); sg.addColorStop(1, '#a6d2ea');
+  c.fillStyle = sg; c.fillRect(0, 0, w, h);
+  // stylized landmasses, positioned to sit behind the real city dots
+  c.fillStyle = '#dcc79a';
+  // North Africa band along the bottom
+  c.beginPath(); c.moveTo(0, h); c.lineTo(0, h * 0.82);
+  c.quadraticCurveTo(w * 0.5, h * 0.72, w, h * 0.8); c.lineTo(w, h); c.closePath(); c.fill();
+  // Italy (around Rome, top-left)
+  blob([[0.0,0.02],[0.16,0.0],[0.2,0.18],[0.12,0.4],[0.16,0.55],[0.06,0.6],[0.04,0.36],[0.0,0.2]]);
+  // Greece (around Philippi/Athens, top-centre)
+  blob([[0.34,0.0],[0.6,0.0],[0.58,0.28],[0.52,0.42],[0.46,0.34],[0.42,0.5],[0.36,0.34],[0.4,0.2]]);
+  // Asia Minor + Syria (right side, around Ephesus → Antioch)
+  blob([[0.62,0.18],[1.0,0.12],[1.0,0.72],[0.78,0.66],[0.66,0.5],[0.6,0.34]]);
+  // islands
+  c.fillStyle = '#d2bd8e';
+  ellipseM(0.12, 0.66, 0.04, 0.02);   // Sicily
+  ellipseM(0.46, 0.74, 0.07, 0.022);  // Crete
+  ellipseM(0.86, 0.62, 0.05, 0.03);   // Cyprus
+  const sh = mapShipState();
+  // full route, faint dashed
+  c.strokeStyle = 'rgba(40,74,99,0.35)'; c.lineWidth = 1.5; c.setLineDash([4, 4]);
+  c.beginPath();
+  MAP_POINTS.forEach((p, i) => { const q = mapProj(p); i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y); });
+  c.stroke(); c.setLineDash([]);
+  // travelled portion, solid gold up to the ship
+  c.strokeStyle = '#d99a2b'; c.lineWidth = 3; c.lineJoin = 'round';
+  c.beginPath();
+  const start = mapProj(MAP_POINTS[0]); c.moveTo(start.x, start.y);
+  for (let i = 1; i <= sh.reached && i < MAP_POINTS.length; i++) { const q = mapProj(MAP_POINTS[i]); c.lineTo(q.x, q.y); }
+  c.lineTo(sh.x, sh.y);
+  c.stroke();
+  // port dots + labels
+  c.font = '700 9px Inter, system-ui, sans-serif';
+  MAP_POINTS.forEach((p, i) => {
+    const q = mapProj(p);
+    const done = i <= sh.reached;
+    c.beginPath(); c.arc(q.x, q.y, 3.4, 0, Math.PI * 2);
+    c.fillStyle = done ? '#d99a2b' : '#fff';
+    c.fill(); c.strokeStyle = '#234a63'; c.lineWidth = 1.2; c.stroke();
+    c.fillStyle = 'rgba(20,44,66,0.92)'; c.textAlign = (q.x > w * 0.7) ? 'right' : 'left';
+    const lx = (q.x > w * 0.7) ? q.x - 6 : q.x + 6;
+    c.fillText(p.name, lx, q.y + 3);
+  });
+  // the ship marker (pulsing)
+  c.beginPath(); c.arc(sh.x, sh.y, 5.5 + Math.sin(sceneTime * 4) * 1.2, 0, Math.PI * 2);
+  c.fillStyle = '#b9433a'; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+
+  function blob(pts) {
+    c.beginPath();
+    pts.forEach((p, i) => { const x = p[0] * w, y = p[1] * h; i ? c.lineTo(x, y) : c.moveTo(x, y); });
+    c.closePath(); c.fill();
+  }
+  function ellipseM(fx, fy, rx, ry) {
+    c.beginPath(); c.ellipse(fx * w, fy * h, rx * w, ry * h + rx * w, 0, 0, Math.PI * 2); c.fill();
+  }
+}
+function updateMapCaption() {
+  if (state === 'menu') { mapCapEl.textContent = 'Antioch — ready to set sail'; return; }
+  const dest = ITINERARY[Math.min(legIndex, ITINERARY.length - 1)].port;
+  mapCapEl.textContent = (state === 'landing' || state === 'done')
+    ? '⚓ Landed at ' + dest + '  ·  stop ' + (legIndex + 1) + ' of ' + ITINERARY.length
+    : 'Leg ' + (legIndex + 1) + ' of ' + ITINERARY.length + '  →  ' + dest;
 }
 
 // ============================================================

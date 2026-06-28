@@ -212,6 +212,9 @@
     #soloScreen .card-img { max-height: 24vh; }
     #soloScreen .circa-card.center .card-img { max-height: 22vh; }
     #soloScreen .card-desc { -webkit-line-clamp: 2; }
+    /* As a flex-column child, `margin:0 auto` would shrink the timeline to its
+       (near-zero) intrinsic width, collapsing the ribbon — pin it to full width. */
+    #soloScreen .timeline-wrap { width: 100%; }
 
     /* Solo header bar */
     .solo-header {
@@ -1890,23 +1893,27 @@ const rail = HSGStreak.init({
 updatePlayerNames();
 renderEraTiles();
 
-// TEMP repro hook — start a solo round and auto-answer to inspect the reveal/timeline.
+// TEMP QA hook — drive the solo game into various states for inspection.
 if (location.search.includes('autoplay')) {
+  const qp = new URLSearchParams(location.search);
+  const mode_ = qp.get('autoplay') || 'initial';
   mode = 'solo'; handSize = 4;
   soloSourceDeck = deckForEra('all');
   tlBounds = eraTimelineBounds('all', soloSourceDeck);
-  const byTitle = t => DECK.find(c => c.title === t);
-  soloDeck = []; soloStreak = 0; soloRoundNum = 1;
-  soloHand = ['Telephone invented','Han Dynasty established','First Moon landing','Wheel invented'].map(byTitle);
-  soloCenterCard = byTitle('Muslim Conquest of Spain');
+  soloDeck = shuffle([...soloSourceDeck]); soloStreak = 0; soloRoundNum = 0;
+  soloHand = [];
+  for (let i = 0; i < handSize; i++) if (soloDeck.length) soloHand.push(soloDeck.pop());
+  if (mode_ === 'end') soloDeck = soloDeck.slice(0, 1); // near deck exhaustion
   document.getElementById('setupScreen').style.display = 'none';
   document.getElementById('soloScreen').style.display = 'block';
   document.body.classList.add('solo-active');
-  document.getElementById('soloRound').textContent = '1';
-  resetShowdown();
-  renderCenterCard();
-  renderSoloHand(false);
-  setTimeout(() => soloPickCard(0), 300); // pick "Telephone invented"
+  updateSoloStats();
+  soloNextRound();
+  if (mode_ === 'correct' || mode_ === 'wrong') {
+    const best = findBestCardIndex(soloHand, soloCenterCard);
+    const idx = mode_ === 'correct' ? best : (best === 0 ? soloHand.length - 1 : 0);
+    setTimeout(() => soloPickCard(idx), 250);
+  }
 }
 </script>
 

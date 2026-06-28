@@ -115,6 +115,57 @@
     }
     .reset-link:hover { color: var(--ink); }
 
+    /* ============ Journey map (the 6 stages of the Exodus) ============ */
+    .journey {
+      display: flex; align-items: stretch; gap: 0; margin: 0 0 0.9rem;
+      background: var(--cream-dark); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 0.4rem 0.5rem; overflow-x: auto;
+    }
+    .jstage {
+      flex: 1 1 0; min-width: 78px; display: flex; flex-direction: column; align-items: center;
+      gap: 0.15rem; padding: 0.35rem 0.2rem; border-radius: 10px; position: relative;
+      text-align: center; opacity: 0.5; transition: opacity 0.2s, background 0.2s;
+    }
+    .jstage .jemoji { font-size: 1.4rem; line-height: 1; }
+    .jstage .jname { font-size: 0.62rem; font-weight: 700; line-height: 1.1; color: var(--ink); font-family: var(--font-sans); }
+    .jstage .jnum { font-size: 0.55rem; font-weight: 700; color: var(--ink-light); font-family: var(--font-sans); }
+    .jstage.active { opacity: 1; background: #fff; box-shadow: 0 2px 6px rgba(26,23,20,0.10); }
+    .jstage.done { opacity: 0.95; }
+    .jstage.done .jemoji::after {
+      content: "✓"; position: absolute; top: 0.2rem; right: 0.45rem;
+      font-size: 0.7rem; color: var(--green); font-weight: 900;
+    }
+    @media (max-width: 620px) {
+      .jstage .jname { display: none; }
+      .jstage { min-width: 0; }
+    }
+
+    /* ============ Story overlays (level intro + clear) ============ */
+    .ov .scripture {
+      font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #ffd98a; margin-bottom: 0.5rem;
+    }
+    .ov .story {
+      color: #f4e6cd; max-width: 46ch; line-height: 1.5; margin: 0 0 1.1rem; font-size: 0.98rem;
+    }
+    .ov .level-tag {
+      font-family: var(--font-sans); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em;
+      text-transform: uppercase; color: #e6cfa6; margin-bottom: 0.2rem;
+    }
+    .ov .teach {
+      background: rgba(255,255,255,0.10); border: 1px solid rgba(255,217,138,0.35);
+      border-radius: 10px; padding: 0.6rem 0.9rem; max-width: 44ch;
+      color: #fdf3df; font-size: 0.9rem; line-height: 1.45; margin: 0 0 1.1rem;
+    }
+    .ov .teach b { color: #ffd98a; }
+
+    /* level progress pill in the question panel header */
+    .qhead { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.55rem; }
+    .lvl-progress {
+      font-family: var(--font-sans); font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em;
+      color: var(--ink-light); white-space: nowrap;
+    }
+
     @media (max-width: 480px) {
       .answers { grid-template-columns: 1fr; }
     }
@@ -132,21 +183,24 @@
 <div class="chase-page">
 
   <div class="chase-top">
-    <h1>Bible Trivia</h1>
+    <h1>The Exodus Journey</h1>
     <div class="stat-group">
       <div class="stat-badge" id="scoreBadge">0 correct</div>
       <div class="stat-badge" id="bestBadge">Best 0</div>
     </div>
   </div>
 
+  <!-- The six stages of the journey out of Egypt -->
+  <div class="journey" id="journeyMap"></div>
+
   <div class="scene-wrap" id="sceneWrap">
     <canvas id="scene"></canvas>
 
-    <!-- Start overlay -->
+    <!-- Start overlay (pick difficulty) -->
     <div class="ov" id="startOverlay">
-      <div class="crest">🐎</div>
-      <h2>Race to the Red Sea</h2>
-      <p>Pharaoh's army is right behind you! Answer Bible questions to outrun them and reach the Red Sea. Pick your difficulty:</p>
+      <div class="crest">📜</div>
+      <h2>The Exodus Journey</h2>
+      <p>Travel with Moses and Israel from slavery in Egypt all the way to the Promised Land — through the plagues, across the Red Sea, the desert, Mount Sinai, and the walls of Jericho. Answer Bible questions to move through all six stages.</p>
       <div class="pace-row">
         <button class="pace-btn" data-pace="easy">Easy<span class="p-sub">Grades 3–7</span></button>
         <button class="pace-btn" data-pace="medium">Medium<span class="p-sub">High school</span></button>
@@ -155,44 +209,70 @@
       </div>
     </div>
 
-    <!-- Game over overlay -->
-    <div class="ov hidden" id="overOverlay">
-      <div class="crest">🏜️</div>
-      <h2 id="overTitle">They caught you!</h2>
-      <div class="final-stats">
-        <div class="fs"><b id="fsCorrect">0</b><span>Correct</span></div>
-        <div class="fs"><b id="fsBestStreak">0</b><span>Best Streak</span></div>
-        <div class="fs"><b id="fsProgress">0%</b><span>To the Sea</span></div>
-      </div>
+    <!-- Level intro overlay (story for the upcoming stage) -->
+    <div class="ov hidden" id="introOverlay">
+      <div class="crest" id="introEmoji">🧱</div>
+      <div class="level-tag" id="introTag">Stage 1 of 6</div>
+      <h2 id="introTitle">Slavery in Egypt</h2>
+      <div class="scripture" id="introRef">Exodus 1</div>
+      <p class="story" id="introStory"></p>
       <div class="overlay-actions">
-        <button class="play-btn" id="againBtn">Run Again 🐎</button>
-        <button class="play-btn secondary" id="menuBtn">Change Level</button>
+        <button class="play-btn" id="introBtn">Begin →</button>
       </div>
     </div>
 
-    <!-- Victory overlay -->
+    <!-- Level clear overlay -->
+    <div class="ov hidden" id="clearOverlay">
+      <div class="crest" id="clearEmoji">🧱</div>
+      <h2 id="clearTitle">Stage complete!</h2>
+      <div class="teach" id="clearTeach"></div>
+      <div class="overlay-actions">
+        <button class="play-btn" id="clearBtn">Continue →</button>
+      </div>
+    </div>
+
+    <!-- Caught overlay (Red Sea chase only) -->
+    <div class="ov hidden" id="overOverlay">
+      <div class="crest">🐎</div>
+      <h2 id="overTitle">Pharaoh's army caught up!</h2>
+      <p>The chariots overtook you before you reached the sea. Catch your breath and run again — the sea is waiting.</p>
+      <div class="final-stats">
+        <div class="fs"><b id="fsCorrect">0</b><span>Correct</span></div>
+        <div class="fs"><b id="fsBestStreak">0</b><span>Best Streak</span></div>
+      </div>
+      <div class="overlay-actions">
+        <button class="play-btn" id="againBtn">Run Again 🐎</button>
+        <button class="play-btn secondary" id="menuBtn">Quit to Menu</button>
+      </div>
+    </div>
+
+    <!-- Final victory overlay -->
     <div class="ov hidden" id="winOverlay">
-      <div class="crest">🌊</div>
-      <h2>You crossed the Red Sea!</h2>
-      <p id="winMsg">The waters closed behind you — you're safe on the far shore.</p>
+      <div class="crest">🌅</div>
+      <h2>You reached the Promised Land!</h2>
+      <p id="winMsg">From slavery to freedom — you walked the whole journey out of Egypt with Moses and Joshua.</p>
       <div class="final-stats">
         <div class="fs"><b id="wCorrect">0</b><span>Correct</span></div>
         <div class="fs"><b id="wBestStreak">0</b><span>Best Streak</span></div>
+        <div class="fs"><b id="wStages">6</b><span>Stages</span></div>
       </div>
       <div class="overlay-actions">
-        <button class="play-btn" id="winAgainBtn">Play Again 🐎</button>
+        <button class="play-btn" id="winAgainBtn">Journey Again 📜</button>
         <a class="play-btn secondary" href="../../subjects/bible.html" style="text-decoration:none;display:inline-flex;align-items:center">← Bible</a>
       </div>
     </div>
   </div>
 
   <div class="qpanel" id="qpanel">
-    <span class="qtag tag-people" id="qtag">People</span>
-    <div class="qtext" id="qtext">Press a pace to begin the escape.</div>
+    <div class="qhead">
+      <span class="qtag tag-people" id="qtag">People</span>
+      <span class="lvl-progress" id="lvlProgress"></span>
+    </div>
+    <div class="qtext" id="qtext">Pick a difficulty to begin the journey.</div>
     <div class="answers" id="answers"></div>
   </div>
 
-  <p class="chase-hint">Tap an answer or press <b>A · B · C · D</b>. Right answers pull you ahead; wrong ones let the army gain. Reach the Red Sea before they catch you!</p>
+  <p class="chase-hint">Tap an answer or press <b>A · B · C · D</b>. Each right answer moves the story forward to the next stage of the Exodus.</p>
 
   <div class="control-row">
     <button class="reset-link" onclick="toMenu()">Quit to menu</button>

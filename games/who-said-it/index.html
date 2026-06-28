@@ -154,6 +154,7 @@ let answerPool = shuffle(PEOPLE);   // order to draw answers from
 let collected = [];            // people filling the wall this game (in order)
 const collectedNames = new Set();
 let answered = false, current = null, advanceTimer = null;
+let totalAnswered = 0, streak = 0, bestStreak = 0;   // for the end-of-game summary
 
 // ---- preload the portrait, skipping any that 404 ----
 function loadPortrait(p){
@@ -258,6 +259,8 @@ function handleAnswer(chosen, btn){
   const btns = document.querySelectorAll('.option-btn');
   btns.forEach(b=>b.disabled=true);
   const correct = chosen === current.n;
+  totalAnswered++;
+  if(correct){ streak++; if(streak>bestStreak) bestStreak=streak; } else { streak=0; }
 
   if(correct){
     btn.classList.add('correct');
@@ -284,11 +287,12 @@ function handleAnswer(chosen, btn){
 
 function winGame(){
   if(window.HSGfx && HSGfx.showSummary){
-    HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:WALL_SIZE, best:WALL_SIZE, onPlayAgain:resetGame });
+    HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:totalAnswered, best:bestStreak, onPlayAgain:resetGame });
   } else { resetGame(); }
 }
 function resetGame(){
   collected = []; collectedNames.clear();
+  totalAnswered = 0; streak = 0; bestStreak = 0;
   answerPool = shuffle(PEOPLE.filter(p=>!brokenImg.has(p.n)));
   buildWall(); nextCard();
 }
