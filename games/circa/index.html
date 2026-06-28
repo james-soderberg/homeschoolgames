@@ -1318,9 +1318,10 @@ function renderTimeline(centerYear, pickYear, isCorrect) {
     wrap.classList.add('show');
     const fill = wrap.querySelector('.tl-fill');
     if (fill) requestAnimationFrame(() => fill.classList.add('grow'));
-    // Bring the timeline + Next button into view when the screen is too short
-    // for the whole reveal (otherwise the ribbon animates below the fold).
-    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 60);
+    // Nudge the timeline into view when the screen is too short for the whole
+    // reveal (block:'nearest' only scrolls the minimum, so it doesn't yank the
+    // showdown off-screen when everything already fits).
+    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
   });
 }
 
@@ -1892,29 +1893,6 @@ const rail = HSGStreak.init({
 
 updatePlayerNames();
 renderEraTiles();
-
-// TEMP QA hook — drive the solo game into various states for inspection.
-if (location.search.includes('autoplay')) {
-  const qp = new URLSearchParams(location.search);
-  const mode_ = qp.get('autoplay') || 'initial';
-  mode = 'solo'; handSize = 4;
-  soloSourceDeck = deckForEra('all');
-  tlBounds = eraTimelineBounds('all', soloSourceDeck);
-  soloDeck = shuffle([...soloSourceDeck]); soloStreak = 0; soloRoundNum = 0;
-  soloHand = [];
-  for (let i = 0; i < handSize; i++) if (soloDeck.length) soloHand.push(soloDeck.pop());
-  if (mode_ === 'end') soloDeck = soloDeck.slice(0, 1); // near deck exhaustion
-  document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('soloScreen').style.display = 'block';
-  document.body.classList.add('solo-active');
-  updateSoloStats();
-  soloNextRound();
-  if (mode_ === 'correct' || mode_ === 'wrong') {
-    const best = findBestCardIndex(soloHand, soloCenterCard);
-    const idx = mode_ === 'correct' ? best : (best === 0 ? soloHand.length - 1 : 0);
-    setTimeout(() => soloPickCard(idx), 250);
-  }
-}
 </script>
 
 </body>
