@@ -184,8 +184,8 @@
       padding: 0.6rem 0 0;
     }
 
-    /* ---- Solo play fills exactly one screen — no page scroll ---- */
-    body.solo-active { overflow: hidden; height: 100dvh; display: flex; flex-direction: column; }
+    /* ---- Solo play fills one screen; the reveal (timeline) may grow past it ---- */
+    body.solo-active { overflow-y: auto; min-height: 100dvh; display: flex; flex-direction: column; }
     body.solo-active .site-header { flex: 0 0 auto; }
     body.solo-active .site-footer { display: none; }
     body.solo-active #soloScreen { flex: 1 1 auto; min-height: 0; display: block; }
@@ -1315,6 +1315,9 @@ function renderTimeline(centerYear, pickYear, isCorrect) {
     wrap.classList.add('show');
     const fill = wrap.querySelector('.tl-fill');
     if (fill) requestAnimationFrame(() => fill.classList.add('grow'));
+    // Bring the timeline + Next button into view when the screen is too short
+    // for the whole reveal (otherwise the ribbon animates below the fold).
+    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 60);
   });
 }
 
@@ -1886,6 +1889,25 @@ const rail = HSGStreak.init({
 
 updatePlayerNames();
 renderEraTiles();
+
+// TEMP repro hook — start a solo round and auto-answer to inspect the reveal/timeline.
+if (location.search.includes('autoplay')) {
+  mode = 'solo'; handSize = 4;
+  soloSourceDeck = deckForEra('all');
+  tlBounds = eraTimelineBounds('all', soloSourceDeck);
+  const byTitle = t => DECK.find(c => c.title === t);
+  soloDeck = []; soloStreak = 0; soloRoundNum = 1;
+  soloHand = ['Telephone invented','Han Dynasty established','First Moon landing','Wheel invented'].map(byTitle);
+  soloCenterCard = byTitle('Muslim Conquest of Spain');
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('soloScreen').style.display = 'block';
+  document.body.classList.add('solo-active');
+  document.getElementById('soloRound').textContent = '1';
+  resetShowdown();
+  renderCenterCard();
+  renderSoloHand(false);
+  setTimeout(() => soloPickCard(0), 300); // pick "Telephone invented"
+}
 </script>
 
 </body>

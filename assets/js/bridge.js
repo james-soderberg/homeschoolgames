@@ -186,7 +186,7 @@
         </div>
         <div class="br-input-row" style="display:none">
           <input class="br-num" type="text" inputmode="numeric" autocomplete="off" placeholder="answer">
-          <span class="br-help-label">type &amp; press <b>Enter</b> — or tap a choice</span>
+          <span class="br-help-label">just <b>type the answer</b> — or tap a choice</span>
         </div>
         <div class="br-answers"></div>
       </div>`;
@@ -504,9 +504,13 @@
       }
     }
 
-    // typed numeric answer (fast path) — digits + optional leading minus
+    // typed numeric answer (fast path) — digits + optional leading minus.
+    // Auto-submit the instant the typed value matches the answer, so a correct
+    // number counts immediately without pressing Enter. (Wrong values keep
+    // waiting — typing toward a multi-digit answer is never penalised.)
     inputEl.addEventListener('input', () => {
       inputEl.value = inputEl.value.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '');
+      if (running && !coasting && q && inputEl.value === String(q.answer)) answer(inputEl.value);
     });
     inputEl.addEventListener('keydown', e => {
       if (e.key !== 'Enter') return;

@@ -322,6 +322,7 @@ const CANON = [
 const CAT_LABEL = { story:"Story", verse:"Verse", character:"Character", wild:"Many Books", trap:"Tricky" };
 const KEYS = ['A','B','C','D'];
 const CORRECT_TO_LAND = 5;   // correct verses needed to reach the next port (bar fills 20% each)
+const SHIP_X0 = 0.16, SHIP_X1 = 0.60;  // ship sails from left → right across the screen as a leg progresses
 
 // ---------------- The voyage: ordered ports, each with a teaching vignette ----------------
 const ITINERARY = [
@@ -389,6 +390,7 @@ let storm = START_STORM, stormShown = START_STORM;
 let correctCount = 0, streak = 0, bestStreak = 0;
 let queue = [], current = null, answered = false;
 let scroll = 0, speed = 0, surgeT = 0, heel = 0, heelTarget = 0, shake = 0, sceneTime = 0;
+let shipFrac = 0.40;         // ship's x as a fraction of W; advances across the screen each leg
 let lightningT = 0, revealT = 0;
 let spray = [];
 let lastTs = 0, rafId = null;
@@ -529,7 +531,7 @@ function drawRain(sf) {
 }
 
 // ---- the ship ----
-function shipX() { return W * 0.40; }
+function shipX() { return W * shipFrac; }
 function drawShip(t, ox, oy, os) {
   const cx = (ox == null) ? shipX() : ox;
   const baseY = (oy == null) ? seaLevel() : oy;
@@ -961,6 +963,10 @@ function loop(ts) {
   heelTarget += Math.sin(sceneTime * 1.4) * 0.0009 * (1 + stormFrac() * 3);
 
   if (state === 'sail') {
+    // ship advances across the screen as the leg's correct answers stack up
+    const prog = clamp01(legCorrect / CORRECT_TO_LAND);
+    const tgt = SHIP_X0 + (SHIP_X1 - SHIP_X0) * prog;
+    shipFrac += (tgt - shipFrac) * Math.min(1, dt * 2.5);
     if (Math.random() < 0.5) spawnSpray(shipX() + 90, seaLevel() + 6, 1, speed);
     if (stormFrac() > 0.5 && Math.random() < 0.4) spawnSpray(rand(0, W), seaLevel() + rand(-10, 30), 1, 0);
   }
@@ -1158,6 +1164,7 @@ function continueVoyage() {
   if (window.HSGSound) HSGSound.tick();
   legIndex++;
   legCorrect = 0; legWrong = 0;
+  shipFrac = SHIP_X0;          // start the new leg back at the left
   storm = START_STORM;
   state = 'sail';
   nextQuestion();
@@ -1169,6 +1176,7 @@ function startGame(key) {
   storm = START_STORM; stormShown = START_STORM;
   correctCount = 0; streak = 0; bestStreak = 0;
   legIndex = 0; legCorrect = 0; legWrong = 0;
+  shipFrac = SHIP_X0;          // set sail from the left
   queue = []; answered = false; spray = []; surgeT = 0; heel = 0; heelTarget = 0;
   confettiFired = false;
   startOverlay.classList.add('hidden');
@@ -1185,6 +1193,7 @@ function updateBadges() {
 function toMenu() {
   state = 'menu';
   storm = START_STORM; legIndex = 0; legCorrect = 0; legWrong = 0;
+  shipFrac = 0.40;             // centered for the idle menu scene
   startOverlay.classList.remove('hidden');
   setQuestionLayout();
   qtextEl.textContent = 'Choose your winds to set sail.';

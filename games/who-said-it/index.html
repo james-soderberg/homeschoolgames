@@ -30,6 +30,11 @@
   .quote-text { font-family:var(--font-serif); font-size:1.55rem; line-height:1.35; color:var(--ink); margin:.2rem auto .5rem; max-width:30ch; }
   .quote-text::before{ content:'“'; } .quote-text::after{ content:'”'; }
   .quote-blurb { font-family:var(--font-sans); color:var(--ink-light); font-size:.92rem; margin:0 0 .2rem; }
+  .hint-btn { background:var(--cream-dark); border:1.5px solid var(--border); border-radius:99px; color:var(--ink-light);
+    font-family:var(--font-sans); font-weight:700; font-size:.8rem; padding:.32rem .9rem; cursor:pointer; margin:.2rem 0 .2rem;
+    transition:background .12s, color .12s; }
+  .hint-btn:hover { background:#efe7d6; color:var(--ink); }
+  .hint-btn[hidden] { display:none; }
   .ask { font-family:var(--font-sans); font-weight:700; letter-spacing:.04em; color:var(--ink-light); font-size:.8rem;
     text-transform:uppercase; margin:1rem 0 .7rem; }
 
@@ -100,7 +105,8 @@
       <div class="quiz-card">
         <div class="portrait-wrap" id="portraitWrap"><img id="portrait" alt="Portrait"></div>
         <p class="quote-text" id="quoteText"></p>
-        <p class="quote-blurb" id="quoteBlurb"></p>
+        <button class="hint-btn" id="hintBtn" type="button">💡 Reveal hint</button>
+        <p class="quote-blurb" id="quoteBlurb" hidden></p>
         <div class="ask">Who said it?</div>
         <div class="option-grid" id="optionGrid"></div>
         <div class="feedback" id="feedback"></div>
@@ -230,7 +236,9 @@ async function nextCard(){
   current = await pickAnswer();
   document.getElementById('portrait').src = imgFor(current);
   document.getElementById('quoteText').textContent = current.q;
-  document.getElementById('quoteBlurb').textContent = current.b;
+  const blurb = document.getElementById('quoteBlurb');
+  blurb.textContent = current.b; blurb.hidden = true;          // hidden until the hint is revealed
+  document.getElementById('hintBtn').hidden = false;
 
   const options = buildOptions(current);
   const grid = document.getElementById('optionGrid');
@@ -285,6 +293,10 @@ function resetGame(){
   buildWall(); nextCard();
 }
 
+document.getElementById('hintBtn').addEventListener('click', ()=>{
+  document.getElementById('quoteBlurb').hidden = false;
+  document.getElementById('hintBtn').hidden = true;
+});
 document.getElementById('nextBtn').addEventListener('click', ()=>{ if(answered) nextCard(); });
 document.addEventListener('keydown', e=>{
   if((e.key==='Enter'||e.key===' ') && answered){ e.preventDefault(); nextCard(); return; }
