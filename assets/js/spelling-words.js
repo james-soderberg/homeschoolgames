@@ -202,11 +202,40 @@
     return CLUES[String(word || '').toLowerCase()] || null;
   }
 
+  // Speak a word aloud, spelling-bee style, via the browser's speech synthesis.
+  // The point of these games is the SPELLING, so the player should always be
+  // able to hear the word: the on-screen "hear the word" button passes
+  // force=true so it works even when the game's sound effects are muted.
+  // Auto-announcing a new word passes no force, so muting still silences it.
+  function say(word, force) {
+    try {
+      word = String(word || '');
+      if (!word) return;
+      if (!force && window.HSGSound && window.HSGSound.muted) return;
+      if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return;
+      window.speechSynthesis.cancel();
+      const u = new window.SpeechSynthesisUtterance(word);
+      u.rate = 0.8; u.pitch = 1.05; u.lang = 'en-US';
+      window.speechSynthesis.speak(u);
+    } catch (e) {}
+  }
+
+  // A plain, obvious hint so the player KNOWS which word to spell (no guessing):
+  // the starting letter and how many letters it has.
+  function hint(word) {
+    word = String(word || '');
+    if (!word) return '';
+    const n = word.length;
+    return '🔡 Starts with “' + word[0].toUpperCase() + '” · ' + n + ' letter' + (n === 1 ? '' : 's');
+  }
+
   window.HSGSpellWords = {
     levels: ['easy', 'medium', 'hard', 'einstein'],
     bank: BANK,
     clues: CLUES,
     pick,
-    clue
+    clue,
+    say,
+    hint
   };
 })();

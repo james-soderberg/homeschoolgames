@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Bible Quiz — Paul's Voyage — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     /* Fit the whole game to the viewport — no page scroll on desktop. */
     html, body { height: 100%; }
@@ -237,6 +238,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // BIBLE QUIZ — PAUL'S VOYAGE (a leg-by-leg journey to Rome)
@@ -443,7 +445,19 @@ let W = 800, H = 420, dpr = 1;
 let state = 'menu';          // menu | sail | landing | done
 let level = LEVELS.easy;
 let storm = START_STORM, stormShown = START_STORM;
-let correctCount = 0, streak = 0, bestStreak = 0;
+let correctCount = 0, streak = 0, bestStreak = 0, runRecorded = false;
+
+// Bank the voyage's longest streak to the per-difficulty Top-10 (prompts only if it
+// qualifies). showBoard renders the standings into the final landing card.
+function bankVoyage(showBoard) {
+  if (!window.HSGStreak || runRecorded) return;
+  runRecorded = true;
+  const board = { gameId:'bible-quiz', gameName:'Bible Quiz', level:level.key,
+                  levelName: level.key.charAt(0).toUpperCase()+level.key.slice(1), minStreak:3 };
+  const draw = () => { if (showBoard) HSGStreak.renderBoardInto('#bqBoard', board); };
+  HSGStreak.record(Object.assign({ score:bestStreak, onDone:draw }, board));
+  draw();
+}
 let queue = [], current = null, answered = false;
 let scroll = 0, speed = 0, surgeT = 0, heel = 0, heelTarget = 0, shake = 0, sceneTime = 0;
 let shipFrac = 0.40;         // ship's x as a fraction of W; advances across the screen each leg
@@ -1279,6 +1293,11 @@ function fillLandingCard(stop) {
       '<a class="play-btn secondary" href="../../subjects/bible.html" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">← Bible</a>';
     answersEl.appendChild(actions);
     document.getElementById('voyAgain').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
+    const lb = document.createElement('div');
+    lb.className = 'hsg-board'; lb.id = 'bqBoard';
+    lb.style.cssText = 'text-align:left;margin-top:1rem';
+    answersEl.appendChild(lb);
+    bankVoyage(true);   // reached Rome — bank the longest streak + show standings
     // stay in 'landing' so the Rome vignette keeps drawing; the buttons end the run.
   } else {
     const next = ITINERARY[legIndex + 1];
@@ -1305,7 +1324,7 @@ function startGame(key) {
   level = LEVELS[key] || LEVELS.easy;
   state = 'sail';
   storm = START_STORM; stormShown = START_STORM;
-  correctCount = 0; streak = 0; bestStreak = 0;
+  correctCount = 0; streak = 0; bestStreak = 0; runRecorded = false;
   legIndex = 0; legCorrect = 0; legWrong = 0;
   shipFrac = SHIP_X0;          // set sail from the left
   queue = []; answered = false; spray = []; surgeT = 0; heel = 0; heelTarget = 0;
@@ -1323,6 +1342,7 @@ function updateBadges() {
 }
 
 function toMenu() {
+  bankVoyage(false);   // quitting mid-voyage still banks the longest streak (prompts if Top 10)
   state = 'menu';
   storm = START_STORM; legIndex = 0; legCorrect = 0; legWrong = 0;
   shipFrac = 0.40;             // centered for the idle menu scene

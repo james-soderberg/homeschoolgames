@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Race to the Red Sea — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .chase-page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
@@ -256,6 +257,7 @@
         <div class="fs"><b id="wBestStreak">0</b><span>Best Streak</span></div>
         <div class="fs"><b id="wStages">6</b><span>Stages</span></div>
       </div>
+      <div class="hsg-board" id="btBoard" style="text-align:left;margin:0 auto 1rem;max-width:360px"></div>
       <div class="overlay-actions">
         <button class="play-btn" id="winAgainBtn">Journey Again 📜</button>
         <a class="play-btn secondary" href="../../subjects/bible.html" style="text-decoration:none;display:inline-flex;align-items:center">← Bible</a>
@@ -286,6 +288,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // BIBLE TRIVIA — CHARIOT CHASE (Exodus)
@@ -824,7 +827,19 @@ let state = 'menu';          // menu | intro | play | finale | clear | caught | 
 let difficulty = 'medium';
 let levelIdx = 0;
 let levelDone = 0;           // correct answers logged in the current stage
-let correctCount = 0, streak = 0, bestStreak = 0;
+let correctCount = 0, streak = 0, bestStreak = 0, runRecorded = false;
+
+// Bank the journey's longest streak to the per-difficulty Top-10 (prompts only if it
+// qualifies). showBoard renders the standings into the victory overlay.
+function bankJourney(showBoard) {
+  if (!window.HSGStreak || runRecorded) return;
+  runRecorded = true;
+  const board = { gameId:'bible-trivia', gameName:'The Exodus Journey', level:difficulty,
+                  levelName: difficulty.charAt(0).toUpperCase()+difficulty.slice(1), minStreak:3 };
+  const draw = () => { if (showBoard) HSGStreak.renderBoardInto('#btBoard', board); };
+  HSGStreak.record(Object.assign({ score:bestStreak, onDone:draw }, board));
+  draw();
+}
 let queue = [], current = null, answered = true, lastOfLevel = false;
 let scroll = 0, speed = 0, surgeT = 0, stumbleT = 0, shake = 0, sceneTime = 0;
 let revealT = 0, fxT = 0;    // fxT: per-correct animation timer (counts down)
@@ -1617,7 +1632,7 @@ function renderJourneyMap(currentDone) {
 // ============================================================
 function startJourney(diff) {
   difficulty = DECK[diff] ? diff : 'medium';
-  correctCount = 0; streak = 0; bestStreak = 0; levelIdx = 0;
+  correctCount = 0; streak = 0; bestStreak = 0; levelIdx = 0; runRecorded = false;
   startOverlay.classList.add('hidden');
   updateBadges();
   showLevelIntro();
@@ -1725,9 +1740,11 @@ function winGame() {
   updateBadges();
   if (window.HSGSound) HSGSound.finish(true);
   if (window.HSGfx) HSGfx.confetti({ count: 120, big: true });
+  bankJourney(true);   // completed the journey — bank the longest streak + show standings
 }
 
 function toMenu() {
+  bankJourney(false);   // quitting still banks the longest streak (prompts if Top 10)
   state = 'menu'; levelIdx = 0;
   resetLevelState();
   introOverlay.classList.add('hidden'); clearOverlay.classList.add('hidden');

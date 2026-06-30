@@ -293,7 +293,7 @@
           <div class="fs"><b id="cCountries">0</b><span>Countries</span></div>
         </div>
         <div class="name-entry hidden" id="nameEntry">
-          <span class="ne-label">🏅 New high streak! Add your name:</span>
+          <span class="ne-label" id="neLabel">🏅 New high streak! Add your name:</span>
           <div class="ne-row">
             <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off">
             <button class="play-btn" id="saveNameBtn">Save</button>
@@ -884,6 +884,10 @@ function caught() {
   const ne = document.getElementById('nameEntry');
   if (qualifies) {
     pendingScore = { streak: bestStreak, lap: lap };
+    const rank = board.filter(e => e.streak > bestStreak).length + 1;   // where this run lands
+    const medal = { 1:'🥇', 2:'🥈', 3:'🥉' }[rank] || '🏅';
+    const ord = rank + (['th','st','nd','rd'][(rank % 100 - 20) % 10] || ['th','st','nd','rd'][rank % 100] || 'th');
+    document.getElementById('neLabel').textContent = `${medal} You took ${ord} place — add your name:`;
     ne.classList.remove('hidden');
     const inp = document.getElementById('nameInput');
     inp.value = lastName();

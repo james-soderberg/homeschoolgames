@@ -56,6 +56,13 @@
     }
     .slot.done { color: var(--green); border-color: var(--green); }
     .slot.next { border-color: var(--gold); transform: translateY(-3px); }
+    /* obvious hint so you know the WORD — the challenge is just spelling it */
+    .second-clue {
+      font-family: var(--font-sans); font-weight: 700; font-size: 0.88rem; text-align: center;
+      color: var(--ink-light); background: var(--cream-dark); border: 1.5px solid var(--border);
+      border-radius: 99px; padding: 0.35rem 1rem; max-width: 50ch;
+    }
+    .second-clue.hidden { display: none; }
 
     .stage {
       position: relative; width: 100%; border-radius: 16px; overflow: hidden;
@@ -122,6 +129,7 @@
       <span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span>
     </div>
     <div class="word-slots" id="wordSlots"></div>
+    <div class="second-clue hidden" id="catchHint"></div>
   </div>
 
   <div class="stage" id="stage">
@@ -238,16 +246,10 @@ const BASKET_W = ()=> clamp(TILE()*1.5, 64, 112);
 const BASKET_Y = ()=> H-52;
 
 // ---- words / speech ----
-function speak(w){
-  try{
-    if (HSGSound.muted) return;
-    if (!window.speechSynthesis) return;
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(w);
-    u.rate = 0.85; u.pitch = 1.05;
-    speechSynthesis.speak(u);
-  }catch(e){}
-}
+// Speak the word aloud (the goal is the spelling, so the word itself is given).
+// force=true (the 🔊 button) speaks even when sound effects are muted.
+function speak(w, force){ HSGSpellWords.say(w, force); }
+const catchHint = document.getElementById('catchHint');
 function newWord(){
   word = HSGSpellWords.pick(level).toLowerCase();
   clueStr = HSGSpellWords.clue(word) || ('It has ' + word.length + ' letters');
@@ -256,6 +258,8 @@ function newWord(){
   sinceNeeded = 0;
   spawnAcc = 0;
   clueText.textContent = clueStr;
+  catchHint.textContent = HSGSpellWords.hint(word);
+  catchHint.classList.remove('hidden');
   renderSlots();
   speak(word);
   // pause so the player can read the clue & figure out the word before it falls
@@ -279,7 +283,7 @@ function startGame(lv){
   setupCanvas();
   basketX=basketTargetX=W/2;
   shakeT=0; flashT=0; spawnAcc=0;
-  rail.reset();
+  rail.setLevel(lv, lv.charAt(0).toUpperCase()+lv.slice(1));  // per-difficulty board
   updateHud();
   startOverlay.classList.add('hidden');
   newWord();
@@ -288,15 +292,16 @@ function startGame(lv){
 }
 function quitToMenu(){
   running=false; reading=false; if(rafId) cancelAnimationFrame(rafId); rafId=null;
-  rail.value=bestStreak; rail.end();
+  rail.gameOver(bestStreak);   // bank the longest streak on quit (prompts if Top 10)
   tiles=[]; ctx.clearRect(0,0,W,H);
   clueText.textContent='Pick a level to start!';
+  catchHint.textContent=''; catchHint.classList.add('hidden');
   wordSlots.innerHTML='';
   startOverlay.classList.remove('hidden');
 }
 function gameOver(){
   running=false; reading=false; if(rafId) cancelAnimationFrame(rafId); rafId=null;
-  rail.value=bestStreak; rail.end();
+  rail.gameOver(bestStreak);   // run over — bank the longest streak (prompts if Top 10)
   HSGSound.finish(false);
   HSGfx.showSummary({
     title:'Game Over', correct:score, total:score+mistakes, best:bestStreak,
@@ -354,7 +359,7 @@ function wordComplete(){
 }
 function mistakeMade(){
   mistakes++;
-  rail.reset();
+  rail.broke();   // snap the streak but keep the session-best for the leaderboard
   HSGSound.wrong();
   HSGfx.shake(); shakeT=0.35;
   updateHud();
@@ -510,7 +515,7 @@ document.addEventListener('keydown', e=>{
   if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a'){ basketTargetX=clamp(basketTargetX-W*0.12, 0, W); e.preventDefault(); }
   else if(e.key==='ArrowRight'||e.key.toLowerCase()==='d'){ basketTargetX=clamp(basketTargetX+W*0.12, 0, W); e.preventDefault(); }
 });
-document.getElementById('hearBtn').addEventListener('click', ()=>{ if(word) speak(word); });
+document.getElementById('hearBtn').addEventListener('click', ()=>{ if(word) speak(word, true); });
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', ()=>startGame(b.dataset.level)));
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && running) lastTs=0; });
 

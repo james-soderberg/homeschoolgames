@@ -168,7 +168,7 @@
     requestAnimationFrame(step);
   }
 
-  function showSummary({ title = 'Round complete', correct = 0, total = 0, best = 0, onPlayAgain, allGamesHref = '../../index.html' }) {
+  function showSummary({ title = 'Round complete', correct = 0, total = 0, best = 0, onPlayAgain, allGamesHref = '../../index.html', extraHTML = '', onMount }) {
     const pct = total ? Math.round((correct / total) * 100) : 0;
     const grade = gradeFor(pct);
 
@@ -184,12 +184,14 @@
           <div class="hsg-stat"><div class="hsg-stat-num" data-num="${correct}">0</div><div class="hsg-stat-label">Correct</div></div>
           <div class="hsg-stat"><div class="hsg-stat-num best" data-num="${best}">0</div><div class="hsg-stat-label">Best streak</div></div>
         </div>
+        ${extraHTML}
         <div class="hsg-summary-actions">
           <button class="hsg-btn-primary" id="hsgPlayAgain">Play again →</button>
           <a class="hsg-btn-link" href="${allGamesHref}">← All games</a>
         </div>
       </div>`;
     document.body.appendChild(overlay);
+    if (typeof onMount === 'function') onMount(overlay.querySelector('.hsg-summary-card'));
 
     // animate the numbers + celebrate
     setTimeout(() => {

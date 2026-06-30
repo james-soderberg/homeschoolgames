@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Word Racer — HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .wr-page { max-width: 820px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
@@ -203,6 +204,7 @@
       <div class="stat"><b id="accResult">100%</b><span>Accuracy</span></div>
     </div>
     <div class="standings" id="standings"></div>
+    <div class="hsg-board" id="wrBoard" style="max-width:380px;margin:0 auto 1.5rem;text-align:left"></div>
     <div class="results-btns">
       <button class="start-race-btn" onclick="startRace()">Race Again →</button>
     </div>
@@ -216,6 +218,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // WORD RACER — type a passage to race; rivals adopt YOUR pace
@@ -603,6 +606,20 @@ function endRace() {
   if (place === 1) confettiBurst();
   if (window.HSGSound) HSGSound.finish(place === 1);
   showResults(place, racers, wpm, acc, isBest);
+
+  // Record the race to the Top-10 fastest-WPM leaderboard; prompt for a name
+  // (with placement) only if this run cracks it.
+  renderBoard();
+  if (window.HSGStreak) {
+    HSGStreak.record({
+      gameId: 'word-racer', gameName: 'Word Racer', unit: 'wpm',
+      score: wpm, minStreak: 1, onDone: function () { renderBoard(); }
+    });
+  }
+}
+
+function renderBoard() {
+  if (window.HSGStreak) HSGStreak.renderBoardInto('#wrBoard', { gameId: 'word-racer', unit: 'wpm', minStreak: 1 });
 }
 
 function confettiBurst() {

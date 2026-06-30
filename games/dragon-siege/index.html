@@ -367,6 +367,49 @@ const WORDS = {
     "cataclysm","barbarians","siegeworks","halberdier"
   ]
 };
+
+// ----- Scripture pools (Medium & Hard) -----
+// Common KJV verses, broken into their plain words: lowercased, punctuation and
+// references stripped, single letters dropped. Words are kept in verse order so
+// foes tend to march out roughly in reading order — players catch the gist even
+// as they type out of sequence. (Verse order is preserved; see pickWord.)
+const MEDIUM_VERSES = [
+  "For God so loved the world that he gave his only begotten Son that whosoever believeth in him should not perish but have everlasting life",
+  "The LORD is my shepherd I shall not want",
+  "In the beginning God created the heaven and the earth",
+  "Trust in the LORD with all thine heart and lean not unto thine own understanding",
+  "I can do all things through Christ which strengtheneth me",
+  "This is the day which the LORD hath made we will rejoice and be glad in it",
+  "And we know that all things work together for good to them that love God",
+  "Thy word is a lamp unto my feet and a light unto my path",
+  "Be ye kind one to another tenderhearted forgiving one another",
+  "I am the way the truth and the life",
+];
+const HARD_VERSES = [
+  "Be strong and of a good courage be not afraid neither be thou dismayed for the LORD thy God is with thee whithersoever thou goest",
+  "For I know the thoughts that I think toward you saith the LORD thoughts of peace and not of evil to give you an expected end",
+  "But they that wait upon the LORD shall renew their strength they shall mount up with wings as eagles they shall run and not be weary",
+  "And be not conformed to this world but be ye transformed by the renewing of your mind",
+  "Put on the whole armour of God that ye may be able to stand against the wiles of the devil",
+  "For God hath not given us the spirit of fear but of power and of love and of a sound mind",
+  "In all thy ways acknowledge him and he shall direct thy paths",
+  "Let your light so shine before men that they may see your good works",
+  "Charity suffereth long and is kind charity envieth not charity vaunteth not itself",
+  "Casting all your care upon him for he careth for you",
+];
+function makeScripturePool(verses){
+  const words = [];
+  for (const v of verses){
+    for (const w of v.toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/)){
+      if (w.length >= 2) words.push(w);
+    }
+  }
+  words.__scripture = true;   // pickWord walks these in verse order (see below)
+  words.__cur = 0;
+  return words;
+}
+WORDS.scriptureMed  = makeScripturePool(MEDIUM_VERSES);
+WORDS.scriptureHard = makeScripturePool(HARD_VERSES);
 const BOSS_WORDS = [
   "fire-breathing","ancient wyrm","scorched earth","wings of doom","conflagration",
   "leviathan","incandescent","devastation","behemoth","ruination","molten fury",
@@ -406,14 +449,14 @@ const REALMS = {
   },
   // = the build you tested as "easy" (gentle layout + this speed), now labelled Medium
   medium: {
-    pool:"knight", bossWords:BOSS_WORDS, targetWpm:"was the old 'easy'",
+    pool:"scriptureMed", bossWords:BOSS_WORDS, targetWpm:"was the old 'easy'",
     marchBase:15, marchStep:4.0,
     rockBase:11, rockStep:0.2, rockMin:8,
     dragonBase:9, dragonStep:0.2, dragonMin:6.5,
     mountedFrom:1, siegeInterval:2.0
   },
   hard: {
-    pool:"dragonlord", bossWords:BOSS_WORDS, targetWpm:"40-60",
+    pool:"scriptureHard", bossWords:BOSS_WORDS, targetWpm:"40-60",
     marchBase:22, marchStep:2.8,             // L1≈40 wpm … L5≈60 wpm (mirrors Medium at 2× the pace)
     rockBase:9, rockStep:0.2, rockMin:6.5,
     dragonBase:7, dragonStep:0.2, dragonMin:5.5,
@@ -485,8 +528,10 @@ let shake=0, flashA=0, flashColor='255,120,40';
 let nextId=1, troopCount=0;
 let treb={ fireT:0 };   // siege engine arm animation (0 = cocked, pulses to 1 on fire)
 
+const REALM_LABELS = { easy:'Easy', medium:'Medium', hard:'Hard', impossible:'Impossible' };
 const rail = HSGStreak.init({
   gameId:'dragon-siege', gameName:'Dragon Siege', minStreak:3,
+  level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
 });
 
@@ -795,6 +840,16 @@ function usedLetters(){
   return s;
 }
 function pickWord(pool, avoid){
+  // Scripture pools march out in verse order: from the cursor, take the next word
+  // whose starting letter isn't already on the field, then advance the cursor.
+  if (pool.__scripture){
+    const n = pool.length;
+    for (let k=0; k<n; k++){
+      const w = pool[(pool.__cur + k) % n];
+      if (!avoid.has(w[0])){ pool.__cur = (pool.__cur + k + 1) % n; return w; }
+    }
+    const w = pool[pool.__cur % n]; pool.__cur = (pool.__cur + 1) % n; return w;  // every letter taken
+  }
   const cands = pool.filter(w => !avoid.has(w[0].toLowerCase()));
   return choice(cands.length ? cands : pool).toLowerCase();  // fall back if every letter is taken
 }
@@ -1924,7 +1979,7 @@ function damageCastle(x, y, size){
   if (defeat) return;            // already falling — ignore further hits
   lives--;
   if (window.HSGSound) HSGSound.wrong();
-  rail.reset(); // breaking the line snuffs the live streak (no mid-run modal)
+  rail.broke(); // breaking the line snuffs the live streak (keeps the session best, no modal)
   decals.push({ x:clamp(x,8,castleW()), y:clamp(y,wallTopY()-20,groundY()), r: size==='small'?16:28 });
   if (decals.length>14) decals.shift();
   burst(x, y, size);
@@ -2476,12 +2531,13 @@ function finishDefeat(){
 // ===================================================================
 function startGame(key){
   realmKey=key; realm=REALMS[key];
+  WORDS.scriptureMed.__cur = 0; WORDS.scriptureHard.__cur = 0;   // verses start from the beginning each game
   clearField();
   lives=START_LIVES; slain=0; bestStreak=0; troopCount=0;
   squadGapT=0; sceneTime=0; phase='spawning'; interT=0;
   shake=0; flashA=0; defeat=false; defeatT=0; paused=false;
   document.getElementById('overTitle').textContent='The Castle Is Lost';
-  rail.reset();
+  rail.setLevel(key, REALM_LABELS[key] || key);  // per-realm leaderboard; resets the streak
   setupCanvas();
   updateHud();
   startOverlay.classList.add('hidden');
@@ -2507,8 +2563,9 @@ function quitToMenu(){
   startOverlay.classList.remove('hidden');
 }
 function endRun(showModal){
-  rail.value=bestStreak;
-  if (showModal) rail.end(); else rail.reset();
+  // Bank the longest streak of this run on BOTH defeat and surrender; the modal
+  // only appears if it cracks this realm's Top 10. (showModal kept for callers.)
+  rail.gameOver(bestStreak);
 }
 
 // ===================================================================

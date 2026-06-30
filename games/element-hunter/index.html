@@ -286,7 +286,8 @@ function markFound(n) {
 
 function startSet() {
   clearTimeout(advanceTimer);
-  if (typeof rail !== 'undefined') rail.end();
+  // switch to this set's own streak board (banks the previous run if it qualifies)
+  if (typeof rail !== 'undefined') rail.setLevel(curFilter.key, curFilter.label);
   found = loadFound(curFilter.key);
   missed = 0; streak = 0; bestStreak = 0;
   waitingForNext = false; setJustFinished = false;
@@ -322,6 +323,7 @@ function nextQuestion() {
       `<span style="color:var(--green)">🧪 You found all ${total} elements in "${curFilter.label}"!</span>`;
     if (setJustFinished) {
       setJustFinished = false;
+      rail.gameOver(bestStreak);   // set complete — bank the longest streak (prompts if Top 10)
       HSGfx.confetti({ count: 90, big: true });
       HSGfx.showSummary({
         title: `${curFilter.label} complete!`,
@@ -361,7 +363,7 @@ function handleClick(n) {
     advanceTimer = setTimeout(nextQuestion, 1100);
   } else {
     missed++;
-    const ended = streak; streak = 0;
+    streak = 0;
     HSGSound.wrong();
     const clicked = byNum[n];
     fb.innerHTML = `<span style="color:var(--red)">✗ That's ${clicked.name} (${clicked.sym}). ${current.name} is highlighted in green.</span>`;
@@ -374,7 +376,7 @@ function handleClick(n) {
     updateScore();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 2000);
-    if (ended) rail.end();
+    rail.broke();   // wrong click snaps the streak — keep hunting, no modal
   }
 }
 

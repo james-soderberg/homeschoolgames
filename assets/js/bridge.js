@@ -160,7 +160,7 @@
 
   function init(cfg) {
     const mount = cfg.mount;
-    const rail = cfg.rail || { hit(){}, end(){}, reset(){} };
+    const rail = cfg.rail || { hit(){}, broke(){}, gameOver(){}, reset(){}, setLevel(){} };
     const tiers = cfg.tiers || [{ key:'easy', label:'Easy', desc:'' }];
     const makeQuestion = cfg.makeQuestion;
     const fx = window.HSGfx, snd = window.HSGSound || { correct(){}, wrong(){}, streak(){}, tick(){}, finish(){} };
@@ -220,6 +220,7 @@
       startEl.querySelectorAll('.br-tier').forEach(b =>
         b.addEventListener('click', () => { snd.tick(); tierIdx = +b.dataset.i; level = 1;
           totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0;
+          rail.setLevel(tiers[tierIdx].key, tiers[tierIdx].label);  // per-tier streak board
           startEl.style.display = 'none'; startLevel(); }));
     }
 
@@ -465,7 +466,7 @@
         if (fx && fx.milestone(streak)) { if (builtBlocks < target) builtBlocks++; snd.streak(streak); }
         renderBlocks(true);
       } else {
-        streak = 0; rail.end(); snd.wrong();
+        streak = 0; rail.broke(); snd.wrong();
         stage.classList.remove('flash-r'); void stage.offsetWidth; stage.classList.add('flash-r');
       }
       newQuestion();
@@ -494,11 +495,12 @@
 
     function summary() {
       const dist = distanceBase + Math.floor((runnerX - RUN_X0) / W * 10);
+      rail.gameOver(bestStreak);   // run over — bank the longest streak (prompts if Top 10)
       if (fx) {
         fx.showSummary({
           title: `${tiers[tierIdx].label} · Level ${level} · ${Math.max(0,dist)} m`,
           correct: totalCorrect, total: totalQ, best: bestStreak,
-          onPlayAgain: () => { rail.end(); level = 1; totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0; startLevel(); },
+          onPlayAgain: () => { rail.reset(); level = 1; totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0; startLevel(); },
           allGamesHref: cfg.allGamesHref || '../../index.html',
         });
       }

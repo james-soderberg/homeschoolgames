@@ -373,6 +373,7 @@ function setTitle(el, name) {
 function loadRegion(region) {
   currentRegion = region;
   const labels = { americas:'Americas', europe:'Europe', asia:'Asia', africa:'Africa' };
+  if (typeof rail !== 'undefined') rail.setLevel(region, labels[region]);  // per-region board
   document.querySelectorAll('.region-tab').forEach(t => {
     t.classList.toggle('active', t.textContent.trim() === labels[region]);
   });
@@ -389,7 +390,6 @@ function loadRegion(region) {
 }
 
 function startRound() {
-  if (typeof rail !== 'undefined') rail.end(); // streak ends on reset / region switch
   completed = loadCompleted(currentRegion);
   scoreWrong = 0;
   streak = 0;
@@ -433,6 +433,7 @@ function nextQuestion() {
     // Only celebrate when the region was just finished by play (not on reload).
     if (regionJustFinished) {
       regionJustFinished = false;
+      rail.gameOver(bestStreak);   // region complete — bank the longest streak (prompts if Top 10)
       HSGfx.confetti({ count: 90, big: true });
       HSGfx.showSummary({
         title: `${REGIONS[currentRegion].label} complete!`,
@@ -481,7 +482,6 @@ function handleCountryClick(countryId) {
     advanceTimer = setTimeout(nextQuestion, 1000);
   } else {
     scoreWrong++;
-    const endedStreak = streak;
     streak = 0;
     HSGSound.wrong();
     const wrongName = getCountryName(countryId);
@@ -498,8 +498,7 @@ function handleCountryClick(countryId) {
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1800);
-    // A streak just ended — flare down and offer the leaderboard if it qualifies.
-    if (endedStreak) rail.end();
+    rail.broke();   // wrong click snaps the streak — keep going, no modal
   }
 }
 

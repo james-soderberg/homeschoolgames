@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Who Said It? — HomeschoolGames</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
+<link rel="stylesheet" href="../../assets/css/streak-rail.css">
 <style>
   .wsi-page { max-width: 1080px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
   .wsi-top { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; margin-bottom:1.1rem; }
@@ -132,6 +133,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/whosaidit-people.js"></script>
 <script>
 // ============================================================
@@ -286,9 +288,16 @@ function handleAnswer(chosen, btn){
 }
 
 function winGame(){
+  const board = { gameId:'who-said-it', gameName:'Who Said It?', minStreak:3 };
+  const drawBoard = () => { if(window.HSGStreak) HSGStreak.renderBoardInto('#wsiBoard', board); };
   if(window.HSGfx && HSGfx.showSummary){
-    HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:totalAnswered, best:bestStreak, onPlayAgain:resetGame });
+    HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:totalAnswered, best:bestStreak,
+      onPlayAgain:resetGame,
+      extraHTML:'<div class="hsg-board" id="wsiBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+      onMount:drawBoard });
   } else { resetGame(); }
+  // Bank the longest streak; prompt for a name + placement only if it makes the Top 10.
+  if(window.HSGStreak) HSGStreak.record(Object.assign({ score:bestStreak, onDone:drawBoard }, board));
 }
 function resetGame(){
   collected = []; collectedNames.clear();

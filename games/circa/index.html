@@ -188,29 +188,34 @@
     body.solo-active { overflow-y: auto; min-height: 100dvh; display: flex; flex-direction: column; }
     body.solo-active .site-header { flex: 0 0 auto; }
     body.solo-active .site-footer { display: none; }
-    body.solo-active #soloScreen { flex: 1 1 auto; min-height: 0; display: block; }
+    /* flex-grow fills the screen when content is short; no-shrink (and no
+       min-height cap) lets it grow with content so the reveal timeline extends
+       the page and becomes scrollable instead of overflowing below the fold. */
+    body.solo-active #soloScreen { flex: 1 0 auto; display: block; }
 
     /* Center the game in the viewport. The streak rail sits to the right,
        balanced by .game-layout's phantom spacer so it doesn't pull the
        game off-center. */
-    #soloScreen .game-layout { max-width: 1500px; height: 100%; align-items: stretch; }
+    /* No forced viewport height: cards already fit via vh-sized images, so the
+       layout flows naturally and the page grows/scrolls when the timeline opens. */
+    #soloScreen .game-layout { max-width: 1500px; align-items: flex-start; }
     #soloScreen .game-main {
       flex: 0 1 960px; max-width: 960px;
-      display: flex; flex-direction: column; min-height: 0; gap: 0.35rem;
+      display: flex; flex-direction: column; min-height: 0; gap: 0.25rem;
     }
     #soloScreen .hsg-rail { align-self: flex-start; }
 
     /* Compact the column and let the images scale to the screen height so the
        whole hand fits without scrolling. */
-    #soloScreen .solo-header { margin-bottom: 0.4rem; }
-    #soloScreen .center-card-wrap { margin-bottom: 0.3rem; }
+    #soloScreen .solo-header { margin-bottom: 0.2rem; }
+    #soloScreen .center-card-wrap { margin-bottom: 0.15rem; }
     #soloScreen .center-label,
-    #soloScreen .center-label#centerLabel { margin-bottom: 0.35rem; }
-    #soloScreen .solo-instruction { margin: 0.2rem 0; }
-    #soloScreen .hand-label-solo { margin: 0.25rem 0; }
-    #soloScreen #soloHandGrid { flex: 0 1 auto; min-height: 0; margin-bottom: 0.4rem; }
-    #soloScreen .card-img { max-height: 24vh; }
-    #soloScreen .circa-card.center .card-img { max-height: 22vh; }
+    #soloScreen .center-label#centerLabel { margin-bottom: 0.2rem; }
+    #soloScreen .solo-instruction { margin: 0.15rem 0; }
+    #soloScreen .hand-label-solo { margin: 0.15rem 0; }
+    #soloScreen #soloHandGrid { flex: 0 1 auto; min-height: 0; margin-bottom: 0.15rem; }
+    #soloScreen .card-img { max-height: 18vh; }
+    #soloScreen .circa-card.center .card-img { max-height: 17vh; }
     #soloScreen .card-desc { -webkit-line-clamp: 2; }
     /* As a flex-column child, `margin:0 auto` would shrink the timeline to its
        (near-zero) intrinsic width, collapsing the ribbon — pin it to full width. */
@@ -762,7 +767,7 @@
       <div class="solo-stats">
         <div class="stat-pill best">Best <span class="stat-val" id="soloBest">0</span></div>
         <div class="stat-pill">Round <span class="stat-val" id="soloRound">1</span></div>
-        <button class="btn btn-outline btn-sm" onclick="location.reload()">Quit</button>
+        <button class="btn btn-outline btn-sm" onclick="quitSolo()">Quit</button>
       </div>
     </div>
 
@@ -1053,20 +1058,6 @@ function fmtYear(card) {
   return `${Math.abs(card.year)} ${card.year < 0 ? 'BC' : 'AD'}${card.approx ? ' (approx.)' : ''}`;
 }
 
-// Punchy reaction based on how many years the player's pick was off.
-function roundCommentary(diff, won) {
-  if (won) {
-    if (diff <= 50)   return '🎯 BULLSEYE!';
-    if (diff <= 300)  return '🔥 NAILED IT!';
-    if (diff <= 2000) return '✨ NICE ONE!';
-    return '✅ CLOSEST WINS!';
-  }
-  if (diff <= 100)    return '😅 SO CLOSE!';
-  if (diff <= 1000)   return '😬 NOT QUITE…';
-  if (diff <= 10000)  return '🥴 WAY OFF!';
-  return '💀 NOT EVEN CLOSE!';
-}
-
 // Build a card DOM element (front face only, used throughout)
 function makeCardFront(card, extraClass = '') {
   const el = document.createElement('div');
@@ -1321,10 +1312,13 @@ function renderTimeline(centerYear, pickYear, isCorrect) {
     wrap.classList.add('show');
     const fill = wrap.querySelector('.tl-fill');
     if (fill) requestAnimationFrame(() => fill.classList.add('grow'));
-    // Nudge the timeline into view when the screen is too short for the whole
-    // reveal (block:'nearest' only scrolls the minimum, so it doesn't yank the
-    // showdown off-screen when everything already fits).
-    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 60);
+    // Bring the whole timeline into view. block:'end' aligns its bottom edge to
+    // the viewport bottom, so when the solo screen fills the height the ribbon
+    // isn't left peeking below the fold (block:'nearest' only nudged it ~25px).
+    // Wait for the max-height expand (0.4s) to finish so the element is at full
+    // height before scrolling — otherwise block:'end' under-scrolls to a partly
+    // collapsed ribbon and leaves it below the fold.
+    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 480);
   });
 }
 
@@ -1467,7 +1461,7 @@ function soloPickCard(pickedIdx) {
       updateSoloStats();
       soloHand.splice(pickedIdx, 1); // played card leaves the hand
 
-      instruction.innerHTML = `<div class="round-verdict" style="color:var(--green)">${roundCommentary(pickedDiff, true)}</div><span style="color:var(--green);font-weight:600;">✓ Correct!</span> Your card was the closest.`;
+      instruction.innerHTML = `<span style="color:var(--green);font-weight:700;">✓ Correct!</span> Your card was the closest.`;
 
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-gold btn-next';
@@ -1484,7 +1478,7 @@ function soloPickCard(pickedIdx) {
       if (window.HSGfx) { HSGfx.flash('red'); if (pickedDiff > 2000) HSGfx.shake(); } // shake on a wild miss
       updateSoloStats();
 
-      instruction.innerHTML = `<div class="round-verdict" style="color:var(--red)">${roundCommentary(pickedDiff, false)}</div>`;
+      instruction.innerHTML = `<span style="color:var(--red);font-weight:700;">✗ Not the closest.</span> The closest was “${bestCard.title}.”`;
 
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-gold btn-next';
@@ -1498,7 +1492,7 @@ function soloPickCard(pickedIdx) {
         streakNote.textContent = `Streak of ${prevStreak} ended.`;
         bar.appendChild(streakNote);
       }
-      rail.end(); // flare the fire down + offer the leaderboard
+      rail.broke(); // wrong pick snaps the streak — play continues, no modal
     }
   };
 
@@ -1529,8 +1523,8 @@ function soloEndGame(reason) {
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
 
-  // The run is over — flare down and offer the leaderboard with this streak.
-  rail.end();
+  // The run is over — bank the longest streak (prompts only if it makes the Top 10).
+  rail.gameOver();
 
   const hs = getHighScore();
   document.getElementById('endSubtitle').textContent =
@@ -1861,6 +1855,8 @@ function startSoloWithEra(key, tileEl) {
   handSize = 4;
   soloSourceDeck = deckForEra(key);
   tlBounds = eraTimelineBounds(key, soloSourceDeck);
+  const eraMeta = ERAS.find(e => e.key === key) || {};
+  rail.setLevel(key, eraMeta.label || key);   // each era keeps its own streak board
   if (window.HSGSound) HSGSound.tick();
   const grid = document.getElementById('eraGrid');
   if (grid) grid.classList.add('chosen');
@@ -1871,6 +1867,16 @@ function startSoloWithEra(key, tileEl) {
     if (tileEl) tileEl.classList.remove('picked');
     startSoloGame();
   }, 480);
+}
+
+// Quit a solo run: bank the longest streak (prompts only if it makes the Top 10),
+// then return to the era picker. No page reload, so the prompt can show.
+function quitSolo() {
+  rail.gameOver();
+  document.body.classList.remove('solo-active');
+  document.getElementById('soloScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display = 'block';
 }
 
 function showFriendsSetup() {
@@ -1890,12 +1896,22 @@ function startFriendsGame() {
 // setup and end screens via the boardMount selector.
 const rail = HSGStreak.init({
   gameId: 'circa', gameName: 'Circa', minStreak: 1,
+  level: 'all', levelName: 'All Time',
   mount: document.getElementById('streakRail'),
   boardMount: '.circa-leaderboard'
 });
 
 updatePlayerNames();
 renderEraTiles();
+
+// TEMP test hook — verify per-era streak banking end-to-end.
+if (location.search.includes('streaktest')) {
+  rail.setLevel('ancient', 'Ancient');
+  for (let i = 0; i < 7; i++) rail.hit();   // build a 7-streak
+  rail.broke();                              // a wrong pick mid-game — must NOT prompt
+  for (let i = 0; i < 4; i++) rail.hit();    // streak of 4 (best stays 7)
+  setTimeout(() => rail.gameOver(), 200);    // end → should prompt "Circa — Ancient", streak 7
+}
 </script>
 
 </body>

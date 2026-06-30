@@ -39,6 +39,12 @@
       background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
       padding: 0.25rem 0.6rem; flex-shrink: 0;
     }
+    .hear-btn {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      width: 2.1rem; height: 2.1rem; font-size: 1rem; cursor: pointer; line-height: 1; flex-shrink: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .hear-btn:hover { background: #e3dccb; }
     .word-slots { display: flex; gap: 0.35rem; flex-wrap: wrap; justify-content: center; }
     .slot {
       min-width: 1.7rem; height: 2.7rem; padding: 0 0.4rem;
@@ -168,7 +174,7 @@
   </div>
 
   <div class="word-rail">
-    <div class="clue-line"><span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span></div>
+    <div class="clue-line"><button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button><span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span></div>
     <div class="word-slots" id="wordSlots"></div>
     <div class="ready-banner hidden" id="readyBanner">Press any key to start ▶</div>
     <div class="second-clue hidden" id="secondClue"></div>
@@ -302,7 +308,8 @@ const START_LEN=3;
 let snake=[], lastSnake=[], dir={dc:1,dr:0}, queued=null, pellets=[];
 let stepAcc=0, curInterval=0.3, lastTs=0, rafId=null, flashT=0, shakeT=0, lifeT=0, nextId=1;
 
-const rail = HSGStreak.init({ gameId:'letter-snake', gameName:'Letter Snake', minStreak:2,
+const rail = HSGStreak.init({ gameId:'letter-snake', gameName:'Letter Snake', minStreak:6,
+  unit:'length', level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail') });
 
 // ---- slots (blank until spelled) ----
@@ -332,7 +339,8 @@ function newWord(){
   // ready state — snake sits frozen in place until the player presses a key / taps
   state='ready'; stepAcc=0; lastSnake=snake.map(s=>({c:s.c,r:s.r}));
   hidePauseUI();
-  showSecondClue();               // first & last letter — a permanent extra hint
+  showSecondClue();               // first & last letter + length — a permanent extra hint
+  HSGSpellWords.say(word);        // announce the word aloud (the goal is the spelling)
   readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word — press any key to continue ▶';
   readyBanner.classList.remove('hidden');
 }
@@ -347,7 +355,8 @@ function beginPlay(){
 function secondClueText(){
   if(!word) return '';
   const first=word[0].toUpperCase(), last=word[word.length-1].toUpperCase();
-  return '🔎 Starts with “'+first+'” · ends with “'+last+'”';
+  const n=word.length;
+  return '🔎 Starts with “'+first+'” · ends with “'+last+'” · '+n+' letter'+(n===1?'':'s');
 }
 function showSecondClue(){ secondClue.textContent=secondClueText(); secondClue.classList.remove('hidden'); }
 
@@ -403,7 +412,8 @@ function startGame(lv){
   level=lv; cfg=LEVELS[lv];
   lettersEaten=0; wordsDone=0; mistakes=0;
   flashT=0; shakeT=0; lifeT=0; stepAcc=0;
-  rail.reset(); setupCanvas();
+  rail.setLevel(lv, lv.charAt(0).toUpperCase()+lv.slice(1));  // per-difficulty board
+  setupCanvas();
   resetSnake();        // the only place the snake is reset — it persists between words
   startOverlay.classList.add('hidden');
   endOverlay.classList.add('hidden');
@@ -413,7 +423,7 @@ function startGame(lv){
 }
 function quitToMenu(){
   // record an in-progress run before bailing (a finished run is already recorded)
-  if (state==='playing'||state==='ready'||state==='paused'){ rail.value=snake.length; rail.end(); }
+  if (state==='playing'||state==='ready'||state==='paused'){ rail.gameOver(snake.length); }
   state='menu';
   hidePauseUI();
   readyBanner.classList.add('hidden');
@@ -437,7 +447,7 @@ function gameOver(reason){
   endBest.textContent = best;
   endOverlay.classList.remove('hidden');
   HSGSound.finish(false);
-  rail.value=finalLen; rail.end();   // record to leaderboard (name prompt if it qualifies)
+  rail.gameOver(finalLen);   // record to this level's leaderboard (name prompt if it qualifies)
 }
 
 function wordComplete(){
@@ -455,6 +465,8 @@ function loseLife(){
 }
 function updateHud(){
   scoreBadge.textContent='🐍 Length '+snake.length;
+  rail.set(snake.length);   // live length feeds the rail counter + session best
+
   let h=''; for(let i=0;i<MAX_MISTAKES;i++) h+= i<(MAX_MISTAKES-mistakes)?'❤️':'<span class="spent">🤍</span>';
   heartsBadge.innerHTML=h;
 }
@@ -636,6 +648,7 @@ pauseBtn.addEventListener('click', (e)=>{ e.stopPropagation(); togglePause(); })
 // handler (which would skip the read-the-clue pause and launch immediately).
 document.getElementById('endPlayAgain').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(level); });
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', (e)=>{ e.stopPropagation(); startGame(b.dataset.level); }));
+document.getElementById('hearBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(word) HSGSpellWords.say(word, true); });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state==='playing') lastTs=0; });
 
 setupCanvas();
