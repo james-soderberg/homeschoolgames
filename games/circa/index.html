@@ -1903,15 +1903,6 @@ const rail = HSGStreak.init({
 
 updatePlayerNames();
 renderEraTiles();
-
-// TEMP test hook — verify per-era streak banking end-to-end.
-if (location.search.includes('streaktest')) {
-  rail.setLevel('ancient', 'Ancient');
-  for (let i = 0; i < 7; i++) rail.hit();   // build a 7-streak
-  rail.broke();                              // a wrong pick mid-game — must NOT prompt
-  for (let i = 0; i < 4; i++) rail.hit();    // streak of 4 (best stays 7)
-  setTimeout(() => rail.gameOver(), 200);    // end → should prompt "Circa — Ancient", streak 7
-}
 </script>
 
 </body>
