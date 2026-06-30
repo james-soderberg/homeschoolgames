@@ -4,7 +4,7 @@ const GAMES = [
   { key:'dragon-siege',  name:'Dragon Siege',     href:'games/dragon-siege/index.html', subject:'Typing',    emoji:'🐉', blurb:'Type fast to defend the keep.',      photo:'assets/img/home/shots/dragon-siege.jpg' },
   { key:'word-racer',    name:'Word Racer',       href:'games/word-racer/index.html',   subject:'Typing',    emoji:'🏎️', blurb:'Type fast to win the race.',         photo:'assets/img/home/shots/word-racer.jpg' },
   { key:'letter-snake',  name:'Letter Snake',     href:'games/letter-snake/index.html', subject:'Spelling',  emoji:'🐍', blurb:'Spell words as you slither.',        photo:'assets/img/home/shots/letter-snake.jpg' },
-  { key:'bible-trivia',  name:'Race to the Red Sea',href:'games/bible-trivia/index.html', subject:'Bible Trivia', emoji:'🐎', blurb:'Outrun Pharaoh to the Red Sea.',         photo:'assets/img/home/shots/bible-trivia.jpg' },
+  { key:'bible-trivia',  name:'The Exodus Journey', href:'games/bible-trivia/index.html', subject:'Bible Trivia', emoji:'📜', blurb:'From slavery in Egypt to the Promised Land.', photo:'assets/img/home/shots/bible-trivia.jpg' },
   { key:'bridge-run',    name:'Bridge Run',       href:'games/bridge-run/index.html',   subject:'Math',      emoji:'🌉', blurb:'Solve the gap and sprint across.',   photo:'assets/img/home/shots/bridge-run.jpg' },
   { key:'flag-frenzy',   name:'Around the World', href:'games/flag-frenzy/index.html',  subject:'Flag Identification', emoji:'🚩', blurb:'Race through the flags of the world.',photo:'assets/img/home/shots/flag-frenzy.jpg' },
   { key:'map-quiz',      name:'Map Quiz',         href:'games/map-quiz/index.html',     subject:'Geography', emoji:'🗺️', blurb:'Find every country on the map.',     photo:'assets/img/home/shots/map-quiz.jpg' },

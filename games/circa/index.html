@@ -676,6 +676,9 @@
     .target-year { font-family: var(--font-serif); font-size: 3.5rem; font-weight: 600; color: var(--ink); line-height: 1; }
     .target-era { font-family: var(--font-serif); font-size: 1rem; color: var(--gold); font-weight: 600; margin-top: 0.2rem; }
     .target-hidden { font-family: var(--font-serif); font-size: 2rem; letter-spacing: 0.3em; color: var(--border); }
+    /* the face-up target event card in pass-and-play (date stays hidden until reveal) */
+    .target-card-mount { display: flex; justify-content: center; }
+    .target-card-mount .circa-card { width: 240px; max-width: 100%; cursor: default; }
     .hand-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.75rem; }
     .reveal-area { display: none; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
     .reveal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
@@ -801,8 +804,8 @@
     </div>
 
     <div class="target-area">
-      <p class="target-label">Target Year</p>
-      <div id="targetDisplay" class="target-hidden">? ? ? ?</div>
+      <p class="target-label" id="targetLabel">Target card — play the card closest in date</p>
+      <div class="target-card-mount" id="targetCardEl"></div>
     </div>
 
     <div class="round-result" id="roundResult"></div>
@@ -1608,14 +1611,22 @@ function startRound() {
   roundNum++;
 
   document.getElementById('roundNum').textContent = roundNum;
-  document.getElementById('targetDisplay').innerHTML = '<span class="target-hidden">? ? ? ?</span>';
+
+  // Show the target EVENT face-up — its date stays hidden until the reveal, so
+  // players choose the card from their hand closest in date to this event.
+  const tMount = document.getElementById('targetCardEl');
+  tMount.innerHTML = '';
+  tMount.appendChild(makeCardFront(targetCard, 'no-hover'));
+  document.getElementById('targetLabel').textContent = 'Target card — play the card closest in date';
+
+  document.getElementById('handSection').style.display = 'block';
   document.getElementById('revealArea').style.display = 'none';
   document.getElementById('roundResult').style.display = 'none';
 
   updateScoreBar();
 
-  if (mode === 'pass' && players.length > 1) {
-    showPassScreen(players[0].name, 'Your turn to pick a card.');
+  if (players.length > 1) {
+    showPassScreen(players[0].name, 'Look at the target, then pick the card closest in date.');
   } else {
     renderHand(0);
   }
@@ -1638,10 +1649,9 @@ function renderHand(playerIndex) {
   const player = players[playerIndex];
   const hand = hands[playerIndex];
 
-  document.getElementById('handLabel').textContent =
-    mode === 'pass' ? `${player.name} — pick one card to play` : `All players pick — then reveal`;
+  document.getElementById('handLabel').textContent = `${player.name} — pick the card closest in date to the target`;
   document.getElementById('soloHint').textContent =
-    mode !== 'pass' && players.length > 1 ? 'Pick in secret, then compare after everyone has chosen.' : '';
+    players.length > 1 ? 'Only you should look — pick in secret, then pass the device.' : '';
 
   const grid = document.getElementById('handGrid');
   grid.innerHTML = '';
@@ -1680,22 +1690,14 @@ function confirmPick(playerIndex) {
   const card = hands[playerIndex][selectedCardIndex];
   picks.push({ playerIndex, card, cardIndex: selectedCardIndex });
   selectedCardIndex = -1;
+  if (window.HSGSound) HSGSound.tick();
 
-  if (mode === 'pass') {
-    const nextIndex = currentPickerIndex + 1;
-    if (nextIndex < players.length) {
-      currentPickerIndex = nextIndex;
-      showPassScreen(players[nextIndex].name, 'Your turn to pick a card.');
-    } else {
-      revealRound();
-    }
+  const nextIndex = currentPickerIndex + 1;
+  if (nextIndex < players.length) {
+    currentPickerIndex = nextIndex;
+    showPassScreen(players[nextIndex].name, 'Look at the target, then pick the card closest in date.');
   } else {
-    if (picks.length < players.length) {
-      currentPickerIndex++;
-      renderHand(currentPickerIndex);
-    } else {
-      revealRound();
-    }
+    revealRound();
   }
 }
 
@@ -1706,10 +1708,14 @@ function revealRound() {
   document.getElementById('actionBar').innerHTML = '';
 
   const tYear = targetCard.year;
-  document.getElementById('targetDisplay').innerHTML =
-    `<div class="target-year">${Math.abs(tYear)}</div>
-     <div class="target-era">${tYear < 0 ? 'BC' : 'AD'}${targetCard.approx ? ' <small style="color:var(--gold-light)">approx.</small>' : ''}</div>`;
 
+  // Reveal the target's true date on its own card.
+  const tMount = document.getElementById('targetCardEl');
+  tMount.innerHTML = '';
+  tMount.appendChild(makeCardWithYear(targetCard, 'no-hover'));
+  document.getElementById('targetLabel').textContent = `The target was ${fmtYear(targetCard)}`;
+
+  // Closest pick wins. Ties go to the earliest picker in turn order.
   let bestDiff = Infinity;
   let winnerIdx = -1;
   picks.forEach(p => {
@@ -1730,26 +1736,21 @@ function revealRound() {
 
     const nameEl = document.createElement('div');
     nameEl.className = 'player-name';
-    nameEl.textContent = players[p.playerIndex].name;
+    nameEl.textContent = players[p.playerIndex].name + (isWinner ? ' 👑' : '');
     entry.appendChild(nameEl);
 
-    // Show card back (year)
-    const cardEl = document.createElement('div');
-    cardEl.className = 'circa-card face-down' + (isWinner ? '' : ' disabled');
-    const yr = document.createElement('div'); yr.className = 'card-back-year'; yr.textContent = Math.abs(p.card.year); cardEl.appendChild(yr);
-    const era = document.createElement('div'); era.className = 'card-back-era'; era.textContent = p.card.year < 0 ? 'BC' : 'AD'; cardEl.appendChild(era);
-    if (p.card.approx) { const ap = document.createElement('div'); ap.className = 'card-back-approx'; ap.textContent = 'approx.'; cardEl.appendChild(ap); }
-    const brand = document.createElement('div'); brand.className = 'card-back-brand'; brand.textContent = 'Circa'; cardEl.appendChild(brand);
-    entry.appendChild(cardEl);
+    // Show the full card each player played, with its date revealed.
+    entry.appendChild(makeCardWithYear(p.card, 'no-hover' + (isWinner ? ' show-best' : ' disabled')));
 
     const diffEl = document.createElement('div');
     diffEl.className = 'diff-badge' + (isWinner ? ' winner' : '');
-    diffEl.textContent = diff === 0 ? 'Exact!' : `Off by ${diff.toLocaleString()} yrs`;
+    diffEl.textContent = diff === 0 ? '🎯 Exact!' : `Off by ${diff.toLocaleString()} yrs`;
     entry.appendChild(diffEl);
 
     grid.appendChild(entry);
   });
 
+  // Award every played card plus the target to the winner; remove played cards.
   picks.forEach(p => { piles[winnerIdx].push(p.card); });
   piles[winnerIdx].push(targetCard);
   picks.forEach(p => { hands[p.playerIndex].splice(p.cardIndex, 1); });
@@ -1759,6 +1760,8 @@ function revealRound() {
   resultEl.textContent = `${players[winnerIdx].name} wins round ${roundNum} (+${picks.length + 1} cards)`;
 
   updateScoreBar();
+  if (window.HSGSound && HSGSound.correct) HSGSound.correct();
+  if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 40 });
 
   const handsEmpty = hands.every(h => h.length === 0);
   const bar = document.getElementById('actionBar');

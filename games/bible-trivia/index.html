@@ -713,46 +713,126 @@ const DECK = {
 const CAT_LABEL = { people:"People", events:"Events", numbers:"Numbers", places:"Places", words:"Words" };
 const KEYS = ['A','B','C','D'];
 
-// ---------------- Difficulty + pace ----------------
-// Difficulty no longer sets the speed — the harder questions are the challenge.
-// Every level starts at the same gentle "Stroll"; only Einstein begins a touch
-// quicker ("Trot"). drain = gap lost per second a question waits; gain/loss per
-// answer; step = progress toward the sea per correct answer (100 = arrival).
-const STROLL = { drain: 1.6, gain: 16, loss: 13, step: 9.5 };
-const TROT   = { drain: 2.2, gain: 15, loss: 14, step: 9.0 };
-const PACES = { easy: STROLL, medium: STROLL, hard: STROLL, einstein: TROT };
+// ============================================================
+// THE EXODUS JOURNEY — six animated stages from slavery in Egypt
+// to the Promised Land. Bible questions drive the story forward:
+// each correct answer advances the current stage and plays its
+// animation; reach a stage's goal to move on.
+//   1 Slavery in Egypt    — build the store-cities, brick by brick
+//   2 The Ten Plagues     — one plague per correct answer
+//   3 Race to the Red Sea — the chariot chase + the sea parts
+//   4 Wandering the Desert— manna, the pillar of cloud, toward Sinai
+//   5 Mount Sinai         — the Ten Commandments, one by one
+//   6 The Fall of Jericho — march seven times, the walls fall
+// Nothing violent is shown; wrong answers simply don't advance.
+// ============================================================
+
+// ---------------- Difficulty ----------------
 const LEVEL_META = {
-  easy:     { label: 'Easy',     sub: 'Grades 3–7' },
-  medium:   { label: 'Medium',   sub: 'High school' },
-  hard:     { label: 'Hard',     sub: 'Adult' },
-  einstein: { label: 'Einstein', sub: 'Expert' },
+  easy:     { label:'Easy',     sub:'Grades 3–7' },
+  medium:   { label:'Medium',   sub:'High school' },
+  hard:     { label:'Hard',     sub:'Adult' },
+  einstein: { label:'Einstein', sub:'Expert' },
 };
-const BEST_KEY = 'bible_trivia_chase_best';
+const BEST_KEY = 'exodus_journey_best';
+// Only stage 3 (the chase) uses the army gap. drain = lead lost per second a
+// fresh question waits; gain/loss per answer.
+const CHASE = { drain: 1.6, gain: 18, loss: 14 };
+
+// ---------------- Story content ----------------
+const PLAGUES = [
+  { n:'Blood',     d:'The Nile turned to blood' },
+  { n:'Frogs',     d:'Frogs covered the land' },
+  { n:'Gnats',     d:'The dust became gnats' },
+  { n:'Flies',     d:'Swarms of flies filled Egypt' },
+  { n:'Livestock', d:'The livestock fell sick' },
+  { n:'Boils',     d:'Boils broke out on man and beast' },
+  { n:'Hail',      d:'Hail and fire fell from the sky' },
+  { n:'Locusts',   d:'Locusts ate every green plant' },
+  { n:'Darkness',  d:'Three days of total darkness' },
+  { n:'Passover',  d:"The firstborn — Israel spared by the lamb's blood" },
+];
+const COMMANDMENTS = [
+  'Have no other gods before Me',
+  'Do not make idols',
+  "Do not misuse God's name",
+  'Keep the Sabbath day holy',
+  'Honor your father and mother',
+  'Do not murder',
+  'Do not commit adultery',
+  'Do not steal',
+  'Do not give false testimony',
+  'Do not covet',
+];
+const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+
+// ---------------- The six stages ----------------
+const LEVELS = [
+  {
+    id:'slavery', emoji:'🧱', name:'Slavery in Egypt', ref:'Exodus 1', goal:5, pause:1.1,
+    story:"Jacob's family grew into a great nation in Egypt. A new Pharaoh feared them and forced them into hard slavery — making bricks and building his store-cities. Israel cried out to God for help.",
+    teach:"Israel was enslaved in Egypt for over <b>400 years</b>. God heard their cry and raised up <b>Moses</b> to set His people free. <i>(Exodus 1–2)</i>",
+    scene: drawSlavery,
+  },
+  {
+    id:'plagues', emoji:'🐸', name:'The Ten Plagues', ref:'Exodus 7–12', goal:10, pause:1.6,
+    story:"Moses stood before Pharaoh and said, \"Let my people go!\" Pharaoh refused again and again — so God sent ten plagues on Egypt, each one a sign of His power.",
+    teach:"The <b>ten plagues</b> ended with the first <b>Passover</b>: Israel marked their doors with lamb's blood and were spared. At last Pharaoh let them go. <i>(Exodus 7–12)</i>",
+    scene: drawPlagues,
+  },
+  {
+    id:'redsea', emoji:'🌊', name:'Race to the Red Sea', ref:'Exodus 14', goal:8, pause:0.85,
+    story:"Israel marched out of Egypt — but Pharaoh changed his mind and sent his chariots after them! The Red Sea lies ahead and the army is closing in. Keep answering to outrun Pharaoh and reach the shore!",
+    teach:"At the sea <b>Moses stretched out his hand</b> and God parted the waters. Israel crossed on dry ground, and the sea closed over Pharaoh's army. <i>(Exodus 14)</i>",
+    scene: drawChase, chase:true,
+  },
+  {
+    id:'desert', emoji:'🏜️', name:'Wandering the Desert', ref:'Exodus 16', goal:6, pause:1.2,
+    story:"Free at last, Israel journeyed through a vast wilderness toward the mountain of God. With no food or water, they grumbled — but God provided bread from heaven each morning and led them by a pillar of cloud and fire.",
+    teach:"God fed Israel with <b>manna</b> every morning and led them by a <b>pillar of cloud</b> by day and <b>fire</b> by night, all the way to Mount Sinai. <i>(Exodus 16)</i>",
+    scene: drawDesert,
+  },
+  {
+    id:'sinai', emoji:'⛰️', name:'Mount Sinai', ref:'Exodus 20', goal:10, pause:1.3,
+    story:"At Mount Sinai the mountain shook with thunder, smoke and fire. Moses climbed up to meet God, who gave His people ten commandments to live by — written on two tablets of stone.",
+    teach:"On Mount Sinai God gave Moses the <b>Ten Commandments</b> — His law for how to love God and love others. <i>(Exodus 20)</i>",
+    scene: drawSinai,
+  },
+  {
+    id:'jericho', emoji:'🎺', name:'The Fall of Jericho', ref:'Joshua 6', goal:7, pause:1.2,
+    story:"A new leader, Joshua, led Israel into the Promised Land. The mighty walled city of Jericho blocked the way. God told them to march around it once a day for six days — and seven times on the seventh day.",
+    teach:"On the seventh march the priests blew their trumpets, the people shouted, and the <b>walls of Jericho fell flat</b>. The Promised Land was open at last! <i>(Joshua 6)</i>",
+    scene: drawJericho,
+  },
+];
 
 // ---------------- DOM ----------------
 const sceneWrap = document.getElementById('sceneWrap');
 const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const startOverlay = document.getElementById('startOverlay');
+const introOverlay = document.getElementById('introOverlay');
+const clearOverlay = document.getElementById('clearOverlay');
 const overOverlay = document.getElementById('overOverlay');
 const winOverlay = document.getElementById('winOverlay');
 const answersEl = document.getElementById('answers');
+const journeyMap = document.getElementById('journeyMap');
 
 // ---------------- State ----------------
 let W = 800, H = 420, dpr = 1;
-let state = 'menu';          // menu | run | finale | caught | win
-let level = 'medium';
-let pace = PACES.medium;
-let gap = 62;                // 0..100 lead over the army (0 = caught)
-let gapShown = 62;           // eased visual gap — the Israelites glide forward rather than snapping
-let progress = 0;            // 0..100 distance to the Red Sea
+let state = 'menu';          // menu | intro | play | finale | clear | caught | win
+let difficulty = 'medium';
+let levelIdx = 0;
+let levelDone = 0;           // correct answers logged in the current stage
 let correctCount = 0, streak = 0, bestStreak = 0;
-let queue = [], current = null, answered = false;
+let queue = [], current = null, answered = true, lastOfLevel = false;
 let scroll = 0, speed = 0, surgeT = 0, stumbleT = 0, shake = 0, sceneTime = 0;
-let revealT = 0;             // pause timer after answering before the next question
-let finaleT = 0;             // seconds into the Red Sea finale
+let revealT = 0, fxT = 0;    // fxT: per-correct animation timer (counts down)
 let dust = [];
 let lastTs = 0, rafId = null;
+// stage 3 (chase)
+let gap = 62, gapShown = 62, finaleT = 0;
+let finaleKind = 'redsea', finaleDone = function(){};
 
 function setupCanvas() {
   const r = sceneWrap.getBoundingClientRect();
@@ -766,6 +846,7 @@ function setupCanvas() {
 window.addEventListener('resize', setupCanvas);
 
 const rand = (a, b) => a + Math.random() * (b - a);
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
 function shuffle(arr) {
   const a = arr.slice();
   for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
@@ -774,21 +855,32 @@ function shuffle(arr) {
 function groundY() { return H * 0.80; }
 function getBest() { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; }
 function setBest(n) { try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) {} }
+function roundRect(x, y, w, h, r) {
+  r = Math.min(r, h / 2, w / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function roundTopRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x, y + h); ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h); ctx.closePath();
+}
 
 // ============================================================
-// Scene drawing
+// Shared desert backdrop + figures (reused by several stages)
 // ============================================================
 function drawSky(t) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#f6dca6'); g.addColorStop(0.55, '#f0c98a'); g.addColorStop(1, '#e7b878');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  // sun
   ctx.fillStyle = 'rgba(255,238,190,0.95)';
   ctx.beginPath(); ctx.arc(W * 0.16, H * 0.26, 34, 0, Math.PI * 2); ctx.fill();
   ctx.fillStyle = 'rgba(255,246,222,0.5)';
   ctx.beginPath(); ctx.arc(W * 0.16, H * 0.26, 52, 0, Math.PI * 2); ctx.fill();
 }
-// a scrolling parallax band of shapes
 function band(factor, period, drawShape) {
   const off = -((scroll * factor) % period);
   for (let x = off - period; x < W + period; x += period) drawShape(x);
@@ -796,22 +888,12 @@ function band(factor, period, drawShape) {
 function drawBackground(t) {
   drawSky(t);
   const gy = groundY();
-  // distant pyramids
   ctx.fillStyle = '#cfa264';
-  band(0.12, 360, (x) => {
-    pyramid(x + 70, gy, 120, 78); pyramid(x + 180, gy, 80, 52);
-  });
-  // mid dunes
-  ctx.fillStyle = '#d8b176';
-  duneRow(gy - 6, 0.32, 300, 30);
-  ctx.fillStyle = '#cda063';
-  duneRow(gy + 2, 0.55, 220, 22);
-  // ground
-  ctx.fillStyle = '#caa468';
-  ctx.fillRect(0, gy, W, H - gy);
-  ctx.fillStyle = '#b8924f';
-  ctx.fillRect(0, gy, W, 4);
-  // scrolling ground speckles for a sense of speed
+  band(0.12, 360, (x) => { pyramid(x + 70, gy, 120, 78); pyramid(x + 180, gy, 80, 52); });
+  ctx.fillStyle = '#d8b176'; duneRow(gy - 6, 0.32, 300, 30);
+  ctx.fillStyle = '#cda063'; duneRow(gy + 2, 0.55, 220, 22);
+  ctx.fillStyle = '#caa468'; ctx.fillRect(0, gy, W, H - gy);
+  ctx.fillStyle = '#b8924f'; ctx.fillRect(0, gy, W, 4);
   ctx.fillStyle = 'rgba(120,80,30,0.30)';
   band(1, 46, (x) => { ctx.fillRect(x, gy + 16, 12, 3); ctx.fillRect(x + 22, gy + 34, 8, 3); ctx.fillRect(x + 10, gy + 54, 14, 3); });
 }
@@ -821,13 +903,10 @@ function pyramid(cx, baseY, w, h) {
 function duneRow(baseY, factor, period, amp) {
   const off = -((scroll * factor) % period);
   ctx.beginPath(); ctx.moveTo(-period, H);
-  for (let x = off - period; x < W + period; x += period / 2) {
-    ctx.quadraticCurveTo(x + period / 4, baseY - amp, x + period / 2, baseY);
-  }
+  for (let x = off - period; x < W + period; x += period / 2) ctx.quadraticCurveTo(x + period / 4, baseY - amp, x + period / 2, baseY);
   ctx.lineTo(W + period, H); ctx.closePath(); ctx.fill();
 }
 
-// dust particles kicked up behind wheels/hooves
 function spawnDust(x, y, n, sp) {
   for (let i = 0; i < n; i++) dust.push({
     x, y: y + rand(-3, 3), vx: -rand(20, 70) - sp * 0.4, vy: -rand(8, 40),
@@ -846,70 +925,46 @@ function drawDust(dt) {
   }
 }
 
-// a galloping horse + chariot + rider, drawn centred at (cx) standing on groundY.
+// galloping horse + chariot + rider centred at cx on groundY
 function drawRig(cx, t, opt) {
-  const gy = groundY();
-  const s = opt.scale, gp = t * opt.gallop;
+  const gy = groundY(), s = opt.scale, gp = t * opt.gallop;
   const bounce = Math.sin(gp) * 2 * s;
-  ctx.save();
-  ctx.translate(cx, gy + bounce);
-  ctx.scale(s, s);
+  ctx.save(); ctx.translate(cx, gy + bounce); ctx.scale(s, s);
   if (opt.lean) ctx.rotate(opt.lean);
-
-  // ground shadow
   ctx.fillStyle = 'rgba(60,35,10,0.20)';
   ctx.beginPath(); ctx.ellipse(0, 2, 78, 8, 0, 0, Math.PI * 2); ctx.fill();
-
-  // ---- chariot (behind the horse, to the left) ----
   const wheelR = 17;
   drawWheel(-44, -wheelR, wheelR, opt.wood, gp);
-  // car body
   ctx.fillStyle = opt.wood;
-  ctx.beginPath();
-  ctx.moveTo(-64, -wheelR - 2); ctx.lineTo(-22, -wheelR - 2);
+  ctx.beginPath(); ctx.moveTo(-64, -wheelR - 2); ctx.lineTo(-22, -wheelR - 2);
   ctx.lineTo(-26, -wheelR - 28); ctx.lineTo(-60, -wheelR - 28); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = opt.trim;
-  ctx.fillRect(-64, -wheelR - 8, 42, 5);
-  // axle to horse
+  ctx.fillStyle = opt.trim; ctx.fillRect(-64, -wheelR - 8, 42, 5);
   ctx.strokeStyle = opt.wood; ctx.lineWidth = 4;
   ctx.beginPath(); ctx.moveTo(-26, -wheelR - 6); ctx.lineTo(18, -22); ctx.stroke();
-
-  // ---- horse ----
   ctx.fillStyle = opt.horse;
-  // body
   ctx.beginPath(); ctx.ellipse(28, -30, 30, 16, 0, 0, Math.PI * 2); ctx.fill();
-  // neck + head
   ctx.beginPath();
   ctx.moveTo(48, -38); ctx.quadraticCurveTo(64, -54, 66, -44);
   ctx.lineTo(74, -46); ctx.quadraticCurveTo(70, -34, 60, -32);
   ctx.quadraticCurveTo(54, -30, 48, -26); ctx.closePath(); ctx.fill();
-  // mane + tail
   ctx.strokeStyle = opt.mane; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(46, -44); ctx.lineTo(56, -50); ctx.moveTo(44, -40); ctx.lineTo(52, -46); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(0, -34);
   ctx.quadraticCurveTo(-10, -30 + Math.sin(gp) * 4, -14, -16); ctx.stroke();
-  // legs (two phases for a gallop)
   ctx.strokeStyle = opt.horse; ctx.lineWidth = 5; ctx.lineCap = 'round';
-  legPair(18, -16, gp);
-  legPair(38, -16, gp + Math.PI);
-
-  // ---- rider ----
-  ctx.save();
-  ctx.translate(-42, -wheelR - 30);
+  legPair(18, -16, gp); legPair(38, -16, gp + Math.PI);
+  ctx.save(); ctx.translate(-42, -wheelR - 30);
   ctx.fillStyle = opt.robe;
   ctx.beginPath(); ctx.moveTo(-8, 0); ctx.quadraticCurveTo(0, -6, 8, 0); ctx.lineTo(6, -22); ctx.lineTo(-6, -22); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = opt.skin;
-  ctx.beginPath(); ctx.arc(0, -28, 6, 0, Math.PI * 2); ctx.fill();   // head
+  ctx.fillStyle = opt.skin; ctx.beginPath(); ctx.arc(0, -28, 6, 0, Math.PI * 2); ctx.fill();
   if (opt.helmet) { ctx.fillStyle = opt.helmet; ctx.beginPath(); ctx.arc(0, -29, 6.5, Math.PI, 0); ctx.fill();
-    ctx.fillStyle = '#b03030'; ctx.fillRect(-1.5, -40, 3, 10); }    // plume
-  // raised arm (player holds a staff; soldiers hold a spear)
+    ctx.fillStyle = '#b03030'; ctx.fillRect(-1.5, -40, 3, 10); }
   ctx.strokeStyle = opt.skin; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(2, -20); ctx.lineTo(12, -30); ctx.stroke();
   ctx.strokeStyle = opt.staff || '#6b4a24'; ctx.lineWidth = 3;
   ctx.beginPath(); ctx.moveTo(12, -42); ctx.lineTo(12, -22); ctx.stroke();
   if (opt.spearTip) { ctx.fillStyle = '#cfd3da'; ctx.beginPath(); ctx.moveTo(12, -42); ctx.lineTo(9, -36); ctx.lineTo(15, -36); ctx.closePath(); ctx.fill(); }
   ctx.restore();
-
   ctx.restore();
 }
 function legPair(x, y, ph) {
@@ -920,15 +975,11 @@ function drawWheel(cx, cy, r, color, ang) {
   ctx.save(); ctx.translate(cx, cy);
   ctx.strokeStyle = color; ctx.lineWidth = 4;
   ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.stroke();
-  ctx.rotate(ang);
-  ctx.lineWidth = 2.5;
+  ctx.rotate(ang); ctx.lineWidth = 2.5;
   for (let i = 0; i < 6; i++) { ctx.rotate(Math.PI / 3); ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(r, 0); ctx.stroke(); }
   ctx.restore();
 }
 
-const clamp01 = (v) => Math.max(0, Math.min(1, v));
-
-// The fleeing Israelites — a small crowd on foot trailing Moses (deterministic).
 const PEOPLE = [
   { dy: -10, sc: 0.82, ph: 0.0, skin: '#d8a070', wrap: '#8a6a4a' },
   { dy: -4,  sc: 0.90, ph: 1.1, skin: '#e2b487', wrap: '#6a6a9a' },
@@ -940,7 +991,6 @@ const PEOPLE = [
 ];
 const ROBES = ['#9a6a8a', '#7a5a3a', '#5a7a6a', '#8a6a4a', '#6a6a9a', '#7a8a5a'];
 
-// one robed person walking; Moses (opt.staff) holds his staff aloft
 function drawWalker(x, gy, t, o) {
   const s = o.scale, ph = t * o.speed + (o.ph || 0);
   const bob = Math.abs(Math.sin(ph)) * 2 * s;
@@ -968,92 +1018,262 @@ function drawIsraelites(cx, t) {
   }
   drawWalker(cx, gy, t, { scale: base * 1.22, speed: 6.5, ph: 0, robe: '#b9433a', skin: '#e7b07a', wrap: '#d8d0c4', staff: true });
 }
-// Pharaoh's pursuit — four spear-bearing chariots in a staggered line
-function drawArmy(t) {
-  const ax = armyX();
-  for (let i = 3; i >= 0; i--) drawRig(ax - i * 46, t + i * 0.4, armyOpts());
-}
-function armyOpts() {
-  return { scale: H / 380, gallop: 15, lean: -0.04,
-    wood: '#4a3320', trim: '#8a6a36', horse: '#6b5236', mane: '#2e2316', robe: '#5a4a8a',
-    skin: '#caa074', helmet: '#8a7f4a', spearTip: true };
+
+// a banner that fades in/out with the per-correct animation
+function sceneBanner(title, sub) {
+  const a = clamp01(fxT / 0.3);
+  if (a <= 0) return;
+  ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center';
+  const cx = W / 2, y = H * 0.13;
+  ctx.font = '800 17px Inter, system-ui, sans-serif';
+  const w = Math.max(ctx.measureText(title).width, sub ? ctx.measureText(sub).width : 0) + 44;
+  ctx.fillStyle = 'rgba(30,18,6,0.80)';
+  roundRect(cx - w / 2, y - 22, w, sub ? 50 : 32, 10); ctx.fill();
+  ctx.fillStyle = '#ffe6b0'; ctx.fillText(title, cx, y - 4);
+  if (sub) { ctx.font = '600 12px Inter, system-ui, sans-serif'; ctx.fillStyle = '#f0dcb6'; ctx.fillText(sub, cx, y + 15); }
+  ctx.restore();
 }
 
-// Pharaoh's army holds a near-fixed anchor near the left; the Israelites
-// advance forward (to the right) as their lead grows, so gaining ground reads
-// as them surging ahead rather than the army dropping back.
-function armyX() { return W * 0.16; }
-function playerX() { return armyX() + 40 + (gapShown / 100) * (W * 0.50); }
-
-function drawChase(dt) {
-  drawBackground(sceneTime);
-  drawDust(dt);
-  drawArmy(sceneTime);
-  // a dust wall behind the army when they're close
-  if (gapShown < 45) {
-    const ax = armyX();
-    ctx.fillStyle = 'rgba(150,110,60,' + (0.18 * (1 - gapShown / 45)).toFixed(3) + ')';
-    ctx.fillRect(0, groundY() - 80, ax + 30, 80);
-  }
-  // the fleeing Israelites on foot — Moses leading with his staff
-  drawIsraelites(playerX(), sceneTime);
-  // surge speed lines when you pull ahead
-  if (surgeT > 0) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2;
-    for (let i = 0; i < 5; i++) { const yy = groundY() - 30 - i * 22; ctx.beginPath(); ctx.moveTo(playerX() + 20, yy); ctx.lineTo(playerX() + 20 - 40 * surgeT - i * 6, yy); ctx.stroke(); }
-  }
-  drawHUD();
-}
-
-function drawHUD() {
-  // "to the Red Sea" progress (top-left)
-  meter(14, 14, 150, '🌊 Red Sea', progress / 100, '#2f86c8', '#0e4d80');
-  // army danger (top-right): fills red as they close in
-  const danger = 1 - gapShown / 100;
-  meter(W - 164, 14, 150, '🐎 Army', danger, '#d77a3a', '#9a3a1a', true);
-}
 function meter(x, y, w, label, frac, c1, c2, right) {
-  frac = Math.max(0, Math.min(1, frac));
+  frac = clamp01(frac);
   ctx.save();
   ctx.font = '700 11px Inter, system-ui, sans-serif';
   ctx.fillStyle = 'rgba(40,24,8,0.85)';
   ctx.textAlign = right ? 'right' : 'left';
   ctx.fillText(label, right ? x + w : x, y + 9);
   const by = y + 15, bh = 9;
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
-  roundRect(x, by, w, bh, 4); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.55)'; roundRect(x, by, w, bh, 4); ctx.fill();
   const g = ctx.createLinearGradient(x, 0, x + w, 0); g.addColorStop(0, c1); g.addColorStop(1, c2);
   ctx.fillStyle = g;
-  if (right) { roundRect(x + w * (1 - frac), by, w * frac, bh, 4); }
-  else { roundRect(x, by, w * frac, bh, 4); }
+  if (right) roundRect(x + w * (1 - frac), by, w * frac, bh, 4); else roundRect(x, by, w * frac, bh, 4);
   ctx.fill();
   ctx.strokeStyle = 'rgba(40,24,8,0.4)'; ctx.lineWidth = 1; roundRect(x, by, w, bh, 4); ctx.stroke();
   ctx.restore();
 }
-function roundRect(x, y, w, h, r) {
-  r = Math.min(r, h / 2, w / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+
+// ============================================================
+// STAGE 1 — Slavery in Egypt
+// ============================================================
+function drawWorker(x, gy, t, robe, skin, phase) {
+  const bob = Math.abs(Math.sin(t * 4 + phase)) * 2, s = H / 330;
+  ctx.save(); ctx.translate(x, gy - bob); ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(60,35,10,0.18)'; ctx.beginPath(); ctx.ellipse(0, 2, 12, 3, 0, 0, Math.PI * 2); ctx.fill();
+  const sw = Math.sin(t * 4 + phase) * 4;
+  ctx.strokeStyle = robe; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -14); ctx.lineTo(sw, 0); ctx.moveTo(0, -14); ctx.lineTo(-sw, 0); ctx.stroke();
+  ctx.save(); ctx.translate(0, -14); ctx.rotate(-0.5);
+  ctx.fillStyle = robe;
+  ctx.beginPath(); ctx.moveTo(-7, 0); ctx.quadraticCurveTo(0, -4, 8, 0); ctx.lineTo(6, -20); ctx.lineTo(-6, -20); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(2, -24, 5, 0, Math.PI * 2); ctx.fill();   // head leans forward
+  ctx.restore();
+  ctx.fillStyle = '#a86a3a'; ctx.fillRect(-13, -32, 16, 9);   // brick carried on the back
+  ctx.strokeStyle = 'rgba(60,35,10,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(-13, -32, 16, 9);
+  ctx.restore();
+}
+function drawTaskmaster(x, gy) {
+  const s = H / 300;
+  ctx.save(); ctx.translate(x, gy); ctx.scale(s, s);
+  ctx.fillStyle = 'rgba(60,35,10,0.18)'; ctx.beginPath(); ctx.ellipse(0, 2, 11, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#caa030';
+  ctx.beginPath(); ctx.moveTo(-7, 0); ctx.quadraticCurveTo(0, -5, 7, 0); ctx.lineTo(5, -26); ctx.lineTo(-5, -26); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e7b07a'; ctx.beginPath(); ctx.arc(0, -32, 6, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#3a4a8a'; ctx.beginPath(); ctx.arc(0, -33, 7, Math.PI, 0); ctx.fill(); ctx.fillRect(-7, -34, 14, 4);
+  ctx.strokeStyle = '#5a3a1a'; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+  const wsw = Math.sin(sceneTime * 3) * 8;
+  ctx.beginPath(); ctx.moveTo(4, -24); ctx.lineTo(18, -34); ctx.quadraticCurveTo(30, -30, 34 + wsw, -20); ctx.stroke();
+  ctx.restore();
+}
+function drawSlavery(dt) {
+  drawBackground(sceneTime);
+  const gy = groundY(), L = LEVELS[0];
+  // the store-city wall, built brick by brick (one course per correct answer)
+  const courses = Math.min(levelDone, L.goal), bw = 42, bh = 15, cols = 5;
+  const baseX = W * 0.60, baseY = gy - 2;
+  for (let c = 0; c < courses; c++) {
+    const y = baseY - (c + 1) * bh;
+    for (let col = 0; col < cols; col++) {
+      const x = baseX + col * bw + (c % 2 ? bw / 2 : 0) - bw;
+      ctx.fillStyle = (c === courses - 1 && fxT > 0) ? '#e9c27a' : '#b07a44';
+      ctx.fillRect(x, y, bw - 3, bh - 3);
+      ctx.strokeStyle = 'rgba(60,35,10,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(x, y, bw - 3, bh - 3);
+    }
+  }
+  // faint outline of the finished structure to come
+  ctx.strokeStyle = 'rgba(90,60,25,0.25)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5;
+  ctx.strokeRect(baseX - bw, baseY - L.goal * bh, cols * bw - 3, L.goal * bh); ctx.setLineDash([]);
+  // laborers hauling bricks
+  drawWorker(W * 0.30, gy, sceneTime, '#7a5a3a', '#d8a070', 0);
+  drawWorker(W * 0.41, gy, sceneTime + 1.3, '#5a7a6a', '#e2b487', 1.6);
+  drawWorker(W * 0.50, gy, sceneTime + 2.1, '#6a6a9a', '#caa074', 0.8);
+  // the Egyptian taskmaster with his whip
+  drawTaskmaster(W * 0.14, gy);
+  meter(14, 14, 150, '🧱 Store-city', courses / L.goal, '#c08a3a', '#7a4a14');
+  if (fxT > 0) sceneBanner('A course of bricks is laid', courses + ' of ' + L.goal + ' complete');
 }
 
 // ============================================================
-// Red Sea finale — the sea parts, you cross, the waters close.
-// Phases by finaleT (seconds): 0–1.6 part · 1.6–3.8 cross · 3.8–5.4 close · then win.
+// STAGE 2 — The Ten Plagues
 // ============================================================
-// Phases by finaleT (s):  part 0–1.4 · cross 1.4–3.4 · engulf 3.4–4.7 · reveal 4.7–6.2
-function drawFinale(dt) {
-  const gy = groundY(), t = finaleT;
-  const part   = clamp01(t / 1.4);
-  const cross  = clamp01((t - 1.4) / 2.0);
-  const engulf = clamp01((t - 3.4) / 1.3);
-  const reveal = clamp01((t - 4.7) / 1.5);
+function drawPalace(x, gy) {
+  const w = 150, h = 120;
+  ctx.fillStyle = '#b89668'; ctx.fillRect(x - w / 2, gy - h, w, h);
+  ctx.fillStyle = '#a07f50';
+  for (let i = 0; i < 5; i++) ctx.fillRect(x - w / 2 + 12 + i * 28, gy - h + 12, 13, h - 18);
+  ctx.fillStyle = '#8a6a40'; ctx.fillRect(x - w / 2 - 6, gy - h - 10, w + 12, 12);
+}
+function drawEgyptBase() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#f2d49a'); g.addColorStop(1, '#e3b878');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const gy = groundY();
+  ctx.fillStyle = '#cfa264'; pyramid(W * 0.30, gy, 150, 95); pyramid(W * 0.44, gy, 100, 64);
+  drawPalace(W * 0.76, gy);
+  ctx.fillStyle = '#caa468'; ctx.fillRect(0, gy, W, H - gy);
+  const nileTop = gy + (H - gy) * 0.42;
+  ctx.fillStyle = (levelDone >= 1) ? '#7e1f1f' : '#3f93cf';
+  ctx.fillRect(0, nileTop, W * 0.5, H - nileTop);
+  ctx.fillStyle = (levelDone >= 1) ? 'rgba(150,40,40,0.5)' : 'rgba(255,255,255,0.35)';
+  for (let i = 0; i < 6; i++) { const yy = nileTop + 8 + i * 7; ctx.fillRect((sceneTime * 18 + i * 40) % (W * 0.5), yy, 18, 2); }
+}
+function drawSwarm(n, sp, color, gy) {
+  ctx.fillStyle = color;
+  for (let i = 0; i < n; i++) {
+    const bx = (i * 53) % W;
+    const by = gy - 16 - ((i * 97) % Math.floor(gy * 0.6));
+    const x = bx + Math.sin(sceneTime * sp + i) * 14;
+    const y = by + Math.cos(sceneTime * sp * 1.3 + i * 1.7) * 10;
+    ctx.fillRect(x, y, 2.4, 2.4);
+  }
+}
+function drawFrogs() {
+  const gy = groundY();
+  for (let i = 0; i < 14; i++) {
+    const x = ((i * 61 + sceneTime * 40) % (W + 40)) - 20;
+    const hop = Math.abs(Math.sin(sceneTime * 4 + i)) * 18, y = gy - 6 - hop;
+    ctx.fillStyle = '#4a8a3a'; ctx.beginPath(); ctx.ellipse(x, y, 9, 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#2e5a24'; ctx.beginPath(); ctx.arc(x - 3, y - 3, 1.4, 0, Math.PI * 2); ctx.arc(x + 3, y - 3, 1.4, 0, Math.PI * 2); ctx.fill();
+  }
+}
+function drawDeadCow(x, gy) {
+  ctx.save(); ctx.translate(x, gy - 2);
+  ctx.fillStyle = 'rgba(60,35,10,0.18)'; ctx.beginPath(); ctx.ellipse(0, 4, 46, 7, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#9a7b54'; ctx.beginPath(); ctx.ellipse(0, -12, 40, 16, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-40, -16, 12, 9, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#7a5e3e'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  for (const lx of [-18, -6, 8, 20]) { ctx.beginPath(); ctx.moveTo(lx, -22); ctx.lineTo(lx + 4, -40); ctx.stroke(); }
+  ctx.strokeStyle = '#3a2a18'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(-44, -18); ctx.lineTo(-40, -14); ctx.moveTo(-40, -18); ctx.lineTo(-44, -14); ctx.stroke();
+  ctx.restore();
+}
+function drawBoils() {
+  const gy = groundY();
+  drawWalker(W * 0.5, gy, sceneTime * 0.25, { scale: H / 300, speed: 0.6, robe: '#7a5a3a', skin: '#d8a070' });
+  ctx.fillStyle = '#b83030';
+  for (let i = 0; i < 22; i++) {
+    const x = W * 0.5 + Math.sin(i * 1.7) * (8 + (i % 7) * 4);
+    const y = gy - 22 - (i * 11) % 70;
+    ctx.beginPath(); ctx.arc(x, y, 2.6, 0, Math.PI * 2); ctx.fill();
+  }
+}
+function drawHail(dt) {
+  ctx.strokeStyle = 'rgba(230,240,255,0.85)'; ctx.lineWidth = 2;
+  for (let i = 0; i < 70; i++) {
+    const x = ((i * 89 + sceneTime * 420) % (W + 40)) - 20;
+    const y = ((i * 53 + sceneTime * 640) % (H + 40)) - 20;
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 4, y + 12); ctx.stroke();
+  }
+  if (fxT > LEVELS[1].pause - 0.25) { ctx.fillStyle = 'rgba(255,255,255,0.30)'; ctx.fillRect(0, 0, W, H); }
+}
+function drawPassover() {
+  ctx.fillStyle = 'rgba(8,10,30,0.82)'; ctx.fillRect(0, 0, W, H);
+  const gy = groundY(), x = W * 0.5, w = 120, h = 130;
+  ctx.fillStyle = 'rgba(230,230,255,0.7)'; ctx.beginPath(); ctx.arc(W * 0.8, H * 0.2, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#3a3050'; ctx.fillRect(x - w / 2, gy - h, w, h);
+  const dw = 44, dh = 80;
+  ctx.fillStyle = '#1a1428'; ctx.fillRect(x - dw / 2, gy - dh, dw, dh);
+  const glow = 0.6 + 0.4 * Math.sin(sceneTime * 3);
+  ctx.fillStyle = 'rgba(180,30,30,' + glow.toFixed(2) + ')';
+  ctx.fillRect(x - dw / 2 - 5, gy - dh - 6, dw + 10, 7);
+  ctx.fillRect(x - dw / 2 - 5, gy - dh, 5, dh);
+  ctx.fillRect(x + dw / 2, gy - dh, 5, dh);
+}
+function plagueEffect(p, dt) {
+  const gy = groundY();
+  switch (p) {
+    case 1: ctx.fillStyle = 'rgba(120,10,10,0.12)'; ctx.fillRect(0, 0, W, H); break;
+    case 2: drawFrogs(); break;
+    case 3: drawSwarm(450, 1.2, 'rgba(80,60,30,0.7)', gy); break;
+    case 4: drawSwarm(280, 2.4, 'rgba(20,20,20,0.8)', gy); break;
+    case 5: drawDeadCow(W * 0.55, gy); break;
+    case 6: drawBoils(); break;
+    case 7: drawHail(dt); break;
+    case 8: drawSwarm(360, 2.0, 'rgba(120,130,30,0.85)', gy); break;
+    case 9: ctx.fillStyle = 'rgba(5,5,20,0.82)'; ctx.fillRect(0, 0, W, H); break;
+    case 10: drawPassover(); break;
+  }
+}
+function drawPlagueTally(p) {
+  const n = 10, dotR = 7, g = 8, total = n * (dotR * 2 + g) - g;
+  let x = (W - total) / 2 + dotR; const y = 20;
+  ctx.textBaseline = 'middle';
+  for (let i = 0; i < n; i++) {
+    ctx.beginPath(); ctx.arc(x, y, dotR, 0, Math.PI * 2);
+    ctx.fillStyle = i < p ? '#c0392b' : 'rgba(255,255,255,0.5)'; ctx.fill();
+    ctx.strokeStyle = 'rgba(40,20,10,0.5)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = i < p ? '#fff' : 'rgba(40,20,10,0.55)';
+    ctx.font = '700 8px Inter, system-ui, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(String(i + 1), x, y + 0.5);
+    x += dotR * 2 + g;
+  }
+  ctx.textBaseline = 'alphabetic';
+}
+function drawPlagues(dt) {
+  drawEgyptBase();
+  const p = Math.min(levelDone, 10);
+  if (p >= 1) plagueEffect(p, dt);
+  drawPlagueTally(p);
+  if (fxT > 0 && p >= 1) { const pl = PLAGUES[p - 1]; sceneBanner('Plague ' + p + ': ' + pl.n, pl.d); }
+}
 
+// ============================================================
+// STAGE 3 — Race to the Red Sea (the chariot chase)
+// ============================================================
+function drawArmy(t) { const ax = armyX(); for (let i = 3; i >= 0; i--) drawRig(ax - i * 46, t + i * 0.4, armyOpts()); }
+function armyOpts() {
+  return { scale: H / 380, gallop: 15, lean: -0.04,
+    wood: '#4a3320', trim: '#8a6a36', horse: '#6b5236', mane: '#2e2316', robe: '#5a4a8a',
+    skin: '#caa074', helmet: '#8a7f4a', spearTip: true };
+}
+function armyX() { return W * 0.16; }
+function playerX() { return armyX() + 40 + (gapShown / 100) * (W * 0.50); }
+function drawHUD() {
+  meter(14, 14, 150, '🌊 Red Sea', levelDone / LEVELS[2].goal, '#2f86c8', '#0e4d80');
+  meter(W - 164, 14, 150, '🐎 Army', 1 - gapShown / 100, '#d77a3a', '#9a3a1a', true);
+}
+function drawChase(dt) {
   drawBackground(sceneTime);
   drawDust(dt);
-
+  drawArmy(sceneTime);
+  if (gapShown < 45) {
+    const ax = armyX();
+    ctx.fillStyle = 'rgba(150,110,60,' + (0.18 * (1 - gapShown / 45)).toFixed(3) + ')';
+    ctx.fillRect(0, groundY() - 80, ax + 30, 80);
+  }
+  drawIsraelites(playerX(), sceneTime);
+  if (surgeT > 0) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)'; ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) { const yy = groundY() - 30 - i * 22; ctx.beginPath(); ctx.moveTo(playerX() + 20, yy); ctx.lineTo(playerX() + 20 - 40 * surgeT - i * 6, yy); ctx.stroke(); }
+  }
+  drawHUD();
+}
+// Red Sea finale — the sea parts, you cross, the waters close.
+function drawFinale(dt) {
+  const gy = groundY(), t = finaleT;
+  const part = clamp01(t / 1.4), cross = clamp01((t - 1.4) / 2.0);
+  const engulf = clamp01((t - 3.4) / 1.3), reveal = clamp01((t - 4.7) / 1.5);
+  drawBackground(sceneTime);
+  drawDust(dt);
   const seaLeft = W * 0.44, seaTop = H * 0.26;
-  // standing sea on the right, with a dry parted corridor — until the engulf swallows it
   if (engulf < 1) {
     const wg = ctx.createLinearGradient(0, seaTop, 0, H); wg.addColorStop(0, '#3f93cf'); wg.addColorStop(1, '#13456f');
     ctx.fillStyle = wg; ctx.fillRect(seaLeft, seaTop, W - seaLeft, H - seaTop);
@@ -1066,36 +1286,23 @@ function drawFinale(dt) {
       waterEdge(seaLeft, corrMidY + open / 2, W - seaLeft, false);
     }
   }
-
-  // the Israelites cross to the right and walk off to safety
-  if (reveal <= 0) {
-    const ix = playerX() + cross * (W * 0.6);
-    drawIsraelites(Math.min(ix, W + 150), sceneTime);
-  }
-
-  // Pharaoh's four chariots charge in after them, then are consumed
+  if (reveal <= 0) { const ix = playerX() + cross * (W * 0.6); drawIsraelites(Math.min(ix, W + 150), sceneTime); }
   if (engulf < 0.98) {
     const ax = armyX() + cross * (W * 0.52);
     ctx.save(); ctx.globalAlpha = 1 - engulf;
     for (let i = 3; i >= 0; i--) drawRig(ax - i * 46, sceneTime + i * 0.4, armyOpts());
     ctx.restore();
   }
-
-  // the Israelites already safe on the far shore (revealed as the water recedes)
   if (reveal > 0) drawIsraelites(W * 0.66, sceneTime * 0.25);
-
-  // the sea RISES to engulf the whole screen, consuming Pharaoh, then recedes
   const lvl = clamp01(engulf - reveal);
   if (lvl > 0.001) {
     const top = H - lvl * H;
     const fg = ctx.createLinearGradient(0, top, 0, H); fg.addColorStop(0, '#56abe1'); fg.addColorStop(1, '#0f3f68');
     ctx.fillStyle = fg; ctx.fillRect(0, top, W, H - top);
-    // foamy crest along the surface
     ctx.fillStyle = 'rgba(255,255,255,0.85)';
     ctx.beginPath(); ctx.moveTo(0, top);
     for (let x = 0; x <= W; x += 16) ctx.lineTo(x, top + Math.sin((x + scroll) * 0.05 + t * 6) * 5);
     ctx.lineTo(W, top + 12); ctx.lineTo(0, top + 12); ctx.closePath(); ctx.fill();
-    // spray flecks above the surge
     ctx.fillStyle = 'rgba(255,255,255,0.6)';
     for (let i = 0; i < 12; i++) { const sx = (i / 12) * W + Math.sin(t * 7 + i) * 12; ctx.beginPath(); ctx.arc(sx, top - Math.abs(Math.sin(t * 5 + i)) * 16, 3 + (i % 3), 0, Math.PI * 2); ctx.fill(); }
   }
@@ -1103,11 +1310,163 @@ function drawFinale(dt) {
 }
 function waterEdge(x, y, w, top) {
   ctx.beginPath(); ctx.moveTo(x, y);
-  for (let i = 0; i <= w; i += 18) {
-    const yy = y + Math.sin((i + scroll) * 0.08) * 4 * (top ? -1 : 1);
-    ctx.lineTo(x + i, yy);
-  }
+  for (let i = 0; i <= w; i += 18) { const yy = y + Math.sin((i + scroll) * 0.08) * 4 * (top ? -1 : 1); ctx.lineTo(x + i, yy); }
   ctx.lineTo(x + w, y + (top ? -8 : 8)); ctx.lineTo(x, y + (top ? -8 : 8)); ctx.closePath(); ctx.fill();
+}
+
+// ============================================================
+// STAGE 4 — Wandering the Desert
+// ============================================================
+function drawPillar(x, gy) {
+  for (let i = 0; i < 7; i++) {
+    ctx.fillStyle = 'rgba(245,245,252,0.14)';
+    ctx.beginPath(); ctx.ellipse(x + Math.sin(sceneTime + i) * 3, gy - 34 - i * 30, 24 - i * 1.6, 19, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(240,150,40,0.5)'; ctx.beginPath(); ctx.ellipse(x, gy - 22, 17, 13, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(250,210,120,0.6)'; ctx.beginPath(); ctx.ellipse(x, gy - 24, 9, 8, 0, 0, Math.PI * 2); ctx.fill();
+}
+function drawManna(dt) {
+  const count = fxT > 0 ? 60 : 22;
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  for (let i = 0; i < count; i++) {
+    const x = (i * 71 + sceneTime * 30) % W;
+    const y = (i * 47 + sceneTime * 120) % groundY();
+    ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+  }
+}
+function drawDesert(dt) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#cfe2f0'); g.addColorStop(0.6, '#ecdcb4'); g.addColorStop(1, '#d8bf86');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const gy = groundY(), L = LEVELS[3], prog = levelDone / L.goal;
+  // Mount Sinai grows nearer on the horizon as the journey advances
+  const mh = 70 + prog * 150, mw = 150 + prog * 120, mx = W * 0.82;
+  ctx.fillStyle = '#9a8a6a';
+  ctx.beginPath(); ctx.moveTo(mx - mw / 2, gy); ctx.lineTo(mx, gy - mh); ctx.lineTo(mx + mw / 2, gy); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#b6a584'; ctx.beginPath(); ctx.moveTo(mx - mw * 0.18, gy - mh * 0.64); ctx.lineTo(mx, gy - mh); ctx.lineTo(mx + mw * 0.18, gy - mh * 0.64); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#d8b176'; duneRow(gy - 4, 0.0, 280, 26);
+  ctx.fillStyle = '#caa468'; ctx.fillRect(0, gy, W, H - gy);
+  ctx.fillStyle = '#b8924f'; ctx.fillRect(0, gy, W, 4);
+  const cx = W * 0.18 + prog * (W * 0.46);
+  drawPillar(cx - 36, gy);
+  drawIsraelites(cx, sceneTime);
+  drawManna(dt);
+  meter(14, 14, 150, '⛰️ To Mount Sinai', prog, '#caa050', '#7a5a20');
+  if (fxT > 0) sceneBanner('Manna from heaven', 'God provides bread for the journey');
+}
+
+// ============================================================
+// STAGE 5 — Mount Sinai (the Ten Commandments)
+// ============================================================
+function lightning(x, y0, y1) {
+  ctx.beginPath(); ctx.moveTo(x, y0);
+  let y = y0;
+  while (y < y1) { y += rand(10, 24); ctx.lineTo(x + rand(-12, 12), Math.min(y, y1)); }
+  ctx.stroke();
+}
+function drawTablets() {
+  const gy = groundY(), tw = 92, th = 152, y = gy - th - 6, x1 = W * 0.10, x2 = x1 + tw + 12;
+  [[0, x1], [1, x2]].forEach(([half, tx]) => {
+    ctx.fillStyle = '#d3c6a6'; roundTopRect(tx, y, tw, th, 36); ctx.fill();
+    ctx.strokeStyle = '#8a7c5c'; ctx.lineWidth = 2; roundTopRect(tx, y, tw, th, 36); ctx.stroke();
+    for (let r = 0; r < 5; r++) {
+      const idx = half * 5 + r, ly = y + 42 + r * 22, lit = idx < levelDone;
+      ctx.font = '800 9px Inter, system-ui, sans-serif'; ctx.textAlign = 'left';
+      ctx.fillStyle = lit ? '#5a3a0a' : 'rgba(90,80,60,0.4)';
+      ctx.fillText(ROMAN[idx], tx + 11, ly - 2);
+      ctx.fillStyle = lit ? '#7a5a1a' : 'rgba(90,80,60,0.30)';
+      ctx.fillRect(tx + 30, ly - 6, tw - 42, 3);
+      if (idx === levelDone - 1 && fxT > 0) { ctx.fillStyle = 'rgba(255,210,120,0.5)'; roundRect(tx + 6, ly - 12, tw - 12, 16, 4); ctx.fill(); }
+    }
+  });
+}
+function drawSinai(dt) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#332f48'); g.addColorStop(1, '#6a5f6a');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const gy = groundY(), L = LEVELS[4], prog = levelDone / L.goal;
+  const mx = W * 0.66, base = gy, mw = W * 0.72, mh = H * 0.66;
+  ctx.fillStyle = '#4a4250';
+  ctx.beginPath(); ctx.moveTo(mx - mw / 2, base); ctx.lineTo(mx, base - mh); ctx.lineTo(mx + mw / 2, base); ctx.closePath(); ctx.fill();
+  for (let i = 0; i < 6; i++) { ctx.fillStyle = 'rgba(40,36,46,' + (0.4 - i * 0.05).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(mx + Math.sin(sceneTime + i) * 6, base - mh - 8 - i * 22, 18 + i * 5, 0, Math.PI * 2); ctx.fill(); }
+  ctx.fillStyle = 'rgba(240,120,40,' + (0.5 + 0.3 * Math.sin(sceneTime * 4)).toFixed(2) + ')';
+  ctx.beginPath(); ctx.arc(mx, base - mh + 6, 16, 0, Math.PI * 2); ctx.fill();
+  if (fxT > L.pause - 0.25) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; lightning(mx + rand(-70, 70), 0, base - mh + 10);
+    ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(0, 0, W, H);
+  }
+  ctx.fillStyle = '#5a5040'; ctx.fillRect(0, gy, W, H - gy);
+  const moX = mx - mw / 2 + 30 + prog * (mw / 2) * 0.7, moY = base - prog * mh * 0.9;
+  drawWalker(moX, moY, sceneTime, { scale: 0.7, speed: 5, robe: '#d8d0c4', skin: '#e7b07a', staff: true });
+  drawTablets();
+  meter(W - 164, 14, 150, '📜 Commandments', prog, '#e0c060', '#8a6a20', true);
+  if (fxT > 0 && levelDone >= 1) sceneBanner('Commandment ' + ROMAN[levelDone - 1], COMMANDMENTS[levelDone - 1]);
+}
+
+// ============================================================
+// STAGE 6 — The Fall of Jericho
+// ============================================================
+function drawCity(x, gy, laps) {
+  const w = 170, h = 120;
+  ctx.fillStyle = '#c9b07e'; ctx.fillRect(x - w / 2, gy - h, w, h);
+  ctx.fillStyle = '#b89a64';
+  for (let i = 0; i < 7; i++) ctx.fillRect(x - w / 2 + i * (w / 7), gy - h - 10, w / 7 - 4, 12);
+  ctx.fillStyle = '#bfa470'; ctx.fillRect(x - w / 2 - 12, gy - h - 18, 24, h + 18); ctx.fillRect(x + w / 2 - 12, gy - h - 18, 24, h + 18);
+  ctx.fillStyle = '#7a5a36'; ctx.beginPath(); ctx.moveTo(x - 18, gy); ctx.lineTo(x - 18, gy - 30); ctx.arc(x, gy - 30, 18, Math.PI, 0); ctx.lineTo(x + 18, gy); ctx.closePath(); ctx.fill();
+  // cracks deepen with each lap (deterministic — no per-frame jitter)
+  ctx.strokeStyle = 'rgba(80,50,20,0.5)'; ctx.lineWidth = 2;
+  for (let i = 0; i < laps; i++) {
+    const cx = x - w / 2 + 18 + (i * 23) % (w - 30);
+    ctx.beginPath(); ctx.moveTo(cx, gy - h + 10);
+    let yy = gy - h + 10, k = 0;
+    while (yy < gy - 8) { yy += 18; ctx.lineTo(cx + Math.sin(i * 3 + k) * 6, yy); k++; }
+    ctx.stroke();
+  }
+}
+function drawMarchers(dt) {
+  const gy = groundY(), n = 6, spacing = 78, span = W + spacing * 2, base = (sceneTime * 60) % span;
+  for (let i = 0; i < n; i++) {
+    const x = ((base + i * spacing) % span) - spacing, priest = (i % 3 === 0);
+    drawWalker(x, gy + 4, sceneTime, { scale: H / 360, speed: 7, ph: i, robe: priest ? '#d8d0c4' : ROBES[i % ROBES.length], skin: '#e7b07a', staff: priest });
+    if (priest) { ctx.save(); ctx.translate(x + 9, gy - 26); ctx.fillStyle = '#e8d27a'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -4); ctx.lineTo(15, 4); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  }
+}
+function drawJericho(dt) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#bfe0ef'); g.addColorStop(1, '#dfe8c0');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const gy = groundY(), L = LEVELS[5];
+  ctx.fillStyle = '#9ab36a'; ctx.fillRect(0, gy, W, H - gy);
+  ctx.fillStyle = '#8aa35c'; ctx.fillRect(0, gy, W, 4);
+  drawCity(W * 0.72, gy, Math.min(levelDone, L.goal));
+  drawMarchers(dt);
+  meter(14, 14, 150, '🎺 Marches', Math.min(levelDone, L.goal) / L.goal, '#caa050', '#7a5a20');
+  if (fxT > 0) sceneBanner('March ' + Math.min(levelDone, L.goal) + ' of ' + L.goal, levelDone >= L.goal ? 'Now the trumpets sound!' : 'Marching around Jericho');
+}
+function drawJerichoFall(dt) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#bfe0ef'); g.addColorStop(1, '#dfe8c0');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  const gy = groundY(); ctx.fillStyle = '#9ab36a'; ctx.fillRect(0, gy, W, H - gy);
+  const t = finaleT, fall = clamp01(t / 2.2);
+  const x = W * 0.72, w = 170, h = 120, cols = 8, rows = 5, bw = w / cols, bh = h / rows;
+  // towers + battlements crumble into falling blocks
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const delay = (r / rows) * 0.4 + ((c % 2) ? 0.1 : 0);
+    const f = clamp01((fall - delay) / 0.6);
+    const bx = x - w / 2 + c * bw, by = gy - h + r * bh;
+    const dy = f * f * (H * 0.5), rot = f * ((c % 2) ? 0.7 : -0.7);
+    ctx.save(); ctx.translate(bx + bw / 2, by + bh / 2 + dy); ctx.rotate(rot);
+    ctx.fillStyle = '#c9b07e'; ctx.fillRect(-bw / 2 + 1, -bh / 2 + 1, bw - 2, bh - 2);
+    ctx.strokeStyle = 'rgba(80,50,20,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2 + 1, -bh / 2 + 1, bw - 2, bh - 2);
+    ctx.restore();
+  }
+  ctx.fillStyle = 'rgba(200,180,140,' + (0.5 * fall).toFixed(2) + ')';
+  for (let i = 0; i < 30; i++) { const dx = x - w / 2 + (i * 53) % w; const dy = gy - Math.sin(t * 2 + i) * 18 - ((i * 7) % 60) * fall; ctx.beginPath(); ctx.arc(dx, dy, 10 + (i % 4) * 4, 0, Math.PI * 2); ctx.fill(); }
+  drawMarchers(dt);
+  ctx.save(); ctx.globalAlpha = clamp01((t - 1.4) / 0.8); ctx.textAlign = 'center';
+  ctx.font = '800 26px Inter, system-ui, sans-serif'; ctx.fillStyle = '#7a3520';
+  ctx.fillText('The walls fell down flat!', W / 2, H * 0.2); ctx.restore();
 }
 
 // ============================================================
@@ -1120,43 +1479,51 @@ function loop(ts) {
   if (dt > 0.05) dt = 0.05;
   sceneTime += dt;
 
-  // speed: base + surge, eased
   surgeT = Math.max(0, surgeT - dt);
   stumbleT = Math.max(0, stumbleT - dt);
-  const targetSpeed = (state === 'finale') ? 240 : (stumbleT > 0 ? 40 : 120 + surgeT * 260);
+  fxT = Math.max(0, fxT - dt);
+
+  const chasing = (state === 'play' && LEVELS[levelIdx].chase);
+  const seaFinale = (state === 'finale' && finaleKind === 'redsea');
+  let targetSpeed;
+  if (seaFinale) targetSpeed = 240;
+  else if (chasing) targetSpeed = (stumbleT > 0 ? 40 : 120 + surgeT * 260);
+  else targetSpeed = 26;
   speed += (targetSpeed - speed) * Math.min(1, dt * 4);
   scroll += speed * dt;
-
-  // ease the shown gap toward the real one so the Israelites glide forward/back
   gapShown += (gap - gapShown) * Math.min(1, dt * 3);
 
-  // hooves kick dust
-  if (state === 'run' || state === 'finale') {
+  if (chasing || seaFinale) {
     if (Math.random() < 0.4) spawnDust(playerX() - 24, groundY(), 1, speed * 0.4);
-    if (state !== 'finale' && Math.random() < 0.7) spawnDust(armyX() - 30, groundY(), 1, speed);
+    if (!seaFinale && Math.random() < 0.7) spawnDust(armyX() - 30, groundY(), 1, speed);
   }
 
-  // shake
   ctx.save();
   if (shake > 0) { ctx.translate(rand(-shake, shake), rand(-shake, shake)); shake = Math.max(0, shake - dt * 30); }
 
   if (state === 'finale') {
     finaleT += dt;
-    drawFinale(dt);
-    if (finaleT >= 6.6) { ctx.restore(); winGame(); return; }
-  } else if (state === 'run') {
-    // passive drain only while a fresh question waits (dawdling lets them gain)
-    if (!answered) {
-      gap -= pace.drain * dt;
+    if (finaleKind === 'redsea') { drawFinale(dt); if (finaleT >= 6.6) { ctx.restore(); finaleDone(); return; } }
+    else { drawJerichoFall(dt); if (finaleT >= 4.0) { ctx.restore(); finaleDone(); return; } }
+  } else if (state === 'play') {
+    const L = LEVELS[levelIdx];
+    if (L.chase && !answered) {
+      gap -= CHASE.drain * dt;
       if (gap <= 0) { gap = 0; ctx.restore(); caught(); return; }
-    } else {
-      revealT -= dt;
-      if (revealT <= 0) nextQuestion();
     }
-    drawChase(dt);
+    if (answered) {
+      revealT -= dt;
+      if (revealT <= 0) {
+        if (lastOfLevel) {
+          lastOfLevel = false;
+          if (L.id === 'jericho') startJerichoFall(); else levelClear();
+        } else nextQuestion();
+      }
+    }
+    L.scene(dt);
   } else {
-    // menu / caught / win — keep the scene alive underneath the overlay
-    drawChase(dt);
+    // menu / intro / clear / caught / win — keep the scene alive behind the overlay
+    LEVELS[levelIdx].scene(dt);
   }
   ctx.restore();
 }
@@ -1164,7 +1531,7 @@ function loop(ts) {
 // ============================================================
 // Question flow
 // ============================================================
-function drawCard() { if (!queue.length) queue = shuffle(DECK[level] || DECK.medium); return queue.pop(); }
+function drawCard() { if (!queue.length) queue = shuffle(DECK[difficulty] || DECK.medium); return queue.pop(); }
 
 function nextQuestion() {
   answered = false;
@@ -1172,8 +1539,7 @@ function nextQuestion() {
   const opts = shuffle([current.a, ...current.wrong]);
   current._opts = opts;
   const tag = document.getElementById('qtag');
-  tag.textContent = CAT_LABEL[current.cat];
-  tag.className = 'qtag tag-' + current.cat;
+  tag.textContent = CAT_LABEL[current.cat]; tag.className = 'qtag tag-' + current.cat;
   document.getElementById('qtext').textContent = current.q;
   answersEl.innerHTML = '';
   opts.forEach((val, i) => {
@@ -1187,78 +1553,145 @@ function nextQuestion() {
 }
 
 function answer(idx) {
-  if (state !== 'run' || answered) return;
-  const btns = [...answersEl.children];
-  const btn = btns[idx]; if (!btn) return;
+  if (state !== 'play' || answered) return;
+  const btns = [...answersEl.children], btn = btns[idx];
+  if (!btn) return;
   answered = true;
   btns.forEach(b => b.disabled = true);
-  const correct = (btn.dataset.val === current.a);
+  const correct = (btn.dataset.val === current.a), L = LEVELS[levelIdx];
 
   if (correct) {
     correctCount++; streak++; if (streak > bestStreak) bestStreak = streak;
     btn.classList.add('correct');
-    gap = Math.min(100, gap + pace.gain);
-    progress += pace.step;
-    surgeT = 0.6;
     if (window.HSGSound) HSGSound.correct();
     if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
-    spawnDust(playerX() - 50, groundY(), 14, speed + 200);
-    updateBadges();
-    if (progress >= 100) { revealT = 0.5; startFinale(); return; }
+    levelDone++; fxT = L.pause;
+    updateBadges(); updateLevelProgress();
+    const reached = levelDone >= L.goal;
+    if (L.chase) {
+      gap = Math.min(100, gap + CHASE.gain); surgeT = 0.6;
+      spawnDust(playerX() - 50, groundY(), 14, speed + 200);
+      if (reached) { startRedSeaFinale(); return; }
+    } else if (reached) {
+      lastOfLevel = true; revealT = Math.max(L.pause, 1.1); return;
+    }
+    revealT = L.pause;
   } else {
     streak = 0;
     btn.classList.add('wrong');
     btns.forEach(b => { if (b.dataset.val === current.a) b.classList.add('reveal'); });
-    gap = Math.max(0, gap - pace.loss);
-    stumbleT = 0.5; shake = 7;
     if (window.HSGSound) HSGSound.wrong();
     if (window.HSGfx) HSGfx.flash('rgba(150,40,40,0.28)');
-    if (gap <= 0) { revealT = 0.4; setTimeout(() => { if (state === 'run') caught(); }, 650); return; }
+    if (L.chase) {
+      gap = Math.max(0, gap - CHASE.loss); stumbleT = 0.5; shake = 7;
+      if (gap <= 0) { revealT = 0.4; setTimeout(() => { if (state === 'play') caught(); }, 650); return; }
+    } else { shake = 5; }
+    revealT = 1.5;   // linger on a miss so the right answer can be read
   }
-  revealT = correct ? 0.85 : 1.5;   // linger a touch longer on a miss to read the answer
 }
 
+// ============================================================
+// HUD / journey map
+// ============================================================
 function updateBadges() {
   document.getElementById('scoreBadge').textContent = correctCount + ' correct';
   document.getElementById('bestBadge').textContent = 'Best ' + getBest();
+}
+function updateLevelProgress() {
+  const L = LEVELS[levelIdx];
+  document.getElementById('lvlProgress').textContent = L.name + ' · ' + Math.min(levelDone, L.goal) + '/' + L.goal;
+}
+function renderJourneyMap(currentDone) {
+  journeyMap.innerHTML = '';
+  LEVELS.forEach((L, i) => {
+    const done = i < levelIdx || (currentDone && i === levelIdx);
+    const d = document.createElement('div');
+    d.className = 'jstage' + (i === levelIdx && !currentDone ? ' active' : '') + (done ? ' done' : '');
+    d.innerHTML = '<span class="jemoji">' + L.emoji + '</span><span class="jname">' + L.name + '</span><span class="jnum">' + (i + 1) + '</span>';
+    journeyMap.appendChild(d);
+  });
 }
 
 // ============================================================
 // Lifecycle
 // ============================================================
-function startGame(key) {
-  level = DECK[key] ? key : 'medium';
-  pace = PACES[level];
-  state = 'run';
-  gap = 62; gapShown = 62; progress = 0; correctCount = 0; streak = 0; bestStreak = 0;
-  queue = []; answered = false; dust = []; surgeT = 0; stumbleT = 0; finaleT = 0;
+function startJourney(diff) {
+  difficulty = DECK[diff] ? diff : 'medium';
+  correctCount = 0; streak = 0; bestStreak = 0; levelIdx = 0;
   startOverlay.classList.add('hidden');
+  updateBadges();
+  showLevelIntro();
+}
+
+function resetLevelState() {
+  levelDone = 0; answered = true; lastOfLevel = false; queue = []; current = null;
+  fxT = 0; surgeT = 0; stumbleT = 0; finaleT = 0; dust = [];
+  gap = 62; gapShown = 62;
+}
+
+function showLevelIntro() {
+  const L = LEVELS[levelIdx];
+  state = 'intro';
+  resetLevelState();
+  document.getElementById('introEmoji').textContent = L.emoji;
+  document.getElementById('introTag').textContent = 'Stage ' + (levelIdx + 1) + ' of ' + LEVELS.length;
+  document.getElementById('introTitle').textContent = L.name;
+  document.getElementById('introRef').textContent = L.ref;
+  document.getElementById('introStory').textContent = L.story;
+  introOverlay.classList.remove('hidden');
+  clearOverlay.classList.add('hidden');
   overOverlay.classList.add('hidden');
   winOverlay.classList.add('hidden');
-  document.getElementById('qpanel').style.opacity = '1';
-  updateBadges();
+  renderJourneyMap();
+  updateLevelProgress();
+  document.getElementById('qtext').textContent = 'Read the story, then press Begin.';
+  document.getElementById('qtag').textContent = L.ref; document.getElementById('qtag').className = 'qtag tag-events';
+  answersEl.innerHTML = '';
+}
+
+function beginLevel() {
+  const L = LEVELS[levelIdx];
+  introOverlay.classList.add('hidden');
+  state = 'play'; answered = false; lastOfLevel = false;
+  if (L.chase) { gap = 62; gapShown = 62; }
   nextQuestion();
 }
 
-function startFinale() {
-  state = 'finale'; finaleT = 0; answered = true;
-  // clear the question panel during the crossing
+function levelClear() {
+  const L = LEVELS[levelIdx];
+  state = 'clear'; answered = true;
+  document.getElementById('clearEmoji').textContent = L.emoji;
+  document.getElementById('clearTitle').textContent = L.name + ' — complete!';
+  document.getElementById('clearTeach').innerHTML = L.teach;
+  clearOverlay.classList.remove('hidden');
+  renderJourneyMap(true);
+  if (window.HSGSound) HSGSound.finish(true);
+  if (window.HSGfx) HSGfx.confetti({ count: 50 });
+}
+
+function continueJourney() {
+  clearOverlay.classList.add('hidden');
+  levelIdx++;
+  if (levelIdx >= LEVELS.length) { winGame(); return; }
+  showLevelIntro();
+}
+
+function startRedSeaFinale() {
+  state = 'finale'; finaleKind = 'redsea'; finaleT = 0; answered = true;
+  finaleDone = levelClear;
   document.getElementById('qtext').textContent = 'The Red Sea opens before you…';
+  document.getElementById('qtag').textContent = 'Exodus 14'; document.getElementById('qtag').className = 'qtag tag-places';
   answersEl.innerHTML = '';
-  document.getElementById('qtag').textContent = 'Exodus';
-  document.getElementById('qtag').className = 'qtag tag-places';
   if (window.HSGSound) HSGSound.streak(3);
 }
 
-function winGame() {
-  state = 'win';
-  if (bestStreak > getBest()) setBest(bestStreak);
-  document.getElementById('wCorrect').textContent = correctCount;
-  document.getElementById('wBestStreak').textContent = bestStreak;
-  winOverlay.classList.remove('hidden');
-  updateBadges();
-  if (window.HSGSound) HSGSound.finish(true);
-  if (window.HSGfx) HSGfx.confetti({ count: 90, big: true });
+function startJerichoFall() {
+  state = 'finale'; finaleKind = 'jericho'; finaleT = 0; answered = true;
+  finaleDone = winGame;
+  document.getElementById('qtext').textContent = 'The priests blow the trumpets and the people shout…';
+  document.getElementById('qtag').textContent = 'Joshua 6'; document.getElementById('qtag').className = 'qtag tag-places';
+  answersEl.innerHTML = '';
+  if (window.HSGSound) HSGSound.streak(3);
 }
 
 function caught() {
@@ -1267,34 +1700,58 @@ function caught() {
   shake = 10;
   document.getElementById('fsCorrect').textContent = correctCount;
   document.getElementById('fsBestStreak').textContent = bestStreak;
-  document.getElementById('fsProgress').textContent = Math.round(progress) + '%';
   overOverlay.classList.remove('hidden');
   updateBadges();
   if (window.HSGSound) HSGSound.finish(false);
 }
 
-function toMenu() {
-  state = 'menu';
+// Run the chase again from the start of the Red Sea stage (keeps journey progress).
+function retryChase() {
   overOverlay.classList.add('hidden');
-  winOverlay.classList.add('hidden');
+  resetLevelState();
+  state = 'play'; answered = false;
+  updateLevelProgress();
+  nextQuestion();
+}
+
+function winGame() {
+  state = 'win';
+  if (bestStreak > getBest()) setBest(bestStreak);
+  document.getElementById('wCorrect').textContent = correctCount;
+  document.getElementById('wBestStreak').textContent = bestStreak;
+  document.getElementById('wStages').textContent = LEVELS.length;
+  winOverlay.classList.remove('hidden');
+  renderJourneyMap(true);
+  updateBadges();
+  if (window.HSGSound) HSGSound.finish(true);
+  if (window.HSGfx) HSGfx.confetti({ count: 120, big: true });
+}
+
+function toMenu() {
+  state = 'menu'; levelIdx = 0;
+  resetLevelState();
+  introOverlay.classList.add('hidden'); clearOverlay.classList.add('hidden');
+  overOverlay.classList.add('hidden'); winOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
-  document.getElementById('qtext').textContent = 'Press a pace to begin the escape.';
-  document.getElementById('qtag').textContent = 'People';
-  document.getElementById('qtag').className = 'qtag tag-people';
+  renderJourneyMap();
+  document.getElementById('qtext').textContent = 'Pick a difficulty to begin the journey.';
+  document.getElementById('qtag').textContent = 'People'; document.getElementById('qtag').className = 'qtag tag-people';
+  document.getElementById('lvlProgress').textContent = '';
   answersEl.innerHTML = '';
 }
 
 // ---------------- Wiring ----------------
 document.querySelectorAll('.pace-btn').forEach(b => {
-  b.addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.pace); });
+  b.addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startJourney(b.dataset.pace); });
 });
-document.getElementById('againBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
-document.getElementById('winAgainBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
+document.getElementById('introBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); beginLevel(); });
+document.getElementById('clearBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); continueJourney(); });
+document.getElementById('againBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); retryChase(); });
 document.getElementById('menuBtn').addEventListener('click', toMenu);
-function paceKey() { return level; }
+document.getElementById('winAgainBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startJourney(difficulty); });
 
 document.addEventListener('keydown', e => {
-  if (state !== 'run' || answered) return;
+  if (state !== 'play' || answered) return;
   const i = ['a', 'b', 'c', 'd'].indexOf(e.key.toLowerCase());
   if (i === -1) return;
   const btn = answersEl.children[i];
@@ -1302,8 +1759,10 @@ document.addEventListener('keydown', e => {
 });
 
 setupCanvas();
+renderJourneyMap();
 updateBadges();
 rafId = requestAnimationFrame(loop);
+
 </script>
 
 </body>

@@ -1117,6 +1117,7 @@ function loop(ts) {
     drawSailing(dt);   // menu
   }
   ctx.restore();
+  drawMiniMap();
 }
 
 // ============================================================
@@ -1245,6 +1246,7 @@ function arrive() {
   if (bestStreak > getBest()) setBest(bestStreak);
   updateBadges();
   fillLandingCard(stop);
+  updateMapCaption();
 }
 
 function fillLandingCard(stop) {
@@ -1277,7 +1279,7 @@ function fillLandingCard(stop) {
       '<a class="play-btn secondary" href="../../subjects/bible.html" style="text-decoration:none;display:inline-flex;align-items:center;justify-content:center">← Bible</a>';
     answersEl.appendChild(actions);
     document.getElementById('voyAgain').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startGame(paceKey()); });
-    state = 'done';
+    // stay in 'landing' so the Rome vignette keeps drawing; the buttons end the run.
   } else {
     const next = ITINERARY[legIndex + 1];
     const btn = document.createElement('button');
@@ -1296,6 +1298,7 @@ function continueVoyage() {
   storm = START_STORM;
   state = 'sail';
   nextQuestion();
+  updateMapCaption();
 }
 
 function startGame(key) {
@@ -1311,6 +1314,7 @@ function startGame(key) {
   document.getElementById('qpanel').style.opacity = '1';
   updateBadges();
   nextQuestion();
+  updateMapCaption();
 }
 
 function updateBadges() {
@@ -1330,6 +1334,7 @@ function toMenu() {
   document.getElementById('qtag').textContent = 'Story';
   document.getElementById('qtag').className = 'qtag tag-story';
   answersEl.innerHTML = '';
+  updateMapCaption();
 }
 
 // ---------------- Wiring ----------------
@@ -1348,6 +1353,7 @@ document.addEventListener('keydown', e => {
 
 setupCanvas();
 updateBadges();
+updateMapCaption();
 rafId = requestAnimationFrame(loop);
 </script>
 
