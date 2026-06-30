@@ -433,8 +433,8 @@ function nextQuestion() {
     // Only celebrate when the region was just finished by play (not on reload).
     if (regionJustFinished) {
       regionJustFinished = false;
-      rail.gameOver(bestStreak);   // region complete — bank the longest streak (prompts if Top 10)
       HSGfx.confetti({ count: 90, big: true });
+      const banked = bestStreak;
       HSGfx.showSummary({
         title: `${REGIONS[currentRegion].label} complete!`,
         correct: total, total: total + scoreWrong, best: bestStreak,
@@ -442,6 +442,8 @@ function nextQuestion() {
           try { localStorage.removeItem(storageKey(currentRegion)); } catch (e) {}
           loadRegion(currentRegion);
         },
+        extraHTML: '<div id="mqBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+        onMount: card => rail.gameOver(banked, card.querySelector('#mqBoard')),
       });
     }
     return;

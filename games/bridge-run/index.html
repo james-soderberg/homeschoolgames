@@ -46,16 +46,20 @@
 function ri(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
 function pick(arr) { return arr[ri(0, arr.length - 1)]; }
 
-function build(prompt, answer) {
+function build(prompt, answer, opts) {
+  const lo = opts && opts.min != null ? opts.min : null;
+  const hi = opts && opts.max != null ? opts.max : null;
+  const ok = v => v !== answer && (lo == null || v >= lo) && (hi == null || v <= hi);
   const set = new Set([answer]);
   let g = 0;
-  while (set.size < 4 && g++ < 80) {
+  while (set.size < 4 && g++ < 200) {
     const span = Math.max(4, Math.floor(Math.abs(answer) * 0.4) + 3);
     const v = answer + (Math.random() < 0.5 ? -1 : 1) * ri(1, span);
-    if (v !== answer) set.add(v);
+    if (ok(v)) set.add(v);
   }
   let e = 1;
-  while (set.size < 4) { if (!set.has(answer + e)) set.add(answer + e); e++; }
+  while (set.size < 4 && e < 500) { if (ok(answer + e)) set.add(answer + e); if (set.size < 4 && ok(answer - e)) set.add(answer - e); e++; }
+  if (lo != null && hi != null) for (let v = lo; v <= hi && set.size < 4; v++) if (ok(v)) set.add(v);   // range fallback
   const choices = [...set];
   for (let i = choices.length - 1; i > 0; i--) { const j = ri(0, i); [choices[i], choices[j]] = [choices[j], choices[i]]; }
   return { prompt, choices, answer };
@@ -63,10 +67,9 @@ function build(prompt, answer) {
 
 function makeQuestion(level, tier) {
   if (tier === 'easy') {
-    // K–2: addition & subtraction, small numbers growing slowly
-    const cap = Math.min(10 + level * 3, 30);
-    if (Math.random() < 0.5) { const a = ri(1, cap), b = ri(1, cap); return build(`${a} + ${b}`, a + b); }
-    const a = ri(2, cap), b = ri(1, a); return build(`${a} − ${b}`, a - b);
+    // K–2: single-digit answers only (0–9), never negative, doesn't ramp with level
+    if (Math.random() < 0.5) { const ans = ri(0, 9), a = ri(0, ans), b = ans - a; return build(`${a} + ${b}`, ans, { min: 0, max: 9 }); }
+    const a = ri(1, 9), b = ri(0, a); return build(`${a} − ${b}`, a - b, { min: 0, max: 9 });
   }
   if (tier === 'medium') {
     // Grades 3–5: times tables, division, larger add/sub

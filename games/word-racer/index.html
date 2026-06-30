@@ -607,19 +607,14 @@ function endRace() {
   if (window.HSGSound) HSGSound.finish(place === 1);
   showResults(place, racers, wpm, acc, isBest);
 
-  // Record the race to the Top-10 fastest-WPM leaderboard; prompt for a name
-  // (with placement) only if this run cracks it.
-  renderBoard();
+  // Show the Top-10 fastest-WPM board + an inline name entry (with placement)
+  // right in the results screen — only if this race cracks the board.
   if (window.HSGStreak) {
-    HSGStreak.record({
+    HSGStreak.endPanel('#wrBoard', {
       gameId: 'word-racer', gameName: 'Word Racer', unit: 'wpm',
-      score: wpm, minStreak: 1, onDone: function () { renderBoard(); }
+      score: wpm, minStreak: 1
     });
   }
-}
-
-function renderBoard() {
-  if (window.HSGStreak) HSGStreak.renderBoardInto('#wrBoard', { gameId: 'word-racer', unit: 'wpm', minStreak: 1 });
 }
 
 function confettiBurst() {

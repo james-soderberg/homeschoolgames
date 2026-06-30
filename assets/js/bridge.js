@@ -15,11 +15,26 @@
   const W = 54, START_PLAT = 96, RUN_X0 = 48, HEAD_START = 5, KEYS = ['A','B','C','D'];
   const GROUND_BOTTOM = 34;   // % of stage height where the path sits
 
-  // base walking speed (px/sec) per difficulty tier index
-  const TIER_SPEED = [26, 34, 44, 56];
+  // base walking speed (px/sec) per difficulty tier index (Easy is gentle for little kids)
+  const TIER_SPEED = [18, 34, 44, 56];
 
-  // Each level is a wooden drawbridge over a different vista (built in buildScene).
-  const TERRAINS = [{ key:'canyon' }, { key:'volcano' }, { key:'city' }, { key:'sky' }];
+  // Each level is a different TRAVERSAL, not just a new backdrop. Level 1 is the
+  // flat wooden drawbridge; after that the laid path RISES (rise = px climbed per
+  // block) so the runner scales a mountain, a cliff, and beyond. block = art class,
+  // rail = rope side-rail (drawbridge only), climb = use base/summit not gatehouse.
+  // sx = horizontal px per block step (W = walk across; 0 = climb straight up).
+  // rise = vertical px per block step. struct = finish structure to draw.
+  const MODES = [
+    { key:'bridge',   terrain:'canyon',   sx:W, rise:0,  block:'',       rail:true,  struct:'gate',   climb:false },
+    { key:'mountain', terrain:'mountain', sx:W, rise:12, block:'ledge',  rail:false, struct:'summit', climb:true  },
+    { key:'cliff',    terrain:'cliff',    sx:0, rise:30, block:'piton',  rail:false, struct:'summit', climb:true  },
+    { key:'ladder',   terrain:'cliff',    sx:0, rise:24, block:'rung',   rail:false, struct:'summit', climb:true, ladder:true },
+    { key:'boat',     terrain:'river',    sx:W, rise:0,  block:'raft',   rail:false, struct:'dock',   climb:false, boat:true },
+    { key:'volcano',  terrain:'volcano',  sx:W, rise:15, block:'ledge',  rail:false, struct:'summit', climb:true  },
+    { key:'tower',    terrain:'city',     sx:W, rise:20, block:'girder', rail:false, struct:'summit', climb:true  },
+    { key:'sky',      terrain:'sky',      sx:W, rise:9,  block:'cloud',  rail:false, struct:'summit', climb:true  },
+  ];
+  const modeFor = lvl => MODES[(lvl - 1) % MODES.length];
 
   const style = document.createElement('style');
   style.textContent = `
@@ -50,6 +65,19 @@
     .br-block::before { left:4px; } .br-block::after { right:4px; }
     .br-block.new { animation:brDrop .28s cubic-bezier(.3,1.5,.5,1); }
     @keyframes brDrop { from{ transform:translateY(-34px) rotate(-8deg); opacity:.2; } to{ transform:none; opacity:1; } }
+    /* climbing-path block art (mountain ledges, cliff pitons, steel girders, clouds) */
+    .br-block.ledge { background:linear-gradient(#8a6f4e,#5d452a); border-top-color:#a98a63; border-bottom-color:#3c2c19; }
+    .br-block.piton { background:linear-gradient(#9a9488,#615b4d); border-top-color:#b8b2a3; border-bottom-color:#3e392f; }
+    .br-block.piton::before, .br-block.piton::after { background:#c9c2b0; box-shadow:0 1px 1px rgba(0,0,0,.4); }
+    .br-block.girder { background:repeating-linear-gradient(90deg,#586071 0,#586071 10px,#454c5b 10px,#454c5b 20px); border-top-color:#7a8294; border-bottom-color:#2c313c; }
+    .br-block.cloud { background:linear-gradient(#ffffff,#dde9f6); border-radius:14px; border-top-color:#fff; border-bottom-color:#cdd9e6; box-shadow:0 6px 12px rgba(80,110,150,.2); }
+    .br-block.cloud::before, .br-block.cloud::after { display:none; }
+    .br-block.rung { height:9px; background:linear-gradient(#7a5230,#583a1d); border-radius:5px; border-top-color:#9a6f44; border-bottom-color:#3a2613; }
+    .br-block.rung::before, .br-block.rung::after { display:none; }
+    .br-block.raft { background:repeating-linear-gradient(90deg,#a9763f 0,#a9763f 9px,#8f5f2f 9px,#8f5f2f 18px); border-top-color:#c2925a; border-bottom-color:#5a3c1d; }
+    .br-char.climbing svg { transform:rotate(-9deg); transition:transform .25s; }
+    .br-char.boat::before { content:''; position:absolute; left:-12px; right:-12px; bottom:-2px; height:18px; z-index:-1;
+      background:linear-gradient(#8a5a2c,#5e3c18); border-radius:0 0 14px 14px / 0 0 22px 22px; box-shadow:0 4px 6px rgba(0,0,0,.32); }
 
     /* rope side-rail + posts */
     .br-rail { position:absolute; height:4px; border-radius:99px;
@@ -199,7 +227,7 @@
       inputRow = $('.br-input-row'), inputEl = $('.br-num'),
       levelEl = $('[data-level]'), distEl = $('[data-dist]'), leadbar = $('.br-leadbar'), leadFill = $('.br-leadbar > i');
 
-    let tierIdx = 0, level = 1, terrain, q;
+    let tierIdx = 0, level = 1, terrain, mode = MODES[0], q;
     let runnerX, builtBlocks, target, speed, coasting;
     let running = false, over = false, raf = 0, lastTs = 0;
     let totalCorrect = 0, totalQ = 0, streak = 0, bestStreak = 0, distanceBase = 0;
@@ -207,6 +235,14 @@
 
     const builtFrontX = () => START_PLAT + builtBlocks * W;
     const finishX = () => START_PLAT + target * W;
+    // Scroll the world so the runner stays centred. sx<W tips the path toward
+    // vertical (sx=0 ⇒ climb straight up); rise scrolls it DOWN so he ascends.
+    const setWorld = () => {
+      const p = (runnerX - START_PLAT) / W;
+      const tx = charScreenX - (START_PLAT + p * mode.sx);
+      const ty = Math.max(0, p) * mode.rise;
+      world.style.transform = `translate(${tx.toFixed(1)}px, ${ty.toFixed(1)}px)`;
+    };
 
     function showStart() {
       running = false; over = false; cancelAnimationFrame(raf);
@@ -225,14 +261,15 @@
     }
 
     function startLevel() {
-      terrain = TERRAINS[(level - 1) % TERRAINS.length];
+      mode = modeFor(level);
+      terrain = { key: mode.terrain };
       target = 11 + level * 2;
       speed = TIER_SPEED[tierIdx] + (level - 1) * 6;
       runnerX = RUN_X0;
       builtBlocks = Math.min(HEAD_START, target);
       coasting = false; over = false;
       charScreenX = Math.max(120, (stage.clientWidth || 700) * 0.3);
-      charEl.className = 'br-char';
+      charEl.className = 'br-char' + (mode.climb ? ' climbing' : '') + (mode.boat ? ' boat' : '');
       charEl.style.setProperty('--wd', (22 / speed).toFixed(2) + 's');
       buildScene();
       renderBlocks(false);
@@ -268,6 +305,24 @@
         html += ridge(`${G - 2}`, 90, '#a9743f', .8, '0 100%,15% 45%,30% 70%,50% 35%,68% 65%,82% 40%,100% 60%,100% 100%');
         html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#7a5a3c,#3a2616 55%,#160d06)"></div>`;
         html += `<div class="layer" style="bottom:5%;height:5px;background:linear-gradient(90deg,transparent,#bfe0ef88,transparent);filter:blur(2px)"></div>`;
+      } else if (terrain.key === 'mountain') {
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#7fb6e6 0%,#bfe0f2 52%,#eaf5fb 100%)"></div>`;
+        html += `<div class="layer" style="top:10%;left:14%;width:62px;height:62px;border-radius:50%;background:radial-gradient(circle,#fffbe8,#ffe39a);box-shadow:0 0 44px 14px rgba(255,227,154,.5)"></div>`;
+        html += ridge(`${G - 2}`, 200, 'linear-gradient(#9db3d4,#6c83a8)', .85, '0 100%,16% 34%,28% 58%,44% 14%,58% 50%,72% 22%,86% 52%,100% 30%,100% 100%');
+        html += ridge(`${G + 22}`, 70, '#eef4fb', .9, '0 100%,42% 10%,50% 22%,58% 10%,100% 100%');   // snow cap
+        html += `<div class="layer" style="bottom:0;height:${G + 60}%;left:34%;right:0;background:linear-gradient(120deg,#6e8b4e,#3f5a2e);clip-path:polygon(0 100%,26% 46%,100% 0,100% 100%)"></div>`;
+        let pine = '';
+        for (let i = 0; i < 7; i++) pine += `<div style="position:absolute;left:${46 + i * 7}%;bottom:${G + 6 + i * 7}%;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-bottom:18px solid #2f4a24"></div>`;
+        html += `<div class="layer" style="inset:0">${pine}</div>`;
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#5d7a3e,#34471f 60%,#1c2810)"></div>`;
+      } else if (terrain.key === 'cliff') {
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#cfe7f5 0%,#a7c8dd 46%,#6b8aa0 100%)"></div>`;
+        html += ridge(`${G - 4}`, 90, '#8aa0b4', .5, '0 100%,20% 50%,40% 70%,60% 45%,80% 68%,100% 50%,100% 100%');   // hazy far peaks
+        html += `<div class="layer" style="bottom:0;height:150%;left:48%;right:0;background:linear-gradient(90deg,#564c43,#73685b 35%,#8b7f6e);box-shadow:inset 28px 0 50px rgba(0,0,0,.28)"></div>`;   // the cliff wall
+        let cr = '';
+        for (let i = 0; i < 7; i++) cr += `<div style="position:absolute;left:${52 + i * 6}%;top:${(i * 13) % 40}%;width:3px;height:${40 + (i * 17 % 40)}%;background:rgba(0,0,0,.18)"></div>`;
+        html += `<div class="layer" style="inset:0">${cr}</div>`;
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#6a5e4e,#3a3024)"></div>`;
       } else if (terrain.key === 'volcano') {
         html += `<div class="layer" style="inset:0;background:linear-gradient(#3a1f2e 0%,#6e2f25 60%,#a23a1e 100%)"></div>`;
         html += `<div class="layer" style="bottom:${G - 4}%;left:8%;width:340px;height:200px;background:#2a1a16;clip-path:polygon(0 100%,38% 8%,46% 14%,62% 8%,100% 100%)"></div>`;
@@ -293,6 +348,14 @@
         }
         html += `<div class="layer" style="inset:0">${far}</div><div class="layer" style="inset:0">${near}</div>`;
         html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#3a4258,#202738 60%,#11151f)"></div>`;
+      } else if (terrain.key === 'river') {
+        html += `<div class="layer" style="inset:0;background:linear-gradient(#9fd0f2 0%,#c7e7f5 55%,#cdeede 100%)"></div>`;
+        html += `<div class="layer" style="top:12%;left:72%;width:58px;height:58px;border-radius:50%;background:radial-gradient(circle,#fffbe8,#ffe39a);opacity:.9"></div>`;
+        html += ridge(`${G}`, 80, 'linear-gradient(#6e9e54,#4f7a3a)', .85, '0 100%,10% 50%,30% 64%,50% 44%,70% 62%,90% 48%,100% 58%,100% 100%');   // green banks
+        html += `<div class="layer" style="bottom:0;height:${G}%;background:linear-gradient(#5fb6d6,#2f7fa6 60%,#1d5f80)"></div>`;   // water
+        let sh = '';
+        for (let i = 0; i < 12; i++) sh += `<div style="position:absolute;bottom:${(i * 7) % G}%;left:${(i * 53 % 92)}%;width:${28 + i * 4}px;height:2px;background:rgba(255,255,255,.4);border-radius:99px"></div>`;
+        html += `<div class="layer" style="inset:0">${sh}</div>`;   // shimmer
       } else { // sky
         html += `<div class="layer" style="inset:0;background:linear-gradient(#5aa6e8 0%,#9fd0f2 60%,#d8eefb 100%)"></div>`;
         html += `<div class="layer" style="top:10%;left:70%;width:70px;height:70px;border-radius:50%;background:radial-gradient(circle,#fffbe8,#ffe9a0);box-shadow:0 0 60px 22px rgba(255,233,160,.5)"></div>`;
@@ -309,92 +372,118 @@
 
     // The drawbridge itself (scrolls with the world).
     function renderBlocks(animateLast) {
-      const deckTop = `calc(${GROUND_BOTTOM}% )`;     // plank top sits on the ground line
+      const sx = mode.sx, rise = mode.rise;
+      const blkBottom = i => `calc(${GROUND_BOTTOM}% - 16px + ${(i * rise).toFixed(1)}px)`;
+      const fvx = START_PLAT + target * sx;          // finish: visual x (= finishX when sx=W)
+      const summitY = (target * rise).toFixed(1);    // finish: px above the start line
       blocksEl.innerHTML = '';
 
-      // planks
+      // path blocks (planks / ledges / pitons / rungs / girders / clouds / rafts)
       for (let i = 0; i < builtBlocks; i++) {
         const blk = document.createElement('div');
-        blk.className = 'br-block' + (animateLast && i === builtBlocks - 1 ? ' new' : '');
-        blk.style.left = (START_PLAT + i * W + 2) + 'px';
+        blk.className = 'br-block' + (mode.block ? ' ' + mode.block : '') + (animateLast && i === builtBlocks - 1 ? ' new' : '');
+        blk.style.left = (START_PLAT + i * sx + 2) + 'px';
         blk.style.width = (W - 4) + 'px';
-        blk.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
+        blk.style.bottom = blkBottom(i);
         blocksEl.appendChild(blk);
       }
-      // rope side-rail + posts along the built span
-      if (builtBlocks > 0) {
+      // two vertical side-rails make the rungs read as a ladder
+      if (mode.ladder && builtBlocks > 0) {
+        const h = (builtBlocks - 1) * rise + 30;
+        [8, W - 12].forEach(off => {
+          const rl = document.createElement('div');
+          rl.className = 'br-post';
+          rl.style.left = (START_PLAT + off) + 'px';
+          rl.style.bottom = `calc(${GROUND_BOTTOM}% - 10px)`;
+          rl.style.height = h + 'px';
+          blocksEl.appendChild(rl);
+        });
+      }
+      // rope side-rail + posts — flat drawbridge only
+      if (mode.rail && builtBlocks > 0) {
         const span = builtBlocks * W;
         const rail = document.createElement('div');
         rail.className = 'br-rail';
-        rail.style.left = START_PLAT + 'px';
-        rail.style.width = span + 'px';
+        rail.style.left = START_PLAT + 'px'; rail.style.width = span + 'px';
         rail.style.bottom = `calc(${GROUND_BOTTOM}% + 20px)`;
         blocksEl.appendChild(rail);
         for (let i = 0; i <= builtBlocks; i += 2) {
           const post = document.createElement('div');
           post.className = 'br-post';
           post.style.left = (START_PLAT + i * W) + 'px';
-          post.style.bottom = `${GROUND_BOTTOM}%`;
-          post.style.height = '22px';
+          post.style.bottom = `${GROUND_BOTTOM}%`; post.style.height = '22px';
           blocksEl.appendChild(post);
         }
       }
 
-      // towers (start gatehouse + finish) and chains/flag
       platsEl.innerHTML = '';
-      const towerH = 150, towerDrop = 60;
-      const tower = (x, w) => {
-        const t = document.createElement('div');
-        t.className = 'br-tower';
-        t.style.left = x + 'px'; t.style.width = w + 'px';
-        t.style.height = towerH + 'px';
-        t.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px)`;
-        t.innerHTML = '<div class="br-merlon"></div>';
-        platsEl.appendChild(t);
-        return t;
+      const startSlab = document.createElement('div');
+      startSlab.className = 'br-slab';
+      startSlab.style.left = '-40px'; startSlab.style.width = (START_PLAT + 44) + 'px';
+      startSlab.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
+      platsEl.appendChild(startSlab);
+
+      // finish flag at a given vertical expression (poles + pennant)
+      const flagAt = (x, expr) => {
+        const pole = document.createElement('div');
+        pole.className = 'br-flagpole';
+        pole.style.left = (x + 24) + 'px'; pole.style.height = '34px';
+        pole.style.bottom = `calc(${expr})`;
+        platsEl.appendChild(pole);
+        const flag = document.createElement('div');
+        flag.className = 'br-flag';
+        flag.style.left = (x + 27) + 'px';
+        flag.style.bottom = `calc(${expr} + 28px)`;
+        platsEl.appendChild(flag);
       };
-      tower(-40, START_PLAT + 40);                 // start gatehouse (off left edge)
-      tower(finishX(), 200);                        // finish tower
 
-      // walkable stone threshold slabs at deck level (so the runner stands on a surface)
-      [[-40, START_PLAT + 44], [finishX() - 4, 204]].forEach(([x, w]) => {
-        const slab = document.createElement('div');
-        slab.className = 'br-slab';
-        slab.style.left = x + 'px'; slab.style.width = w + 'px';
-        slab.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
-        platsEl.appendChild(slab);
-      });
-
-      // short drawbridge hinge chains from the gatehouse top down to the deck
-      const topY = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px - 16px)`;
-      [-7, 1].forEach(off => {
-        const ch = document.createElement('div');
-        ch.className = 'br-chain';
-        ch.style.left = (START_PLAT - 16 + off) + 'px';
-        ch.style.bottom = topY;
-        ch.style.width = '78px';
-        ch.style.transform = 'rotate(72deg)';
-        platsEl.appendChild(ch);
-      });
-
-      // finish flag on the far tower
-      const pole = document.createElement('div');
-      pole.className = 'br-flagpole';
-      pole.style.left = (finishX() + 24) + 'px';
-      pole.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px - 6px)`;
-      pole.style.height = '34px';
-      platsEl.appendChild(pole);
-      const flag = document.createElement('div');
-      flag.className = 'br-flag';
-      flag.style.left = (finishX() + 27) + 'px';
-      flag.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px + 12px)`;
-      platsEl.appendChild(flag);
+      if (mode.struct === 'gate') {
+        const towerH = 150, towerDrop = 60;
+        const tower = (x, w) => {
+          const t = document.createElement('div');
+          t.className = 'br-tower';
+          t.style.left = x + 'px'; t.style.width = w + 'px'; t.style.height = towerH + 'px';
+          t.style.bottom = `calc(${GROUND_BOTTOM}% - ${towerDrop}px)`;
+          t.innerHTML = '<div class="br-merlon"></div>';
+          platsEl.appendChild(t);
+        };
+        tower(-40, START_PLAT + 40);
+        tower(fvx, 200);
+        const finSlab = document.createElement('div');
+        finSlab.className = 'br-slab';
+        finSlab.style.left = (fvx - 4) + 'px'; finSlab.style.width = '204px';
+        finSlab.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
+        platsEl.appendChild(finSlab);
+        const topY = `calc(${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px - 16px)`;
+        [-7, 1].forEach(off => {
+          const ch = document.createElement('div');
+          ch.className = 'br-chain';
+          ch.style.left = (START_PLAT - 16 + off) + 'px'; ch.style.bottom = topY;
+          ch.style.width = '78px'; ch.style.transform = 'rotate(72deg)';
+          platsEl.appendChild(ch);
+        });
+        flagAt(fvx, `${GROUND_BOTTOM}% - ${towerDrop}px + ${towerH}px - 6px`);
+      } else if (mode.struct === 'summit') {
+        const summit = document.createElement('div');
+        summit.className = 'br-slab';
+        summit.style.left = (fvx - 4) + 'px'; summit.style.width = '200px';
+        summit.style.bottom = `calc(${GROUND_BOTTOM}% - 16px + ${summitY}px)`;
+        platsEl.appendChild(summit);
+        flagAt(fvx, `${GROUND_BOTTOM}% + ${summitY}px`);
+      } else { // dock — the far shore for the boat
+        const dock = document.createElement('div');
+        dock.className = 'br-slab';
+        dock.style.left = (fvx - 4) + 'px'; dock.style.width = '204px';
+        dock.style.bottom = `calc(${GROUND_BOTTOM}% - 16px)`;
+        platsEl.appendChild(dock);
+        flagAt(fvx, `${GROUND_BOTTOM}% + 2px`);
+      }
     }
 
     function placeChar() {
       charEl.style.left = charScreenX + 'px';
       charEl.style.bottom = `calc(${GROUND_BOTTOM}% - 6px)`;
-      world.style.transform = `translateX(${charScreenX - runnerX}px)`;
+      setWorld();
     }
 
     function loop(ts) {
@@ -403,7 +492,7 @@
       const dt = Math.min(0.05, (ts - lastTs) / 1000);
       lastTs = ts;
       runnerX += speed * dt;
-      world.style.transform = `translateX(${charScreenX - runnerX}px)`;
+      setWorld();
 
       const dist = distanceBase + Math.floor((runnerX - RUN_X0) / W * 10);
       distEl.textContent = Math.max(0, dist) + ' m';
@@ -495,14 +584,19 @@
 
     function summary() {
       const dist = distanceBase + Math.floor((runnerX - RUN_X0) / W * 10);
-      rail.gameOver(bestStreak);   // run over — bank the longest streak (prompts if Top 10)
+      const banked = bestStreak;
       if (fx) {
         fx.showSummary({
           title: `${tiers[tierIdx].label} · Level ${level} · ${Math.max(0,dist)} m`,
           correct: totalCorrect, total: totalQ, best: bestStreak,
           onPlayAgain: () => { rail.reset(); level = 1; totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0; startLevel(); },
           allGamesHref: cfg.allGamesHref || '../../index.html',
+          extraHTML: '<div id="brBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+          // run over — bank the longest streak + show placement/name entry inline
+          onMount: card => rail.gameOver(banked, card.querySelector('#brBoard')),
         });
+      } else {
+        rail.gameOver(banked);
       }
     }
 
@@ -542,11 +636,11 @@
       _preview: (n, blocks) => {
         running = false; cancelAnimationFrame(raf);
         startEl.style.display = 'none'; promptEl.style.display = 'none'; answersEl.innerHTML = '';
-        level = n; terrain = TERRAINS[(n - 1) % TERRAINS.length];
+        level = n; mode = modeFor(n); terrain = { key: mode.terrain };
         target = 11 + n * 2; builtBlocks = Math.min(blocks || 7, target);
         runnerX = START_PLAT + (builtBlocks - 2) * W;
         charScreenX = Math.max(120, (stage.clientWidth || 700) * 0.3);
-        charEl.className = 'br-char walk';
+        charEl.className = 'br-char walk' + (mode.climb ? ' climbing' : '') + (mode.boat ? ' boat' : '');
         buildScene(); renderBlocks(false); placeChar();
         levelEl.textContent = 'Level ' + n;
       },

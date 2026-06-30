@@ -225,6 +225,42 @@
   padding: 0.75rem 0.4rem; font-size: 0.85rem; line-height: 1.5;
 }
 
+/* hint marker + legend */
+.hsg-hint-star { color: #E0531B; font-weight: 800; margin-left: 0.1em; }
+.hsg-board-legend {
+  margin: 0.5rem 0 0; padding-top: 0.45rem; border-top: 1px solid var(--cream-dark);
+  font-size: 0.74rem; color: var(--ink-light); text-align: left;
+}
+
+/* ======================= INLINE END PANEL ======================= */
+/* The placement + name entry shown INSIDE an end screen (no popup). */
+.hsg-ep-prompt {
+  background: linear-gradient(#FFF6E6, #FFFBF3);
+  border: 1.5px solid var(--gold, #C4A040); border-radius: 12px;
+  padding: 0.75rem 0.85rem; margin-bottom: 0.85rem; text-align: center;
+}
+.hsg-ep-place {
+  margin: 0 0 0.55rem; font-family: var(--font-serif), serif;
+  font-size: 1.02rem; font-weight: 700; color: var(--ink);
+}
+.hsg-ep-place strong { color: #E0531B; }
+.hsg-ep-row { display: flex; gap: 0.5rem; }
+.hsg-ep-input {
+  flex: 1; min-width: 0; padding: 0.6rem 0.8rem;
+  border: 1.5px solid var(--border); border-radius: 9px;
+  font-family: var(--font-sans), sans-serif; font-size: 0.95rem; color: var(--ink);
+  background: #fff;
+}
+.hsg-ep-input:focus { outline: none; border-color: #E0531B; }
+.hsg-ep-save {
+  flex-shrink: 0; padding: 0.6rem 1.2rem; border: none; border-radius: 9px;
+  font-family: var(--font-sans), sans-serif; font-weight: 700; font-size: 0.95rem;
+  cursor: pointer; color: #fff;
+  background: linear-gradient(#E0531B, #E0A53B);
+}
+.hsg-ep-save:hover { filter: brightness(1.06); }
+.hsg-ep-save:disabled { opacity: 0.5; cursor: default; filter: none; }
+
 /* ======================= RECORD TOAST ======================= */
 .hsg-toast {
   position: fixed;

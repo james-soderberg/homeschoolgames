@@ -838,7 +838,7 @@
     <br><br>
     <a href="../../index.html" class="btn btn-outline">All Games</a>
 
-    <div class="circa-leaderboard"></div>
+    <div class="circa-leaderboard" id="circaEndBoard"></div>
   </div>
 
   <footer class="site-footer">
@@ -1523,8 +1523,9 @@ function soloEndGame(reason) {
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
 
-  // The run is over — bank the longest streak (prompts only if it makes the Top 10).
-  rail.gameOver();
+  // The run is over — bank the longest streak and show the placement + name entry
+  // inline on the end screen (no popup). Only shows if it makes the Top 10.
+  rail.gameOver(undefined, document.getElementById('circaEndBoard'));
 
   const hs = getHighScore();
   document.getElementById('endSubtitle').textContent =
@@ -1869,14 +1870,13 @@ function startSoloWithEra(key, tileEl) {
   }, 480);
 }
 
-// Quit a solo run: bank the longest streak (prompts only if it makes the Top 10),
-// then return to the era picker. No page reload, so the prompt can show.
+// Quit a solo run: show the end screen (with the inline placement + name entry),
+// same as a natural game-over — so there's no separate popup.
 function quitSolo() {
-  rail.gameOver();
-  document.body.classList.remove('solo-active');
-  document.getElementById('soloScreen').style.display = 'none';
-  document.getElementById('endScreen').style.display = 'none';
-  document.getElementById('setupScreen').style.display = 'block';
+  if (soloRoundNum > 0) soloEndGame('You stopped early');
+  else { document.body.classList.remove('solo-active');
+    document.getElementById('soloScreen').style.display = 'none';
+    document.getElementById('setupScreen').style.display = 'block'; }
 }
 
 function showFriendsSetup() {

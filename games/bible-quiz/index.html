@@ -452,11 +452,13 @@ let correctCount = 0, streak = 0, bestStreak = 0, runRecorded = false;
 function bankVoyage(showBoard) {
   if (!window.HSGStreak || runRecorded) return;
   runRecorded = true;
-  const board = { gameId:'bible-quiz', gameName:'Bible Quiz', level:level.key,
-                  levelName: level.key.charAt(0).toUpperCase()+level.key.slice(1), minStreak:3 };
-  const draw = () => { if (showBoard) HSGStreak.renderBoardInto('#bqBoard', board); };
-  HSGStreak.record(Object.assign({ score:bestStreak, onDone:draw }, board));
-  draw();
+  const opts = { gameId:'bible-quiz', gameName:'Bible Quiz', level:level.key,
+                 levelName: level.key.charAt(0).toUpperCase()+level.key.slice(1),
+                 minStreak:3, score:bestStreak };
+  // Reaching Rome shows the board + inline name entry in the landing card; a
+  // mid-voyage quit (no end card) falls back to the modal.
+  if (showBoard) HSGStreak.endPanel('#bqBoard', opts);
+  else HSGStreak.record(opts);
 }
 let queue = [], current = null, answered = false;
 let scroll = 0, speed = 0, surgeT = 0, heel = 0, heelTarget = 0, shake = 0, sceneTime = 0;

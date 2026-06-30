@@ -450,7 +450,7 @@ let lap = 1;                  // which time around the globe
 
 let progress = 0;             // 0..100 Fogg's position on the current lap
 let fixPos = -22;             // 0..100 Detective Fix's position (trails Fogg)
-let correctCount = 0, streak = 0, bestStreak = 0;
+let correctCount = 0, streak = 0, bestStreak = 0, hintUsed = false;
 let visited = new Set([0]);
 
 let queue = [], current = null, answered = false;
@@ -840,7 +840,7 @@ function startGame() {
   state = 'run'; lap = 1;
   progress = 0; fixPos = fixStartFor(1);
   dispProgress = 0; dispFix = fixPos;
-  correctCount = 0; streak = 0; bestStreak = 0;
+  correctCount = 0; streak = 0; bestStreak = 0; hintUsed = false;
   visited = new Set([0]);
   queue = []; answered = false; surgeT = 0; stumbleT = 0; mishapT = 0; arriveT = 0; lapHold = 0;
   pendingScore = null;
@@ -907,6 +907,7 @@ function saveName() {
   const name = ((inp.value || '').trim() || 'Traveller').slice(0, 12);
   setLastName(name);
   const entry = { name: name, streak: pendingScore.streak, lap: pendingScore.lap };
+  if (hintUsed) entry.hinted = true;
   const board = getBoard();
   board.push(entry);
   board.sort((a, b) => b.streak - a.streak);
@@ -934,10 +935,17 @@ function renderRail(highlight) {
     row.className = 'rail-row' + (me ? ' me' : '');
     const rank = document.createElement('span'); rank.className = 'rail-rank'; rank.textContent = (i + 1);
     const nm = document.createElement('span'); nm.className = 'rail-name'; nm.textContent = e.name;
+    if (e.hinted) nm.insertAdjacentHTML('beforeend', '<span style="color:#E0531B;font-weight:800"> *</span>');
     const st = document.createElement('span'); st.className = 'rail-streak'; st.textContent = '🔥 ' + e.streak;
     row.appendChild(rank); row.appendChild(nm); row.appendChild(st);
     el.appendChild(row);
   });
+  if (board.some(e => e.hinted)) {
+    const li = document.createElement('li');
+    li.style.cssText = 'list-style:none;font-size:.72rem;color:var(--ink-light);margin-top:.45rem;padding-top:.4rem;border-top:1px solid var(--border)';
+    li.innerHTML = '<span style="color:#E0531B;font-weight:800">*</span> used hints';
+    el.appendChild(li);
+  }
 }
 
 // ---------------- Wiring ----------------
@@ -946,6 +954,7 @@ document.getElementById('hintBtn').addEventListener('click', () => {
   if (state !== 'run' || answered) return;
   document.getElementById('flagBlurb').hidden = false;
   document.getElementById('hintBtn').hidden = true;
+  hintUsed = true;   // mark the run as hint-assisted (asterisk on the leaderboard)
   if (window.HSGSound) HSGSound.tick();
 });
 document.getElementById('caughtAgainBtn').addEventListener('click', again);

@@ -199,6 +199,7 @@
         <div class="es"><b id="endWords">0</b><span>Words</span></div>
         <div class="es"><b id="endBest">0</b><span>Longest ever</span></div>
       </div>
+      <div class="hsg-board" id="lsBoard" style="text-align:left;margin:0 auto 0.85rem;max-width:320px;background:rgba(255,253,244,0.96);border-radius:12px;padding:0.5rem 0.7rem"></div>
       <div class="end-actions">
         <button class="end-btn primary" id="endPlayAgain">Play again →</button>
         <button class="end-btn ghost" onclick="quitToMenu()">Change level</button>
@@ -239,11 +240,11 @@
 // letters IN SPELLING ORDER. Edges wrap around (no wall deaths).
 // The snake grows with every letter, so longer words get tricky.
 // ============================================================
-const LEVELS = {                               // stepMs = ms per move (start → fast); 15% slower than before
-  easy:     { stepMs:[414,334], decoys:4 },  // grades 1–3 • super slow
-  medium:   { stepMs:[345,270], decoys:6 },  // grades 4–7 • steady
-  hard:     { stepMs:[288,224], decoys:8 },  // high school+ • quicker
-  einstein: { stepMs:[247,190], decoys:9 }   // spelling-bee • fast
+const LEVELS = {                               // stepMs = ms per move (start → fast); higher = slower
+  easy:     { stepMs:[520,420], decoys:4 },  // grades 1–3 • super slow
+  medium:   { stepMs:[430,340], decoys:6 },  // grades 4–7 • steady
+  hard:     { stepMs:[360,280], decoys:8 },  // high school+ • quicker
+  einstein: { stepMs:[310,240], decoys:9 }   // spelling-bee • fast
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
@@ -447,7 +448,8 @@ function gameOver(reason){
   endBest.textContent = best;
   endOverlay.classList.remove('hidden');
   HSGSound.finish(false);
-  rail.gameOver(finalLen);   // record to this level's leaderboard (name prompt if it qualifies)
+  // bank the snake's length + show placement/name entry inline on the end card
+  rail.gameOver(finalLen, document.getElementById('lsBoard'));
 }
 
 function wordComplete(){

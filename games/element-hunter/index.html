@@ -323,12 +323,15 @@ function nextQuestion() {
       `<span style="color:var(--green)">🧪 You found all ${total} elements in "${curFilter.label}"!</span>`;
     if (setJustFinished) {
       setJustFinished = false;
-      rail.gameOver(bestStreak);   // set complete — bank the longest streak (prompts if Top 10)
       HSGfx.confetti({ count: 90, big: true });
+      const banked = bestStreak;
       HSGfx.showSummary({
         title: `${curFilter.label} complete!`,
         correct: total, total: total + missed, best: bestStreak,
         onPlayAgain: () => { try { localStorage.removeItem(storageKey(curFilter.key)); } catch (e) {} startSet(); },
+        extraHTML: '<div id="ehBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+        // bank the streak + show the placement/name entry INLINE in the summary card
+        onMount: card => rail.gameOver(banked, card.querySelector('#ehBoard')),
       });
     }
     return;

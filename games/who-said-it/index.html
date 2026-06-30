@@ -157,6 +157,7 @@ let collected = [];            // people filling the wall this game (in order)
 const collectedNames = new Set();
 let answered = false, current = null, advanceTimer = null;
 let totalAnswered = 0, streak = 0, bestStreak = 0;   // for the end-of-game summary
+let hintUsed = false;                                // any hint this run → leaderboard asterisk
 
 // ---- preload the portrait, skipping any that 404 ----
 function loadPortrait(p){
@@ -288,20 +289,19 @@ function handleAnswer(chosen, btn){
 }
 
 function winGame(){
-  const board = { gameId:'who-said-it', gameName:'Who Said It?', minStreak:3 };
-  const drawBoard = () => { if(window.HSGStreak) HSGStreak.renderBoardInto('#wsiBoard', board); };
+  // Show the leaderboard + inline placement/name entry right in the summary card.
+  const panel = { gameId:'who-said-it', gameName:'Who Said It?', minStreak:3,
+                  score:bestStreak, hinted:hintUsed };
   if(window.HSGfx && HSGfx.showSummary){
     HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:totalAnswered, best:bestStreak,
       onPlayAgain:resetGame,
-      extraHTML:'<div class="hsg-board" id="wsiBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
-      onMount:drawBoard });
+      extraHTML:'<div id="wsiBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+      onMount:()=>{ if(window.HSGStreak) HSGStreak.endPanel('#wsiBoard', panel); } });
   } else { resetGame(); }
-  // Bank the longest streak; prompt for a name + placement only if it makes the Top 10.
-  if(window.HSGStreak) HSGStreak.record(Object.assign({ score:bestStreak, onDone:drawBoard }, board));
 }
 function resetGame(){
   collected = []; collectedNames.clear();
-  totalAnswered = 0; streak = 0; bestStreak = 0;
+  totalAnswered = 0; streak = 0; bestStreak = 0; hintUsed = false;
   answerPool = shuffle(PEOPLE.filter(p=>!brokenImg.has(p.n)));
   buildWall(); nextCard();
 }
@@ -309,6 +309,7 @@ function resetGame(){
 document.getElementById('hintBtn').addEventListener('click', ()=>{
   document.getElementById('quoteBlurb').hidden = false;
   document.getElementById('hintBtn').hidden = true;
+  hintUsed = true;   // mark the run as hint-assisted
 });
 document.getElementById('nextBtn').addEventListener('click', ()=>{ if(answered) nextCard(); });
 document.addEventListener('keydown', e=>{

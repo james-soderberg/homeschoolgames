@@ -287,6 +287,7 @@
         <div class="fs"><b id="fsBest">0</b><span>Best Streak</span></div>
         <div class="fs"><b id="fsWave">1</b><span>Level</span></div>
       </div>
+      <div class="hsg-board" id="dsBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
       <div class="overlay-actions">
         <button class="play-btn" id="againBtn">Defend Again ⚔️</button>
         <button class="play-btn secondary" id="changeRealmBtn">Change Realm</button>
@@ -2563,9 +2564,11 @@ function quitToMenu(){
   startOverlay.classList.remove('hidden');
 }
 function endRun(showModal){
-  // Bank the longest streak of this run on BOTH defeat and surrender; the modal
-  // only appears if it cracks this realm's Top 10. (showModal kept for callers.)
-  rail.gameOver(bestStreak);
+  // Defeat shows the inline placement + name entry on the defeat screen; a quiet
+  // surrender (no end screen) falls back to the modal. Either way only records if
+  // the longest streak cracks this realm's Top 10.
+  if (showModal) rail.gameOver(bestStreak, document.getElementById('dsBoard'));
+  else rail.gameOver(bestStreak);
 }
 
 // ===================================================================

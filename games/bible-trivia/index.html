@@ -834,11 +834,13 @@ let correctCount = 0, streak = 0, bestStreak = 0, runRecorded = false;
 function bankJourney(showBoard) {
   if (!window.HSGStreak || runRecorded) return;
   runRecorded = true;
-  const board = { gameId:'bible-trivia', gameName:'The Exodus Journey', level:difficulty,
-                  levelName: difficulty.charAt(0).toUpperCase()+difficulty.slice(1), minStreak:3 };
-  const draw = () => { if (showBoard) HSGStreak.renderBoardInto('#btBoard', board); };
-  HSGStreak.record(Object.assign({ score:bestStreak, onDone:draw }, board));
-  draw();
+  const opts = { gameId:'bible-trivia', gameName:'The Exodus Journey', level:difficulty,
+                 levelName: difficulty.charAt(0).toUpperCase()+difficulty.slice(1),
+                 minStreak:3, score:bestStreak };
+  // The victory overlay shows the board + inline name entry; a quit (no overlay)
+  // falls back to the modal.
+  if (showBoard) HSGStreak.endPanel('#btBoard', opts);
+  else HSGStreak.record(opts);
 }
 let queue = [], current = null, answered = true, lastOfLevel = false;
 let scroll = 0, speed = 0, surgeT = 0, stumbleT = 0, shake = 0, sceneTime = 0;
