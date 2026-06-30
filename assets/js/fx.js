@@ -137,7 +137,7 @@
   function milestone(streak) {
     if (!streak || streak % 5 !== 0) return false;
     const tier = streak / 5; // 1,2,3,...
-    const labels = ['', `${streak} IN A ROW!`, `${streak} STREAK! 🔥`, `UNSTOPPABLE — ${streak}! 🔥`, `LEGENDARY — ${streak}! 🏆`];
+    const labels = ['', `${streak} IN A ROW!`, `${streak} STREAK! 🔥`, `UNSTOPPABLE · ${streak}! 🔥`, `LEGENDARY · ${streak}! 🏆`];
     const colors = ['', '#2A5C3F', '#C4A040', '#8B2020', '#4A2C6B'];
     const idx = Math.min(tier, 4);
     banner(labels[idx], colors[idx]);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Circa — History Card Game</title>
+  <title>Circa · History Card Game</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -725,7 +725,7 @@
     <div class="setup-icon">🏛️</div>
     <h1>Circa</h1>
     <p class="setup-tagline">A history card game</p>
-    <p class="setup-how">Pick an era — your whole hand will be cards from that time. Then choose the card <strong>closest in date</strong> to the center card!</p>
+    <p class="setup-how">Pick an era. Your whole hand will be cards from that time. Then choose the card <strong>closest in date</strong> to the center card!</p>
 
     <p class="era-prompt">Choose your era</p>
     <div class="era-grid" id="eraGrid"></div>
@@ -763,7 +763,7 @@
     <div class="game-main">
 
     <div class="solo-header">
-      <h2>Circa <span style="font-size:1rem;color:var(--ink-light);font-family:var(--font-sans);font-weight:400;">— Solo</span></h2>
+      <h2>Circa <span style="font-size:1rem;color:var(--ink-light);font-family:var(--font-sans);font-weight:400;">· Solo</span></h2>
       <div class="solo-stats">
         <div class="stat-pill best">Best <span class="stat-val" id="soloBest">0</span></div>
         <div class="stat-pill">Round <span class="stat-val" id="soloRound">1</span></div>
@@ -773,7 +773,7 @@
 
     <!-- Center card -->
     <div class="center-card-wrap">
-      <p class="center-label" id="centerLabel">Center card — find the closest in your hand</p>
+      <p class="center-label" id="centerLabel">Center card: find the closest in your hand</p>
       <div class="showdown" id="showdown">
         <div class="showdown-slot" id="centerSlot"><div id="centerCardEl"></div></div>
         <div class="showdown-gap" id="showdownGap"></div>
@@ -809,7 +809,7 @@
     </div>
 
     <div class="target-area">
-      <p class="target-label" id="targetLabel">Target card — play the card closest in date</p>
+      <p class="target-label" id="targetLabel">Target card: play the card closest in date</p>
       <div class="target-card-mount" id="targetCardEl"></div>
     </div>
 
@@ -821,7 +821,7 @@
     </div>
 
     <div id="handSection">
-      <p class="hand-label" id="handLabel">Your hand — pick one card to play</p>
+      <p class="hand-label" id="handLabel">Your hand: pick one card to play</p>
       <p class="solo-hint" id="soloHint"></p>
       <div class="hand-grid" id="handGrid"></div>
       <div class="action-bar" id="actionBar"></div>
@@ -843,7 +843,7 @@
 
   <footer class="site-footer">
     <a href="../../index.html">homeschoolgames.app</a>
-    <span style="display:block; font-size:0.72rem; color:var(--ink-light); margin-top:0.35rem;">Historical images from <a href="https://commons.wikimedia.org" rel="noopener" target="_blank" style="color:inherit;">Wikimedia Commons</a> — hover any card for its credit.</span>
+    <span style="display:block; font-size:0.72rem; color:var(--ink-light); margin-top:0.35rem;">Historical images from <a href="https://commons.wikimedia.org" rel="noopener" target="_blank" style="color:inherit;">Wikimedia Commons</a>. Hover any card for its credit.</span>
   </footer>
 
 <script src="../../assets/js/streak-rail.js"></script>
@@ -1273,7 +1273,7 @@ function resetShowdown() {
   const tl = document.getElementById('timelineWrap');
   if (tl) { tl.classList.remove('show'); tl.innerHTML = ''; }
   const label = document.getElementById('centerLabel');
-  if (label) label.textContent = 'Center card — find the closest in your hand';
+  if (label) label.textContent = 'Center card: find the closest in your hand';
 }
 
 function fmtYearShort(y) { return Math.abs(y) + (y < 0 ? ' BC' : ' AD'); }
@@ -1612,7 +1612,7 @@ function startRound() {
   const tMount = document.getElementById('targetCardEl');
   tMount.innerHTML = '';
   tMount.appendChild(makeCardFront(targetCard, 'no-hover'));
-  document.getElementById('targetLabel').textContent = 'Target card — play the card closest in date';
+  document.getElementById('targetLabel').textContent = 'Target card: play the card closest in date';
 
   document.getElementById('handSection').style.display = 'block';
   document.getElementById('revealArea').style.display = 'none';
@@ -1644,9 +1644,9 @@ function renderHand(playerIndex) {
   const player = players[playerIndex];
   const hand = hands[playerIndex];
 
-  document.getElementById('handLabel').textContent = `${player.name} — pick the card closest in date to the target`;
+  document.getElementById('handLabel').textContent = `${player.name}: pick the card closest in date to the target`;
   document.getElementById('soloHint').textContent =
-    players.length > 1 ? 'Only you should look — pick in secret, then pass the device.' : '';
+    players.length > 1 ? 'Only you should look. Pick in secret, then pass the device.' : '';
 
   const grid = document.getElementById('handGrid');
   grid.innerHTML = '';

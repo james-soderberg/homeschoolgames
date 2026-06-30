@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Word Racer — HomeschoolGames</title>
+  <title>Word Racer · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -192,7 +192,7 @@
     </div>
 
     <div class="passage" id="passage" onclick="focusGame()"></div>
-    <div class="race-hint" id="raceHint">Just start typing — the clock starts on “Go!”</div>
+    <div class="race-hint" id="raceHint">Just start typing. The clock starts on “Go!”</div>
   </section>
 
   <!-- RESULTS -->
@@ -499,7 +499,7 @@ function updateRace(pPos) {
     lastLeader = leader.name;
     setCommentary(leader.you ? "🏁 You're in the lead!" : `💨 ${leader.name} grabs the lead!`, false);
   }
-  if (!said70 && pPos >= 0.7) { said70 = true; setCommentary('🔥 Final stretch — floor it!', true); }
+  if (!said70 && pPos >= 0.7) { said70 = true; setCommentary('🔥 Final stretch! Floor it!', true); }
   if (!said90 && pPos >= 0.9) { said90 = true; setCommentary('⚡ Almost at the line!', true); }
 }
 

@@ -1,0 +1,1552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Type Invaders · HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    /* Fill the screen — the battlefield takes as much height as fits. */
+    html, body { height: 100%; }
+    body.ti-active { overflow: hidden; }
+
+    .game-layout-wide { max-width: min(1700px, 97vw); gap: 1rem; justify-content: center; }
+    .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
+    @media (max-width: 1080px) { .game-layout-wide::before { display: none; } }
+    .ti-page { margin: 0 auto; padding: 0.6rem 1rem 0.5rem; width: 100%; }
+
+    .ti-top {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.5rem;
+    }
+    .ti-top h1 { margin: 0; font-size: 1.55rem; letter-spacing: 0.01em; }
+    .stat-group { display: flex; gap: 0.45rem; align-items: center; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border);
+      border-radius: 99px; padding: 0.42rem 0.9rem; font-weight: 700;
+      font-size: 0.86rem; font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
+    }
+    .hearts { font-size: 1.02rem; letter-spacing: 0.04em; line-height: 1; }
+    .hearts .spent { filter: grayscale(1) opacity(0.35); }
+
+    /* ============ Battlefield (the sky over D.C.) ============ */
+    .ti-sky {
+      position: relative; width: 100%;
+      height: min(86vh, 940px); min-height: 480px;
+      border-radius: 16px; overflow: hidden;
+      border: 2.5px solid #10131f;
+      box-shadow: 0 12px 40px rgba(8,10,20,0.5);
+      user-select: none; touch-action: manipulation;
+      background: linear-gradient(#070912, #0d1430 55%, #14224a);
+      cursor: default;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .ti-sky::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      box-shadow: inset 0 0 140px 30px rgba(0,0,0,0.5); border-radius: 14px; z-index: 6;
+    }
+
+    /* word labels float above the canvas */
+    .bubble-layer { position: absolute; inset: 0; z-index: 5; pointer-events: none; }
+    .word-bubble {
+      position: absolute; top: 0; left: 0; transform: translate(-50%, -50%);
+      font-family: 'Courier New', ui-monospace, monospace; font-weight: 700;
+      font-size: 0.98rem; letter-spacing: 0.04em;
+      background: rgba(8,14,30,0.86); color: #dfe8ff;
+      border: 1.5px solid #3a5a9a; border-radius: 8px;
+      padding: 1px 7px; white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.6), 0 0 10px rgba(60,120,220,0.25);
+    }
+    .word-bubble .done { color: #46d17a; }
+    .word-bubble .next { color: #ffd23f; text-decoration: underline; }
+    .word-bubble .rest { color: #9fb3d8; }
+    .word-bubble.active {
+      border-color: #ffd23f; background: rgba(40,40,12,0.92);
+      box-shadow: 0 0 0 2px rgba(255,210,63,0.85), 0 0 16px rgba(255,210,63,0.6), 0 4px 12px rgba(0,0,0,0.6);
+    }
+    .word-bubble.bolt { border-color: #ff5bb0; box-shadow: 0 0 0 1px rgba(255,91,176,0.5), 0 2px 10px rgba(0,0,0,0.6); }
+    .word-bubble.bolt .rest { color: #ffb3df; }
+    .word-bubble.power { border-color: #ffd23f; color: #fff3c4; background: rgba(46,36,6,0.9); }
+    .word-bubble.boss { font-size: 1.12rem; padding: 2px 9px; border-color: #ff6a3d; }
+    .word-bubble.miss { animation: bubbleMiss 0.3s ease; }
+    @keyframes bubbleMiss {
+      50% { background: rgba(70,12,12,0.95); border-color: var(--red);
+            box-shadow: 0 0 0 2px rgba(220,40,40,0.7), 0 4px 12px rgba(0,0,0,0.6); }
+    }
+
+    .wave-flash {
+      position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; pointer-events: none; text-align: center;
+      opacity: 0;
+    }
+    .wave-flash.show { animation: waveFlash 1.7s ease forwards; }
+    .wave-flash .wf-title { font-family: var(--font-serif); font-size: 2.6rem; font-weight: 800;
+      color: #fff; text-shadow: 0 0 18px rgba(90,150,255,0.8), 0 4px 14px rgba(0,0,0,0.6); }
+    .wave-flash .wf-sub { font-family: var(--font-sans); font-weight: 700; color: #bcd2ff; margin-top: 0.3rem; font-size: 1rem; }
+    @keyframes waveFlash { 0%{opacity:0;transform:scale(0.8)} 15%{opacity:1;transform:scale(1)} 80%{opacity:1} 100%{opacity:0;transform:scale(1.05)} }
+
+    /* pause button */
+    .pause-btn {
+      position: absolute; top: 0.6rem; right: 0.6rem; z-index: 9;
+      width: 2.5rem; height: 2.5rem; border-radius: 50%;
+      background: rgba(12,18,38,0.8); color: #dfe8ff; border: 2px solid rgba(120,160,240,0.4);
+      font-size: 1.05rem; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.12s, border-color 0.12s, transform 0.1s;
+    }
+    .pause-btn:hover { background: rgba(20,30,60,0.95); border-color: #ffd23f; }
+    .pause-btn:active { transform: scale(0.94); }
+    .pause-btn.hidden { display: none; }
+
+    /* ============ Overlays ============ */
+    .bf-overlay {
+      position: absolute; inset: 0; z-index: 12;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 1.5rem; overflow: auto;
+      background: rgba(6,9,20,0.9); backdrop-filter: blur(2px); color: #eaf1ff;
+    }
+    .bf-overlay.hidden { display: none; }
+    .bf-overlay h2 { font-family: var(--font-serif); color: #fff; font-size: 2.1rem; margin: 0 0 0.4rem; }
+    .bf-overlay p { color: #c4d3f0; margin: 0 0 1.25rem; max-width: 40ch; font-size: 0.98rem; line-height: 1.5; }
+    .bf-overlay .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.4rem; }
+
+    .realm-row { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 360px; }
+    .realm-btn {
+      display: flex; align-items: center; gap: 0.7rem;
+      background: rgba(255,255,255,0.96); border: 2.5px solid var(--border); border-radius: 12px;
+      padding: 0.7rem 1rem; cursor: pointer; font-family: var(--font-sans); color: var(--ink);
+      transition: transform 0.12s, border-color 0.12s, background 0.12s; text-align: left;
+    }
+    .realm-btn:hover { transform: translateY(-2px); border-color: var(--gold); }
+    .realm-btn .r-icon { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
+    .realm-btn .r-name { font-weight: 800; font-size: 1.1rem; display: block; }
+    .realm-btn .r-desc { font-size: 0.78rem; color: var(--ink-light); display: block; }
+
+    .play-btn {
+      background: var(--gold); color: var(--ink); border: none; border-radius: 99px;
+      padding: 0.8rem 1.9rem; font-family: var(--font-sans); font-size: 1.05rem; font-weight: 800;
+      cursor: pointer; box-shadow: 0 5px 0 #a07f2c; transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    .play-btn:hover { background: #d0ab48; }
+    .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07f2c; }
+    .play-btn.secondary { background: transparent; color: #eaf1ff; border: 2px solid rgba(234,241,255,0.5);
+      box-shadow: none; font-size: 0.95rem; padding: 0.55rem 1.3rem; }
+    .play-btn.secondary:hover { background: rgba(234,241,255,0.12); }
+    .overlay-actions { display: flex; flex-direction: column; gap: 0.65rem; align-items: center; margin-top: 0.2rem; }
+
+    .final-stats { display: flex; gap: 1.4rem; justify-content: center; margin-bottom: 1rem; }
+    .final-stats .fs { text-align: center; }
+    .final-stats .fs b { display: block; font-family: var(--font-serif); font-size: 1.7rem; color: #fff; line-height: 1; }
+    .final-stats .fs span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #aebfe0; }
+
+    .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: -9999px; }
+
+    .hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin: 0.5rem 0 0.2rem; line-height: 1.5; }
+    .hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.35rem; }
+    .reset-link { background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer;
+      font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem; }
+    .reset-link:hover { color: var(--ink); }
+    /* keep the leaderboard readable on the dark overlay */
+    #tiBoard .hsg-board-head h2, #tiBoard .hsg-board-name, #tiBoard .hsg-board-empty { color: #eaf1ff; }
+    #tiBoard .hsg-board-row:not(:last-child) { border-bottom-color: rgba(255,255,255,0.12); }
+    /* screenshot mode (open with ?shot): hide the page chrome and fill the viewport
+       with the game stage, for capturing the home-tile image */
+    body.ti-shot { overflow: hidden; background: #06080f; }
+    body.ti-shot .site-header, body.ti-shot .ti-top, body.ti-shot .hint,
+    body.ti-shot .control-row, body.ti-shot .site-footer, body.ti-shot .hsg-rail { display: none !important; }
+    body.ti-shot .game-layout-wide::before { display: none !important; }
+    body.ti-shot .game-layout, body.ti-shot .ti-page { margin: 0 !important; padding: 0 !important; max-width: none !important; width: 100% !important; }
+    body.ti-shot .ti-sky { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; border: 0 !important; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../subjects/typing.html">← Typing</a>
+  </nav>
+</header>
+
+<div class="game-layout game-layout-wide">
+<div class="ti-page game-main">
+
+  <div class="ti-top">
+    <h1>Type Invaders</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="waveBadge">🛸 Wave 1</div>
+      <div class="stat-badge" id="killBadge">💥 0</div>
+      <div class="stat-badge hearts" id="heartsBadge">🏛️🏛️🏛️🏛️🏛️</div>
+    </div>
+  </div>
+
+  <div class="ti-sky" id="sky">
+    <canvas id="scene"></canvas>
+    <div class="bubble-layer" id="bubbleLayer"></div>
+    <div class="wave-flash" id="waveFlash"><div class="wf-title" id="wfTitle"></div><div class="wf-sub" id="wfSub"></div></div>
+    <button class="pause-btn hidden" id="pauseBtn" title="Pause (Esc)" aria-label="Pause">⏸</button>
+
+    <!-- Pause overlay -->
+    <div class="bf-overlay hidden" id="pauseOverlay">
+      <div class="crest">⏸️</div>
+      <h2>Paused</h2>
+      <p>The invasion will wait. Catch your breath, defender.</p>
+      <button class="play-btn" id="resumeBtn">Resume ▶</button>
+    </div>
+
+    <!-- Start overlay -->
+    <div class="bf-overlay" id="startOverlay">
+      <div class="crest">🛸</div>
+      <h2>Type Invaders</h2>
+      <p>Aliens are swarming the White House! <strong>Type a saucer's word</strong> to blast it. Every key fires a shot. Don't let them land. Pick a difficulty:</p>
+      <div class="realm-row">
+        <button class="realm-btn" data-realm="easy"><span class="r-icon">🛰️</span><span><span class="r-name">Easy</span><span class="r-desc">Simple words · gentle</span></span></button>
+        <button class="realm-btn" data-realm="medium"><span class="r-icon">🚀</span><span><span class="r-name">Medium</span><span class="r-desc">The Constitution · steady</span></span></button>
+        <button class="realm-btn" data-realm="hard"><span class="r-icon">👨‍🚀</span><span><span class="r-name">Hard</span><span class="r-desc">The Constitution · fast</span></span></button>
+        <button class="realm-btn" data-realm="impossible"><span class="r-icon">👽</span><span><span class="r-name">Impossible</span><span class="r-desc">The Constitution · relentless</span></span></button>
+      </div>
+    </div>
+
+    <!-- Game over overlay -->
+    <div class="bf-overlay hidden" id="overOverlay">
+      <div class="crest" id="overCrest">🏛️</div>
+      <h2 id="overTitle">The White House Has Fallen</h2>
+      <div class="final-stats">
+        <div class="fs"><b id="fsKills">0</b><span>Destroyed</span></div>
+        <div class="fs"><b id="fsBest">0</b><span>Best Streak</span></div>
+        <div class="fs"><b id="fsWave">1</b><span>Wave</span></div>
+      </div>
+      <div class="hsg-board" id="tiBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
+      <div class="overlay-actions">
+        <button class="play-btn" id="againBtn">Defend Again 🚀</button>
+        <button class="play-btn secondary" id="changeRealmBtn">Change Difficulty</button>
+      </div>
+    </div>
+
+    <input class="type-catcher" id="catcher" type="text" autocomplete="off"
+           autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="latin" aria-hidden="true">
+  </div>
+
+  <p class="hint">
+    Start typing a saucer's word to lock on. Every letter fires a laser, and finishing the word destroys it.
+    Pink <strong>plasma bolts</strong> and gold <strong>power-ups</strong> have words too. <kbd>Esc</kbd> to pause.
+  </p>
+  <div class="control-row">
+    <button class="reset-link" onclick="quitToMenu()">Retreat &amp; Choose Difficulty</button>
+  </div>
+
+</div><!-- /.ti-page -->
+
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div><!-- /.game-layout -->
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script>
+// ============================================================
+// TYPE INVADERS — an arcade typing-defense game.
+// Alien saucers descend on the White House. Type a saucer's word
+// to lock on; every keystroke fires a laser from the roof cannon,
+// and finishing the word blows the saucer out of the sky. Bombers
+// rain typeable plasma bolts; motherships need a whole phrase.
+// Let one land and the White House takes a hit. Five hits and D.C.
+// falls. Mirrors Dragon Siege's realm + wave + streak structure.
+// ============================================================
+
+// ---------- Word pools ----------
+// EASY reuses Dragon Siege's gentle word list. MEDIUM / HARD / IMPOSSIBLE serve
+// the real words of the U.S. Constitution, in order (letters only) — you type
+// your way through the document as you defend the capital.
+const EASY_WORDS = [
+  "cat","hat","dog","sun","run","red","big","bed","cup","top",
+  "box","fox","pig","hen","bug","map","net","pen","jam","mud",
+  "bat","bus","cow","egg","fan","hop","log","mom","dad","sit",
+  "home","ball","book","tree","fish","cake","star","frog","duck","bird",
+  "milk","door","hand","jump","play","rain","sock","ship","king","gold",
+  "moon","leaf","nest","ring","sand","wind","cart","gate","horn","drum"
+];
+const MISSILE_WORDS = EASY_WORDS.filter(w => w.length <= 4);
+
+const CONSTITUTION = (`
+  We the People of the United States, in Order to form a more perfect Union, establish Justice,
+  insure domestic Tranquility, provide for the common defence, promote the general Welfare, and
+  secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this
+  Constitution for the United States of America.
+  Article one. All legislative Powers herein granted shall be vested in a Congress of the United
+  States, which shall consist of a Senate and House of Representatives.
+  The House of Representatives shall be composed of Members chosen every second Year by the People
+  of the several States, and the Electors in each State shall have the Qualifications requisite for
+  Electors of the most numerous Branch of the State Legislature. No Person shall be a Representative
+  who shall not have attained to the Age of twenty five Years, and been seven Years a Citizen of the
+  United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be
+  chosen. Representatives and direct Taxes shall be apportioned among the several States which may be
+  included within this Union, according to their respective Numbers. The actual Enumeration shall be
+  made within three Years after the first Meeting of the Congress, and within every subsequent Term
+  of ten Years, in such Manner as they shall by Law direct. The House of Representatives shall choose
+  their Speaker and other Officers, and shall have the sole Power of Impeachment.
+  The Senate of the United States shall be composed of two Senators from each State, chosen by the
+  Legislature thereof, for six Years, and each Senator shall have one Vote. No Person shall be a
+  Senator who shall not have attained to the Age of thirty Years, and been nine Years a Citizen of
+  the United States. The Vice President of the United States shall be President of the Senate, but
+  shall have no Vote, unless they be equally divided. The Senate shall have the sole Power to try all
+  Impeachments. The Times, Places and Manner of holding Elections for Senators and Representatives
+  shall be prescribed in each State by the Legislature thereof. Each House shall be the Judge of the
+  Elections, Returns and Qualifications of its own Members, and a Majority of each shall constitute a
+  Quorum to do Business. The Senators and Representatives shall receive a Compensation for their
+  Services, to be ascertained by Law, and paid out of the Treasury of the United States. All Bills
+  for raising Revenue shall originate in the House of Representatives, but the Senate may propose or
+  concur with Amendments as on other Bills. Every Bill which shall have passed the House of
+  Representatives and the Senate, shall, before it become a Law, be presented to the President of the
+  United States.
+`).toLowerCase().replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
+
+// Mothership phrases — typed as a sequence of words (one laser volley each).
+const BOSS_PHRASES = [
+  ["take","your","leader"],
+  ["we","come","in","peace"],
+  ["resistance","is","futile"],
+  ["prepare","for","invasion"],
+  ["the","mothership","arrives"],
+  ["defend","the","capital"],
+  ["earth","belongs","to","us"],
+  ["not","on","my","watch"],
+];
+
+// src: 'easy' = random kid words; 'const' = the Constitution served in order.
+const REALMS = {
+  easy:       { src:'easy',  descBase:26, descStep:3.0, gapBase:2.5, gapStep:0.10, gapMin:1.15, bomberChance:0.00, bomberStep:0.012, label:'Easy' },
+  medium:     { src:'const', descBase:38, descStep:3.8, gapBase:2.1, gapStep:0.10, gapMin:0.95, bomberChance:0.14, bomberStep:0.02,  label:'Medium' },
+  hard:       { src:'const', descBase:52, descStep:4.6, gapBase:1.7, gapStep:0.09, gapMin:0.80, bomberChance:0.28, bomberStep:0.025, label:'Hard' },
+  impossible: { src:'const', descBase:70, descStep:5.6, gapBase:1.3, gapStep:0.08, gapMin:0.64, bomberChance:0.44, bomberStep:0.03,  label:'Impossible' },
+};
+const REALM_LABELS = { easy:'Easy', medium:'Medium', hard:'Hard', impossible:'Impossible' };
+
+// word serving — Constitution realms walk the text in order
+let constIdx = 0;
+function nextAlienWord(){
+  if (realm.src === 'const'){ const w = CONSTITUTION[constIdx % CONSTITUTION.length]; constIdx++; return w; }
+  return pickWord(EASY_WORDS, usedLetters());
+}
+const START_LIVES = 5;
+const BOSS_EVERY = 5;          // every 5th wave is a mothership
+
+// ---------- DOM ----------
+const sky         = document.getElementById('sky');
+const canvas      = document.getElementById('scene');
+const ctx         = canvas.getContext('2d');
+const bubbleLayer = document.getElementById('bubbleLayer');
+const catcher     = document.getElementById('catcher');
+const startOverlay= document.getElementById('startOverlay');
+const overOverlay = document.getElementById('overOverlay');
+const pauseOverlay= document.getElementById('pauseOverlay');
+const pauseBtn    = document.getElementById('pauseBtn');
+const waveFlash   = document.getElementById('waveFlash');
+
+let W = 800, H = 600, dpr = 1;
+function setupCanvas() {
+  const r = sky.getBoundingClientRect();
+  W = Math.max(320, r.width);
+  H = Math.max(360, r.height);
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  buildStars();
+}
+window.addEventListener('resize', setupCanvas);
+
+// ---------- Utils ----------
+const rand   = (a, b) => a + Math.random() * (b - a);
+const randi  = (a, b) => Math.floor(rand(a, b + 1));
+const choice = a => a[Math.floor(Math.random() * a.length)];
+const clamp  = (v, a, b) => Math.max(a, Math.min(b, v));
+const lerp   = (a, b, t) => a + (b - a) * t;
+
+// ---------- State ----------
+let realmKey = 'easy', realm = REALMS.easy;
+let lives = START_LIVES, kills = 0, wave = 1, bestStreak = 0;
+let running = false, paused = false, gameLost = false;
+let rafId = null, lastTs = 0, sceneTime = 0;
+let shake = 0, flashRed = 0, flashWhite = 0;
+let shieldT = 0;                 // active shield (power-up) seconds remaining
+let slowT = 0;                   // freeze/slow power-up seconds remaining
+
+let aliens = [], bolts = [], bullets = [], particles = [], floaters = [], powerups = [], rings = [], walkers = [], tanks = [];
+let roofAliens = [];     // the celebrating aliens shown on the roof after a defeat
+let active = null;
+
+// wave bookkeeping
+let toSpawn = 0, spawnTimer = 0, gap = 2, isBossWave = false, boss = null;
+let secretBuf = '';
+
+// ---------- Geometry: the White House sits centred at the base ----------
+function whW(){ return clamp(W * 0.26, 150, 280); }
+function whH(){ return whW() * 0.62; }
+function whX(){ return W / 2; }
+function groundY(){ return H - 6; }
+function whTopY(){ return groundY() - whH() - 30; }   // roofline (cannon sits here)
+function cannon(){ return { x: whX(), y: whTopY() - 6 }; }
+function landY(){ return groundY() - 10; }                 // the grass surface
+function overHouse(x){ return Math.abs(x - whX()) < whW()/2; }  // within the building footprint
+
+// ===================================================================
+//  BACKGROUND — starfield, moon, D.C. skyline
+// ===================================================================
+let stars = [];
+function buildStars(){
+  stars = [];
+  const n = Math.round(W * H / 7000);
+  for (let i = 0; i < n; i++){
+    stars.push({ x: Math.random()*W, y: Math.random()*H*0.92, r: rand(0.4,1.6),
+      tw: rand(0,6.28), sp: rand(0.6,2.2) });
+  }
+}
+function drawBackground(t){
+  // sky gradient already on the element; paint stars + moon + skyline on canvas
+  ctx.clearRect(0,0,W,H);
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#070912'); g.addColorStop(0.55,'#0d1430'); g.addColorStop(1,'#16264f');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+
+  // stars (twinkle)
+  for (const s of stars){
+    const a = 0.35 + 0.45*(0.5+0.5*Math.sin(t*s.sp + s.tw));
+    ctx.globalAlpha = a; ctx.fillStyle = '#dfe8ff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // moon
+  const mx = W*0.82, my = H*0.16, mr = clamp(W*0.05, 34, 64);
+  const mg = ctx.createRadialGradient(mx-mr*0.3, my-mr*0.3, mr*0.2, mx, my, mr);
+  mg.addColorStop(0,'#fbf6e2'); mg.addColorStop(1,'#cdd0bf');
+  ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(mx,my,mr,0,6.2832); ctx.fill();
+  ctx.fillStyle = 'rgba(150,150,130,0.35)';
+  ctx.beginPath(); ctx.arc(mx-mr*0.3, my+mr*0.1, mr*0.18, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(mx+mr*0.25, my-mr*0.25, mr*0.12, 0, 6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(mx+mr*0.1, my+mr*0.35, mr*0.10, 0, 6.2832); ctx.fill();
+
+  drawSkyline();
+}
+function drawSkyline(){
+  const baseY = groundY();
+  // distant D.C. monuments in silhouette
+  ctx.fillStyle = '#0a1020';
+  // ground strip
+  ctx.fillRect(0, baseY-18, W, 24);
+  // Washington Monument (obelisk) — left of centre
+  const wmX = W*0.30, wmW = clamp(W*0.018,9,16), wmH = clamp(H*0.30,120,240);
+  ctx.fillStyle = '#0c1428';
+  ctx.beginPath();
+  ctx.moveTo(wmX-wmW, baseY-18); ctx.lineTo(wmX-wmW, baseY-18-wmH);
+  ctx.lineTo(wmX, baseY-18-wmH-wmW*1.2); ctx.lineTo(wmX+wmW, baseY-18-wmH);
+  ctx.lineTo(wmX+wmW, baseY-18); ctx.closePath(); ctx.fill();
+  // tiny red aircraft light
+  ctx.fillStyle = 'rgba(255,80,80,'+(0.5+0.5*Math.sin(sceneTime*3))+')';
+  ctx.fillRect(wmX-1.5, baseY-18-wmH-wmW*1.2-3, 3, 3);
+
+  // Capitol dome — right of centre
+  const cdX = W*0.70, cdY = baseY-18, cdR = clamp(W*0.035,22,44);
+  ctx.fillStyle = '#0c1428';
+  ctx.fillRect(cdX-cdR*1.5, cdY-cdR*0.7, cdR*3, cdR*0.8);            // base block
+  ctx.beginPath(); ctx.arc(cdX, cdY-cdR*0.7, cdR, Math.PI, 0); ctx.fill();   // dome
+  ctx.fillRect(cdX-2.5, cdY-cdR*0.7-cdR-8, 5, 10);                   // little spire
+
+  // a low haze glow on the horizon
+  const hz = ctx.createLinearGradient(0, baseY-70, 0, baseY);
+  hz.addColorStop(0,'rgba(40,70,140,0)'); hz.addColorStop(1,'rgba(60,90,170,0.25)');
+  ctx.fillStyle = hz; ctx.fillRect(0, baseY-70, W, 76);
+}
+
+// ===================================================================
+//  THE WHITE HOUSE  (+ aiming roof cannon, damage states)
+// ===================================================================
+let cannonAng = -Math.PI/2, cannonRecoil = 0;
+function drawWhiteHouse(t){
+  const cx = whX(), w = whW(), h = whH(), top = whTopY(), gy = groundY();
+  const lost = START_LIVES - lives;       // 0..5 damage
+  ctx.save();
+
+  // lawn
+  ctx.fillStyle = '#13321f'; ctx.fillRect(cx-w*0.85, gy-12, w*1.7, 16);
+
+  // shield bubble
+  if (shieldT > 0){
+    const a = 0.25 + 0.15*Math.sin(t*6);
+    ctx.strokeStyle = 'rgba(90,180,255,'+(0.5+0.3*Math.sin(t*6))+')';
+    ctx.lineWidth = 3;
+    ctx.fillStyle = 'rgba(90,170,255,'+a*0.4+')';
+    ctx.beginPath(); ctx.ellipse(cx, top+h*0.4, w*0.78, h*0.95, 0, 0, 6.2832); ctx.fill(); ctx.stroke();
+  }
+
+  // main mansion block
+  const bodyTop = top + 22;
+  const bw = w, bx = cx - bw/2;
+  ctx.fillStyle = lost>=4 ? '#cdbfae' : '#f2efe6';
+  ctx.fillRect(bx, bodyTop, bw, gy-12-bodyTop);
+  // shading
+  ctx.fillStyle = 'rgba(0,0,0,0.08)'; ctx.fillRect(bx, bodyTop, bw, 4);
+  ctx.fillStyle = 'rgba(0,0,0,0.10)'; ctx.fillRect(cx+bw*0.32, bodyTop, bw*0.18, gy-12-bodyTop);
+
+  // rows of windows
+  ctx.fillStyle = lost>=3 ? '#5a4a36' : '#2a3a5a';
+  const winY1 = bodyTop+14, winY2 = bodyTop+ (gy-12-bodyTop)*0.55;
+  for (let i=0;i<6;i++){
+    const wx = bx + bw*0.10 + i*(bw*0.135);
+    ctx.fillRect(wx, winY1, bw*0.075, 14);
+    ctx.fillRect(wx, winY2, bw*0.075, 16);
+  }
+
+  // central portico (columns + pediment)
+  const pcw = bw*0.42, pcx = cx - pcw/2, pcTop = top + 8;
+  ctx.fillStyle = '#fbfaf4';
+  // pediment (triangle)
+  ctx.beginPath();
+  ctx.moveTo(pcx-6, pcTop+14); ctx.lineTo(cx, pcTop-4); ctx.lineTo(pcx+pcw+6, pcTop+14);
+  ctx.closePath(); ctx.fill();
+  // entablature
+  ctx.fillRect(pcx-6, pcTop+14, pcw+12, 8);
+  // columns
+  ctx.fillStyle = '#ffffff';
+  for (let i=0;i<4;i++){ const colx = pcx + 6 + i*((pcw-12)/3); ctx.fillRect(colx-3, pcTop+22, 6, gy-12-(pcTop+22)); }
+  ctx.fillStyle = 'rgba(0,0,0,0.10)';
+  for (let i=0;i<4;i++){ const colx = pcx + 6 + i*((pcw-12)/3); ctx.fillRect(colx+1, pcTop+22, 2, gy-12-(pcTop+22)); }
+  // door
+  ctx.fillStyle = lost>=2 ? '#2a1c10' : '#3a2a18';
+  ctx.fillRect(cx-bw*0.05, gy-12-26, bw*0.10, 26);
+
+  // roof balustrade
+  ctx.fillStyle = '#e9e6da'; ctx.fillRect(bx, bodyTop-6, bw, 6);
+
+  // flag on the roof
+  const fpx = cx, fpy = top+2;
+  ctx.strokeStyle = '#c9c2b0'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(fpx, fpy); ctx.lineTo(fpx, fpy-30); ctx.stroke();
+  const fl = 4*Math.sin(t*4);
+  ctx.fillStyle = '#b22234';
+  ctx.beginPath(); ctx.moveTo(fpx, fpy-30); ctx.lineTo(fpx+22, fpy-26+fl); ctx.lineTo(fpx, fpy-22); ctx.closePath(); ctx.fill();
+
+  // ---- damage: a big, obvious blaze grows with every hit taken ----
+  ctx.save();
+  for (let i=0;i<lost;i++){
+    const sx = bx + bw*(0.16 + 0.68*((i+0.5)/Math.max(1,lost)));
+    const sy = bodyTop + (gy-12-bodyTop)*0.18 + (i%2)*16;
+    const big = 16 + 6*Math.sin(t*9+i);
+    // glowing heat halo
+    ctx.fillStyle = 'rgba(255,120,30,0.22)';
+    ctx.beginPath(); ctx.arc(sx, sy, big*2.2, 0, 6.2832); ctx.fill();
+    // layered flame (red base, orange mid, yellow core) — flickering
+    for (let f=0; f<3; f++){
+      const fr = big*(1.1-f*0.32) + (f? 3*Math.sin(t*13+i+f):0);
+      const fy = sy - big*0.5*f - 3*Math.abs(Math.sin(t*7+i));
+      ctx.fillStyle = ['rgba(200,40,15,0.92)','rgba(255,130,25,0.95)','rgba(255,225,90,0.95)'][f];
+      ctx.beginPath();
+      ctx.moveTo(sx-fr*0.7, fy);
+      ctx.quadraticCurveTo(sx-fr*0.5, fy-fr*1.1, sx, fy-fr*1.8 - 4*Math.sin(t*11+i));
+      ctx.quadraticCurveTo(sx+fr*0.5, fy-fr*1.1, sx+fr*0.7, fy);
+      ctx.quadraticCurveTo(sx, fy+fr*0.4, sx-fr*0.7, fy);
+      ctx.fill();
+    }
+    // thick smoke billowing up
+    for (let s=0;s<2;s++){
+      const pf = ((t*0.5 + i*1.3 + s*0.5) % 1);
+      ctx.fillStyle = 'rgba(36,34,40,'+(0.5*(1-pf))+')';
+      ctx.beginPath(); ctx.arc(sx + 8*Math.sin(t+i+s), sy - pf*90, 10+pf*22, 0, 6.2832); ctx.fill();
+    }
+  }
+  ctx.restore();
+
+  // ---- roof cannon (aims at the active target) ----
+  const c = cannon();
+  ctx.translate(c.x, c.y);
+  // base
+  ctx.fillStyle = '#3a4250'; ctx.beginPath(); ctx.arc(0,4,12,Math.PI,0); ctx.fill();
+  ctx.fillStyle = '#566273'; ctx.fillRect(-12,3,24,5);
+  // barrel
+  ctx.rotate(cannonAng + Math.PI/2);
+  const rec = cannonRecoil*8;
+  ctx.fillStyle = '#8a94a8';
+  ctx.fillRect(-4, -26+rec, 8, 26);
+  ctx.fillStyle = '#aeb8cc'; ctx.fillRect(-4, -26+rec, 3, 26);
+  ctx.fillStyle = '#2bd0ff'; ctx.beginPath(); ctx.arc(0,-26+rec,3.2,0,6.2832); ctx.fill();   // glowing tip
+  ctx.restore();
+  cannonRecoil = Math.max(0, cannonRecoil - 0.08);
+}
+
+// ===================================================================
+//  WORD BUBBLES (DOM labels over the canvas)
+// ===================================================================
+function makeBubble(o, cls){
+  const b = document.createElement('div');
+  b.className = 'word-bubble' + (cls ? ' '+cls : '');
+  o.bubble = b; bubbleLayer.appendChild(b); renderBubble(o);
+}
+function renderBubble(o){
+  if (!o.bubble) return;
+  const w = o.word, done = w.slice(0,o.typed), nx = w.slice(o.typed,o.typed+1), rest = w.slice(o.typed+1);
+  o.bubble.innerHTML = '<span class="done">'+done+'</span><span class="next">'+nx+'</span><span class="rest">'+rest+'</span>';
+}
+function removeBubble(o){ if (o.bubble){ o.bubble.remove(); o.bubble = null; } }
+function positionBubble(o, x, y){
+  if (!o.bubble) return;
+  o.bubble.style.left = x + 'px';
+  o.bubble.style.top  = y + 'px';
+}
+
+// ===================================================================
+//  SPAWNING
+// ===================================================================
+function usedLetters(){
+  const set = new Set();
+  for (const a of aliens) if (a.typed===0 && a.word) set.add(a.word[0]);
+  for (const b of bolts)  if (b.typed===0 && b.word) set.add(b.word[0]);
+  for (const p of powerups) if (p.typed===0 && p.word) set.add(p.word[0]);
+  if (boss && boss.typed===0 && boss.word) set.add(boss.word[0]);
+  return set;
+}
+function pickWord(pool, avoid){
+  let w, guard = 0;
+  do { w = choice(pool); guard++; } while (avoid.has(w[0]) && guard < 24);
+  return w;
+}
+
+// flying-ship variety: each shape gets its own look + feel
+const SHIP_TYPES = [
+  { shape:'saucer',  w:3,   r:22, spd:1.00, wob:1.0, hues:[150,190,280,160] },
+  { shape:'scout',   w:2,   r:16, spd:1.35, wob:1.5, hues:[60,45,170] },
+  { shape:'orb',     w:1.6, r:19, spd:0.85, wob:0.8, hues:[300,330,200] },
+  { shape:'crystal', w:1.3, r:18, spd:1.18, wob:0.5, hues:[180,260,140] },
+  { shape:'jelly',   w:1.1, r:24, spd:0.70, wob:1.9, hues:[290,205,160] },
+  { shape:'ring',    w:1.4, r:22, spd:0.95, wob:1.0, hues:[40,190,150] },
+];
+function pickShip(){
+  let total = 0; for (const t of SHIP_TYPES) total += t.w;
+  let r = Math.random()*total;
+  for (const t of SHIP_TYPES){ if ((r -= t.w) <= 0) return t; }
+  return SHIP_TYPES[0];
+}
+function spawnAlien(opts){
+  opts = opts || {};
+  const bomber = !!opts.bomber;
+  const type = bomber ? { shape:'bomber', r:26, spd:0.8, wob:0.8, hues:[18] } : pickShip();
+  const margin = 60;
+  const a = {
+    kind: bomber ? 'bomber' : type.shape, shape: type.shape,
+    x: rand(margin, W-margin), y: rand(-90,-30), word: nextAlienWord(), typed: 0,
+    speed: descSpeed() * type.spd * rand(0.92, 1.12),
+    drift: rand(-20,20), wob: rand(0,6.28), wobAmp: rand(6,16)*type.wob, spin: rand(0,6.28),
+    hue: choice(type.hues), fireT: rand(1.6, 3.2), dead: false, r: type.r,
+  };
+  makeBubble(a);
+  aliens.push(a);
+  return a;
+}
+function spawnBoss(){
+  const phrase = choice(BOSS_PHRASES);
+  boss = {
+    kind:'boss', x: W/2, y: -90, words: phrase.slice(), wordIdx:0, word: phrase[0], typed:0,
+    speed: descSpeed()*0.42, wob: rand(0,6.28), hue: 300, fireT: 2.0, dead:false, r: 64,
+    hp: phrase.length, maxHp: phrase.length, flinch: 0,
+  };
+  makeBubble(boss, 'boss');
+  flashWave('⚠ MOTHERSHIP', 'Type the whole phrase to bring it down!');
+  if (window.HSGSound) HSGSound.alarm();
+}
+function spawnBolt(fromX, fromY){
+  // a slow alien MISSILE with a short word — drifts down at the same pace as ships
+  const word = pickWord(MISSILE_WORDS, usedLetters());
+  const b = {
+    x: fromX, y: fromY, word, typed:0,
+    speed: descSpeed() * rand(0.95, 1.1), drift: rand(-16,16), wob: rand(0,6.28),
+    dead:false, r:13, spin:0,
+  };
+  makeBubble(b, 'bolt');
+  bolts.push(b);
+  if (window.HSGSound) HSGSound.alarm();
+}
+function maybeSpawnPowerup(){
+  // ~1 in 9 waves grants a power-up drifting down
+  const kinds = ['nuke','shield','repair','freeze'];
+  const kind = choice(lives < START_LIVES ? kinds : ['nuke','shield','freeze']);
+  const words = { nuke:'nuke', shield:'shield', repair:'repair', freeze:'freeze' };
+  const p = {
+    kind, x: rand(W*0.2, W*0.8), y:-40, word: words[kind], typed:0,
+    speed: descSpeed()*0.7, wob: rand(0,6.28), drift: rand(-14,14), dead:false, r:18,
+  };
+  makeBubble(p, 'power');
+  powerups.push(p);
+}
+function descSpeed(){ return realm.descBase + (wave-1)*realm.descStep; }
+
+// ===================================================================
+//  WAVES / LEVELS
+// ===================================================================
+function startWave(n){
+  wave = n;
+  isBossWave = (n % BOSS_EVERY === 0);
+  boss = null;
+  document.getElementById('waveBadge').textContent = '🛸 Wave ' + n;
+  if (isBossWave){
+    toSpawn = Math.min(3, 1 + Math.floor(n/BOSS_EVERY));   // a couple of escorts, then the boss
+    spawnTimer = 0.8; gap = 1.4;
+  } else {
+    toSpawn = 4 + n;                       // grows each wave
+    spawnTimer = 0.5;
+    gap = Math.max(realm.gapMin, realm.gapBase - (n-1)*realm.gapStep);
+    flashWave('WAVE ' + n, waveSub(n));
+  }
+  // occasional power-up wave
+  if (!isBossWave && n>1 && Math.random() < 0.30) maybeSpawnPowerup();
+}
+function waveSub(n){
+  if (n===1) return 'Defend the White House!';
+  if (n % BOSS_EVERY === BOSS_EVERY-1) return 'A mothership approaches…';
+  const tips = ['Incoming saucers!','Faster this time!','Hold the line!','They keep coming!','Steady, defender.'];
+  return choice(tips);
+}
+function bomberChanceNow(){ return Math.min(0.65, realm.bomberChance + (wave-1)*realm.bomberStep); }
+
+function maybeAdvanceWave(){
+  // the wave isn't clear until the sky AND the ground are empty
+  if (walkers.length>0) return;
+  if (isBossWave){
+    if (toSpawn<=0 && aliens.length===0 && (!boss || boss.dead)) {
+      if (boss && boss.dead) { boss = null; }
+      if (!boss) startWave(wave+1);
+    }
+  } else if (toSpawn<=0 && aliens.length===0){
+    startWave(wave+1);
+  }
+}
+
+// ===================================================================
+//  UPDATE
+// ===================================================================
+function updateSpawns(dt){
+  spawnTimer -= dt;
+  if (spawnTimer <= 0 && toSpawn > 0){
+    if (isBossWave && toSpawn===1 && aliens.length<=1){
+      // last "spawn" of a boss wave = the mothership
+      spawnBoss(); toSpawn = 0;
+    } else {
+      spawnAlien({ bomber: !isBossWave && Math.random() < bomberChanceNow() });
+      toSpawn--;
+      spawnTimer = gap * rand(0.8,1.2);
+    }
+  }
+}
+function updateAliens(dt, t){
+  const sp = slowT>0 ? 0.35 : 1;
+  for (const a of aliens){
+    a.y += a.speed*sp*dt;
+    a.wob += dt*2; a.spin += dt*1.6;
+    a.x += a.drift*sp*dt*0.4;
+    if (a.x < 40){ a.x = 40; a.drift = Math.abs(a.drift); }
+    if (a.x > W-40){ a.x = W-40; a.drift = -Math.abs(a.drift); }
+    // bombers fire slow missiles
+    if (a.kind==='bomber'){
+      a.fireT -= dt*sp;
+      if (a.fireT<=0 && a.y>30 && a.y<landY()-90){ spawnBolt(a.x, a.y+20); a.fireT = rand(2.6,4.2); }
+    }
+    const bx = a.x + Math.sin(a.wob)*a.wobAmp;
+    positionBubble(a, bx, a.y - a.r - 16);
+    // shootable all the way down — crash the House if over it, else land on the grass
+    const land = overHouse(bx) ? whTopY() : landY();
+    if (a.y >= land){
+      a.dead = true;
+      if (overHouse(bx)) houseHit(bx); else landShip(a, bx);
+    }
+  }
+  if (boss){
+    boss.y += boss.speed*sp*dt*(boss.flinch>0?0.2:1);
+    boss.y = Math.min(boss.y, whTopY()-90);
+    boss.wob += dt*1.5;
+    if (boss.flinch>0) boss.flinch -= dt;
+    boss.fireT -= dt*sp;
+    if (boss.fireT<=0){ spawnBolt(boss.x+rand(-50,50), boss.y+40); boss.fireT = rand(1.8,3.0); }
+    positionBubble(boss, boss.x, boss.y - boss.r - 22);
+  }
+  aliens = aliens.filter(a=>{ if (a.dead){ removeBubble(a); if (active===a) active=null; return false; } return true; });
+}
+// a ship touches down on the grass and disgorges two ground aliens
+function landShip(a, bx){
+  emit(bx, landY(), 'debris', 8, '#9aa3b5');
+  emit(bx, landY(), 'spark', 6, 'hsl('+(a.hue||150)+',80%,65%)');
+  shake = Math.max(shake, 4);
+  if (window.HSGSound) HSGSound.boom();      // landing thud
+  spawnWalker(bx - 16); spawnWalker(bx + 16);
+}
+function updateBolts(dt){
+  const sp = slowT>0 ? 0.4 : 1;
+  for (const b of bolts){
+    b.y += b.speed*sp*dt; b.wob += dt*5; b.x += b.drift*sp*dt*0.3; b.spin += dt*4;
+    const bx = b.x + Math.sin(b.wob)*3;
+    positionBubble(b, bx, b.y - b.r - 12);
+    const land = overHouse(bx) ? whTopY() : landY();
+    if (b.y >= land){
+      b.dead = true;
+      if (overHouse(bx)) houseHit(bx);
+      else { emit(bx, landY(), 'fire', 6, '#ff7ad0'); spawnWalker(bx); }   // a dud drops a trooper
+    }
+  }
+  bolts = bolts.filter(b=>{ if (b.dead){ removeBubble(b); if (active===b) active=null; return false; } return true; });
+}
+// ---- ground aliens (walkers): march toward the House; reaching it costs a life ----
+function spawnWalker(x){
+  let wx = clamp(x, 28, W-28);
+  const edge = whW()/2 + 22;
+  if (overHouse(wx)) wx = wx < whX() ? whX()-edge : whX()+edge;   // never start inside the building
+  const w = {
+    kind:'walker', x: wx, y: landY()+2, word: pickWord(MISSILE_WORDS, usedLetters()), typed:0,
+    dir: (whX()-wx) >= 0 ? 1 : -1, speed: 24 + wave*1.4, hue: choice([130,95,160]),
+    leg: rand(0,6.28), dead:false, r:13,
+  };
+  makeBubble(w);
+  walkers.push(w);
+}
+function updateWalkers(dt){
+  const sp = slowT>0 ? 0.4 : 1;
+  for (const w of walkers){
+    w.x += w.dir * w.speed * sp * dt;
+    w.leg += dt*9;
+    positionBubble(w, w.x, w.y - w.r - 20);
+    // a tank intercepts the walker first (no life lost — they trade)
+    let tk = null;
+    for (const t of tanks){ if (!t.dead && Math.abs(w.x - t.x) < w.r + t.r){ tk = t; break; } }
+    if (tk){
+      tk.dead = true; w.dead = true; tk.boom = 0.3;
+      explosion(tk.x, tk.y-6, false, 30);
+      floatText(tk.x, tk.y-30, 'TANK DOWN', '#cdd6c0');
+      continue;
+    }
+    if (overHouse(w.x)){ w.dead = true; emit(w.x, landY(), 'debris', 6, '#46d17a'); houseHit(w.x); }
+  }
+  walkers = walkers.filter(w=>{ if (w.dead){ removeBubble(w); if (active===w) active=null; return false; } return true; });
+  tanks = tanks.filter(t=>!t.dead);
+}
+// the player's ground tanks — a finite buffer of walker interceptors at the House edges
+function spawnTanks(){
+  tanks = [];
+  const eL = whX()-whW()/2, eR = whX()+whW()/2;
+  [eL-18, eL-52, eR+18, eR+52].forEach(x =>
+    tanks.push({ x: clamp(x, 24, W-24), y: landY()+4, dead:false, r:16, boom:0 }));
+}
+function updatePowerups(dt){
+  for (const p of powerups){
+    p.y += p.speed*dt; p.wob += dt*3; p.x += p.drift*dt*0.4;
+    positionBubble(p, p.x, p.y - p.r - 16);
+    if (p.y >= landY()+30){ p.dead = true; }   // missed power-up just leaves
+  }
+  powerups = powerups.filter(p=>{ if (p.dead){ removeBubble(p); if (active===p) active=null; return false; } return true; });
+}
+function updateBullets(dt){
+  for (const b of bullets){
+    // home gently toward a live target
+    if (b.target && !b.target.dead){
+      const tx = b.target.x + (b.target.wob!=null?Math.sin(b.target.wob)*(b.target.wobAmp||0):0);
+      const ty = b.target.y;
+      const ang = Math.atan2(ty-b.y, tx-b.x);
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      b.vx = lerp(b.vx, ca*b.spd, 0.25); b.vy = lerp(b.vy, sa*b.spd, 0.25);
+    }
+    b.px = b.x; b.py = b.y;
+    b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
+    // reached target?
+    if (b.target && !b.target.dead){
+      const dx=b.x-b.target.x, dy=b.y-b.target.y;
+      if (dx*dx+dy*dy < (b.target.r+6)*(b.target.r+6)){ b.dead=true; emit(b.x,b.y,'spark',4,b.color); }
+    }
+    if (b.y < -20 || b.life<=0) { b.dead = true; }
+  }
+  bullets = bullets.filter(b=>!b.dead);
+}
+function updateParticles(dt){
+  for (const p of particles){
+    p.x += p.vx*dt; p.y += p.vy*dt; p.vy += p.g*dt; p.life -= dt;
+    p.vx *= 0.98; p.vy *= 0.98;
+  }
+  particles = particles.filter(p=>p.life>0);
+  for (const f of floaters){ f.y -= 28*dt; f.life -= dt; }
+  floaters = floaters.filter(f=>f.life>0);
+  for (const r of rings){ r.r += r.sp*dt; r.life -= dt; }
+  rings = rings.filter(r=>r.life>0);
+}
+
+// ===================================================================
+//  RENDER
+// ===================================================================
+function draw(t){
+  ctx.save();
+  if (shake>0){ ctx.translate(rand(-shake,shake), rand(-shake,shake)); }
+  drawBackground(t);
+
+  // rings (shockwaves)
+  for (const r of rings){
+    ctx.globalAlpha = clamp(r.life/r.life0,0,1)*0.7;
+    ctx.strokeStyle = r.color; ctx.lineWidth = r.w;
+    ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, 6.2832); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+
+  drawWhiteHouse(t);
+  if (gameLost) drawRoofAliens(t);
+
+  for (const tk of tanks) drawTank(tk, t);
+  for (const w of walkers) drawWalker(w, t);
+  for (const p of powerups) drawPowerup(p, t);
+  for (const a of aliens) drawAlien(a, t);
+  if (boss) drawBoss(boss, t);
+  for (const b of bolts) drawMissile(b, t);
+  for (const b of bullets) drawBullet(b);
+  drawParticles();
+
+  // floaters (+score text)
+  ctx.textAlign='center'; ctx.font = '700 16px var(--font-sans), sans-serif';
+  for (const f of floaters){ ctx.globalAlpha = clamp(f.life/0.9,0,1); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y); }
+  ctx.globalAlpha = 1;
+
+  ctx.restore();
+
+  // full-screen flashes (outside shake transform)
+  if (flashRed>0){ ctx.fillStyle = 'rgba(200,30,30,'+flashRed*0.5+')'; ctx.fillRect(0,0,W,H); }
+  if (flashWhite>0){ ctx.fillStyle = 'rgba(255,255,255,'+flashWhite*0.7+')'; ctx.fillRect(0,0,W,H); }
+}
+
+function drawAlien(a, t){
+  const x = a.x + Math.sin(a.wob)*a.wobAmp, y = a.y;
+  ctx.save(); ctx.translate(x,y);
+  // shared glow
+  ctx.fillStyle = 'hsla('+a.hue+',80%,60%,0.16)';
+  ctx.beginPath(); ctx.arc(0,0,a.r*1.5,0,6.2832); ctx.fill();
+  switch (a.shape){
+    case 'scout':   drawScout(a,t); break;
+    case 'orb':     drawOrb(a,t); break;
+    case 'crystal': drawCrystal(a,t); break;
+    case 'jelly':   drawJelly(a,t); break;
+    case 'ring':    drawRing(a,t); break;
+    case 'bomber':  drawSaucer(a,t,true); break;
+    default:        drawSaucer(a,t,false);
+  }
+  ctx.restore();
+}
+// classic disc + dome (also the bomber, with a belly cannon)
+function drawSaucer(a, t, bomber){
+  const r = a.r;
+  ctx.fillStyle = 'hsla('+a.hue+',90%,65%,0.10)';
+  ctx.beginPath(); ctx.moveTo(-r*0.5,r*0.2); ctx.lineTo(r*0.5,r*0.2); ctx.lineTo(r*1.1,r*2.4); ctx.lineTo(-r*1.1,r*2.4); ctx.closePath(); ctx.fill();
+  const bg = ctx.createLinearGradient(0,-r*0.5,0,r*0.5);
+  bg.addColorStop(0, bomber?'#e7c0a8':'#cfd6e2'); bg.addColorStop(1, bomber?'#8a5a44':'#7c8596');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.ellipse(0, r*0.16, r, r*0.46, 0, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1.5; ctx.stroke();
+  const dg = ctx.createRadialGradient(-r*0.2,-r*0.3,2,0,-r*0.1,r*0.7);
+  dg.addColorStop(0,'#eafcff'); dg.addColorStop(1,'hsl('+a.hue+',85%,55%)');
+  ctx.fillStyle=dg; ctx.beginPath(); ctx.ellipse(0,-r*0.18,r*0.55,r*0.5,0,Math.PI,0); ctx.fill();
+  ctx.fillStyle='#0b0b16';
+  ctx.beginPath(); ctx.arc(-r*0.14,-r*0.22,r*0.07,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.14,-r*0.22,r*0.07,0,6.2832); ctx.fill();
+  for (let i=-2;i<=2;i++){
+    const on=(Math.sin(t*6+i)+1)>1;
+    ctx.fillStyle = on?'hsl('+((a.hue+40)%360)+',95%,65%)':'rgba(255,255,255,0.25)';
+    ctx.beginPath(); ctx.arc(i*r*0.34, r*0.34, r*0.08, 0, 6.2832); ctx.fill();
+  }
+  if (bomber){
+    ctx.fillStyle='rgba(255,90,60,'+(0.4+0.4*Math.sin(t*8))+')';
+    ctx.beginPath(); ctx.arc(0,r*0.45,r*0.18,0,6.2832); ctx.fill();
+  }
+}
+// sleek fast dart with twin engines
+function drawScout(a, t){
+  const r = a.r;
+  ctx.fillStyle = 'hsl('+a.hue+',70%,72%)';
+  ctx.beginPath(); ctx.moveTo(0, r*1.0); ctx.lineTo(-r*0.9,-r*0.5); ctx.lineTo(0,-r*0.2); ctx.lineTo(r*0.9,-r*0.5); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = 'hsl('+a.hue+',75%,55%)';
+  ctx.beginPath(); ctx.ellipse(0,-r*0.1,r*0.32,r*0.5,0,0,6.2832); ctx.fill();
+  ctx.fillStyle='#0b0b16'; ctx.beginPath(); ctx.arc(0,-r*0.12,r*0.13,0,6.2832); ctx.fill();
+  // engine flames
+  for (const ex of [-r*0.55, r*0.55]){
+    ctx.fillStyle='rgba(120,220,255,'+(0.6+0.3*Math.sin(t*20+ex))+')';
+    ctx.beginPath(); ctx.ellipse(ex,-r*0.5,r*0.14,r*0.3+r*0.1*Math.sin(t*20+ex),0,0,6.2832); ctx.fill();
+  }
+}
+// floating cyclops orb
+function drawOrb(a, t){
+  const r=a.r, pul=1+0.08*Math.sin(t*4+a.spin);
+  const g=ctx.createRadialGradient(-r*0.3,-r*0.3,2,0,0,r*pul);
+  g.addColorStop(0,'#fff'); g.addColorStop(0.5,'hsl('+a.hue+',80%,68%)'); g.addColorStop(1,'hsl('+a.hue+',75%,38%)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,r*pul,0,6.2832); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,r*0.05,r*0.46,0,6.2832); ctx.fill();
+  ctx.fillStyle='#10131f'; ctx.beginPath(); ctx.arc(0,r*0.08,r*0.24,0,6.2832); ctx.fill();
+  // little fins
+  ctx.fillStyle='hsl('+a.hue+',70%,45%)';
+  ctx.beginPath(); ctx.ellipse(-r*0.9,0,r*0.3,r*0.14,0.5,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(r*0.9,0,r*0.3,r*0.14,-0.5,0,6.2832); ctx.fill();
+}
+// angular crystal ship
+function drawCrystal(a, t){
+  const r=a.r; ctx.rotate(0.2*Math.sin(t*1.5+a.spin));
+  const g=ctx.createLinearGradient(0,-r,0,r);
+  g.addColorStop(0,'hsl('+a.hue+',85%,80%)'); g.addColorStop(1,'hsl('+a.hue+',80%,42%)');
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.moveTo(0,-r*1.1); ctx.lineTo(r*0.8,-r*0.1); ctx.lineTo(0,r*1.1); ctx.lineTo(-r*0.8,-r*0.1); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.6)'; ctx.lineWidth=1.5; ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.moveTo(0,-r*1.1); ctx.lineTo(r*0.8,-r*0.1); ctx.lineTo(0,0); ctx.closePath(); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(0,0,r*0.16,0,6.2832); ctx.fill();
+}
+// bioluminescent jellyfish with tentacles
+function drawJelly(a, t){
+  const r=a.r;
+  ctx.fillStyle='hsla('+a.hue+',85%,70%,0.85)';
+  ctx.beginPath(); ctx.ellipse(0,-r*0.1,r*0.85,r*0.7,0,Math.PI,0); ctx.fill();
+  ctx.fillStyle='hsla('+a.hue+',85%,55%,0.9)'; ctx.fillRect(-r*0.85,-r*0.1,r*1.7,r*0.12);
+  ctx.strokeStyle='hsl('+a.hue+',90%,75%)'; ctx.lineWidth=2.5;
+  for (let i=-2;i<=2;i++){
+    ctx.beginPath(); ctx.moveTo(i*r*0.32, r*0.02);
+    ctx.quadraticCurveTo(i*r*0.32 + r*0.2*Math.sin(t*4+i), r*0.6, i*r*0.32 + r*0.3*Math.sin(t*3+i), r*1.2);
+    ctx.stroke();
+  }
+  ctx.fillStyle='#10131f';
+  ctx.beginPath(); ctx.arc(-r*0.2,-r*0.2,r*0.1,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.2,-r*0.2,r*0.1,0,6.2832); ctx.fill();
+}
+// saucer girdled by a spinning ring
+function drawRing(a, t){
+  const r=a.r;
+  const bg=ctx.createLinearGradient(0,-r*0.4,0,r*0.4);
+  bg.addColorStop(0,'#e9eef6'); bg.addColorStop(1,'hsl('+a.hue+',40%,55%)');
+  ctx.fillStyle=bg; ctx.beginPath(); ctx.ellipse(0,0,r*0.62,r*0.5,0,0,6.2832); ctx.fill();
+  const dg=ctx.createRadialGradient(-r*0.15,-r*0.2,2,0,-r*0.1,r*0.5);
+  dg.addColorStop(0,'#fff'); dg.addColorStop(1,'hsl('+a.hue+',85%,55%)');
+  ctx.fillStyle=dg; ctx.beginPath(); ctx.ellipse(0,-r*0.18,r*0.34,r*0.34,0,Math.PI,0); ctx.fill();
+  ctx.fillStyle='#0b0b16';
+  ctx.beginPath(); ctx.arc(-r*0.1,-r*0.2,r*0.06,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.1,-r*0.2,r*0.06,0,6.2832); ctx.fill();
+  // the ring (perspective ellipse, spinning shimmer)
+  ctx.strokeStyle='hsl('+a.hue+',90%,68%)'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.ellipse(0,r*0.1,r*1.25,r*0.4,0,0,6.2832); ctx.stroke();
+  for (let i=0;i<8;i++){ const ang=(i/8)*6.2832 + a.spin;
+    ctx.fillStyle='hsl('+((a.hue+50)%360)+',95%,72%)';
+    ctx.beginPath(); ctx.arc(Math.cos(ang)*r*1.25, r*0.1+Math.sin(ang)*r*0.4, 2.4, 0, 6.2832); ctx.fill();
+  }
+}
+function drawBoss(b, t){
+  const x = b.x + Math.sin(b.wob)*10, y = b.y, r = b.r;
+  ctx.save(); ctx.translate(x,y);
+  if (b.flinch>0){ ctx.translate(rand(-3,3),rand(-3,3)); }
+  // big glow
+  ctx.fillStyle = 'hsla('+b.hue+',80%,60%,0.15)';
+  ctx.beginPath(); ctx.arc(0,0,r*1.5,0,6.2832); ctx.fill();
+  // hull
+  const bg = ctx.createLinearGradient(0,-r*0.5,0,r*0.5);
+  bg.addColorStop(0,'#d7c8ec'); bg.addColorStop(1,'#6b5a86');
+  ctx.fillStyle = bg;
+  ctx.beginPath(); ctx.ellipse(0, r*0.12, r, r*0.4, 0, 0, 6.2832); ctx.fill();
+  ctx.strokeStyle = '#3a2c50'; ctx.lineWidth=2; ctx.stroke();
+  // dome
+  const dg = ctx.createRadialGradient(-r*0.2,-r*0.2,4,0,0,r*0.8);
+  dg.addColorStop(0,'#fff'); dg.addColorStop(1,'hsl('+b.hue+',75%,60%)');
+  ctx.fillStyle = dg;
+  ctx.beginPath(); ctx.ellipse(0,-r*0.1,r*0.55,r*0.55,0,Math.PI,0); ctx.fill();
+  // ring of lights
+  for (let i=0;i<10;i++){
+    const ang = (i/10)*6.2832, on=(Math.sin(t*5+i)+1)>1;
+    ctx.fillStyle = on?'hsl('+((b.hue+60)%360)+',95%,70%)':'rgba(255,255,255,0.3)';
+    ctx.beginPath(); ctx.arc(Math.cos(ang)*r*0.85, r*0.12+Math.sin(ang)*r*0.32, r*0.07, 0, 6.2832); ctx.fill();
+  }
+  // hp pips
+  ctx.fillStyle='#fff';
+  // (hp drawn via bubble; add a small bar)
+  const bw=r*1.4, bx=-bw/2, by=-r*0.55;
+  ctx.fillStyle='rgba(0,0,0,0.5)'; ctx.fillRect(bx,by,bw,5);
+  ctx.fillStyle='#ff6a3d'; ctx.fillRect(bx,by,bw*(b.hp/b.maxHp),5);
+  ctx.restore();
+}
+// a slow alien missile (rocket nose-down with an exhaust flame)
+function drawMissile(b, t){
+  const x = b.x + Math.sin(b.wob)*3, y = b.y, r = b.r;
+  ctx.save(); ctx.translate(x,y);
+  // exhaust flame (out the top)
+  const fl = r*0.9 + r*0.4*Math.sin(t*22);
+  const fg = ctx.createLinearGradient(0,-r*0.9,0,-r*0.9-fl);
+  fg.addColorStop(0,'#fff'); fg.addColorStop(0.4,'#ffb84d'); fg.addColorStop(1,'rgba(255,90,60,0)');
+  ctx.fillStyle=fg;
+  ctx.beginPath(); ctx.moveTo(-r*0.34,-r*0.8); ctx.lineTo(0,-r*0.9-fl); ctx.lineTo(r*0.34,-r*0.8); ctx.closePath(); ctx.fill();
+  // body
+  const bg = ctx.createLinearGradient(-r*0.4,0,r*0.4,0);
+  bg.addColorStop(0,'#7c5a86'); bg.addColorStop(0.5,'#d9c2e6'); bg.addColorStop(1,'#7c5a86');
+  ctx.fillStyle=bg;
+  ctx.beginPath();
+  ctx.moveTo(0, r*1.25);                 // nose tip (pointing down)
+  ctx.quadraticCurveTo(r*0.44, r*0.3, r*0.34, -r*0.8);
+  ctx.lineTo(-r*0.34, -r*0.8);
+  ctx.quadraticCurveTo(-r*0.44, r*0.3, 0, r*1.25);
+  ctx.closePath(); ctx.fill();
+  // fins
+  ctx.fillStyle='#ff6a3d';
+  ctx.beginPath(); ctx.moveTo(-r*0.34,-r*0.8); ctx.lineTo(-r*0.7,-r*0.95); ctx.lineTo(-r*0.34,-r*0.35); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(r*0.34,-r*0.8); ctx.lineTo(r*0.7,-r*0.95); ctx.lineTo(r*0.34,-r*0.35); ctx.closePath(); ctx.fill();
+  // glowing warhead band
+  ctx.fillStyle='#ff4da0'; ctx.beginPath(); ctx.arc(0,r*0.45,r*0.18,0,6.2832); ctx.fill();
+  ctx.restore();
+}
+// a little ground alien marching toward the House
+function drawWalker(w, t){
+  const r = w.r;
+  ctx.save(); ctx.translate(w.x, w.y);
+  // legs
+  ctx.strokeStyle='hsl('+w.hue+',60%,30%)'; ctx.lineWidth=3; ctx.lineCap='round';
+  for (const lx of [-r*0.4, r*0.4]){
+    const sw = Math.sin(w.leg + (lx<0?0:Math.PI))*r*0.3;
+    ctx.beginPath(); ctx.moveTo(lx, -r*0.1); ctx.lineTo(lx+sw, r*0.5); ctx.stroke();
+  }
+  // body
+  const g=ctx.createRadialGradient(-r*0.2,-r*0.5,2,0,-r*0.2,r);
+  g.addColorStop(0,'hsl('+w.hue+',70%,68%)'); g.addColorStop(1,'hsl('+w.hue+',65%,38%)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,-r*0.3,r*0.7,r*0.8,0,0,6.2832); ctx.fill();
+  // antennae
+  ctx.strokeStyle='hsl('+w.hue+',70%,55%)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-r*0.25,-r); ctx.lineTo(-r*0.4,-r*1.5); ctx.moveTo(r*0.25,-r); ctx.lineTo(r*0.4,-r*1.5); ctx.stroke();
+  ctx.fillStyle='hsl('+((w.hue+50)%360)+',95%,70%)';
+  ctx.beginPath(); ctx.arc(-r*0.4,-r*1.5,r*0.12,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.4,-r*1.5,r*0.12,0,6.2832); ctx.fill();
+  // big eyes (look toward the House)
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.arc(-r*0.22,-r*0.4,r*0.2,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.22,-r*0.4,r*0.2,0,6.2832); ctx.fill();
+  ctx.fillStyle='#10131f';
+  ctx.beginPath(); ctx.arc(-r*0.22+w.dir*r*0.06,-r*0.4,r*0.1,0,6.2832); ctx.fill();
+  ctx.beginPath(); ctx.arc(r*0.22+w.dir*r*0.06,-r*0.4,r*0.1,0,6.2832); ctx.fill();
+  ctx.restore();
+}
+// a friendly ground tank guarding the House (soaks one walker each)
+function drawTank(tk, t){
+  const r = tk.r;
+  ctx.save(); ctx.translate(tk.x, tk.y);
+  // treads
+  ctx.fillStyle='#2c2f24';
+  ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-r,-r*0.1,r*2,r*0.5,4) : ctx.rect(-r,-r*0.1,r*2,r*0.5); ctx.fill();
+  ctx.fillStyle='#454a36';
+  for (let i=0;i<5;i++){ ctx.beginPath(); ctx.arc(-r+r*0.4+i*r*0.4, r*0.15, r*0.16, 0, 6.2832); ctx.fill(); }
+  // hull
+  const g=ctx.createLinearGradient(0,-r*0.5,0,r*0.1);
+  g.addColorStop(0,'#5e6b3f'); g.addColorStop(1,'#3c4628');
+  ctx.fillStyle=g;
+  ctx.beginPath(); ctx.moveTo(-r*0.9,0); ctx.lineTo(-r*0.7,-r*0.45); ctx.lineTo(r*0.7,-r*0.45); ctx.lineTo(r*0.9,0); ctx.closePath(); ctx.fill();
+  // turret
+  ctx.fillStyle='#54623a';
+  ctx.beginPath(); ctx.ellipse(0,-r*0.5,r*0.42,r*0.32,0,Math.PI,0); ctx.fill();
+  ctx.fillRect(-r*0.42,-r*0.5,r*0.84,r*0.05);
+  // barrel (up at the sky)
+  ctx.save(); ctx.rotate(-0.5); ctx.fillStyle='#3a4226'; ctx.fillRect(-r*0.09,-r*1.25,r*0.18,r*0.9); ctx.restore();
+  // white star
+  ctx.fillStyle='#e8e6d2'; ctx.font='700 '+Math.round(r*0.6)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('★', 0, -r*0.5);
+  ctx.restore();
+}
+// the invaders dancing on the roof once the House has fallen
+function spawnRoofAliens(){
+  roofAliens = [];
+  const w = whW(), cx = whX(), top = whTopY();
+  const n = 4;
+  for (let i=0;i<n;i++){
+    roofAliens.push({ x: cx - w*0.32 + (i/(n-1))*w*0.64, y: top+18,
+      hue: choice([130,150,280,95]), phase: rand(0,6.28), r: 14 });
+  }
+}
+function drawRoofAliens(t){
+  for (const a of roofAliens){
+    const hop = Math.abs(Math.sin(t*5 + a.phase)) * 10;
+    ctx.save(); ctx.translate(a.x, a.y - hop);
+    const r = a.r;
+    // body
+    const g=ctx.createRadialGradient(-r*0.2,-r*0.4,2,0,0,r);
+    g.addColorStop(0,'hsl('+a.hue+',75%,70%)'); g.addColorStop(1,'hsl('+a.hue+',70%,42%)');
+    ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,0,r*0.7,r*0.85,0,0,6.2832); ctx.fill();
+    // raised arms (cheering)
+    ctx.strokeStyle='hsl('+a.hue+',70%,50%)'; ctx.lineWidth=3; ctx.lineCap='round';
+    const arm = 0.5*Math.sin(t*10 + a.phase);
+    ctx.beginPath(); ctx.moveTo(-r*0.5,-r*0.1); ctx.lineTo(-r*1.0,-r*0.8 - arm*r); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(r*0.5,-r*0.1); ctx.lineTo(r*1.0,-r*0.8 + arm*r); ctx.stroke();
+    // happy eyes
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(-r*0.25,-r*0.2,r*0.22,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.25,-r*0.2,r*0.22,0,6.2832); ctx.fill();
+    ctx.fillStyle='#10131f';
+    ctx.beginPath(); ctx.arc(-r*0.25,-r*0.18,r*0.1,0,6.2832); ctx.fill();
+    ctx.beginPath(); ctx.arc(r*0.25,-r*0.18,r*0.1,0,6.2832); ctx.fill();
+    // smile
+    ctx.strokeStyle='#10131f'; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(0,r*0.1,r*0.3,0.15*Math.PI,0.85*Math.PI); ctx.stroke();
+    ctx.restore();
+  }
+}
+function drawPowerup(p, t){
+  const x = p.x + Math.sin(p.wob)*6, y = p.y, r = p.r;
+  ctx.save(); ctx.translate(x,y); ctx.rotate(Math.sin(t*2)*0.2);
+  ctx.fillStyle='rgba(255,210,63,'+(0.25+0.15*Math.sin(t*5))+')';
+  ctx.beginPath(); ctx.arc(0,0,r*1.7,0,6.2832); ctx.fill();
+  // satellite body
+  ctx.fillStyle='#ffd23f'; ctx.fillRect(-r*0.5,-r*0.5,r,r);
+  ctx.fillStyle='#caa11f'; ctx.fillRect(-r*0.5,-r*0.5,r,3);
+  // solar panels
+  ctx.fillStyle='#2e6fb7'; ctx.fillRect(-r*1.5,-r*0.3,r*0.9,r*0.6); ctx.fillRect(r*0.6,-r*0.3,r*0.9,r*0.6);
+  // icon
+  ctx.fillStyle='#3a2a00'; ctx.font='700 '+Math.round(r)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  const ic = { nuke:'☢', shield:'🛡', repair:'♥', freeze:'❄' }[p.kind] || '★';
+  ctx.fillText(ic, 0, 1);
+  ctx.restore();
+}
+function drawBullet(b){
+  ctx.strokeStyle = b.color; ctx.lineWidth = 3; ctx.lineCap='round';
+  ctx.globalAlpha = 0.9;
+  ctx.beginPath(); ctx.moveTo(b.px, b.py); ctx.lineTo(b.x, b.y); ctx.stroke();
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(b.x,b.y,2.2,0,6.2832); ctx.fill();
+}
+function drawParticles(){
+  for (const p of particles){
+    ctx.globalAlpha = clamp(p.life/p.life0,0,1);
+    ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,6.2832); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ===================================================================
+//  EFFECTS
+// ===================================================================
+function emit(x,y,kind,n,color){
+  for (let i=0;i<n;i++){
+    let r,life,vx,vy,g,col;
+    if (kind==='spark'){ r=rand(1,2.5); life=rand(0.2,0.5); const a=rand(0,6.28),s=rand(60,200); vx=Math.cos(a)*s; vy=Math.sin(a)*s; g=120; col=color||'#ffd23f'; }
+    else if (kind==='debris'){ r=rand(1.5,4); life=rand(0.4,0.9); const a=rand(0,6.28),s=rand(40,180); vx=Math.cos(a)*s; vy=Math.sin(a)*s-60; g=360; col=color||'#9aa3b5'; }
+    else { r=rand(2,5); life=rand(0.3,0.7); const a=rand(0,6.28),s=rand(30,140); vx=Math.cos(a)*s; vy=Math.sin(a)*s; g=40; col=color||'#ff9a3d'; }
+    particles.push({ x,y,vx,vy,g,r,life,life0:life,color:col });
+  }
+}
+function explosion(x,y,big,hue){
+  emit(x,y,'fire', big?26:14, 'hsl('+((hue||20))+',90%,60%)');
+  emit(x,y,'spark', big?18:10, '#ffe08a');
+  emit(x,y,'debris', big?14:7);
+  rings.push({ x,y,r: big?10:6, sp: big?420:300, w: big?4:3, color:'rgba(255,180,80,0.8)', life: big?0.5:0.35, life0: big?0.5:0.35 });
+  flashWhite = Math.max(flashWhite, big?0.5:0.18);
+  shake = Math.max(shake, big?14:6);
+  if (window.HSGSound) HSGSound.boom();
+}
+function floatText(x,y,text,color){ floaters.push({ x,y,text,color:color||'#ffd23f',life:0.9}); }
+function flashWave(title, sub){
+  document.getElementById('wfTitle').textContent = title;
+  document.getElementById('wfSub').textContent = sub||'';
+  waveFlash.classList.remove('show'); void waveFlash.offsetWidth; waveFlash.classList.add('show');
+}
+
+// fire a laser from the cannon toward a target (or straight up if none)
+function fireLaser(target, kill){
+  const c = cannon();
+  let ang, tx, ty;
+  if (target){ tx = target.x; ty = target.y; ang = Math.atan2(ty-c.y, tx-c.x); }
+  else { ang = -Math.PI/2 + rand(-0.25,0.25); }
+  cannonAng = ang; cannonRecoil = 1;
+  const spd = 1500;
+  bullets.push({ x:c.x, y:c.y, px:c.x, py:c.y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+    spd, target: target||null, kill:!!kill, life:1.2, color: kill?'#fff':'#5bd0ff' });
+  // the killing shot lands as an explosion (boom), so only the in-between shots "pew"
+  if (!kill && window.HSGSound) HSGSound.laser();
+}
+
+// ===================================================================
+//  TYPING / TARGETING
+// ===================================================================
+function allTargets(){
+  const list = [];
+  for (const w of walkers) list.push(w);
+  for (const b of bolts) list.push(b);
+  for (const p of powerups) list.push(p);
+  for (const a of aliens) list.push(a);
+  if (boss) list.push(boss);
+  return list;
+}
+function setActive(o){
+  if (active===o) return;
+  if (active && active.bubble) active.bubble.classList.remove('active');
+  active = o;
+  if (active && active.bubble) active.bubble.classList.add('active');
+}
+function clearActive(){ if (active && active.bubble) active.bubble.classList.remove('active'); active=null; }
+function acquire(ch){
+  let best=null, bestKey=Infinity;
+  for (const o of allTargets()){
+    if (o.typed>0 || !o.word || o.word[0]!==ch) continue;
+    // urgency: closest threat to the House wins; walkers/missiles are most pressing
+    let key = -o.y;
+    if (o.kind==='boss') key += 200;                          // boss is least urgent (slow, big)
+    else if (o.kind==='walker') key -= 2200 - Math.abs(o.x-whX());  // about to reach the House
+    else if (bolts.indexOf(o)>=0) key -= 1200;               // incoming missiles
+    else if (o.kind==='bomber') key -= 200;
+    if (key<bestKey){ bestKey=key; best=o; }
+  }
+  return best;
+}
+function handleChar(chRaw){
+  if (!running || paused || gameLost) return;
+  const ch = chRaw.toLowerCase();
+  if (!/^[a-z]$/.test(ch)) return;
+  let tgt = active;
+  if (!tgt || tgt.dead){ tgt = acquire(ch); if (tgt) setActive(tgt); }
+  if (tgt && ch === tgt.word[tgt.typed]){
+    tgt.typed++;
+    const done = tgt.typed >= tgt.word.length;
+    fireLaser(tgt, done);                       // EVERY correct key fires a shot
+    if (done) landTarget(tgt); else renderBubble(tgt);
+  } else {
+    // a wrong key ALWAYS shoots wild (even when locked on) — a real miss
+    fireLaser(null, false);
+    if (tgt && tgt.bubble){ tgt.bubble.classList.remove('miss'); void tgt.bubble.offsetWidth; tgt.bubble.classList.add('miss'); }
+  }
+}
+function landTarget(o){
+  if (o.kind==='boss'){
+    o.hp--; o.flinch = 0.5; explosion(o.x, o.y, false, 300); shake=Math.max(shake,8);
+    if (o.wordIdx < o.words.length-1){
+      o.wordIdx++; o.typed=0; o.word=o.words[o.wordIdx]; renderBubble(o); clearActive();
+    } else { destroyBoss(o); }
+    return;
+  }
+  if (powerups.indexOf(o)>=0){ grabPowerup(o); return; }
+  // alien or bolt destroyed
+  o.dead = true; removeBubble(o); if (active===o) active=null;
+  explosion(o.x, o.y, false, o.hue||20);
+  registerKill(o);
+}
+function registerKill(o){
+  kills++; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+  if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
+  floatText(o.x, o.y-20, '+'+rail.value, '#46d17a');
+  document.getElementById('killBadge').textContent = '💥 ' + kills;
+}
+function destroyBoss(o){
+  o.dead = true; removeBubble(o); if (active===o) active=null;
+  explosion(o.x, o.y, true, 300);
+  // a few secondary booms
+  for (let i=0;i<5;i++) setTimeout(()=>{ if(!gameLost) explosion(o.x+rand(-50,50), o.y+rand(-30,30), false, choice([20,40,300])); }, i*120);
+  kills += 5; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+  document.getElementById('killBadge').textContent = '💥 ' + kills;
+  floatText(o.x, o.y-40, 'MOTHERSHIP DOWN!', '#ffd23f');
+  if (window.HSGfx) HSGfx.confetti({ count: 60 });
+  boss = o;   // keep ref so maybeAdvanceWave sees dead boss, then nulls it
+}
+
+// ===================================================================
+//  POWER-UPS
+// ===================================================================
+function grabPowerup(p){
+  p.dead = true; removeBubble(p); if (active===p) active=null;
+  if (window.HSGSound) HSGSound.powerup();
+  emit(p.x,p.y,'spark',16,'#ffd23f');
+  if (p.kind==='nuke'){
+    flashWhite = 0.8; shake = Math.max(shake,16);
+    const victims = aliens.concat(bolts).concat(walkers).concat(boss?[boss]:[]);
+    let n=0;
+    for (const v of victims){ if (v===boss) continue; explosion(v.x,v.y,false,v.hue||20); v.dead=true; removeBubble(v); n++; }
+    aliens = []; bolts = []; walkers = [];
+    if (boss){ boss.hp=0; destroyBoss(boss); }
+    if (active && active!==boss) active=null;
+    kills += n; document.getElementById('killBadge').textContent='💥 '+kills;
+    floatText(W/2, H*0.4, 'EMP BLAST!', '#9be7ff');
+    if (window.HSGSound) HSGSound.boom();
+  } else if (p.kind==='shield'){
+    shieldT = 10; floatText(p.x,p.y-20,'SHIELD UP!','#9be7ff');
+  } else if (p.kind==='repair'){
+    if (lives<START_LIVES){ lives++; updateHearts(); }
+    floatText(p.x,p.y-20,'+1 ♥','#ff6b8a');
+  } else if (p.kind==='freeze'){
+    slowT = 5; floatText(p.x,p.y-20,'FREEZE!','#9be7ff');
+  }
+}
+
+// ===================================================================
+//  DAMAGE / GAME OVER
+// ===================================================================
+// The White House itself is struck (a ship/missile crashes it, or a walker reaches it).
+function houseHit(x){
+  if (gameLost) return;
+  const hx = clamp(x, whX()-whW()/2, whX()+whW()/2);
+  if (shieldT>0){
+    shieldT = 0; flashWhite = Math.max(flashWhite,0.3); shake = Math.max(shake,6);
+    explosion(hx, whTopY()+10, false, 200);
+    floatText(whX(), whTopY()-10, 'SHIELD HELD!', '#9be7ff');
+    return;
+  }
+  explosion(hx, whTopY()+12, false, 18);
+  lives--; updateHearts();
+  rail.broke();                       // a breach snuffs the live streak (keeps best, no modal)
+  flashRed = 0.6; shake = Math.max(shake, 13);
+  if (lives<=0) gameOver();
+}
+function updateHearts(){
+  let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives ? '🏛️' : '<span class="spent">🏛️</span>';
+  document.getElementById('heartsBadge').innerHTML = h;
+}
+function gameOver(){
+  gameLost = true; running = false; pauseBtn.classList.add('hidden');
+  clearActive();
+  // wipe remaining word bubbles
+  for (const o of allTargets()) removeBubble(o);
+  aliens=[]; bolts=[]; walkers=[]; powerups=[]; boss=null;
+  shake = 18; flashRed = 0.8;
+  document.getElementById('fsKills').textContent = kills;
+  document.getElementById('fsBest').textContent = bestStreak;
+  document.getElementById('fsWave').textContent = wave;
+  document.getElementById('overTitle').textContent = bestStreak>=15 ? 'Heroic Last Stand!' : 'The White House Has Fallen';
+  overOverlay.classList.remove('hidden');
+  if (window.HSGSound) HSGSound.finish(false);
+  endRun(true);
+}
+// Bank the run's longest streak. On the game-over screen it shows the inline
+// placement + name entry; a quiet retreat falls back to the modal.
+function endRun(showInline){
+  if (showInline) rail.gameOver(bestStreak, document.getElementById('tiBoard'));
+  else rail.gameOver(bestStreak);
+}
+
+// ===================================================================
+//  LOOP
+// ===================================================================
+function tick(ts){
+  if (!running){ return; }
+  if (paused){ rafId = requestAnimationFrame(tick); return; }
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs)/1000; lastTs = ts;
+  dt = Math.min(dt, 0.05);
+  sceneTime += dt;
+  shake = Math.max(0, shake - dt*40);
+  flashRed = Math.max(0, flashRed - dt*1.6);
+  flashWhite = Math.max(0, flashWhite - dt*2.4);
+  if (shieldT>0) shieldT -= dt;
+  if (slowT>0) slowT -= dt;
+
+  updateSpawns(dt);
+  updateAliens(dt, sceneTime);
+  updateBolts(dt);
+  updateWalkers(dt);
+  updatePowerups(dt);
+  updateBullets(dt);
+  updateParticles(dt);
+  maybeAdvanceWave();
+
+  draw(sceneTime);
+  rafId = requestAnimationFrame(tick);
+}
+// idle scene behind the start menu
+function idle(ts){
+  if (running) return;
+  if (!lastTs) lastTs = ts; const dt = Math.min((ts-lastTs)/1000,0.05); lastTs = ts;
+  sceneTime += dt; updateParticles(dt);
+  draw(sceneTime);
+  requestAnimationFrame(idle);
+}
+
+// ===================================================================
+//  START / QUIT / PAUSE
+// ===================================================================
+const rail = HSGStreak.init({
+  gameId:'type-invaders', gameName:'Type Invaders', minStreak:3,
+  level:'easy', levelName:'Easy',
+  mount: document.getElementById('streakRail')
+});
+
+function startGame(key){
+  realmKey = key; realm = REALMS[key];
+  lives = START_LIVES; kills = 0; bestStreak = 0; gameLost = false; paused = false; constIdx = 0;
+  shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0;
+  for (const o of allTargets()) removeBubble(o);
+  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; boss=null; active=null;
+  rail.setLevel(key, REALM_LABELS[key] || key);     // per-difficulty leaderboard; resets streak
+  document.body.classList.add('ti-active');
+  setupCanvas();
+  updateHearts();
+  document.getElementById('killBadge').textContent='💥 0';
+  startOverlay.classList.add('hidden');
+  overOverlay.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
+  pauseBtn.classList.remove('hidden');
+  startWave(1);
+  running = true; lastTs = 0; focusCatcher();
+  rafId = requestAnimationFrame(tick);
+}
+function quitToMenu(){
+  if (running && !gameLost) endRun(false);          // bank the run (modal if it qualifies)
+  running = false; paused = false; gameLost = false; if (rafId) cancelAnimationFrame(rafId);
+  for (const o of allTargets()) removeBubble(o);
+  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; boss=null; active=null;
+  document.body.classList.remove('ti-active');
+  pauseBtn.classList.add('hidden');
+  overOverlay.classList.add('hidden');
+  pauseOverlay.classList.add('hidden');
+  startOverlay.classList.remove('hidden');
+  lastTs = 0; requestAnimationFrame(idle);
+}
+function togglePause(force){
+  if (!running || gameLost) return;
+  const want = (force===undefined) ? !paused : force;
+  if (want===paused) return;
+  paused = want;
+  if (paused){ pauseOverlay.classList.remove('hidden'); }
+  else { pauseOverlay.classList.add('hidden'); secretBuf=''; lastTs=0; focusCatcher(); }
+}
+function focusCatcher(){ try{ catcher.focus({preventScroll:true}); }catch(e){} }
+
+// ===================================================================
+//  INPUT WIRING
+// ===================================================================
+catcher.addEventListener('input', ()=>{ const v=catcher.value; catcher.value=''; if (paused||gameLost) return; for (const ch of v) handleChar(ch); });
+document.addEventListener('keydown', e=>{
+  if (e.key==='Escape'){ togglePause(); return; }
+  if (!running || gameLost) return;
+  // secret: type "ufo" on the title to... (kept simple — just refocus)
+  if (e.key.length===1 && /[a-zA-Z]/.test(e.key)){ focusCatcher(); }
+});
+sky.addEventListener('pointerdown', ()=>{ if (running && !paused) focusCatcher(); });
+document.querySelectorAll('.realm-btn').forEach(b=> b.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.realm); }));
+document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(realmKey); });
+document.getElementById('changeRealmBtn').addEventListener('click', quitToMenu);
+document.getElementById('resumeBtn').addEventListener('click', ()=>togglePause(false));
+pauseBtn.addEventListener('click', ()=>togglePause());
+
+// ---------- boot ----------
+setupCanvas();
+buildStars();
+requestAnimationFrame(idle);
+
+// Screenshot mode: open this page with ?shot to hide the page chrome, fill the
+// viewport with the stage, and auto-start a wave — used to capture the home tile.
+if (/[?&]shot\b/.test(location.search)) {
+  document.body.classList.add('ti-shot');
+  setupCanvas();          // re-measure now that the stage fills the viewport
+  buildStars();
+  startGame('medium');
+  // hand-build a mid-wave frame so a single rendered shot looks like real action
+  waveFlash.classList.remove('show');
+  aliens.length = 0; toSpawn = 0; spawnTimer = 1e9; kills = 7;
+  document.getElementById('killBadge').textContent = '\u{1F4A5} 7';
+  const ys = [96, 158, 226, 300, 360], xs = [0.24, 0.46, 0.70, 0.36, 0.80];
+  ys.forEach((yy, i) => {
+    const al = spawnAlien({ bomber: i === 3 });
+    al.x = W * xs[i]; al.y = yy;
+    positionBubble(al, al.x, al.y - al.r - 16);
+  });
+  active = aliens[4]; active.typed = 2;
+  positionBubble(active, active.x, active.y - active.r - 16);
+  fireLaser(active, false);
+}
+
+</script>
+
+</body>
+</html>

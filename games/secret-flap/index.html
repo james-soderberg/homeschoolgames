@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flappy Dragonling (a secret game)</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .flap-page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 2.5rem; }
+    .flap-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.9rem; gap: 0.75rem; flex-wrap: wrap; max-width: 460px; margin-inline: auto;
+    }
+    .flap-top h1 { margin: 0; font-size: 1.6rem; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.4rem 0.9rem; font-weight: 700; font-size: 0.9rem;
+      font-family: var(--font-sans); color: var(--ink); white-space: nowrap;
+    }
+
+    .stage-wrap { display: flex; justify-content: center; }
+    .scene-wrap {
+      position: relative; width: 100%; max-width: 460px;
+      height: min(80vh, 720px); min-height: 420px;
+      border-radius: 18px; overflow: hidden;
+      border: 3px solid #3a5a2c; box-shadow: 0 12px 32px rgba(20,33,46,0.34);
+      background: #8fd0e6; user-select: none; touch-action: manipulation; cursor: pointer;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+    .ov {
+      position: absolute; inset: 0; z-index: 6;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      text-align: center; padding: 1.5rem; background: rgba(18,40,30,0.62);
+      backdrop-filter: blur(1.5px); color: #fff;
+    }
+    .ov.hidden { display: none; }
+    .ov .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.25rem; animation: bob 2.2s ease-in-out infinite; }
+    @keyframes bob { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+    .ov h2 { font-family: var(--font-serif); font-size: 1.9rem; margin: 0 0 0.3rem; color: #fff; }
+    .ov p { color: #e6f3ea; margin: 0 0 1.1rem; max-width: 26ch; font-size: 0.98rem; }
+    .final-stats { display: flex; gap: 1.5rem; margin-bottom: 1.2rem; }
+    .fs { display: flex; flex-direction: column; align-items: center; }
+    .fs b { font-family: var(--font-serif); font-size: 2rem; color: #ffd98a; line-height: 1; }
+    .fs span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.09em; color: #cfe7d6; margin-top: 0.25rem; }
+    .play-btn {
+      background: var(--gold); color: var(--ink); border: none; border-radius: 12px;
+      padding: 0.8rem 1.5rem; font-size: 1.05rem; font-weight: 800; font-family: var(--font-sans);
+      cursor: pointer; transition: transform 0.1s, background 0.15s; box-shadow: 0 5px 0 #8c7227;
+    }
+    .play-btn:hover { background: #d6b34e; }
+    .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #8c7227; }
+    .play-btn:disabled { opacity: 0.45; cursor: default; transform: none; box-shadow: 0 5px 0 #8c7227; }
+
+    .flap-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin-top: 0.8rem; }
+    .secret-note { text-align: center; font-size: 0.72rem; color: var(--ink-light); margin-top: 0.3rem; opacity: 0.7; }
+    /* game-over overlay: top-aligned + scrollable so the leaderboard always fits */
+    #overOverlay { justify-content: flex-start; overflow-y: auto; padding: 1.3rem 1.2rem; }
+    #flapBoard { width: 100%; max-width: 340px; margin: 0.3rem auto 1rem; text-align: left; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html">← Home</a>
+  </nav>
+</header>
+
+<div class="flap-page">
+
+  <div class="flap-top">
+    <h1>🐲 Flappy Dragonling</h1>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <div class="stat-badge" id="scoreBadge">0</div>
+      <div class="stat-badge" id="bestBadge">Best 0</div>
+    </div>
+  </div>
+
+  <div class="stage-wrap">
+    <div class="scene-wrap" id="sceneWrap">
+      <canvas id="scene"></canvas>
+
+      <div class="ov" id="startOverlay">
+        <div class="crest">🐲</div>
+        <h2>Flappy Dragonling</h2>
+        <p>Tap, click, or press <b>Space</b> to flap. Slip through the castle towers. How far can you fly?</p>
+        <button class="play-btn" id="startBtn">Take Flight 🐲</button>
+      </div>
+
+      <div class="ov hidden" id="overOverlay">
+        <div class="crest">💥</div>
+        <h2>Down you go!</h2>
+        <div class="final-stats">
+          <div class="fs"><b id="fsScore">0</b><span>Towers</span></div>
+          <div class="fs"><b id="fsBest">0</b><span>Best</span></div>
+        </div>
+        <div class="hsg-board" id="flapBoard"></div>
+        <button class="play-btn" id="againBtn">Fly Again 🐲</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="flap-hint">Tap / click the sky or press <b>Space</b> / <b>↑</b> to flap, and to fly again.</p>
+  <p class="secret-note">🤫 a secret game</p>
+
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script>
+// ============================================================
+// FLAPPY DRAGONLING — a hidden game. A little dragon flaps
+// between castle towers; gravity pulls it down, a flap lifts it.
+// ============================================================
+
+const sceneWrap = document.getElementById('sceneWrap');
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+const startOverlay = document.getElementById('startOverlay');
+const overOverlay = document.getElementById('overOverlay');
+const againBtn = document.getElementById('againBtn');
+let restartReady = true;   // false for ~2s after a crash, so a flap-mash can't instant-restart
+
+const BEST_KEY = 'flappy_dragonling_best';
+const getBest = () => parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0;
+const setBest = (n) => { try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) {} };
+
+// ---- tuning (in logical px / seconds) ----
+const GRAVITY = 2000;
+const FLAP_V = -560;
+const PIPE_W = 66;
+const GAP_BASE = 185, GAP_MIN = 140;
+const SPEED_BASE = 165, SPEED_MAX = 250;
+const SPACING = 230;          // horizontal distance between tower pairs
+const BIRD_R = 16;
+
+let W = 440, H = 680, dpr = 1;
+let state = 'ready';          // ready | play | dead
+let bird, pipes, spawnX, score, scroll, groundScroll, sceneTime, shake;
+let lastTs = 0, rafId = null;
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+function setupCanvas() {
+  const r = sceneWrap.getBoundingClientRect();
+  W = Math.max(300, r.width);
+  H = r.height;
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', setupCanvas);
+
+function groundY() { return H - Math.min(96, H * 0.16); }
+function birdX() { return W * 0.30; }
+function speed() { return Math.min(SPEED_MAX, SPEED_BASE + score * 4); }
+function gap() { return Math.max(GAP_MIN, GAP_BASE - score * 3); }
+
+function reset() {
+  bird = { y: H * 0.45, vy: 0, rot: 0, flapT: 0, wing: 0 };
+  pipes = [];
+  score = 0; scroll = 0; groundScroll = 0; sceneTime = 0; shake = 0;
+  spawnX = W + 80;
+  spawnPipe(spawnX);
+  spawnPipe(spawnX + SPACING);
+  updateBadges();
+}
+
+function spawnPipe(x) {
+  const g = gap();
+  const margin = 60;
+  const gy = rand(margin + g / 2, groundY() - margin - g / 2);
+  pipes.push({ x, gapY: gy, gap: g, passed: false });
+}
+
+function flap() {
+  if (state === 'ready') { startGame(); return; }
+  if (state !== 'play') return;
+  bird.vy = FLAP_V;
+  bird.flapT = 0.18;
+  if (window.HSGSound) HSGSound.tick();
+}
+
+function startGame() {
+  reset();
+  restartReady = true; againBtn.disabled = false;
+  state = 'play';
+  startOverlay.classList.add('hidden');
+  overOverlay.classList.add('hidden');
+  bird.vy = FLAP_V * 0.7;
+}
+
+function die() {
+  if (state !== 'play') return;
+  state = 'dead';
+  shake = 12;
+  if (score > getBest()) setBest(score);
+  document.getElementById('fsScore').textContent = score;
+  document.getElementById('fsBest').textContent = getBest();
+  overOverlay.classList.remove('hidden');
+  updateBadges();
+  if (window.HSGSound) HSGSound.finish(false);
+  if (window.HSGfx) HSGfx.flash('rgba(150,40,40,0.30)');
+  bankScore();   // render the Top-10 board + inline name entry right in the end screen
+  // lock restart for 2s so a flap-mash at the moment of death can't skip the end screen
+  restartReady = false; againBtn.disabled = true;
+  setTimeout(() => { restartReady = true; againBtn.disabled = false; }, 2000);
+}
+
+// ---- leaderboard (local Top-10 via streak-rail, built into the game-over screen) ----
+function bankScore() {
+  if (!window.HSGStreak) return;
+  HSGStreak.endPanel('#flapBoard', {
+    gameId: 'flappy-dragonling', gameName: 'Flappy Dragonling',
+    score: score, unit: 'towers', minStreak: 1
+  });
+}
+
+function updateBadges() {
+  document.getElementById('scoreBadge').textContent = score;
+  document.getElementById('bestBadge').textContent = 'Best ' + getBest();
+}
+
+// ============================================================
+// Update
+// ============================================================
+function update(dt) {
+  sceneTime += dt;
+  bird.flapT = Math.max(0, bird.flapT - dt);
+  // wing flap animation
+  bird.wing = bird.flapT > 0 ? Math.sin((0.18 - bird.flapT) / 0.18 * Math.PI) : Math.sin(sceneTime * 8) * 0.25;
+
+  if (state === 'play') {
+    const sp = speed();
+    scroll += sp * dt; groundScroll += sp * dt;
+
+    bird.vy += GRAVITY * dt;
+    bird.y += bird.vy * dt;
+    bird.rot = clamp(bird.vy / 600, -0.5, 1.2);
+
+    // ceiling: bonk but don't die
+    if (bird.y < BIRD_R) { bird.y = BIRD_R; bird.vy = Math.max(bird.vy, 0); }
+    // ground = death
+    if (bird.y + BIRD_R >= groundY()) { bird.y = groundY() - BIRD_R; die(); }
+
+    // move pipes, recycle, score, collide
+    const bx = birdX();
+    for (const p of pipes) {
+      p.x -= sp * dt;
+      if (!p.passed && p.x + PIPE_W < bx) {
+        p.passed = true; score++; updateBadges();
+        if (window.HSGSound) HSGSound.correct();   // just a soft point chime — no streak banners
+      }
+      // collision (circle vs the two tower rects)
+      if (bx + BIRD_R > p.x && bx - BIRD_R < p.x + PIPE_W) {
+        const top = p.gapY - p.gap / 2, bot = p.gapY + p.gap / 2;
+        if (bird.y - BIRD_R < top || bird.y + BIRD_R > bot) die();
+      }
+    }
+    // drop pipes that scrolled off, spawn fresh ones to keep two ahead
+    while (pipes.length && pipes[0].x + PIPE_W < -10) pipes.shift();
+    const last = pipes[pipes.length - 1];
+    if (!last || last.x < W - SPACING) spawnPipe((last ? last.x : W) + SPACING);
+  } else {
+    // idle bob on the ready/dead screens
+    groundScroll += 60 * dt;
+    if (state === 'ready') bird.y = H * 0.45 + Math.sin(sceneTime * 2.4) * 10;
+    bird.rot = state === 'dead' ? 1.4 : Math.sin(sceneTime * 2.4) * 0.12;
+  }
+  shake = Math.max(0, shake - dt * 40);
+}
+
+// ============================================================
+// Draw
+// ============================================================
+function drawBackground() {
+  // sky
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#7ec6e8'); g.addColorStop(0.7, '#b7e0ef'); g.addColorStop(1, '#dff1e6');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  // sun
+  ctx.fillStyle = 'rgba(255,244,200,0.95)';
+  ctx.beginPath(); ctx.arc(W * 0.80, H * 0.16, 30, 0, Math.PI * 2); ctx.fill();
+  // parallax clouds
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  band(0.2, 220, (x) => cloud(x + 30, H * 0.20, 1));
+  band(0.35, 300, (x) => cloud(x + 150, H * 0.34, 0.8));
+  // distant hills
+  ctx.fillStyle = '#9ccf8f';
+  hills(groundY() - 26, 0.5, 240, 40);
+  ctx.fillStyle = '#86c07a';
+  hills(groundY() - 10, 0.8, 180, 28);
+}
+function band(factor, period, drawShape) {
+  const off = -((scroll * factor) % period);
+  for (let x = off - period; x < W + period; x += period) drawShape(x);
+}
+function cloud(cx, cy, s) {
+  ctx.beginPath();
+  ctx.arc(cx, cy, 16 * s, 0, Math.PI * 2);
+  ctx.arc(cx + 20 * s, cy + 3, 20 * s, 0, Math.PI * 2);
+  ctx.arc(cx + 44 * s, cy, 15 * s, 0, Math.PI * 2);
+  ctx.arc(cx + 22 * s, cy - 9 * s, 15 * s, 0, Math.PI * 2);
+  ctx.fill();
+}
+function hills(baseY, factor, period, amp) {
+  const off = -((scroll * factor) % period);
+  ctx.beginPath(); ctx.moveTo(-period, H);
+  for (let x = off - period; x < W + period; x += period / 2) {
+    ctx.quadraticCurveTo(x + period / 4, baseY - amp, x + period / 2, baseY);
+  }
+  ctx.lineTo(W + period, H); ctx.closePath(); ctx.fill();
+}
+
+// a castle tower (the "pipe") — stone with crenellations at the gap end
+function drawTower(p) {
+  const gy = groundY();
+  const top = p.gapY - p.gap / 2, bot = p.gapY + p.gap / 2;
+  const stone = '#8f8a7e', stoneDk = '#74705f', cap = '#a59f90';
+  // upper tower (hangs from the ceiling)
+  tower(p.x, 0, PIPE_W, top, true);
+  // lower tower (rises from the ground)
+  tower(p.x, bot, PIPE_W, gy - bot, false);
+
+  function tower(x, y, w, h, capAtBottom) {
+    if (h <= 0) return;
+    ctx.fillStyle = stone; ctx.fillRect(x, y, w, h);
+    // shading
+    ctx.fillStyle = 'rgba(0,0,0,0.10)'; ctx.fillRect(x + w - 12, y, 12, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fillRect(x, y, 8, h);
+    // brick lines
+    ctx.strokeStyle = stoneDk; ctx.lineWidth = 1;
+    for (let yy = y + 16; yy < y + h - 4; yy += 22) { ctx.beginPath(); ctx.moveTo(x + 2, yy); ctx.lineTo(x + w - 2, yy); ctx.stroke(); }
+    // battlement cap at the gap end
+    const cy = capAtBottom ? y : y + h - 18;
+    ctx.fillStyle = cap; ctx.fillRect(x - 5, cy, w + 10, 18);
+    ctx.fillStyle = stoneDk;
+    for (let i = 0; i < 4; i++) ctx.fillRect(x - 5 + i * (w + 10) / 4 + 2, cy - 6, (w + 10) / 4 - 6, 7);
+  }
+}
+
+function drawGround() {
+  const gy = groundY();
+  ctx.fillStyle = '#caa468'; ctx.fillRect(0, gy, W, H - gy);
+  ctx.fillStyle = '#6fae52'; ctx.fillRect(0, gy, W, 12);     // grass strip
+  ctx.fillStyle = 'rgba(80,55,20,0.28)';
+  const off = -((groundScroll) % 36);
+  for (let x = off - 36; x < W + 36; x += 36) { ctx.fillRect(x, gy + 22, 16, 4); ctx.fillRect(x + 18, gy + 40, 12, 4); }
+}
+
+// the little dragon
+function drawDragon() {
+  const x = birdX();
+  ctx.save();
+  ctx.translate(x, bird.y);
+  ctx.rotate(bird.rot);
+  // tail
+  ctx.fillStyle = '#3f9d4e';
+  ctx.beginPath(); ctx.moveTo(-12, 0); ctx.quadraticCurveTo(-26, -2, -30, 6); ctx.quadraticCurveTo(-22, 6, -12, 8); ctx.closePath(); ctx.fill();
+  // wing (flaps)
+  const wa = bird.wing;
+  ctx.save(); ctx.translate(-2, -2); ctx.rotate(-0.5 - wa * 0.9);
+  ctx.fillStyle = '#2f8b40';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(-6, -22, 14, -16); ctx.quadraticCurveTo(10, -4, 0, 0); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  // body
+  ctx.fillStyle = '#54c065';
+  ctx.beginPath(); ctx.ellipse(0, 0, 18, 15, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#bfe9b0';
+  ctx.beginPath(); ctx.ellipse(2, 5, 11, 8, 0, 0, Math.PI * 2); ctx.fill();   // belly
+  // back spikes
+  ctx.fillStyle = '#2f8b40';
+  for (const dx of [-8, -1, 6]) { ctx.beginPath(); ctx.moveTo(dx, -12); ctx.lineTo(dx + 4, -19); ctx.lineTo(dx + 7, -11); ctx.closePath(); ctx.fill(); }
+  // head/snout
+  ctx.fillStyle = '#54c065';
+  ctx.beginPath(); ctx.ellipse(14, -3, 11, 9, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#3f9d4e'; ctx.fillRect(20, -1, 8, 6);   // snout
+  // nostril puff
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath(); ctx.arc(30, 1, 1.8 + Math.abs(Math.sin(sceneTime * 6)) * 1.5, 0, Math.PI * 2); ctx.fill();
+  // eye
+  ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(15, -7, 4.5, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1a1714'; ctx.beginPath(); ctx.arc(16.5, -7, 2.2, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+function render() {
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.4, rand(-shake, shake) * 0.4);
+  drawBackground();
+  for (const p of pipes) drawTower(p);
+  drawGround();
+  drawDragon();
+  ctx.restore();
+}
+
+// ============================================================
+// Loop
+// ============================================================
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000; lastTs = ts;
+  if (dt > 0.05) dt = 0.05;
+  update(dt);
+  render();
+}
+
+// ============================================================
+// Input
+// ============================================================
+function onPress(e) {
+  if (state === 'dead') {
+    // let the leaderboard name box & buttons work; a tap anywhere else flies again
+    if (e.target.closest && e.target.closest('#flapBoard, .play-btn, input, button')) return;
+    if (!restartReady) return;          // ignore taps for the first 2s after a crash
+    e.preventDefault(); startGame(); return;
+  }
+  e.preventDefault();
+  flap();
+}
+sceneWrap.addEventListener('mousedown', onPress);
+sceneWrap.addEventListener('touchstart', onPress, { passive: false });
+document.addEventListener('keydown', (e) => {
+  // don't hijack Space while typing a name into the leaderboard prompt
+  const t = e.target;
+  if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+  if (e.code === 'Space' || e.code === 'ArrowUp' || e.key === ' ') {
+    e.preventDefault();
+    if (state === 'dead') { if (restartReady) startGame(); }   // Space restarts, but not for the first 2s
+    else flap();
+  }
+});
+document.getElementById('startBtn').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
+againBtn.addEventListener('click', (e) => { e.stopPropagation(); if (restartReady) startGame(); });
+
+setupCanvas();
+reset();
+state = 'ready';
+rafId = requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

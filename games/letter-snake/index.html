@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Letter Snake — HomeschoolGames</title>
+  <title>Letter Snake · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -209,7 +209,7 @@
     <div class="bf-overlay" id="startOverlay">
       <div class="crest">🐍</div>
       <h2>Letter Snake</h2>
-      <p>Read the <strong>clue</strong>, then steer the snake to gobble the letters <strong>in spelling order</strong>. Edges wrap around — you won't crash off them! Pick a level:</p>
+      <p>Read the <strong>clue</strong>, then steer the snake to gobble the letters <strong>in spelling order</strong>. Edges wrap around, so you won't crash off them! Pick a level:</p>
       <div class="level-row">
         <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Easy</span><span class="l-desc">Grades 1–3</span></span></button>
         <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Medium</span><span class="l-desc">Grades 4–7</span></span></button>
@@ -219,7 +219,7 @@
     </div>
   </div>
 
-  <p class="hint">Steer with <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>WASD</kbd> or swipe. Gobble the letters in order — the edges loop you around to the other side.</p>
+  <p class="hint">Steer with <kbd>←</kbd><kbd>↑</kbd><kbd>↓</kbd><kbd>→</kbd> / <kbd>WASD</kbd> or swipe. Gobble the letters in order. The edges loop you around to the other side.</p>
 
   <div class="control-row"><button class="reset-link" onclick="quitToMenu()">Change Level</button></div>
 
@@ -342,7 +342,7 @@ function newWord(){
   hidePauseUI();
   showSecondClue();               // first & last letter + length — a permanent extra hint
   HSGSpellWords.say(word);        // announce the word aloud (the goal is the spelling)
-  readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word — press any key to continue ▶';
+  readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word! Press any key to continue ▶';
   readyBanner.classList.remove('hidden');
 }
 function beginPlay(){

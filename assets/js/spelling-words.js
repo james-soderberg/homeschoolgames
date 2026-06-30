@@ -116,7 +116,7 @@
     treasure:"💰 A chest of gold and jewels pirates hunt for", umbrella:"☂️ You hold this over your head in the rain",
     butterfly:"🦋 The pretty insect with colorful wings", chocolate:"🍫 The sweet brown candy everyone loves",
     adventure:"🗺️ An exciting and daring journey", beautiful:"😍 Very, very pretty to look at",
-    dangerous:"⚠️ Something that can hurt you — not safe", vegetable:"🥦 Healthy food like broccoli or carrots",
+    dangerous:"⚠️ Something that is not safe and can hurt you", vegetable:"🥦 Healthy food like broccoli or carrots",
     telescope:"🔭 You look through this to see the stars up close", lightning:"⚡ The bright flash in the sky during a storm",
     calendar:"📅 It shows all the days and months of the year", celebrate:"🎉 To have a party for something special",
     important:"❗ Something that really, really matters", different:"🔀 Not the same as something else",

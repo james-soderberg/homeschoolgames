@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Map Quiz — HomeschoolGames</title>
+  <title>Map Quiz · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -158,9 +158,37 @@
     .country.wrong-flash { fill: #8B2020 !important; }
     .country.highlight-target { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
     .country.show-correct { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
-    /* Already found — greyed out, still shows its name on hover */
-    .country.completed { fill: #A8A29A; stroke: #837C72; cursor: help; }
-    .country.completed:hover { fill: #A8A29A; }
+    /* Already found — painted a bright, per-country colour (set inline in JS);
+       hovering brightens it and shows the country name in a tooltip. */
+    .country.completed { fill: #6CA8C4; stroke: #3f6b7d; cursor: pointer; }
+    .country.completed:hover { filter: brightness(1.12); }
+
+    /* floating name tooltip for found countries */
+    #mapTip {
+      position: fixed; z-index: 60; pointer-events: none; opacity: 0;
+      background: rgba(26,23,20,0.93); color: #fff;
+      font-family: var(--font-sans); font-weight: 700; font-size: 0.82rem;
+      padding: 0.3rem 0.6rem; border-radius: 8px; white-space: nowrap;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.28);
+      transform: translate(-50%, calc(-100% - 12px)); transition: opacity 0.1s;
+    }
+    #mapTip.show { opacity: 1; }
+    #mapTip::after {
+      content: ""; position: absolute; left: 50%; top: 100%;
+      transform: translateX(-50%); border: 6px solid transparent;
+      border-top-color: rgba(26,23,20,0.93);
+    }
+
+    /* Always-visible "what to find" chips so you never scroll up to recheck. */
+    .float-prompt {
+      position: fixed; z-index: 55; pointer-events: none; opacity: 0; transition: opacity .15s;
+      background: var(--ink); color: #fff; font-family: var(--font-sans); font-weight: 700;
+      border-radius: 99px; box-shadow: 0 6px 20px rgba(0,0,0,.28); white-space: nowrap;
+    }
+    .float-prompt.show { opacity: 0.96; }
+    .float-prompt .lbl { font-size: 0.7rem; letter-spacing: .08em; text-transform: uppercase; opacity: .8; }
+    .float-prompt b { color: #f0d384; font-family: var(--font-serif); font-weight: 800; }
+    #fpBottom { left: 50%; bottom: 16px; transform: translateX(-50%); padding: .55rem 1.2rem; font-size: 1.1rem; }
 
     .btn-row {
       display: flex;
@@ -370,6 +398,82 @@ function setTitle(el, name) {
   t.textContent = name;
 }
 
+// Found countries fill in with a colour drawn from their NATIONAL FLAG — the
+// single most identifying flag colour — so the map reads like a flag/political
+// map instead of flat grey. Keyed by ISO-2 id.
+const FLAG_COLORS = {
+  // Americas
+  CA:'#D52B1E', US:'#3C3B6E', MX:'#006847', GT:'#4997D0', BZ:'#003F87', HN:'#0073CF',
+  SV:'#0F47AF', NI:'#0067C6', CR:'#002B7F', PA:'#005293', CU:'#002A8F', HT:'#00209F',
+  DO:'#002D62', JM:'#009B3A', CO:'#FCD116', VE:'#00247D', GY:'#009E49', SR:'#377E3F',
+  BR:'#009C3B', EC:'#FFD100', PE:'#D91023', BO:'#FFE000', CL:'#0039A6', AR:'#74ACDF',
+  PY:'#D52B1E', UY:'#0038A8',
+  // Europe
+  IS:'#02529C', IE:'#169B62', GB:'#012169', PT:'#006600', ES:'#C60B1E', FR:'#0055A4',
+  BE:'#FAE042', NL:'#FF6C00', LU:'#00A1DE', DE:'#DD0000', CH:'#D52B1E', AT:'#ED2939',
+  IT:'#008C45', DK:'#C8102E', NO:'#BA0C2F', SE:'#006AA7', FI:'#003580', PL:'#DC143C',
+  CZ:'#11457E', SK:'#0B4EA2', HU:'#CD2A3E', RO:'#002B7F', BG:'#00966E', GR:'#0D5EAF',
+  HR:'#D81E05', SI:'#005DA4', BA:'#002395', RS:'#C6363C', ME:'#C40308', MK:'#D20000',
+  AL:'#E41E20', EE:'#0072CE', LV:'#9E3039', LT:'#FDB913', BY:'#00843D', UA:'#0057B7',
+  MD:'#0046AE', RU:'#DA291C',
+  // Asia
+  TR:'#E30A17', SY:'#007A3D', LB:'#ED1C24', IL:'#0038B8', JO:'#CE1126', IQ:'#CE1126',
+  IR:'#239F40', SA:'#006C35', YE:'#CE1126', OM:'#C8102E', AE:'#00732F', QA:'#8A1538',
+  KW:'#007A3D', AF:'#007A36', PK:'#0C6B37', IN:'#FF9933', NP:'#DC143C', BD:'#006A4E',
+  LK:'#8D2029', MM:'#FECB00', TH:'#241D4F', LA:'#002868', VN:'#DA251D', KH:'#032EA1',
+  MY:'#CC0001', ID:'#CE1126', PH:'#0038A8', CN:'#DE2910', MN:'#C4272E', KR:'#003478',
+  KP:'#ED1C27', JP:'#BC002D', KZ:'#00AFCA', UZ:'#0099B5', TM:'#00843D', AZ:'#00B5E2',
+  GE:'#E8112D', AM:'#D90012',
+  // Africa
+  MA:'#C1272D', DZ:'#006233', TN:'#E70013', LY:'#239E46', EG:'#CE1126', MR:'#00853F',
+  ML:'#14B53A', NE:'#E05206', TD:'#002664', SD:'#D21034', ER:'#12AD2B', ET:'#078930',
+  DJ:'#6AB2E7', SO:'#4189DD', SN:'#00853F', GM:'#CE1126', GW:'#CE1126', GN:'#FCD116',
+  SL:'#1EB53A', LR:'#BF0A30', CI:'#F77F00', GH:'#FCD116', TG:'#006A4E', BJ:'#FCD116',
+  NG:'#008751', CM:'#007A5E', CF:'#003082', SS:'#0F47AF', UG:'#FCDC04', KE:'#BE0027',
+  RW:'#00A1DE', BI:'#CE1126', TZ:'#1EB53A', GA:'#009E60', CG:'#009543', CD:'#007FFF',
+  AO:'#CE1126', ZM:'#198A00', MW:'#21873B', MZ:'#007168', ZW:'#319208', BW:'#75AADB',
+  NA:'#003580', ZA:'#007A4D', SZ:'#3E5EB9', LS:'#00209F', MG:'#FC3D32'
+};
+function hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+// darken a #rrggbb fill into a matching border colour
+function darken(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f);
+  return `rgb(${r},${g},${b})`;
+}
+function colorFor(id) {
+  const flag = FLAG_COLORS[id];
+  if (flag) return { fill: flag, stroke: darken(flag, 0.6) };
+  const hue = hashStr(id) % 360;          // fallback for any id without a flag colour
+  return { fill: `hsl(${hue}, 50%, 63%)`, stroke: `hsl(${hue}, 45%, 38%)` };
+}
+function paintCompleted(el, id) {
+  if (!el) return;
+  const c = colorFor(id);
+  el.style.fill = c.fill;
+  el.style.stroke = c.stroke;
+  el.style.strokeWidth = '0.6';
+}
+
+// Set the target country in the top prompt AND the always-visible floating chips
+// (bottom + right edge), so you can see what to find without scrolling up.
+function setPrompt(text, isCountry) {
+  document.getElementById('promptCountry').textContent = text;
+  const el = document.getElementById('fpBottom');
+  if (el) {
+    if (isCountry) {
+      el.innerHTML = '<span class="lbl">Find:</span> <b>' + text + '</b>';
+      el.classList.add('show');
+    } else {
+      el.classList.remove('show');
+    }
+  }
+}
+
 function loadRegion(region) {
   currentRegion = region;
   const labels = { americas:'Americas', europe:'Europe', asia:'Asia', africa:'Africa' };
@@ -396,10 +500,10 @@ function startRound() {
   bestStreak = 0;
   regionJustFinished = false;
 
-  // Grey out + label everything already found
+  // Colour + label everything already found
   completed.forEach(id => {
     const el = document.getElementById(id);
-    if (el) { el.classList.add('completed'); setTitle(el, getCountryName(id)); }
+    if (el) { el.classList.add('completed'); setTitle(el, getCountryName(id)); paintCompleted(el, id); }
   });
 
   // Only ask for countries not yet found
@@ -427,7 +531,7 @@ function nextQuestion() {
     // Region complete!
     currentCountry = null;
     const total = REGIONS[currentRegion].countries.length;
-    document.getElementById('promptCountry').textContent = 'All found! 🎉';
+    setPrompt('All found! 🎉', false);
     document.getElementById('feedbackBar').innerHTML =
       `<span class="feedback-correct">🌍 You found all ${total} countries in ${REGIONS[currentRegion].label}!</span>`;
     // Only celebrate when the region was just finished by play (not on reload).
@@ -450,7 +554,7 @@ function nextQuestion() {
   }
 
   currentCountry = queue.pop();
-  document.getElementById('promptCountry').textContent = currentCountry.name;
+  setPrompt(currentCountry.name, true);
 }
 
 function handleCountryClick(countryId) {
@@ -477,6 +581,9 @@ function handleCountryClick(countryId) {
     if (correctEl) {
       correctEl.classList.add('correct-flash', 'completed');
       setTitle(correctEl, currentCountry.name);
+      paintCompleted(correctEl, currentCountry.id);                 // set the colour (under the flash)
+      const fid = currentCountry.id;
+      setTimeout(() => { const e = document.getElementById(fid); if (e) e.classList.remove('correct-flash'); }, 450); // reveal it
     }
     fb.innerHTML = `<span class="feedback-correct">🎉 Yes! That's ${currentCountry.name}!</span>`;
     updateScoreDisplay();
@@ -530,6 +637,31 @@ const rail = HSGStreak.init({
   gameId: 'map-quiz', gameName: 'Map Quiz', minStreak: 1,
   mount: document.getElementById('streakRail')
 });
+
+// Hover a found country to see its name (delegated, so it survives map rebuilds).
+const mapTip = document.createElement('div');
+mapTip.id = 'mapTip';
+document.body.appendChild(mapTip);
+
+// always-visible "what to find" chip pinned to the bottom of the screen
+const fpBottom = document.createElement('div');
+fpBottom.id = 'fpBottom'; fpBottom.className = 'float-prompt';
+document.body.appendChild(fpBottom);
+const mapContainerEl = document.getElementById('mapContainer');
+function hideTip() { mapTip.classList.remove('show'); }
+mapContainerEl.addEventListener('mousemove', (e) => {
+  const path = e.target.closest ? e.target.closest('.country.completed') : null;
+  const name = path ? getCountryName(path.id) : null;
+  if (name) {
+    mapTip.textContent = name;
+    mapTip.style.left = e.clientX + 'px';
+    mapTip.style.top = e.clientY + 'px';
+    mapTip.classList.add('show');
+  } else {
+    hideTip();
+  }
+});
+mapContainerEl.addEventListener('mouseleave', hideTip);
 
 loadRegion('americas');
 </script>

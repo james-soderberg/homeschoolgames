@@ -41,6 +41,26 @@
     freqs.forEach(f => tone(f, start, dur, opts));
   }
 
+  // A burst of filtered noise — the crack/blast of an explosion or fire.
+  function noiseBurst(start, dur, { gain = 0.2, freq = 1600, freqEnd = 160, type = 'lowpass' } = {}) {
+    const c = ac(); if (!c) return;
+    const t0 = c.currentTime + start;
+    const len = Math.max(1, Math.floor(c.sampleRate * dur));
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = type;
+    f.frequency.setValueAtTime(freq, t0);
+    f.frequency.exponentialRampToValueAtTime(Math.max(40, freqEnd), t0 + dur);
+    const g = c.createGain();
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(t0); src.stop(t0 + dur + 0.02);
+  }
+
   const API = {
     get muted() { return muted; },
 
@@ -84,6 +104,34 @@
       } else {
         chord([392, 466], 0.0, 0.5, { type: 'sawtooth', gain: 0.1, glideTo: 330 });
       }
+    },
+
+    // ---- space / arcade effects (Type Invaders) ----
+    // a quick "pew" — light enough to fire on every keystroke
+    laser() {
+      if (muted) return;
+      tone(900, 0, 0.09, { type: 'square', gain: 0.045, glideTo: 200 });
+      tone(1800, 0, 0.05, { type: 'sawtooth', gain: 0.025, glideTo: 700 });
+    },
+    // a real explosion — sharp crack + rumbling body + a punchy sub thump
+    boom(big) {
+      if (muted) return;
+      noiseBurst(0,     big ? 0.55 : 0.36, { gain: big ? 0.52 : 0.42, freq: 4200, freqEnd: 80 });  // crack
+      noiseBurst(0.015, big ? 0.72 : 0.52, { gain: big ? 0.34 : 0.26, freq: 700,  freqEnd: 45 });  // rumble body
+      tone(210, 0, 0.08, { type: 'square', gain: 0.18, glideTo: 70 });                // punch
+      tone(80,  0, big ? 0.46 : 0.32, { type: 'sine', gain: 0.22, glideTo: 32 });     // sub thump
+    },
+    // an enemy plasma bolt fired / a warning
+    alarm() {
+      if (muted) return;
+      tone(340, 0, 0.16, { type: 'sawtooth', gain: 0.06, glideTo: 210 });
+    },
+    // grabbed a power-up
+    powerup() {
+      if (muted) return;
+      tone(523, 0, 0.10, { type: 'triangle', gain: 0.12 });
+      tone(784, 0.08, 0.12, { type: 'triangle', gain: 0.12 });
+      tone(1047, 0.16, 0.18, { type: 'sine', gain: 0.12 });
     },
 
     toggle() {

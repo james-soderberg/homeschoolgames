@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HomeschoolGames — Learn by Playing</title>
+<title>HomeschoolGames · Learn by Playing</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap">
 <style>
@@ -22,8 +22,8 @@
   .banner h1 span{color:#d98324;}
   .banner p{margin:.5rem 0 0;color:#7a7363;font-weight:600;font-size:1rem;}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(212px,1fr));gap:2.6rem 1.9rem;justify-items:center;}
-  .pin{width:100%;max-width:238px;background:#fffdf6;padding:12px 12px 0;position:relative;text-decoration:none;color:inherit;
+  .grid{display:flex;flex-wrap:wrap;justify-content:center;gap:2.6rem 1.9rem;}
+  .pin{width:224px;flex:0 0 auto;background:#fffdf6;padding:12px 12px 0;position:relative;text-decoration:none;color:inherit;
     box-shadow:0 9px 18px rgba(40,25,5,.32);transition:transform .16s,box-shadow .16s;}
   .pin:nth-child(4n){transform:rotate(2deg);}   .pin:nth-child(4n+1){transform:rotate(-1.7deg);}
   .pin:nth-child(4n+2){transform:rotate(1.1deg);}.pin:nth-child(4n+3){transform:rotate(-2.3deg);}
@@ -46,7 +46,6 @@
   <div class="wrap">
     <div class="banner">
       <h1>Homeschool<span>Games</span></h1>
-      <p>pick one, press play — no sign-in, no ads!</p>
     </div>
     <div class="grid" id="board"></div>
     <div class="foot">homeschoolgames.app · made for curious kids</div>
@@ -60,6 +59,17 @@
       <div class="cap">${g.name}</div><div class="sub">${g.subject}</div>`;
     board.appendChild(a);
   });
+
+  // Secret game: type "secret game" anywhere on the home page to unlock it.
+  (function(){
+    const CODE='secretgame'; let buf='';
+    document.addEventListener('keydown',e=>{
+      if(e.key&&e.key.length===1&&/[a-zA-Z ]/.test(e.key)){
+        buf=(buf+e.key.toLowerCase()).replace(/[^a-z]/g,'').slice(-CODE.length);
+        if(buf===CODE) location.href='games/secret-flap/index.html';
+      }
+    });
+  })();
 </script>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Letter Catch — HomeschoolGames</title>
+  <title>Letter Catch · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -137,7 +137,7 @@
     <div class="bf-overlay" id="startOverlay">
       <div class="crest">🪣</div>
       <h2>Letter Catch</h2>
-      <p>Read the <strong>clue</strong>, then slide the basket to catch the letters <strong>in spelling order</strong> — dodge the wrong ones! Pick a level:</p>
+      <p>Read the <strong>clue</strong>, then slide the basket to catch the letters <strong>in spelling order</strong>, and dodge the wrong ones! Pick a level:</p>
       <div class="level-row">
         <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Easy</span><span class="l-desc">Grades 1–3</span></span></button>
         <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Medium</span><span class="l-desc">Grades 4–7</span></span></button>
@@ -147,7 +147,7 @@
     </div>
   </div>
 
-  <p class="hint">Move the basket with your <strong>mouse / finger</strong> or <kbd>←</kbd> <kbd>→</kbd>. Catch the letters in spelling order — the slots reveal as you go.</p>
+  <p class="hint">Move the basket with your <strong>mouse / finger</strong> or <kbd>←</kbd> <kbd>→</kbd>. Catch the letters in spelling order. The slots reveal as you go.</p>
 
   <div class="control-row"><button class="reset-link" onclick="quitToMenu()">Change Level</button></div>
 
@@ -462,7 +462,7 @@ function drawReadyBanner(){
   ctx.fillText('Word '+(score+1), W/2, H*0.40);
   ctx.fillStyle='#3a3128';
   ctx.font="700 "+Math.round(clamp(W*0.028,16,24))+"px system-ui, -apple-system, sans-serif";
-  ctx.fillText('Read the clue — get ready!', W/2, H*0.40 + big*0.95);
+  ctx.fillText('Read the clue, get ready!', W/2, H*0.40 + big*0.95);
   // big countdown digit
   ctx.fillStyle='#C4A040';
   ctx.font="800 "+Math.round(clamp(W*0.11,60,120))+"px Georgia, 'Times New Roman', serif";

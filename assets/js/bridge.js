@@ -214,7 +214,7 @@
         </div>
         <div class="br-input-row" style="display:none">
           <input class="br-num" type="text" inputmode="numeric" autocomplete="off" placeholder="answer">
-          <span class="br-help-label">just <b>type the answer</b> — or tap a choice</span>
+          <span class="br-help-label">just <b>type the answer</b>, or tap a choice</span>
         </div>
         <div class="br-answers"></div>
       </div>`;
@@ -250,7 +250,7 @@
       startEl.style.display = 'flex';
       startEl.innerHTML = `<div class="br-start-card">
         <h2>Bridge Run</h2>
-        <p>Your runner never stops walking. Answer fast to lay the path ahead — or he falls!</p>
+        <p>Your runner never stops walking. Answer fast to lay the path ahead, or he falls!</p>
         ${tiers.map((t,i)=>`<button class="br-tier" data-i="${i}"><b class="${t.key==='einstein'?'em':''}">${t.label}</b><span>${t.desc||''}</span></button>`).join('')}
       </div>`;
       startEl.querySelectorAll('.br-tier').forEach(b =>

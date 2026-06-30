@@ -3,11 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Race to the Red Sea — HomeschoolGames</title>
+  <title>Race to the Red Sea · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    .chase-page { max-width: 1180px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    /* Fit the whole game in one viewport — the scene flexes to fill the space
+       left over so the question panel is always visible without scrolling. */
+    html, body { height: 100%; }
+    body { display: flex; flex-direction: column; min-height: 100dvh; margin: 0; }
+    .chase-page { max-width: 1180px; width: 100%; margin: 0 auto; padding: 1rem 1.25rem 1.25rem;
+      flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
 
     .chase-top {
       display: flex; align-items: center; justify-content: space-between;
@@ -24,7 +29,7 @@
     /* ============ Scene (canvas) ============ */
     .scene-wrap {
       position: relative; width: 100%;
-      height: min(72vh, 680px); min-height: 460px;
+      flex: 1 1 auto; min-height: 240px; max-height: 720px;
       border-radius: 16px 16px 0 0; overflow: hidden;
       border: 2.5px solid #6b4a24; border-bottom: none;
       box-shadow: 0 10px 30px rgba(26,23,20,0.30);
@@ -201,7 +206,7 @@
     <div class="ov" id="startOverlay">
       <div class="crest">📜</div>
       <h2>The Exodus Journey</h2>
-      <p>Travel with Moses and Israel from slavery in Egypt all the way to the Promised Land — through the plagues, across the Red Sea, the desert, Mount Sinai, and the walls of Jericho. Answer Bible questions to move through all six stages.</p>
+      <p>Answer Bible questions to journey from Egypt to the Promised Land.</p>
       <div class="pace-row">
         <button class="pace-btn" data-pace="easy">Easy<span class="p-sub">Grades 3–7</span></button>
         <button class="pace-btn" data-pace="medium">Medium<span class="p-sub">High school</span></button>
@@ -236,7 +241,7 @@
     <div class="ov hidden" id="overOverlay">
       <div class="crest">🐎</div>
       <h2 id="overTitle">Pharaoh's army caught up!</h2>
-      <p>The chariots overtook you before you reached the sea. Catch your breath and run again — the sea is waiting.</p>
+      <p>The chariots overtook you before you reached the sea. Catch your breath and run again. The sea is waiting.</p>
       <div class="final-stats">
         <div class="fs"><b id="fsCorrect">0</b><span>Correct</span></div>
         <div class="fs"><b id="fsBestStreak">0</b><span>Best Streak</span></div>
@@ -251,7 +256,7 @@
     <div class="ov hidden" id="winOverlay">
       <div class="crest">🌅</div>
       <h2>You reached the Promised Land!</h2>
-      <p id="winMsg">From slavery to freedom — you walked the whole journey out of Egypt with Moses and Joshua.</p>
+      <p id="winMsg">From slavery to freedom, you walked the whole journey out of Egypt with Moses and Joshua.</p>
       <div class="final-stats">
         <div class="fs"><b id="wCorrect">0</b><span>Correct</span></div>
         <div class="fs"><b id="wBestStreak">0</b><span>Best Streak</span></div>
@@ -361,9 +366,9 @@ const DECK = {
     {"q":"How many sons did Noah have?","a":"3","wrong":["2","10","12"],"cat":"numbers"},
     {"q":"Noah took the animals onto the ark how many at a time?","a":"2","wrong":["3","10","40"],"cat":"numbers"},
     {"q":"How many crosses stood on the hill when Jesus died?","a":"3","wrong":["2","10","12"],"cat":"numbers"},
-    {"q":"The Ten Commandments — how many rules is that?","a":"10","wrong":["2","3","40"],"cat":"numbers"},
+    {"q":"The Ten Commandments: how many rules is that?","a":"10","wrong":["2","3","40"],"cat":"numbers"},
     {"q":"How many men did Jesus pick to be his special helpers?","a":"12","wrong":["2","3","40"],"cat":"numbers"},
-    {"q":"Adam and Eve — that is how many people?","a":"2","wrong":["3","10","12"],"cat":"numbers"},
+    {"q":"Adam and Eve: that is how many people?","a":"2","wrong":["3","10","12"],"cat":"numbers"},
     {"q":"How many days was Jesus in the tomb before Easter?","a":"3","wrong":["2","10","40"],"cat":"numbers"},
     {"q":"Where was baby Jesus born?","a":"Bethlehem","wrong":["Egypt","Heaven","The Red Sea"],"cat":"places"},
     {"q":"Where did Moses lead the people through the water?","a":"The Red Sea","wrong":["Bethlehem","Heaven","Egypt"],"cat":"places"},
@@ -753,7 +758,7 @@ const PLAGUES = [
   { n:'Hail',      d:'Hail and fire fell from the sky' },
   { n:'Locusts',   d:'Locusts ate every green plant' },
   { n:'Darkness',  d:'Three days of total darkness' },
-  { n:'Passover',  d:"The firstborn — Israel spared by the lamb's blood" },
+  { n:'Passover',  d:"The firstborn: Israel spared by the lamb's blood" },
 ];
 const COMMANDMENTS = [
   'Have no other gods before Me',
@@ -773,37 +778,37 @@ const ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
 const LEVELS = [
   {
     id:'slavery', emoji:'🧱', name:'Slavery in Egypt', ref:'Exodus 1', goal:5, pause:1.1,
-    story:"Jacob's family grew into a great nation in Egypt. A new Pharaoh feared them and forced them into hard slavery — making bricks and building his store-cities. Israel cried out to God for help.",
+    story:"Jacob's family grew into a great nation in Egypt. A new Pharaoh feared them and forced them into hard slavery, making bricks and building his store-cities. Israel cried out to God for help.",
     teach:"Israel was enslaved in Egypt for over <b>400 years</b>. God heard their cry and raised up <b>Moses</b> to set His people free. <i>(Exodus 1–2)</i>",
     scene: drawSlavery,
   },
   {
     id:'plagues', emoji:'🐸', name:'The Ten Plagues', ref:'Exodus 7–12', goal:10, pause:1.6,
-    story:"Moses stood before Pharaoh and said, \"Let my people go!\" Pharaoh refused again and again — so God sent ten plagues on Egypt, each one a sign of His power.",
+    story:"Moses stood before Pharaoh and said, \"Let my people go!\" Pharaoh refused again and again, so God sent ten plagues on Egypt, each one a sign of His power.",
     teach:"The <b>ten plagues</b> ended with the first <b>Passover</b>: Israel marked their doors with lamb's blood and were spared. At last Pharaoh let them go. <i>(Exodus 7–12)</i>",
     scene: drawPlagues,
   },
   {
     id:'redsea', emoji:'🌊', name:'Race to the Red Sea', ref:'Exodus 14', goal:8, pause:0.85,
-    story:"Israel marched out of Egypt — but Pharaoh changed his mind and sent his chariots after them! The Red Sea lies ahead and the army is closing in. Keep answering to outrun Pharaoh and reach the shore!",
+    story:"Israel marched out of Egypt, but Pharaoh changed his mind and sent his chariots after them! The Red Sea lies ahead and the army is closing in. Keep answering to outrun Pharaoh and reach the shore!",
     teach:"At the sea <b>Moses stretched out his hand</b> and God parted the waters. Israel crossed on dry ground, and the sea closed over Pharaoh's army. <i>(Exodus 14)</i>",
     scene: drawChase, chase:true,
   },
   {
     id:'desert', emoji:'🏜️', name:'Wandering the Desert', ref:'Exodus 16', goal:6, pause:1.2,
-    story:"Free at last, Israel journeyed through a vast wilderness toward the mountain of God. With no food or water, they grumbled — but God provided bread from heaven each morning and led them by a pillar of cloud and fire.",
+    story:"Free at last, Israel journeyed through a vast wilderness toward the mountain of God. With no food or water, they grumbled, but God provided bread from heaven each morning and led them by a pillar of cloud and fire.",
     teach:"God fed Israel with <b>manna</b> every morning and led them by a <b>pillar of cloud</b> by day and <b>fire</b> by night, all the way to Mount Sinai. <i>(Exodus 16)</i>",
     scene: drawDesert,
   },
   {
     id:'sinai', emoji:'⛰️', name:'Mount Sinai', ref:'Exodus 20', goal:10, pause:1.3,
-    story:"At Mount Sinai the mountain shook with thunder, smoke and fire. Moses climbed up to meet God, who gave His people ten commandments to live by — written on two tablets of stone.",
-    teach:"On Mount Sinai God gave Moses the <b>Ten Commandments</b> — His law for how to love God and love others. <i>(Exodus 20)</i>",
+    story:"At Mount Sinai the mountain shook with thunder, smoke and fire. Moses climbed up to meet God, who gave His people ten commandments to live by, written on two tablets of stone.",
+    teach:"On Mount Sinai God gave Moses the <b>Ten Commandments</b>, His law for how to love God and love others. <i>(Exodus 20)</i>",
     scene: drawSinai,
   },
   {
     id:'jericho', emoji:'🎺', name:'The Fall of Jericho', ref:'Joshua 6', goal:7, pause:1.2,
-    story:"A new leader, Joshua, led Israel into the Promised Land. The mighty walled city of Jericho blocked the way. God told them to march around it once a day for six days — and seven times on the seventh day.",
+    story:"A new leader, Joshua, led Israel into the Promised Land. The mighty walled city of Jericho blocked the way. God told them to march around it once a day for six days, and seven times on the seventh day.",
     teach:"On the seventh march the priests blew their trumpets, the people shouted, and the <b>walls of Jericho fell flat</b>. The Promised Land was open at last! <i>(Joshua 6)</i>",
     scene: drawJericho,
   },
@@ -861,6 +866,8 @@ function setupCanvas() {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 window.addEventListener('resize', setupCanvas);
+// the scene height is flex-derived, so track its actual box (e.g. after fonts load)
+if (window.ResizeObserver) new ResizeObserver(setupCanvas).observe(sceneWrap);
 
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
@@ -1678,7 +1685,7 @@ function levelClear() {
   const L = LEVELS[levelIdx];
   state = 'clear'; answered = true;
   document.getElementById('clearEmoji').textContent = L.emoji;
-  document.getElementById('clearTitle').textContent = L.name + ' — complete!';
+  document.getElementById('clearTitle').textContent = L.name + ' complete!';
   document.getElementById('clearTeach').innerHTML = L.teach;
   clearOverlay.classList.remove('hidden');
   renderJourneyMap(true);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Around the World in 80 Days — HomeschoolGames</title>
+  <title>Around the World in 80 Days · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
     /* Fill the viewport exactly: the page is a 100vh flex column, the question
@@ -286,7 +286,7 @@
       <div class="ov hidden" id="caughtOverlay">
         <div class="crest">🕵️</div>
         <h2>Detective Fix nabs you!</h2>
-        <p>Your voyage ends here — your best streak is logged in the Record Book.</p>
+        <p>Your voyage ends here. Your best streak is logged in the Record Book.</p>
         <div class="final-stats">
           <div class="fs"><b id="cStreak">0</b><span>Best streak</span></div>
           <div class="fs"><b id="cLap">1</b><span>Lap reached</span></div>
@@ -401,15 +401,15 @@ const LEG_TRANSPORT = ["🚢","🚢","🐘","🚢","🚢","🚢","🚂","🚢"];
 
 // Book-accurate mishaps. Picked at random on a wrong answer.
 const MISHAPS = [
-  "The railway ends at Kholby — you must hire an elephant across India.",
+  "The railway ends at Kholby, so you hire an elephant across India.",
   "Passepartout is lured into a Hong Kong opium den and goes missing.",
   "A gale hammers the steamer on the Pacific crossing.",
   "A great herd of bison blocks the line across Nebraska.",
-  "The Medicine Bow trestle bridge is failing — a nerve-racking dash.",
+  "The Medicine Bow trestle bridge is failing. A nerve-racking dash.",
   "A raiding party storms the train near Fort Kearney.",
   "You miss the Carnatic and must charter the schooner Tankadere.",
   "Detective Fix's warrant snarls the whole party in red tape.",
-  "Becalmed mid-ocean — the sails hang limp for want of wind.",
+  "Becalmed mid-ocean, the sails hang limp for want of wind.",
   "A muddled timetable sends your party the wrong way entirely.",
   "Customs officers detain the travellers at the quay.",
   "Monsoon floods wash out the road to Allahabad.",
@@ -655,10 +655,10 @@ function drawHUD() {
 
 function drawBanners() {
   if (state === 'lap') {
-    drawNote('🎉 ' + lapMsg, 'Detective Fix falls behind — keep circling!', '#C4A040', Math.min(1, lapHold + 0.2), H * 0.16);
+    drawNote('🎉 ' + lapMsg, 'Detective Fix falls behind. Keep circling!', '#C4A040', Math.min(1, lapHold + 0.2), H * 0.16);
   } else if (mishapT > 0) {
     const a = Math.min(1, mishapT / 0.4) * Math.min(1, mishapT);
-    drawNote('⚠ MISHAP — Fix gains ground!', mishapMsg, '#8B2020', a, H * 0.16);
+    drawNote('⚠ MISHAP! Fix gains ground!', mishapMsg, '#8B2020', a, H * 0.16);
   } else if (arriveT > 0) {
     const a = Math.min(1, arriveT / 0.4) * Math.min(1, arriveT);
     drawNote('⚓ ' + arriveMsg, '', '#2A5C3F', a, H * 0.16);
@@ -795,7 +795,7 @@ function answer(idx) {
   const isCorrect = (btn.dataset.val === current.country);
 
   document.getElementById('revealName').textContent =
-    current.flag + ' ' + current.country + ' — ' + current.continent;
+    current.flag + ' ' + current.country + ' · ' + current.continent;
   // once answered, show the clue as a takeaway fact (and retire the hint button)
   document.getElementById('flagBlurb').hidden = false;
   document.getElementById('hintBtn').hidden = true;
@@ -887,7 +887,7 @@ function caught() {
     const rank = board.filter(e => e.streak > bestStreak).length + 1;   // where this run lands
     const medal = { 1:'🥇', 2:'🥈', 3:'🥉' }[rank] || '🏅';
     const ord = rank + (['th','st','nd','rd'][(rank % 100 - 20) % 10] || ['th','st','nd','rd'][rank % 100] || 'th');
-    document.getElementById('neLabel').textContent = `${medal} You took ${ord} place — add your name:`;
+    document.getElementById('neLabel').textContent = `${medal} You took ${ord} place! Add your name:`;
     ne.classList.remove('hidden');
     const inp = document.getElementById('nameInput');
     inp.value = lastName();
@@ -925,7 +925,7 @@ function renderRail(highlight) {
   if (!board.length) {
     const li = document.createElement('li');
     li.className = 'rail-empty';
-    li.textContent = 'No records yet — survive a run and be the first in the book!';
+    li.textContent = 'No records yet. Survive a run and be the first in the book!';
     el.appendChild(li);
     return;
   }

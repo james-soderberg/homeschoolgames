@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bible Quiz — Paul's Voyage — HomeschoolGames</title>
+  <title>Bible Quiz: Paul's Voyage · HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -200,7 +200,7 @@
       <div class="ov" id="startOverlay">
         <div class="crest">⛵</div>
         <h2>Paul's Voyage</h2>
-        <p>Retrace Paul's journeys all the way to Rome. Name the book each clue comes from — five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
+        <p>Retrace Paul's journeys all the way to Rome. Name the book each clue comes from. Five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
         <div class="pace-row">
           <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3–7</span></button>
           <button class="pace-btn" data-level="medium">Medium<span class="p-sub">High school</span></button>
@@ -213,7 +213,7 @@
     <aside class="map-panel">
       <h3>Paul's Journey</h3>
       <div class="map-wrap"><canvas id="mapCanvas"></canvas></div>
-      <div class="map-cap" id="mapCap">Antioch — ready to set sail</div>
+      <div class="map-cap" id="mapCap">Antioch, ready to set sail</div>
     </aside>
   </div>
 
@@ -370,17 +370,17 @@ const SHIP_X0 = 0.16, SHIP_X1 = 0.60;  // ship sails from left → right across 
 // ---------------- The voyage: ordered ports, each with a teaching vignette ----------------
 const ITINERARY = [
   { port:"Cyprus", acts:"Acts 13", title:"Elymas Struck Blind", vignette:"cyprus",
-    text:"On the island of Cyprus a sorcerer named Elymas tried to turn the governor from the faith — and was struck blind, groping for someone to lead him. The governor saw it and believed. So began Paul's very first missionary journey." },
+    text:"On the island of Cyprus a sorcerer named Elymas tried to turn the governor from the faith, and was struck blind, groping for someone to lead him. The governor saw it and believed. So began Paul's very first missionary journey." },
   { port:"Philippi", acts:"Acts 16", title:"Prison Doors Flung Open", vignette:"philippi",
-    text:"At Philippi, Paul and Silas were beaten and jailed, yet at midnight they sang hymns. A great earthquake shook the doors open — but they stayed, and the jailer and his whole household were saved. Lydia, a seller of purple, had been Europe's first convert." },
+    text:"At Philippi, Paul and Silas were beaten and jailed, yet at midnight they sang hymns. A great earthquake shook the doors open, but they stayed, and the jailer and his whole household were saved. Lydia, a seller of purple, had been Europe's first convert." },
   { port:"Athens", acts:"Acts 17", title:"The Unknown God", vignette:"athens",
     text:"In Athens, Paul stood on Mars' Hill surrounded by idols and pointed to an altar inscribed 'TO THE UNKNOWN GOD.' He told the philosophers of the one true God 'in whom we live, and move, and have our being.'" },
   { port:"Ephesus", acts:"Acts 19", title:"Scrolls in the Fire", vignette:"ephesus",
-    text:"At Ephesus many believers burned their costly books of magic in the open. A riot erupted in the great theater — 'Great is Diana of the Ephesians!' Years later Paul would write this very city the letter of Ephesians." },
+    text:"At Ephesus many believers burned their costly books of magic in the open. A riot erupted in the great theater: 'Great is Diana of the Ephesians!' Years later Paul would write this very city the letter of Ephesians." },
   { port:"Malta", acts:"Acts 27–28", title:"Shipwreck on Malta", vignette:"malta",
     text:"A fierce storm wrecked the ship on the island of Malta, yet all 276 aboard reached shore alive, exactly as God had promised. When a viper fastened on Paul's hand, he simply shook it into the fire and felt no harm." },
   { port:"Rome", acts:"Acts 28", title:"Paul Reaches Rome", vignette:"rome", final:true,
-    text:"At last Paul came to Rome. Though chained to a soldier, he preached the kingdom of God boldly, 'no man forbidding him,' and from that house he wrote his Prison Letters — Ephesians, Philippians, Colossians, and Philemon." },
+    text:"At last Paul came to Rome. Though chained to a soldier, he preached the kingdom of God boldly, 'no man forbidding him,' and from that house he wrote his Prison Letters: Ephesians, Philippians, Colossians, and Philemon." },
 ];
 
 // ---------------- Difficulty levels ----------------
@@ -812,7 +812,7 @@ function drawMiniMap() {
   }
 }
 function updateMapCaption() {
-  if (state === 'menu') { mapCapEl.textContent = 'Antioch — ready to set sail'; return; }
+  if (state === 'menu') { mapCapEl.textContent = 'Antioch, ready to set sail'; return; }
   const dest = ITINERARY[Math.min(legIndex, ITINERARY.length - 1)].port;
   mapCapEl.textContent = (state === 'landing' || state === 'done')
     ? '⚓ Landed at ' + dest + '  ·  stop ' + (legIndex + 1) + ' of ' + ITINERARY.length
@@ -1240,7 +1240,7 @@ function answer_(idx) {
 
 function showReveal(wasCorrect) {
   const others = current.books.filter(b => b !== current._answer);
-  let line = (wasCorrect ? '✓ ' : '✗ This is from ' + current._answer + ' — ') + current.name.replace(/ \(.*\)$/, '');
+  let line = (wasCorrect ? '✓ ' : '✗ This is from ' + current._answer + ', ') + current.name.replace(/ \(.*\)$/, '');
   if (others.length) line += ' (also in ' + others.join(', ') + ')';
   const el = document.getElementById('qreveal');
   el.textContent = line;
@@ -1271,13 +1271,13 @@ function fillLandingCard(stop) {
   tag.textContent = 'Landing ' + (legIndex + 1) + ' of ' + ITINERARY.length + ' · ' + stop.acts;
 
   qtextEl.classList.remove('quoted'); qtextEl.classList.add('plain');
-  qtextEl.textContent = stop.port + ' — ' + stop.title;
+  qtextEl.textContent = stop.port + ' · ' + stop.title;
   document.getElementById('qblurb').textContent = stop.text;
   document.getElementById('qprompt').style.display = 'none';
 
   const reveal = document.getElementById('qreveal');
-  const note = legWrong === 0 ? '⚓ Smooth sailing — not a single wrong turn!'
-    : '⚓ Safe in port — after ' + legWrong + ' wrong turn' + (legWrong > 1 ? 's' : '') + '.';
+  const note = legWrong === 0 ? '⚓ Smooth sailing, not a single wrong turn!'
+    : '⚓ Safe in port after ' + legWrong + ' wrong turn' + (legWrong > 1 ? 's' : '') + '.';
   reveal.textContent = note; reveal.style.color = 'var(--gold)';
 
   answersEl.innerHTML = '';

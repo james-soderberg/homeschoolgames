@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Who Said It? — HomeschoolGames</title>
+<title>Who Said It? · HomeschoolGames</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
 <link rel="stylesheet" href="../../assets/css/streak-rail.css">
 <style>
@@ -13,6 +13,20 @@
   .stat-badge { background: var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
     padding:.4rem .95rem; font-weight:700; font-size:.9rem; font-family:var(--font-sans); color:var(--ink); white-space:nowrap; }
   .stat-badge b { color: var(--gold); }
+  .top-right { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .auto-toggle { display:inline-flex; align-items:center; gap:.45rem; cursor:pointer;
+    background: var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .85rem; font-weight:700; font-size:.82rem; font-family:var(--font-sans);
+    color:var(--ink-light); white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
+  .auto-toggle:hover { background:#efe7d6; }
+  .auto-toggle .dot { width:.7rem; height:.7rem; border-radius:50%; background:#c2b69c;
+    box-shadow:inset 0 0 0 2px var(--cream-dark); transition:background .15s; }
+  .auto-toggle[aria-checked="true"] { color:var(--ink); border-color:var(--gold); background:#fbf3df; }
+  .auto-toggle[aria-checked="true"] .dot { background:var(--gold); }
+  .quit-btn { cursor:pointer; background:#fff; border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .9rem; font-weight:700; font-size:.82rem; font-family:var(--font-sans);
+    color:var(--ink-light); white-space:nowrap; transition:border-color .15s, color .15s; }
+  .quit-btn:hover { border-color:#c0392b; color:#c0392b; }
 
   /* two columns: quiz + wall */
   .wsi-layout { display:flex; gap:1.5rem; align-items:flex-start; }
@@ -24,7 +38,7 @@
     padding:1.4rem 1.4rem 1.2rem; text-align:center; }
   .portrait-wrap { width:200px; height:240px; margin:0 auto .9rem; border-radius:14px; overflow:hidden;
     border:3px solid var(--border); background:#ece5d6; box-shadow:0 6px 18px rgba(26,23,20,.2); position:relative; }
-  .portrait-wrap img { width:100%; height:100%; object-fit:cover; display:block; }
+  .portrait-wrap img { width:100%; height:100%; object-fit:cover; object-position:center 20%; display:block; }
   .portrait-wrap.win { border-color: var(--gold); animation: pop .5s cubic-bezier(.34,1.56,.64,1); }
   .portrait-wrap.miss { border-color: var(--red); }
   @keyframes pop { 0%{transform:scale(1)} 45%{transform:scale(1.07)} 100%{transform:scale(1)} }
@@ -69,7 +83,7 @@
   .wall-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:7px; padding:10px; }
   .wall-cell { border-radius:9px; overflow:hidden; border:2px solid var(--border); background:#efe7d6; text-align:center; }
   .wall-pic { aspect-ratio:1/1; background:#d8cfbe; position:relative; overflow:hidden; }
-  .wall-pic img { width:100%; height:100%; object-fit:cover; display:block; }
+  .wall-pic img { width:100%; height:100%; object-fit:cover; object-position:center 20%; display:block; }
   .wall-cell.locked .wall-pic::after { content:'?'; position:absolute; inset:0; display:grid; place-items:center;
     font-family:var(--font-serif); font-size:1.5rem; font-weight:700; color:#a59cae; background:#353143; }
   .wall-nm { font-family:var(--font-sans); font-size:8px; font-weight:700; color:var(--ink); padding:2px 1px 3px; line-height:1.05; min-height:2.1em; }
@@ -91,13 +105,20 @@
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
-  <nav class="site-nav"><a href="../../index.html">← All Games</a></nav>
+  <nav class="site-nav"><a href="../../index.html" id="allGamesLink">← All Games</a></nav>
 </header>
 
 <div class="wsi-page">
   <div class="wsi-top">
     <h1>Who Said It?</h1>
-    <div class="stat-badge">Wall of Fame <b id="wallStat">0</b> / <span id="wallGoal">0</span></div>
+    <div class="top-right">
+      <button class="auto-toggle" id="autoToggle" type="button" role="switch" aria-checked="false"
+        title="When on, the game moves to the next quote on its own after you answer.">
+        <span class="dot"></span><span id="autoLabel">Auto-advance: Off</span>
+      </button>
+      <div class="stat-badge">Wall of Fame <b id="wallStat">0</b> / <span id="wallGoal">0</span></div>
+      <button class="quit-btn" id="quitBtn" type="button" title="End the game (you can save your streak first)">Quit</button>
+    </div>
   </div>
 
   <div class="wsi-layout">
@@ -135,6 +156,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/whosaidit-people.js"></script>
+<script src="../../assets/js/whosaidit-bios.js"></script>
 <script>
 // ============================================================
 // WHO SAID IT? — read a famous quote, see the real person, and
@@ -144,7 +166,11 @@
 // ============================================================
 const WALL_SIZE = 24;          // slots to fill to win (kept small, not all 250)
 const KEYS = ['A','B','C','D'];
-const DELAY_OK = 1700, DELAY_NO = 2600;
+const DELAY_OK = 1700, DELAY_NO = 2600;   // win-screen pacing (auto path below)
+// Auto-advance pacing — long enough to read the speaker's bio before moving on.
+const AUTO_OK = 3500, AUTO_NO = 4500;
+let autoAdvance = false;
+try { autoAdvance = localStorage.getItem('wsi_autoadvance') === '1'; } catch(e){}
 
 function slug(n){ return n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
 function imgFor(p){ return '../../assets/img/whosaidit/' + slug(p.n) + '.jpg'; }
@@ -181,9 +207,11 @@ async function pickAnswer(){
   return PEOPLE.find(p=>!brokenImg.has(p.n)) || PEOPLE[0];
 }
 
-// 4 names: the speaker + 3 era-near distractors (closest by year)
+// 4 names: the speaker + 3 era-near distractors (closest by year), all the SAME
+// gender as the speaker (the portrait already shows whether it's a man or woman).
 function buildOptions(ans){
-  const others = PEOPLE.filter(p=>p.n!==ans.n);
+  const sameG = PEOPLE.filter(p=>p.n!==ans.n && p.g===ans.g);
+  const others = sameG.length>=3 ? sameG : PEOPLE.filter(p=>p.n!==ans.n);
   const near = others.slice().sort((a,b)=>Math.abs(a.y-ans.y)-Math.abs(b.y-ans.y)).slice(0, 14);
   const pool = shuffle(near).slice(0,3).map(p=>p.n);
   while(pool.length<3){ const r=others[Math.floor(Math.random()*others.length)].n; if(!pool.includes(r)) pool.push(r); }
@@ -212,7 +240,7 @@ function updateWallCount(){
   document.getElementById('wallBar').style.width = (c/WALL_SIZE*100)+'%';
   const note = document.getElementById('wallNote');
   if(c===0) note.textContent='Name a speaker right to add their portrait.';
-  else if(c>=WALL_SIZE) note.textContent='🏆 Wall complete — you filled it!';
+  else if(c>=WALL_SIZE) note.textContent='🏆 Wall complete! You filled it!';
   else note.textContent=(WALL_SIZE-c)+' more to fill the wall.';
 }
 function addToWall(p){
@@ -281,11 +309,20 @@ function handleAnswer(chosen, btn){
   }
   document.getElementById('revealLine').innerHTML = 'It was <b>'+current.n+'</b> · '+current.e;
 
+  // a sentence about the speaker, shown right or wrong, where the clue sits
+  const bio = (window.WSI_BIOS && WSI_BIOS[current.n]) || current.b;
+  const blurb = document.getElementById('quoteBlurb');
+  blurb.textContent = bio; blurb.hidden = false;
+  document.getElementById('hintBtn').hidden = true;   // the hint is moot once answered
+
   if(collected.length >= WALL_SIZE){ setTimeout(winGame, DELAY_OK); return; }
 
   const nb = document.getElementById('nextBtn');
   nb.style.display='inline-block';
-  advanceTimer = setTimeout(()=>{ if(answered) nextCard(); }, correct?DELAY_OK:DELAY_NO);
+  // Only move on by itself when auto-advance is on; otherwise wait for the click.
+  if(autoAdvance){
+    advanceTimer = setTimeout(()=>{ if(answered) nextCard(); }, correct?AUTO_OK:AUTO_NO);
+  }
 }
 
 function winGame(){
@@ -320,6 +357,44 @@ document.addEventListener('keydown', e=>{
   const b=document.querySelector('.option-btn[data-idx="'+i+'"]');
   if(b && !b.disabled) b.click();
 });
+
+// ---- auto-advance toggle (persisted) ----
+const autoToggle = document.getElementById('autoToggle');
+function renderAutoToggle(){
+  autoToggle.setAttribute('aria-checked', autoAdvance ? 'true' : 'false');
+  document.getElementById('autoLabel').textContent = 'Auto-advance: ' + (autoAdvance ? 'On' : 'Off');
+}
+autoToggle.addEventListener('click', ()=>{
+  autoAdvance = !autoAdvance;
+  try { localStorage.setItem('wsi_autoadvance', autoAdvance ? '1' : '0'); } catch(e){}
+  renderAutoToggle();
+  if(window.HSGSound) HSGSound.tick();
+  if(autoAdvance && answered){            // already on a result → start the countdown now
+    clearTimeout(advanceTimer);
+    advanceTimer = setTimeout(()=>{ if(answered) nextCard(); }, AUTO_OK);
+  } else if(!autoAdvance){
+    clearTimeout(advanceTimer);           // turning it off cancels any pending jump
+  }
+});
+renderAutoToggle();
+
+// ---- quit / leave: offer to save the streak if it makes the Top 10 ----
+let leaving = false;
+function leaveGame(dest){
+  if(leaving) return; leaving = true;
+  clearTimeout(advanceTimer); answered = true;        // freeze the current round
+  const go = ()=>{ if(dest) window.location.href = dest; };
+  // record() shows a save prompt ONLY when the best streak makes the Top 10;
+  // otherwise it calls onDone(null) right away and we just leave.
+  if(window.HSGStreak && HSGStreak.record){
+    HSGStreak.record({ gameId:'who-said-it', gameName:'Who Said It?',
+      score:bestStreak, minStreak:3, unit:'streak',
+      onDone:()=>{ leaving = false; go(); } });
+  } else { go(); }
+}
+document.getElementById('quitBtn').addEventListener('click', ()=> leaveGame('../../index.html'));
+const allGamesLink = document.getElementById('allGamesLink');
+if(allGamesLink) allGamesLink.addEventListener('click', (e)=>{ e.preventDefault(); leaveGame(allGamesLink.href); });
 
 buildWall();
 nextCard();
