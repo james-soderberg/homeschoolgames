@@ -656,55 +656,59 @@
     }
 
     /* ---- PASS-AND-PLAY game screen (unchanged) ---- */
-    .game-screen { display: none; max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+    .game-screen { display: none; max-width: 820px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    /* centered header: title centered, End Game to the right, scores below */
     .game-header {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1.5rem;
-      flex-wrap: wrap;
-      gap: 0.75rem;
+      row-gap: 0.75rem;
+      margin-bottom: 1.4rem;
     }
-    .game-header h2 { font-family: var(--font-serif); font-size: 1.6rem; }
-    .score-bar { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .game-header h2 { grid-column: 2; grid-row: 1; text-align: center; margin: 0; font-family: var(--font-serif); font-size: 1.5rem; }
+    .game-header > .btn { grid-column: 3; grid-row: 1; justify-self: end; }
+    .score-bar { grid-column: 1 / -1; grid-row: 2; display: flex; gap: 0.55rem; flex-wrap: wrap; justify-content: center; }
     .score-pill {
       background: white;
       border: 1px solid var(--border);
       border-radius: 99px;
-      padding: 0.3rem 0.9rem;
-      font-size: 0.8rem;
-      font-weight: 500;
+      padding: 0.3rem 0.95rem;
+      font-size: 0.82rem;
+      font-weight: 600;
     }
     .target-area {
       background: white;
       border: 1px solid var(--border);
       border-radius: var(--radius);
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
+      padding: 1.1rem 1.25rem 1.35rem;
+      margin: 0 auto 1.35rem;
+      max-width: 380px;
       text-align: center;
       box-shadow: var(--shadow);
     }
-    .target-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.5rem; }
+    .target-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.7rem; }
     .target-year { font-family: var(--font-serif); font-size: 3.5rem; font-weight: 600; color: var(--ink); line-height: 1; }
     .target-era { font-family: var(--font-serif); font-size: 1rem; color: var(--gold); font-weight: 600; margin-top: 0.2rem; }
     .target-hidden { font-family: var(--font-serif); font-size: 2rem; letter-spacing: 0.3em; color: var(--border); }
     /* the face-up target event card in pass-and-play (date stays hidden until reveal) */
     .target-card-mount { display: flex; justify-content: center; }
-    .target-card-mount .circa-card { width: 240px; max-width: 100%; cursor: default; }
-    .hand-label { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.75rem; }
-    .reveal-area { display: none; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
-    .reveal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.75rem; margin-top: 1rem; }
+    .target-card-mount .circa-card { width: 250px; max-width: 100%; cursor: default; }
+    .hand-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.35rem; text-align: center; }
+    .reveal-area { display: none; background: white; border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); text-align: center; }
+    .reveal-area .target-label { margin-bottom: 0; }
+    .reveal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 190px)); gap: 0.9rem; margin-top: 1rem; justify-content: center; }
     .reveal-entry { text-align: center; }
-    .reveal-entry .player-name { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.4rem; }
+    .reveal-entry .player-name { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-light); margin-bottom: 0.4rem; }
     .reveal-entry.winner .player-name { color: var(--green); }
     .reveal-entry.winner .circa-card { border-color: var(--green); }
-    .diff-badge { margin-top: 0.4rem; font-size: 0.75rem; font-weight: 600; color: var(--ink-light); }
+    .diff-badge { margin-top: 0.4rem; font-size: 0.75rem; font-weight: 700; color: var(--ink-light); }
     .diff-badge.winner { color: var(--green); }
-    .round-result { display: none; padding: 1rem 1.5rem; background: var(--cream-dark); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.9rem; }
-    .pass-screen { display: none; max-width: 420px; margin: 4rem auto; padding: 0 1.5rem; text-align: center; }
-    .pass-screen h2 { font-size: 1.8rem; margin-bottom: 0.75rem; }
-    .pass-screen p { margin-bottom: 1.5rem; }
-    .solo-hint { font-size: 0.8rem; color: var(--ink-light); margin-top: 0.4rem; font-style: italic; }
+    .round-result { display: none; padding: 0.8rem 1.5rem; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 99px; margin: 0 auto 1.1rem; max-width: 520px; font-size: 0.95rem; font-weight: 600; text-align: center; }
+    .pass-screen { display: none; max-width: 440px; margin: 0 auto; min-height: 70vh; padding: 0 1.5rem; text-align: center; display: none; flex-direction: column; align-items: center; justify-content: center; }
+    .pass-screen.on { display: flex; }
+    .pass-screen h2 { font-size: 1.9rem; margin-bottom: 0.5rem; font-family: var(--font-serif); }
+    .pass-screen p { margin-bottom: 1.5rem; color: var(--ink-light); }
+    .solo-hint { font-size: 0.8rem; color: var(--ink-light); margin: 0 0 0.9rem; font-style: italic; text-align: center; }
 
     /* ---- End screen ---- */
     .end-screen { display: none; max-width: 520px; margin: 3rem auto; padding: 0 1.5rem; text-align: center; }
@@ -1705,13 +1709,13 @@ function startRound() {
 
 function showPassScreen(playerName, msg) {
   document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('passScreen').style.display = 'block';
+  document.getElementById('passScreen').classList.add('on');
   document.getElementById('passTitle').textContent = `${playerName}'s turn`;
   document.getElementById('passMsg').textContent = msg;
 }
 
 function dismissPass() {
-  document.getElementById('passScreen').style.display = 'none';
+  document.getElementById('passScreen').classList.remove('on');
   document.getElementById('gameScreen').style.display = 'block';
   renderHand(currentPickerIndex);
 }
