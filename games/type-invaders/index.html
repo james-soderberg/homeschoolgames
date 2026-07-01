@@ -1396,9 +1396,10 @@ function updateHearts(){
 function gameOver(){
   gameLost = true; running = false; pauseBtn.classList.add('hidden');
   clearActive();
-  // wipe remaining word bubbles
+  // wipe remaining enemies; the White House is left ablaze with the invaders on top
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; walkers=[]; powerups=[]; boss=null;
+  aliens=[]; bolts=[]; walkers=[]; tanks=[]; powerups=[]; boss=null;
+  spawnRoofAliens();
   shake = 18; flashRed = 0.8;
   document.getElementById('fsKills').textContent = kills;
   document.getElementById('fsBest').textContent = bestStreak;
@@ -1407,6 +1408,7 @@ function gameOver(){
   overOverlay.classList.remove('hidden');
   if (window.HSGSound) HSGSound.finish(false);
   endRun(true);
+  lastTs = 0; requestAnimationFrame(idle);   // keep the burning house + dancing aliens animating
 }
 // Bank the run's longest streak. On the game-over screen it shows the inline
 // placement + name entry; a quiet retreat falls back to the modal.
