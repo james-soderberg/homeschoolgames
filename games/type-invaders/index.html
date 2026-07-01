@@ -106,6 +106,11 @@
       background: rgba(6,9,20,0.9); backdrop-filter: blur(2px); color: #eaf1ff;
     }
     .bf-overlay.hidden { display: none; }
+    /* on defeat, dim less + top-align so the burning House + gloating aliens show at the bottom */
+    #overOverlay { justify-content: flex-start; padding-top: 4vh;
+      background: linear-gradient(rgba(6,9,20,0.82) 0%, rgba(6,9,20,0.7) 42%, rgba(6,9,20,0.18) 78%);
+      backdrop-filter: none; }
+    #overOverlay h2, #overOverlay .final-stats .fs b { text-shadow: 0 2px 12px rgba(0,0,0,0.8); }
     .bf-overlay h2 { font-family: var(--font-serif); color: #fff; font-size: 2.1rem; margin: 0 0 0.4rem; }
     .bf-overlay p { color: #c4d3f0; margin: 0 0 1.25rem; max-width: 40ch; font-size: 0.98rem; line-height: 1.5; }
     .bf-overlay .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.4rem; }
@@ -744,6 +749,7 @@ function updateSpawns(dt){
 function updateAliens(dt, t){
   const sp = slowT>0 ? 0.35 : 1;
   for (const a of aliens){
+    if (a.doomed){ a.wob += dt*2; a.spin += dt*3; continue; }   // hangs, awaiting the killing shot
     a.y += a.speed*sp*dt;
     a.wob += dt*2; a.spin += dt*1.6;
     a.x += a.drift*sp*dt*0.4;
@@ -785,6 +791,7 @@ function landShip(a, bx){
 function updateBolts(dt){
   const sp = slowT>0 ? 0.4 : 1;
   for (const b of bolts){
+    if (b.doomed) continue;                     // frozen until the shot lands
     b.y += b.speed*sp*dt; b.wob += dt*5; b.x += b.drift*sp*dt*0.3; b.spin += dt*4;
     const bx = b.x + Math.sin(b.wob)*3;
     positionBubble(b, bx, b.y - b.r - 12);
@@ -813,6 +820,7 @@ function spawnWalker(x){
 function updateWalkers(dt){
   const sp = slowT>0 ? 0.4 : 1;
   for (const w of walkers){
+    if (w.doomed){ w.leg += dt*9; continue; }   // frozen until the shot lands
     w.x += w.dir * w.speed * sp * dt;
     w.leg += dt*9;
     positionBubble(w, w.x, w.y - w.r - 20);
@@ -847,22 +855,26 @@ function updatePowerups(dt){
 }
 function updateBullets(dt){
   for (const b of bullets){
-    // home gently toward a live target
+    // home toward the target (fast, so the killing shot actually connects)
     if (b.target && !b.target.dead){
       const tx = b.target.x + (b.target.wob!=null?Math.sin(b.target.wob)*(b.target.wobAmp||0):0);
       const ty = b.target.y;
       const ang = Math.atan2(ty-b.y, tx-b.x);
-      const ca = Math.cos(ang), sa = Math.sin(ang);
-      b.vx = lerp(b.vx, ca*b.spd, 0.25); b.vy = lerp(b.vy, sa*b.spd, 0.25);
+      b.vx = lerp(b.vx, Math.cos(ang)*b.spd, b.onKill?0.45:0.25);
+      b.vy = lerp(b.vy, Math.sin(ang)*b.spd, b.onKill?0.45:0.25);
     }
     b.px = b.x; b.py = b.y;
     b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
-    // reached target?
-    if (b.target && !b.target.dead){
+    let hit = false;
+    if (b.target){
       const dx=b.x-b.target.x, dy=b.y-b.target.y;
-      if (dx*dx+dy*dy < (b.target.r+6)*(b.target.r+6)){ b.dead=true; emit(b.x,b.y,'spark',4,b.color); }
+      if (dx*dx+dy*dy < (b.target.r+8)*(b.target.r+8)) hit = true;
     }
-    if (b.y < -20 || b.life<=0) { b.dead = true; }
+    if (hit || b.y < -20 || b.life<=0){
+      b.dead = true;
+      if (b.onKill){ b.onKill(); b.onKill = null; }   // the target dies WHEN the shot lands
+      else if (hit) emit(b.x,b.y,'spark',4,b.color);
+    }
   }
   bullets = bullets.filter(b=>!b.dead);
 }
@@ -1231,13 +1243,16 @@ function emit(x,y,kind,n,color){
   }
 }
 function explosion(x,y,big,hue){
-  emit(x,y,'fire', big?26:14, 'hsl('+((hue||20))+',90%,60%)');
-  emit(x,y,'spark', big?18:10, '#ffe08a');
-  emit(x,y,'debris', big?14:7);
-  rings.push({ x,y,r: big?10:6, sp: big?420:300, w: big?4:3, color:'rgba(255,180,80,0.8)', life: big?0.5:0.35, life0: big?0.5:0.35 });
-  flashWhite = Math.max(flashWhite, big?0.5:0.18);
-  shake = Math.max(shake, big?14:6);
-  if (window.HSGSound) HSGSound.boom();
+  emit(x,y,'fire',  big?34:22, 'hsl('+((hue||20))+',95%,58%)');
+  emit(x,y,'fire',  big?18:12, '#ffcf3d');           // bright inner flame
+  emit(x,y,'spark', big?20:13, '#ffe08a');
+  emit(x,y,'debris', big?16:8);
+  // a quick fireball flash
+  particles.push({ x,y, vx:0, vy:0, g:0, r: big?26:16, life:0.16, life0:0.16, color:'rgba(255,190,90,0.9)' });
+  rings.push({ x,y,r: big?10:6, sp: big?440:320, w: big?4:3, color:'rgba(255,170,70,0.85)', life: big?0.5:0.38, life0: big?0.5:0.38 });
+  flashWhite = Math.max(flashWhite, big?0.5:0.22);
+  shake = Math.max(shake, big?14:7);
+  if (window.HSGSound) HSGSound.boom(big);
 }
 function floatText(x,y,text,color){ floaters.push({ x,y,text,color:color||'#ffd23f',life:0.9}); }
 function flashWave(title, sub){
@@ -1246,18 +1261,20 @@ function flashWave(title, sub){
   waveFlash.classList.remove('show'); void waveFlash.offsetWidth; waveFlash.classList.add('show');
 }
 
-// fire a laser from the cannon toward a target (or straight up if none)
-function fireLaser(target, kill){
+// fire a laser from the cannon toward a target (or straight up if none).
+// onKill (optional): a callback run WHEN the bullet reaches the target — that's
+// when the ship actually blows up, not the moment the word finished.
+function fireLaser(target, onKill){
   const c = cannon();
-  let ang, tx, ty;
-  if (target){ tx = target.x; ty = target.y; ang = Math.atan2(ty-c.y, tx-c.x); }
+  let ang;
+  if (target){ ang = Math.atan2(target.y-c.y, target.x-c.x); }
   else { ang = -Math.PI/2 + rand(-0.25,0.25); }
   cannonAng = ang; cannonRecoil = 1;
   const spd = 1500;
   bullets.push({ x:c.x, y:c.y, px:c.x, py:c.y, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
-    spd, target: target||null, kill:!!kill, life:1.2, color: kill?'#fff':'#5bd0ff' });
-  // the killing shot lands as an explosion (boom), so only the in-between shots "pew"
-  if (!kill && window.HSGSound) HSGSound.laser();
+    spd, target: target||null, onKill: onKill||null, life:1.4, color: onKill?'#fff':'#5bd0ff' });
+  // in-between shots "pew"; the killing shot is silent until it lands (then: boom)
+  if (!onKill && window.HSGSound) HSGSound.laser();
 }
 
 // ===================================================================
@@ -1302,26 +1319,37 @@ function handleChar(chRaw){
   if (tgt && ch === tgt.word[tgt.typed]){
     tgt.typed++;
     const done = tgt.typed >= tgt.word.length;
-    fireLaser(tgt, done);                       // EVERY correct key fires a shot
-    if (done) landTarget(tgt); else renderBubble(tgt);
+    if (!done){ fireLaser(tgt, null); renderBubble(tgt); return; }   // in-between shot
+    // WORD DONE — fire the killing shot; the target dies when the bullet reaches it
+    if (powerups.indexOf(tgt)>=0){ fireLaser(tgt, null); grabPowerup(tgt); return; }
+    const victim = tgt;
+    if (victim.kind==='boss'){
+      // lock this word; the hit lands with the bullet
+      victim.locked = true; if (active===victim) active=null;
+      if (victim.bubble) victim.bubble.classList.remove('active');
+      fireLaser(victim, ()=>resolveKill(victim));
+    } else {
+      // freeze it and drop its label; it hangs there until the shot blows it up
+      victim.doomed = true; removeBubble(victim); if (active===victim) active=null;
+      fireLaser(victim, ()=>resolveKill(victim));
+    }
   } else {
     // a wrong key ALWAYS shoots wild (even when locked on) — a real miss
-    fireLaser(null, false);
+    fireLaser(null, null);
     if (tgt && tgt.bubble){ tgt.bubble.classList.remove('miss'); void tgt.bubble.offsetWidth; tgt.bubble.classList.add('miss'); }
   }
 }
-function landTarget(o){
+// the killing shot has arrived — blow the target up with fire
+function resolveKill(o){
+  if (o.dead) return;
   if (o.kind==='boss'){
-    o.hp--; o.flinch = 0.5; explosion(o.x, o.y, false, 300); shake=Math.max(shake,8);
-    if (o.wordIdx < o.words.length-1){
-      o.wordIdx++; o.typed=0; o.word=o.words[o.wordIdx]; renderBubble(o); clearActive();
-    } else { destroyBoss(o); }
+    o.flinch = 0.5; o.locked = false; explosion(o.x, o.y, false, 300); shake=Math.max(shake,8);
+    if (o.wordIdx < o.words.length-1){ o.wordIdx++; o.typed=0; o.word=o.words[o.wordIdx]; renderBubble(o); }
+    else { destroyBoss(o); }
     return;
   }
-  if (powerups.indexOf(o)>=0){ grabPowerup(o); return; }
-  // alien or bolt destroyed
-  o.dead = true; removeBubble(o); if (active===o) active=null;
-  explosion(o.x, o.y, false, o.hue||20);
+  o.dead = true; if (active===o) active=null;
+  explosion(o.x, o.y, false, o.hue||20);   // fireball, not a silent disappear
   registerKill(o);
 }
 function registerKill(o){
@@ -1398,17 +1426,25 @@ function gameOver(){
   clearActive();
   // wipe remaining enemies; the White House is left ablaze with the invaders on top
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; walkers=[]; tanks=[]; powerups=[]; boss=null;
+  aliens=[]; bolts=[]; walkers=[]; tanks=[]; powerups=[]; bullets=[]; boss=null;
   spawnRoofAliens();
-  shake = 18; flashRed = 0.8;
+  shake = 22; flashRed = 0.9;
+  explosion(whX(), whTopY()+20, true, 20);          // the House goes up
+  flashWave('👽 CONQUERED 👽', 'The invaders have taken the capital…');
+  if (window.HSGSound) HSGSound.finish(false);
+  lastTs = 0; requestAnimationFrame(idle);           // hold on the burning house + dancing aliens
+  // …then bring up the results after a few seconds
+  setTimeout(revealEndScreen, 3200);
+}
+function revealEndScreen(){
+  if (!gameLost) return;                              // player already left
   document.getElementById('fsKills').textContent = kills;
   document.getElementById('fsBest').textContent = bestStreak;
   document.getElementById('fsWave').textContent = wave;
   document.getElementById('overTitle').textContent = bestStreak>=15 ? 'Heroic Last Stand!' : 'The White House Has Fallen';
+  const oc = document.getElementById('overCrest'); if (oc) oc.textContent = '👽';
   overOverlay.classList.remove('hidden');
-  if (window.HSGSound) HSGSound.finish(false);
   endRun(true);
-  lastTs = 0; requestAnimationFrame(idle);   // keep the burning house + dancing aliens animating
 }
 // Bank the run's longest streak. On the game-over screen it shows the inline
 // placement + name entry; a quiet retreat falls back to the modal.
@@ -1445,11 +1481,16 @@ function tick(ts){
   draw(sceneTime);
   rafId = requestAnimationFrame(tick);
 }
-// idle scene behind the start menu
+// idle scene — behind the start menu and during the defeat "conquered" hold
 function idle(ts){
   if (running) return;
   if (!lastTs) lastTs = ts; const dt = Math.min((ts-lastTs)/1000,0.05); lastTs = ts;
-  sceneTime += dt; updateParticles(dt);
+  sceneTime += dt;
+  shake = Math.max(0, shake - dt*40);
+  flashRed = Math.max(0, flashRed - dt*1.6);
+  flashWhite = Math.max(0, flashWhite - dt*2.4);
+  updateParticles(dt);
+  if (gameLost) updateBullets(dt);     // let the last shots finish landing
   draw(sceneTime);
   requestAnimationFrame(idle);
 }
@@ -1468,10 +1509,11 @@ function startGame(key){
   lives = START_LIVES; kills = 0; bestStreak = 0; gameLost = false; paused = false; constIdx = 0;
   shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0;
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; boss=null; active=null;
+  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; roofAliens=[]; boss=null; active=null;
   rail.setLevel(key, REALM_LABELS[key] || key);     // per-difficulty leaderboard; resets streak
   document.body.classList.add('ti-active');
   setupCanvas();
+  spawnTanks();                                     // deploy the ground defenses
   updateHearts();
   document.getElementById('killBadge').textContent='💥 0';
   startOverlay.classList.add('hidden');
@@ -1486,7 +1528,7 @@ function quitToMenu(){
   if (running && !gameLost) endRun(false);          // bank the run (modal if it qualifies)
   running = false; paused = false; gameLost = false; if (rafId) cancelAnimationFrame(rafId);
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; boss=null; active=null;
+  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; roofAliens=[]; boss=null; active=null;
   document.body.classList.remove('ti-active');
   pauseBtn.classList.add('hidden');
   overOverlay.classList.add('hidden');
@@ -1545,8 +1587,9 @@ if (/[?&]shot\b/.test(location.search)) {
   });
   active = aliens[4]; active.typed = 2;
   positionBubble(active, active.x, active.y - active.r - 16);
-  fireLaser(active, false);
+  fireLaser(active, null);
 }
+
 
 </script>
 
