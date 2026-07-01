@@ -736,8 +736,32 @@
 
     <p class="era-prompt">Choose a difficulty</p>
     <div class="era-grid mode-grid" id="modeGrid"></div>
+    <button class="friends-link" onclick="showFriendsSetup()">…or play with friends (pass &amp; play)</button>
+
+    <div class="friends-setup" id="friendsSetup" style="display:none">
+      <label>Number of players</label>
+      <select id="playerCount" onchange="updatePlayerNames()">
+        <option value="2" selected>2 players</option>
+        <option value="3">3 players</option>
+        <option value="4">4 players</option>
+        <option value="5">5 players</option>
+        <option value="6">6 players</option>
+      </select>
+
+      <label>Player names <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <div class="player-names" id="playerNames"></div>
+
+      <button class="start-friends-btn" onclick="startFriendsGame()">Start Game →</button>
+    </div>
 
     <div class="circa-leaderboard"></div>
+  </div>
+
+  <!-- ===================== PASS SCREEN ===================== -->
+  <div class="pass-screen" id="passScreen">
+    <h2 id="passTitle">Pass the device</h2>
+    <p id="passMsg">Hand the device to the next player.</p>
+    <button class="btn" onclick="dismissPass()">I'm ready →</button>
   </div>
 
   <!-- ===================== SOLO SCREEN ===================== -->
@@ -780,6 +804,37 @@
     </div><!-- /.game-main -->
     <aside class="hsg-rail" id="streakRail"></aside>
    </div><!-- /.game-layout -->
+  </div>
+
+  <!-- ===================== END SCREEN ===================== -->
+  <!-- ===================== PASS-AND-PLAY GAME SCREEN ===================== -->
+  <div class="game-screen" id="gameScreen">
+
+    <div class="game-header">
+      <h2>Round <span id="roundNum">1</span></h2>
+      <div class="score-bar" id="scoreBar"></div>
+      <button class="btn btn-outline btn-sm" onclick="if(confirm('End game?')) showEndScreen()">End Game</button>
+    </div>
+
+    <div class="target-area">
+      <p class="target-label" id="targetLabel">Target card: play the card closest in date</p>
+      <div class="target-card-mount" id="targetCardEl"></div>
+    </div>
+
+    <div class="round-result" id="roundResult"></div>
+
+    <div class="reveal-area" id="revealArea">
+      <p class="target-label">Revealed Cards</p>
+      <div class="reveal-grid" id="revealGrid"></div>
+    </div>
+
+    <div id="handSection">
+      <p class="hand-label" id="handLabel">Your hand: pick one card to play</p>
+      <p class="solo-hint" id="soloHint"></p>
+      <div class="hand-grid" id="handGrid"></div>
+      <div class="action-bar" id="actionBar"></div>
+    </div>
+
   </div>
 
   <!-- ===================== END SCREEN ===================== -->
@@ -1552,6 +1607,267 @@ const rail = HSGStreak.init({
   boardMount: '.circa-leaderboard'
 });
 
+// ============================================================
+//  MULTIPLAYER — pass & play
+// ============================================================
+let players = [];
+let deck = [];
+let hands = [];
+let piles = [];
+let roundNum = 0;
+let targetCard = null;
+let currentPickerIndex = 0;
+let picks = [];
+let phase = 'pick';
+let selectedCardIndex = -1;
+
+function updatePlayerNames() {
+  const sel = document.getElementById('playerCount');
+  if (!sel) return;
+  const n = parseInt(sel.value);
+  const container = document.getElementById('playerNames');
+  container.innerHTML = '';
+  const defaults = ['Player 1','Player 2','Player 3','Player 4','Player 5','Player 6'];
+  for (let i = 0; i < n; i++) {
+    const inp = document.createElement('input');
+    inp.type = 'text';
+    inp.placeholder = defaults[i];
+    container.appendChild(inp);
+  }
+}
+
+function showFriendsSetup() {
+  const fs = document.getElementById('friendsSetup');
+  fs.style.display = (fs.style.display === 'none' || !fs.style.display) ? 'block' : 'none';
+  if (fs.style.display === 'block') updatePlayerNames();
+}
+
+function startFriendsGame() {
+  mode = 'pass';
+  handSize = 4;
+  document.getElementById('setupScreen').style.display = 'none';
+  startPassGame();
+}
+
+function startPassGame() {
+  const n = parseInt(document.getElementById('playerCount').value);
+  const nameInputs = document.querySelectorAll('#playerNames input');
+  players = [];
+  for (let i = 0; i < n; i++) {
+    const name = (nameInputs[i] && nameInputs[i].value.trim()) || `Player ${i+1}`;
+    players.push({ name, id: i });
+  }
+
+  deck = shuffle([...DECK]);
+  hands = Array.from({ length: n }, () => []);
+  piles = Array.from({ length: n }, () => []);
+  roundNum = 0;
+
+  for (let h = 0; h < handSize; h++) {
+    for (let i = 0; i < n; i++) {
+      if (deck.length > 0) hands[i].push(deck.pop());
+    }
+  }
+
+  document.getElementById('gameScreen').style.display = 'block';
+  startRound();
+}
+
+function startRound() {
+  phase = 'pick';
+  picks = [];
+  currentPickerIndex = 0;
+
+  if (deck.length === 0) { showEndScreen(); return; }
+  targetCard = deck.pop();
+  roundNum++;
+
+  document.getElementById('roundNum').textContent = roundNum;
+
+  // Show the target EVENT face-up — its date stays hidden until the reveal.
+  const tMount = document.getElementById('targetCardEl');
+  tMount.innerHTML = '';
+  tMount.appendChild(makeCardFront(targetCard, 'no-hover'));
+  document.getElementById('targetLabel').textContent = 'Target card: play the card closest in date';
+
+  document.getElementById('handSection').style.display = 'block';
+  document.getElementById('revealArea').style.display = 'none';
+  document.getElementById('roundResult').style.display = 'none';
+
+  updateScoreBar();
+
+  if (players.length > 1) {
+    showPassScreen(players[0].name, 'Look at the target, then pick the card closest in date.');
+  } else {
+    renderHand(0);
+  }
+}
+
+function showPassScreen(playerName, msg) {
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('passScreen').style.display = 'block';
+  document.getElementById('passTitle').textContent = `${playerName}'s turn`;
+  document.getElementById('passMsg').textContent = msg;
+}
+
+function dismissPass() {
+  document.getElementById('passScreen').style.display = 'none';
+  document.getElementById('gameScreen').style.display = 'block';
+  renderHand(currentPickerIndex);
+}
+
+function renderHand(playerIndex) {
+  const player = players[playerIndex];
+  const hand = hands[playerIndex];
+
+  document.getElementById('handLabel').textContent = `${player.name}: pick the card closest in date to the target`;
+  document.getElementById('soloHint').textContent =
+    players.length > 1 ? 'Only you should look. Pick in secret, then pass the device.' : '';
+
+  const grid = document.getElementById('handGrid');
+  grid.innerHTML = '';
+  selectedCardIndex = -1;
+
+  hand.forEach((card, i) => {
+    const el = makeCardFront(card, '');
+    el.addEventListener('click', () => selectCard(playerIndex, i));
+    grid.appendChild(el);
+  });
+
+  const bar = document.getElementById('actionBar');
+  bar.innerHTML = '';
+  const playBtn = document.createElement('button');
+  playBtn.className = 'btn btn-gold';
+  playBtn.textContent = 'Play selected card';
+  playBtn.disabled = true;
+  playBtn.id = 'playBtn';
+  playBtn.addEventListener('click', () => confirmPick(playerIndex));
+  bar.appendChild(playBtn);
+}
+
+function selectCard(playerIndex, cardIndex) {
+  selectedCardIndex = cardIndex;
+  document.getElementById('handGrid').querySelectorAll('.circa-card').forEach((el, i) => {
+    el.classList.toggle('selected', i === cardIndex);
+  });
+  const btn = document.getElementById('playBtn');
+  if (btn) btn.disabled = false;
+}
+
+function confirmPick(playerIndex) {
+  if (selectedCardIndex < 0) return;
+  const card = hands[playerIndex][selectedCardIndex];
+  picks.push({ playerIndex, card, cardIndex: selectedCardIndex });
+  selectedCardIndex = -1;
+  if (window.HSGSound) HSGSound.tick();
+
+  const nextIndex = currentPickerIndex + 1;
+  if (nextIndex < players.length) {
+    currentPickerIndex = nextIndex;
+    showPassScreen(players[nextIndex].name, 'Look at the target, then pick the card closest in date.');
+  } else {
+    revealRound();
+  }
+}
+
+function revealRound() {
+  phase = 'reveal';
+  document.getElementById('handSection').style.display = 'block';
+  document.getElementById('handGrid').innerHTML = '';
+  document.getElementById('actionBar').innerHTML = '';
+
+  const tYear = targetCard.year;
+
+  const tMount = document.getElementById('targetCardEl');
+  tMount.innerHTML = '';
+  tMount.appendChild(makeCardWithYear(targetCard, 'no-hover'));
+  document.getElementById('targetLabel').textContent = `The target was ${fmtYear(targetCard)}`;
+
+  // Closest pick wins. Ties go to the earliest picker in turn order.
+  let bestDiff = Infinity, winnerIdx = -1;
+  picks.forEach(p => {
+    const diff = Math.abs(p.card.year - tYear);
+    if (diff < bestDiff) { bestDiff = diff; winnerIdx = p.playerIndex; }
+  });
+
+  const revealArea = document.getElementById('revealArea');
+  revealArea.style.display = 'block';
+  const grid = document.getElementById('revealGrid');
+  grid.innerHTML = '';
+
+  picks.forEach(p => {
+    const diff = Math.abs(p.card.year - tYear);
+    const isWinner = p.playerIndex === winnerIdx;
+    const entry = document.createElement('div');
+    entry.className = 'reveal-entry' + (isWinner ? ' winner' : '');
+    const nameEl = document.createElement('div');
+    nameEl.className = 'player-name';
+    nameEl.textContent = players[p.playerIndex].name + (isWinner ? ' 👑' : '');
+    entry.appendChild(nameEl);
+    entry.appendChild(makeCardWithYear(p.card, 'no-hover' + (isWinner ? ' show-best' : ' disabled')));
+    const diffEl = document.createElement('div');
+    diffEl.className = 'diff-badge' + (isWinner ? ' winner' : '');
+    diffEl.textContent = diff === 0 ? '🎯 Exact!' : `Off by ${diff.toLocaleString()} yrs`;
+    entry.appendChild(diffEl);
+    grid.appendChild(entry);
+  });
+
+  // Winner takes all played cards + the target; remove played cards from hands.
+  picks.forEach(p => { piles[winnerIdx].push(p.card); });
+  piles[winnerIdx].push(targetCard);
+  picks.forEach(p => { hands[p.playerIndex].splice(p.cardIndex, 1); });
+
+  const resultEl = document.getElementById('roundResult');
+  resultEl.style.display = 'block';
+  resultEl.textContent = `${players[winnerIdx].name} wins round ${roundNum} (+${picks.length + 1} cards)`;
+
+  updateScoreBar();
+  if (window.HSGSound && HSGSound.correct) HSGSound.correct();
+  if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 40 });
+
+  const handsEmpty = hands.every(h => h.length === 0);
+  const bar = document.getElementById('actionBar');
+  bar.innerHTML = '';
+  const nextBtn = document.createElement('button');
+  nextBtn.className = 'btn btn-gold';
+  nextBtn.textContent = handsEmpty ? 'See final scores →' : 'Next round →';
+  nextBtn.addEventListener('click', handsEmpty ? showEndScreen : startRound);
+  bar.appendChild(nextBtn);
+  document.getElementById('handLabel').textContent = 'Results';
+  document.getElementById('soloHint').textContent = '';
+}
+
+function updateScoreBar() {
+  const bar = document.getElementById('scoreBar');
+  bar.innerHTML = '';
+  players.forEach((p, i) => {
+    const pill = document.createElement('div');
+    pill.className = 'score-pill';
+    pill.textContent = `${p.name}: ${piles[i].length}`;
+    bar.appendChild(pill);
+  });
+}
+
+function showEndScreen() {
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('endScreen').style.display = 'block';
+  document.getElementById('endTitle').textContent = 'Game Over';
+  document.getElementById('endSubtitle').textContent = 'Final scores — most cards wins';
+
+  const scores = players.map((p, i) => ({ name: p.name, wins: piles[i].length }));
+  scores.sort((a, b) => b.wins - a.wins);
+
+  const container = document.getElementById('finalScores');
+  container.innerHTML = '';
+  scores.forEach((s, i) => {
+    const row = document.createElement('div');
+    row.className = 'final-row' + (i === 0 ? ' top' : '');
+    row.innerHTML = `<div class="pos">${i === 0 ? '★' : i+1}</div><div class="name">${s.name}</div><div class="wins">${s.wins} cards</div>`;
+    container.appendChild(row);
+  });
+}
+
+updatePlayerNames();
 renderModes();
 </script>
 
