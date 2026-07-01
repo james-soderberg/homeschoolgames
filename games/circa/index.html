@@ -109,6 +109,13 @@
     .era-tile.era-all .era-range::before { content: "· "; }
     .era-tile.era-all .era-range, .era-tile.era-all .era-count { font-size: 0.62rem; }
 
+    /* difficulty picker: two big tiles */
+    .mode-grid { grid-template-columns: repeat(2, 1fr); max-width: 460px; gap: 1rem; }
+    .mode-grid .era-tile { padding: 1.6rem 0.8rem; gap: 0.25rem; }
+    .mode-grid .era-emoji { font-size: 2.6rem; }
+    .mode-grid .era-name { font-size: 1.4rem; }
+    .mode-grid .era-range { font-size: 0.8rem; }
+
     /* selection transition */
     .era-grid.chosen .era-tile:not(.picked) { opacity: 0.2; transform: scale(0.9); transition: all 0.4s; pointer-events: none; }
     .era-tile.picked { animation: eraPick 0.5s cubic-bezier(.34,1.56,.64,1) both; border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-light), 0 10px 24px rgba(196,160,64,0.35); }
@@ -725,36 +732,12 @@
     <div class="setup-icon">🏛️</div>
     <h1>Circa</h1>
     <p class="setup-tagline">A history card game</p>
-    <p class="setup-how">Pick an era. Your whole hand will be cards from that time. Then choose the card <strong>closest in date</strong> to the center card!</p>
+    <p class="setup-how">You get a hand of history cards. Each round, play the card <strong>closest in date</strong> to the center card. Fewer cards makes it easier!</p>
 
-    <p class="era-prompt">Choose your era</p>
-    <div class="era-grid" id="eraGrid"></div>
-    <button class="friends-link" onclick="showFriendsSetup()">…or play with friends</button>
-
-    <div class="friends-setup" id="friendsSetup" style="display:none">
-      <label>Number of players</label>
-      <select id="playerCount" onchange="updatePlayerNames()">
-        <option value="2" selected>2 players</option>
-        <option value="3">3 players</option>
-        <option value="4">4 players</option>
-        <option value="5">5 players</option>
-        <option value="6">6 players</option>
-      </select>
-
-      <label>Player names <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <div class="player-names" id="playerNames"></div>
-
-      <button class="start-friends-btn" onclick="startFriendsGame()">Start Game →</button>
-    </div>
+    <p class="era-prompt">Choose a difficulty</p>
+    <div class="era-grid mode-grid" id="modeGrid"></div>
 
     <div class="circa-leaderboard"></div>
-  </div>
-
-  <!-- ===================== PASS SCREEN ===================== -->
-  <div class="pass-screen" id="passScreen">
-    <h2 id="passTitle">Pass the device</h2>
-    <p id="passMsg">Hand the device to the next player.</p>
-    <button class="btn" onclick="dismissPass()">I'm ready →</button>
   </div>
 
   <!-- ===================== SOLO SCREEN ===================== -->
@@ -797,36 +780,6 @@
     </div><!-- /.game-main -->
     <aside class="hsg-rail" id="streakRail"></aside>
    </div><!-- /.game-layout -->
-  </div>
-
-  <!-- ===================== PASS-AND-PLAY GAME SCREEN ===================== -->
-  <div class="game-screen" id="gameScreen">
-
-    <div class="game-header">
-      <h2>Round <span id="roundNum">1</span></h2>
-      <div class="score-bar" id="scoreBar"></div>
-      <button class="btn btn-outline btn-sm" onclick="if(confirm('End game?')) showEndScreen()">End Game</button>
-    </div>
-
-    <div class="target-area">
-      <p class="target-label" id="targetLabel">Target card: play the card closest in date</p>
-      <div class="target-card-mount" id="targetCardEl"></div>
-    </div>
-
-    <div class="round-result" id="roundResult"></div>
-
-    <div class="reveal-area" id="revealArea">
-      <p class="target-label">Revealed Cards</p>
-      <div class="reveal-grid" id="revealGrid"></div>
-    </div>
-
-    <div id="handSection">
-      <p class="hand-label" id="handLabel">Your hand: pick one card to play</p>
-      <p class="solo-hint" id="soloHint"></p>
-      <div class="hand-grid" id="handGrid"></div>
-      <div class="action-bar" id="actionBar"></div>
-    </div>
-
   </div>
 
   <!-- ===================== END SCREEN ===================== -->
@@ -1109,34 +1062,6 @@ function makeCardWithYear(card, extraClass = '') {
 // ============================================================
 let mode = 'solo';
 
-function setMode(m) {
-  mode = m;
-}
-
-function updatePlayerNames() {
-  const n = parseInt(document.getElementById('playerCount').value);
-  const container = document.getElementById('playerNames');
-  container.innerHTML = '';
-  const defaults = ['Player 1','Player 2','Player 3','Player 4','Player 5','Player 6'];
-  for (let i = 0; i < n; i++) {
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.placeholder = defaults[i];
-    container.appendChild(inp);
-  }
-}
-
-function startGame() {
-  handSize = parseInt(document.getElementById('handSize').value);
-  document.getElementById('setupScreen').style.display = 'none';
-
-  if (mode === 'solo') {
-    startSoloGame();
-  } else {
-    startPassGame();
-  }
-}
-
 // ============================================================
 // ============================================================
 //  SOLO MODE
@@ -1278,9 +1203,8 @@ function resetShowdown() {
 
 function fmtYearShort(y) { return Math.abs(y) + (y < 0 ? ' BC' : ' AD'); }
 
-// Timeline scale spans the CURRENT era's range (set in startSoloWithEra),
-// so the ribbon reads "start of this era ... end of this era".
-let tlBounds = [-3000, 2025];
+// Timeline scale spans the whole deck's range (set in startSoloWithMode).
+let tlBounds = [-3600, 2025];
 
 function renderTimeline(centerYear, pickYear, isCorrect) {
   const wrap = document.getElementById('timelineWrap');
@@ -1558,308 +1482,48 @@ function soloEndGame(reason) {
 }
 
 // ============================================================
-// ============================================================
-//  PASS-AND-PLAY MODE (unchanged logic)
-// ============================================================
-// ============================================================
-
-let players = [];
-let deck = [];
-let hands = [];
-let piles = [];
-let roundNum = 0;
-let targetCard = null;
-let currentPickerIndex = 0;
-let picks = [];
-let phase = 'pick';
-
-function startPassGame() {
-  const n = parseInt(document.getElementById('playerCount').value);
-  const nameInputs = document.querySelectorAll('#playerNames input');
-  players = [];
-  for (let i = 0; i < n; i++) {
-    const name = nameInputs[i]?.value.trim() || `Player ${i+1}`;
-    players.push({ name, id: i });
-  }
-
-  deck = shuffle([...DECK]);
-  hands = Array.from({ length: n }, () => []);
-  piles = Array.from({ length: n }, () => []);
-
-  for (let h = 0; h < handSize; h++) {
-    for (let i = 0; i < n; i++) {
-      if (deck.length > 0) hands[i].push(deck.pop());
-    }
-  }
-
-  document.getElementById('gameScreen').style.display = 'block';
-  startRound();
-}
-
-function startRound() {
-  phase = 'pick';
-  picks = [];
-  currentPickerIndex = 0;
-
-  if (deck.length === 0) { showEndScreen(); return; }
-  targetCard = deck.pop();
-  roundNum++;
-
-  document.getElementById('roundNum').textContent = roundNum;
-
-  // Show the target EVENT face-up — its date stays hidden until the reveal, so
-  // players choose the card from their hand closest in date to this event.
-  const tMount = document.getElementById('targetCardEl');
-  tMount.innerHTML = '';
-  tMount.appendChild(makeCardFront(targetCard, 'no-hover'));
-  document.getElementById('targetLabel').textContent = 'Target card: play the card closest in date';
-
-  document.getElementById('handSection').style.display = 'block';
-  document.getElementById('revealArea').style.display = 'none';
-  document.getElementById('roundResult').style.display = 'none';
-
-  updateScoreBar();
-
-  if (players.length > 1) {
-    showPassScreen(players[0].name, 'Look at the target, then pick the card closest in date.');
-  } else {
-    renderHand(0);
-  }
-}
-
-function showPassScreen(playerName, msg) {
-  document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('passScreen').style.display = 'block';
-  document.getElementById('passTitle').textContent = `${playerName}'s turn`;
-  document.getElementById('passMsg').textContent = msg;
-}
-
-function dismissPass() {
-  document.getElementById('passScreen').style.display = 'none';
-  document.getElementById('gameScreen').style.display = 'block';
-  renderHand(currentPickerIndex);
-}
-
-function renderHand(playerIndex) {
-  const player = players[playerIndex];
-  const hand = hands[playerIndex];
-
-  document.getElementById('handLabel').textContent = `${player.name}: pick the card closest in date to the target`;
-  document.getElementById('soloHint').textContent =
-    players.length > 1 ? 'Only you should look. Pick in secret, then pass the device.' : '';
-
-  const grid = document.getElementById('handGrid');
-  grid.innerHTML = '';
-
-  hand.forEach((card, i) => {
-    const el = makeCardFront(card, '');
-    el.addEventListener('click', () => selectCard(playerIndex, i));
-    grid.appendChild(el);
-  });
-
-  const bar = document.getElementById('actionBar');
-  bar.innerHTML = '';
-
-  const playBtn = document.createElement('button');
-  playBtn.className = 'btn btn-gold';
-  playBtn.textContent = 'Play selected card';
-  playBtn.disabled = true;
-  playBtn.id = 'playBtn';
-  playBtn.addEventListener('click', () => confirmPick(playerIndex));
-  bar.appendChild(playBtn);
-}
-
-let selectedCardIndex = -1;
-
-function selectCard(playerIndex, cardIndex) {
-  selectedCardIndex = cardIndex;
-  document.getElementById('handGrid').querySelectorAll('.circa-card').forEach((el, i) => {
-    el.classList.toggle('selected', i === cardIndex);
-  });
-  const btn = document.getElementById('playBtn');
-  if (btn) btn.disabled = false;
-}
-
-function confirmPick(playerIndex) {
-  if (selectedCardIndex < 0) return;
-  const card = hands[playerIndex][selectedCardIndex];
-  picks.push({ playerIndex, card, cardIndex: selectedCardIndex });
-  selectedCardIndex = -1;
-  if (window.HSGSound) HSGSound.tick();
-
-  const nextIndex = currentPickerIndex + 1;
-  if (nextIndex < players.length) {
-    currentPickerIndex = nextIndex;
-    showPassScreen(players[nextIndex].name, 'Look at the target, then pick the card closest in date.');
-  } else {
-    revealRound();
-  }
-}
-
-function revealRound() {
-  phase = 'reveal';
-  document.getElementById('handSection').style.display = 'block';
-  document.getElementById('handGrid').innerHTML = '';
-  document.getElementById('actionBar').innerHTML = '';
-
-  const tYear = targetCard.year;
-
-  // Reveal the target's true date on its own card.
-  const tMount = document.getElementById('targetCardEl');
-  tMount.innerHTML = '';
-  tMount.appendChild(makeCardWithYear(targetCard, 'no-hover'));
-  document.getElementById('targetLabel').textContent = `The target was ${fmtYear(targetCard)}`;
-
-  // Closest pick wins. Ties go to the earliest picker in turn order.
-  let bestDiff = Infinity;
-  let winnerIdx = -1;
-  picks.forEach(p => {
-    const diff = Math.abs(p.card.year - tYear);
-    if (diff < bestDiff) { bestDiff = diff; winnerIdx = p.playerIndex; }
-  });
-
-  const revealArea = document.getElementById('revealArea');
-  revealArea.style.display = 'block';
-  const grid = document.getElementById('revealGrid');
-  grid.innerHTML = '';
-
-  picks.forEach(p => {
-    const diff = Math.abs(p.card.year - tYear);
-    const isWinner = p.playerIndex === winnerIdx;
-    const entry = document.createElement('div');
-    entry.className = 'reveal-entry' + (isWinner ? ' winner' : '');
-
-    const nameEl = document.createElement('div');
-    nameEl.className = 'player-name';
-    nameEl.textContent = players[p.playerIndex].name + (isWinner ? ' 👑' : '');
-    entry.appendChild(nameEl);
-
-    // Show the full card each player played, with its date revealed.
-    entry.appendChild(makeCardWithYear(p.card, 'no-hover' + (isWinner ? ' show-best' : ' disabled')));
-
-    const diffEl = document.createElement('div');
-    diffEl.className = 'diff-badge' + (isWinner ? ' winner' : '');
-    diffEl.textContent = diff === 0 ? '🎯 Exact!' : `Off by ${diff.toLocaleString()} yrs`;
-    entry.appendChild(diffEl);
-
-    grid.appendChild(entry);
-  });
-
-  // Award every played card plus the target to the winner; remove played cards.
-  picks.forEach(p => { piles[winnerIdx].push(p.card); });
-  piles[winnerIdx].push(targetCard);
-  picks.forEach(p => { hands[p.playerIndex].splice(p.cardIndex, 1); });
-
-  const resultEl = document.getElementById('roundResult');
-  resultEl.style.display = 'block';
-  resultEl.textContent = `${players[winnerIdx].name} wins round ${roundNum} (+${picks.length + 1} cards)`;
-
-  updateScoreBar();
-  if (window.HSGSound && HSGSound.correct) HSGSound.correct();
-  if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 40 });
-
-  const handsEmpty = hands.every(h => h.length === 0);
-  const bar = document.getElementById('actionBar');
-  bar.innerHTML = '';
-  const nextBtn = document.createElement('button');
-  nextBtn.className = 'btn btn-gold';
-  nextBtn.textContent = handsEmpty ? 'See final scores →' : 'Next round →';
-  nextBtn.addEventListener('click', handsEmpty ? showEndScreen : startRound);
-  bar.appendChild(nextBtn);
-  document.getElementById('handLabel').textContent = 'Results';
-  document.getElementById('soloHint').textContent = '';
-}
-
-function updateScoreBar() {
-  const bar = document.getElementById('scoreBar');
-  bar.innerHTML = '';
-  players.forEach((p, i) => {
-    const pill = document.createElement('div');
-    pill.className = 'score-pill';
-    pill.textContent = `${p.name}: ${piles[i].length}`;
-    bar.appendChild(pill);
-  });
-}
-
-function showEndScreen() {
-  document.getElementById('gameScreen').style.display = 'none';
-  document.getElementById('endScreen').style.display = 'block';
-
-  const scores = players.map((p, i) => ({ name: p.name, wins: piles[i].length }));
-  scores.sort((a, b) => b.wins - a.wins);
-
-  const container = document.getElementById('finalScores');
-  container.innerHTML = '';
-  scores.forEach((s, i) => {
-    const row = document.createElement('div');
-    row.className = 'final-row' + (i === 0 ? ' top' : '');
-    row.innerHTML = `<div class="pos">${i === 0 ? '★' : i+1}</div><div class="name">${s.name}</div><div class="wins">${s.wins} cards</div>`;
-    container.appendChild(row);
-  });
-}
-
-// ============================================================
 // Simplified setup helpers
 // ============================================================
 
-// ---- Era picker (solo) ----
-const ERAS = [
-  { key: 'all',         emoji: '🌍', label: 'All Time',     range: 'every era',       lo: -Infinity, hi: Infinity },
-  { key: 'prehistory',  emoji: '🦴', label: 'Prehistory',   range: 'before 3000 BC',  lo: -Infinity, hi: -3000 },
-  { key: 'ancient',     emoji: '🏺', label: 'Ancient',      range: '3000–500 BC',     lo: -3000, hi: -500 },
-  { key: 'classical',   emoji: '⚔️', label: 'Classical',    range: '500 BC–500 AD',   lo: -500, hi: 500 },
-  { key: 'medieval',    emoji: '🏰', label: 'Medieval',     range: '500–1500',        lo: 500, hi: 1500 },
-  { key: 'earlymodern', emoji: '⛵', label: 'Early Modern', range: '1500–1800',       lo: 1500, hi: 1800 },
-  { key: '1800s',       emoji: '🚂', label: 'The 1800s',    range: '19th century',    lo: 1800, hi: 1900 },
-  { key: '1900s',       emoji: '✈️', label: 'The 1900s',    range: '20th century',    lo: 1900, hi: 2000 },
-  { key: '2000s',       emoji: '🛰️', label: 'The 2000s',    range: '21st century',    lo: 2000, hi: Infinity },
+// ---- Difficulty picker (solo only) ----
+const MODES = [
+  { key: 'easy', emoji: '🌱', label: 'Easy', range: '4 cards in hand', hand: 4 },
+  { key: 'hard', emoji: '🔥', label: 'Hard', range: '6 cards in hand', hand: 6 },
 ];
 
-function deckForEra(key) {
-  if (key === 'all') return DECK;
-  const e = ERAS.find(x => x.key === key);
-  return DECK.filter(c => c.year >= e.lo && c.year < e.hi);
+// Timeline ribbon spans the whole deck's range (BC -> today).
+function wholeDeckBounds() {
+  const years = DECK.map(c => c.year);
+  const lo = years.length ? Math.min.apply(null, years) : -3600;
+  return [lo, 2025];
 }
 
-// Timeline ribbon span for the chosen era: its defined start/end, with the
-// open-ended eras (Prehistory, 2000s, All Time) backed by the deck's range.
-function eraTimelineBounds(key, deck) {
-  if (key === 'all') return [-3000, 2025];
-  const e = ERAS.find(x => x.key === key) || {};
-  const years = (deck && deck.length) ? deck.map(c => c.year) : [];
-  let lo = isFinite(e.lo) ? e.lo : (years.length ? Math.min.apply(null, years) : -3000);
-  let hi = isFinite(e.hi) ? e.hi : (years.length ? Math.max.apply(null, years.concat(2025)) : 2025);
-  return [lo, hi];
-}
-
-function renderEraTiles() {
-  const grid = document.getElementById('eraGrid');
+function renderModes() {
+  const grid = document.getElementById('modeGrid');
   if (!grid) return;
   grid.innerHTML = '';
-  ERAS.forEach((e, i) => {
-    const n = deckForEra(e.key).length;
+  MODES.forEach((m, i) => {
     const tile = document.createElement('button');
-    tile.className = 'era-tile' + (e.key === 'all' ? ' era-all' : '');
+    tile.className = 'era-tile';
     tile.style.animationDelay = (i * 0.05) + 's';
     tile.innerHTML =
-      `<span class="era-emoji">${e.emoji}</span>` +
-      `<span class="era-name">${e.label}</span>` +
-      `<span class="era-range">${e.range}</span>` +
-      `<span class="era-count">${n} cards</span>`;
-    tile.addEventListener('click', () => startSoloWithEra(e.key, tile));
+      `<span class="era-emoji">${m.emoji}</span>` +
+      `<span class="era-name">${m.label}</span>` +
+      `<span class="era-range">${m.range}</span>`;
+    tile.addEventListener('click', () => startSoloWithMode(m.key, tile));
     grid.appendChild(tile);
   });
 }
 
-function startSoloWithEra(key, tileEl) {
+function startSoloWithMode(key, tileEl) {
   mode = 'solo';
-  handSize = 4;
-  soloSourceDeck = deckForEra(key);
-  tlBounds = eraTimelineBounds(key, soloSourceDeck);
-  const eraMeta = ERAS.find(e => e.key === key) || {};
-  rail.setLevel(key, eraMeta.label || key);   // each era keeps its own streak board
+  const m = MODES.find(x => x.key === key) || MODES[0];
+  handSize = m.hand;
+  soloSourceDeck = DECK;                 // one combined deck — no era split
+  tlBounds = wholeDeckBounds();
+  rail.setLevel(key, m.label);           // Easy / Hard keep separate streak boards
   if (window.HSGSound) HSGSound.tick();
-  const grid = document.getElementById('eraGrid');
+  const grid = document.getElementById('modeGrid');
   if (grid) grid.classList.add('chosen');
   if (tileEl) tileEl.classList.add('picked');
   setTimeout(() => {
@@ -1879,19 +1543,6 @@ function quitSolo() {
     document.getElementById('setupScreen').style.display = 'block'; }
 }
 
-function showFriendsSetup() {
-  const fs = document.getElementById('friendsSetup');
-  fs.style.display = fs.style.display === 'none' ? 'block' : 'none';
-  if (fs.style.display === 'block') updatePlayerNames();
-}
-
-function startFriendsGame() {
-  mode = 'pass';
-  handSize = 4;
-  document.getElementById('setupScreen').style.display = 'none';
-  startPassGame();
-}
-
 // Init — fire counter on the solo screen, leaderboard mirrored on the
 // setup and end screens via the boardMount selector.
 const rail = HSGStreak.init({
@@ -1901,8 +1552,7 @@ const rail = HSGStreak.init({
   boardMount: '.circa-leaderboard'
 });
 
-updatePlayerNames();
-renderEraTiles();
+renderModes();
 </script>
 
 </body>
