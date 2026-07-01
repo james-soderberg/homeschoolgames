@@ -327,8 +327,8 @@
   "title": "300 Spartans hold Thermopylae",
   "desc": "A small Greek force held a mountain pass against the huge Persian army for three days.",
   "year": -480,
-  "img": "373.jpg",
-  "license": "Public domain"
+  "img": "ev41.jpg",
+  "license": "Wikimedia Commons"
  },
  {
   "title": "Herodotus writes the first history",
@@ -485,10 +485,9 @@
   "title": "Death of Cleopatra ends ancient Egypt",
   "desc": "Cleopatra VII allied with Caesar and then Antony. Her death ended the line of pharaohs that had ruled Egypt for 3,000 years.",
   "year": -30,
-  "img": "473.jpg",
+  "img": "ev61.jpg",
   "approx": true,
-  "credit": "Ancient Roman painter(s)",
-  "license": "Public domain"
+  "license": "Wikimedia Commons"
  },
  {
   "title": "Augustus becomes Rome's first emperor",
@@ -502,9 +501,8 @@
   "title": "Virgil writes the Aeneid",
   "desc": "Rome's founding epic traced Roman origins to Troy. It shaped Roman identity and Latin literature.",
   "year": -19,
-  "img": "478.jpg",
-  "credit": "Federico Barocci",
-  "license": "Public domain"
+  "img": "ev63.jpg",
+  "license": "Wikimedia Commons"
  },
  {
   "title": "Jesus is born in Judea",
@@ -645,8 +643,7 @@
   "title": "Hypatia of Alexandria is killed",
   "desc": "The mathematician and philosopher was murdered by a mob in Alexandria. She was the most prominent female scholar of the ancient world.",
   "year": 415,
-  "img": "ev81.jpg",
-  "license": "Wikimedia Commons"
+  "img": "ev81.jpg"
  },
  {
   "title": "St. Patrick brings Christianity to Ireland",
@@ -1080,8 +1077,7 @@
   "desc": "Italian artists and thinkers revived classical ideas, producing figures like Leonardo, Michelangelo, and Raphael.",
   "year": 1450,
   "img": "ev136.jpg",
-  "approx": true,
-  "license": "Wikimedia Commons"
+  "approx": true
  },
  {
   "title": "Ottomans conquer Constantinople",
