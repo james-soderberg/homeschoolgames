@@ -89,12 +89,13 @@ function makeQuestion(level, tier) {
     if (op === '+') { const a = ri(50, cap), b = ri(50, cap); return build(`${a} + ${b}`, a + b); }
     const a = ri(100, cap), b = ri(20, a); return build(`${a} − ${b}`, a - b);
   }
-  // Einstein: order of operations, exponents, negatives
-  const kind = pick(['order', 'order', 'square', 'cube', 'neg']);
+  // Einstein: order of operations & exponents (answers stay non-negative — the
+  // mobile numeric keypad has no minus key, so negative answers are avoided)
+  const kind = pick(['order', 'order', 'square', 'cube', 'mixed']);
   if (kind === 'order') { const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9); return build(`${a} + ${b} × ${c}`, a + b * c); }
   if (kind === 'square') { const a = ri(4, 15); return build(`${a}²`, a * a); }
   if (kind === 'cube') { const a = ri(2, 7); return build(`${a}³`, a * a * a); }
-  const a = ri(2, 20), b = ri(a + 1, a + 25); return build(`${a} − ${b}`, a - b); // negative result
+  const a = ri(3, 12), b = ri(3, 12), c = ri(2, a * b - 1); return build(`${a} × ${b} − ${c}`, a * b - c); // order of ops, stays positive
 }
 
 const rail = HSGStreak.init({

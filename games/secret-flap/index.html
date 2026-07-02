@@ -115,6 +115,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/canvas-fit.js"></script>
 <script>
 // ============================================================
 // FLAPPY DRAGONLING — a hidden game. A little dragon flaps
@@ -149,16 +150,25 @@ let lastTs = 0, rafId = null;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
-function setupCanvas() {
-  const r = sceneWrap.getBoundingClientRect();
-  W = Math.max(300, r.width);
-  H = r.height;
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+// Keep the bird & towers where they belong when the viewport changes: scale
+// vertical things by the height ratio and horizontal things by the width ratio,
+// then keep the bird safely inside the playfield so a resize can't kill you.
+function rescaleFlap(sx, sy) {
+  if (!bird) return;
+  bird.y *= sy; bird.vy *= sy;
+  for (const p of pipes) { p.x *= sx; p.gapY *= sy; p.gap *= sy; }
+  spawnX *= sx;
+  bird.y = clamp(bird.y, BIRD_R + 2, groundY() - BIRD_R - 2);
 }
-window.addEventListener('resize', setupCanvas);
+const fit = HSGFit.attach(canvas, sceneWrap, {
+  maxDPR: 2, minW: 300, minH: 200,
+  onResize({ rect, size, first }) {
+    const prevW = W, prevH = H;
+    ({ W, H, dpr } = size(Math.max(300, rect.width), rect.height));
+    if (!first) rescaleFlap(W / prevW, H / prevH);
+  }
+});
+function setupCanvas() { fit.trigger(true); }   // size without rescaling (fresh entities)
 
 function groundY() { return H - Math.min(96, H * 0.16); }
 function birdX() { return W * 0.30; }

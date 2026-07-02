@@ -1330,7 +1330,9 @@ function soloPickCard(pickedIdx) {
 
   const pickedDiff = Math.abs(pickedCard.year - soloCenterCard.year);
   const bestDiff = Math.abs(bestCard.year - soloCenterCard.year);
-  const isCorrect = (pickedIdx === bestIdx);
+  // correct if the pick is as close as the best possible — ties (two cards
+  // equally near the center) both count, not just the lowest-index one.
+  const isCorrect = (pickedDiff === bestDiff);
 
   const grid = document.getElementById('soloHandGrid');
   const cardEls = [...grid.children];

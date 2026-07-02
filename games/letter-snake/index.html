@@ -234,6 +234,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/spelling-words.js"></script>
+<script src="../../assets/js/canvas-fit.js"></script>
 <script>
 // ============================================================
 // LETTER SNAKE — read the clue, steer the snake to gobble the
@@ -285,18 +286,53 @@ const endWord  = document.getElementById('endWord');
 const endWordClue = document.getElementById('endWordClue');
 
 let W=560,H=460,dpr=1, CELL=32, COLS=17, ROWS=13;
-function setupCanvas(){
-  const r=stage.getBoundingClientRect();
-  const wpx=Math.max(300,r.width), hpx=Math.max(300,r.height);
-  CELL=Math.max(34, Math.round(wpx/22));
-  COLS=Math.max(10, Math.round(wpx/CELL));
-  ROWS=Math.max(7,  Math.round(hpx/CELL));
-  W=COLS*CELL; H=ROWS*CELL;
-  dpr=Math.min(window.devicePixelRatio||1,2);
-  canvas.width=Math.round(W*dpr); canvas.height=Math.round(H*dpr);
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+
+// wrap an index into [0,n); the board wraps at the edges
+const wrap=(v,n)=>((v%n)+n)%n;
+// map a cell index onto a resized axis, centre-based so it stays proportional
+const mapCell=(v,oldN,newN)=> wrap(Math.round((v+0.5)*newN/oldN - 0.5), newN);
+
+// On a resize the grid can gain/lose rows & columns. Remap the snake and the
+// pellets onto the new grid so nothing is stranded off-board: the head moves to
+// its proportional new cell and the body is rebuilt from the SAME unit steps, so
+// the snake keeps its exact shape and stays contiguous. Pellets keep their
+// letters, relocating only if a cell is now taken.
+function remapGrid(oldCOLS, oldROWS){
+  if(!snake.length) return;
+  const step=(a,b,n)=>{ let d=b-a; if(d===0) return 0; if(Math.abs(d)===n-1) return -Math.sign(d); return Math.sign(d); };
+  const ns=[]; ns.push({ c:mapCell(snake[0].c,oldCOLS,COLS), r:mapCell(snake[0].r,oldROWS,ROWS) });
+  for(let i=1;i<snake.length;i++){
+    const dc=step(snake[i-1].c, snake[i].c, oldCOLS), dr=step(snake[i-1].r, snake[i].r, oldROWS);
+    ns.push({ c:wrap(ns[i-1].c+dc, COLS), r:wrap(ns[i-1].r+dr, ROWS) });
+  }
+  snake=ns; lastSnake=snake.map(s=>({c:s.c,r:s.r}));
+  // re-seat pellets, keeping their letters; skip cells now under the snake / another pellet
+  const occ=new Set(snake.map(s=>s.r*COLS+s.c));
+  for(const p of pellets){
+    let c=mapCell(p.c,oldCOLS,COLS), r=mapCell(p.r,oldROWS,ROWS);
+    if(occ.has(r*COLS+c)){
+      const free=freeCells(); const spot=free.find(f=>!occ.has(f.r*COLS+f.c));
+      if(spot){ c=spot.c; r=spot.r; }
+    }
+    p.c=c; p.r=r; occ.add(r*COLS+c);
+  }
 }
-window.addEventListener('resize', ()=>{ if(state!=='playing'){ setupCanvas(); render(); } });
+
+const fit=HSGFit.attach(canvas, stage, {
+  maxDPR:2, minW:300, minH:300,
+  onResize({ rect, size, first }){
+    const oldCOLS=COLS, oldROWS=ROWS;
+    CELL=Math.max(34, Math.round(rect.width/22));
+    COLS=Math.max(10, Math.round(rect.width/CELL));
+    ROWS=Math.max(7,  Math.round(rect.height/CELL));
+    ({ W, H, dpr } = size(COLS*CELL, ROWS*CELL));
+    if(!first){
+      if(COLS!==oldCOLS || ROWS!==oldROWS) remapGrid(oldCOLS, oldROWS);
+      if(state!=='playing') render();   // the game loop handles the very first draw
+    }
+  }
+});
+function setupCanvas(){ fit.trigger(true); }   // size without remap (fresh board)
 
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const lerp=(a,b,t)=>a+(b-a)*t;

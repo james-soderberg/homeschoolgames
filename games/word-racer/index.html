@@ -594,11 +594,17 @@ function endRace() {
   const wpm = Math.round((passageLen / 5) / mins);
   const acc = totalKeystrokes ? Math.round(passageLen / totalKeystrokes * 100) : 100;
 
-  // standings: player finished (pos 1); rivals at current pos
-  const racers = [{ name: 'You', color: RACERS[0].body, pos: 1, you: true }]
-    .concat(cars.map(c => ({ name: c.name, color: c.color, pos: Math.min(c.pos, 1), you: false })));
-  racers.sort((a, b) => b.pos - a.pos);
-  const place = racers.findIndex(r => r.you) + 1;
+  // standings by real progress: the player crosses the line NOW (pos 1); any
+  // rival already at the line (pos >= 1) finished first and beats you.
+  const you = { name: 'You', color: RACERS[0].body, pos: 1, you: true };
+  const ahead = cars.filter(c => c.pos >= 1)
+    .map(c => ({ name: c.name, color: c.color, pos: c.pos, you: false }))
+    .sort((a, b) => b.pos - a.pos);
+  const behind = cars.filter(c => c.pos < 1)
+    .map(c => ({ name: c.name, color: c.color, pos: c.pos, you: false }))
+    .sort((a, b) => b.pos - a.pos);
+  const racers = [...ahead, you, ...behind];   // already in finishing order
+  const place = ahead.length + 1;
 
   const isBest = wpm > bestWpm;
   if (isBest) { bestWpm = wpm; saveBest(); showBest(); }
