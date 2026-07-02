@@ -250,7 +250,7 @@
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/sfx.js?v=6-whoomph"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script>
@@ -749,14 +749,16 @@ function updateSpawns(dt){
 function updateAliens(dt, t){
   const sp = slowT>0 ? 0.35 : 1;
   for (const a of aliens){
-    if (a.doomed){ a.wob += dt*2; a.spin += dt*3; continue; }   // hangs, awaiting the killing shot
+    // once its word is typed a ship is "doomed": it KEEPS DESCENDING at the same
+    // rate (just reeling a bit) until the homing shot reaches it. It simply can't
+    // fire or crash the House in the brief moment before the shot lands.
     a.y += a.speed*sp*dt;
-    a.wob += dt*2; a.spin += dt*1.6;
+    a.wob += dt*2; a.spin += dt*(a.doomed ? 3 : 1.6);
     a.x += a.drift*sp*dt*0.4;
     if (a.x < 40){ a.x = 40; a.drift = Math.abs(a.drift); }
     if (a.x > W-40){ a.x = W-40; a.drift = -Math.abs(a.drift); }
-    // bombers fire slow missiles
-    if (a.kind==='bomber'){
+    // bombers fire slow missiles (a doomed one is already finished — no last shot)
+    if (a.kind==='bomber' && !a.doomed){
       a.fireT -= dt*sp;
       if (a.fireT<=0 && a.y>30 && a.y<landY()-90){ spawnBolt(a.x, a.y+20); a.fireT = rand(2.6,4.2); }
     }
@@ -764,7 +766,7 @@ function updateAliens(dt, t){
     positionBubble(a, bx, a.y - a.r - 16);
     // shootable all the way down — crash the House if over it, else land on the grass
     const land = overHouse(bx) ? whTopY() : landY();
-    if (a.y >= land){
+    if (!a.doomed && a.y >= land){
       a.dead = true;
       if (overHouse(bx)) houseHit(bx); else landShip(a, bx);
     }
@@ -791,12 +793,11 @@ function landShip(a, bx){
 function updateBolts(dt){
   const sp = slowT>0 ? 0.4 : 1;
   for (const b of bolts){
-    if (b.doomed) continue;                     // frozen until the shot lands
-    b.y += b.speed*sp*dt; b.wob += dt*5; b.x += b.drift*sp*dt*0.3; b.spin += dt*4;
+    b.y += b.speed*sp*dt; b.wob += dt*5; b.x += b.drift*sp*dt*0.3; b.spin += dt*4;   // doomed bolts keep falling too
     const bx = b.x + Math.sin(b.wob)*3;
     positionBubble(b, bx, b.y - b.r - 12);
     const land = overHouse(bx) ? whTopY() : landY();
-    if (b.y >= land){
+    if (!b.doomed && b.y >= land){
       b.dead = true;
       if (overHouse(bx)) houseHit(bx);
       else { emit(bx, landY(), 'fire', 6, '#ff7ad0'); spawnWalker(bx); }   // a dud drops a trooper
@@ -811,29 +812,57 @@ function spawnWalker(x){
   if (overHouse(wx)) wx = wx < whX() ? whX()-edge : whX()+edge;   // never start inside the building
   const w = {
     kind:'walker', x: wx, y: landY()+2, word: pickWord(MISSILE_WORDS, usedLetters()), typed:0,
-    dir: (whX()-wx) >= 0 ? 1 : -1, speed: 24 + wave*1.4, hue: choice([130,95,160]),
-    leg: rand(0,6.28), dead:false, r:13,
+    side: wx < whX() ? -1 : 1, dir: (whX()-wx) >= 0 ? 1 : -1, speed: 24 + wave*1.4,
+    hue: choice([130,95,160]), leg: rand(0,6.28), dead:false, r:13,
+    tank:null, attackT:0,
   };
   makeBubble(w);
   walkers.push(w);
 }
+const TANK_KILL_TIME = 1.0;   // seconds a walker spends destroying a tank
 function updateWalkers(dt){
   const sp = slowT>0 ? 0.4 : 1;
+  const door = whX();
   for (const w of walkers){
-    if (w.doomed){ w.leg += dt*9; continue; }   // frozen until the shot lands
-    w.x += w.dir * w.speed * sp * dt;
-    w.leg += dt*9;
-    positionBubble(w, w.x, w.y - w.r - 20);
-    // a tank intercepts the walker first (no life lost — they trade)
-    let tk = null;
-    for (const t of tanks){ if (!t.dead && Math.abs(w.x - t.x) < w.r + t.r){ tk = t; break; } }
-    if (tk){
-      tk.dead = true; w.dead = true; tk.boom = 0.3;
-      explosion(tk.x, tk.y-6, false, 30);
-      floatText(tk.x, tk.y-30, 'TANK DOWN', '#cdd6c0');
+    if (w.doomed){                              // hit — keeps marching at the same pace until the shot lands
+      w.dir = (door - w.x) >= 0 ? 1 : -1;
+      w.x += w.dir * w.speed * sp * dt;
+      w.leg += dt*9;
+      positionBubble(w, w.x, w.y - w.r - 22);
       continue;
     }
-    if (overHouse(w.x)){ w.dead = true; emit(w.x, landY(), 'debris', 6, '#46d17a'); houseHit(w.x); }
+
+    // busy tearing a tank apart? (survives it, then moves on to the next)
+    if (w.tank && !w.tank.dead){
+      w.x = lerp(w.x, w.tank.x, 0.25);           // clamber onto it
+      w.leg += dt*16;                            // frantic clawing
+      w.attackT -= dt;
+      if (Math.random()<0.5) emit(w.tank.x+rand(-w.tank.r,w.tank.r), w.tank.y-w.tank.r*0.4, 'spark', 1, '#ffd23f');
+      w.tank.shakeT = 0.1;
+      positionBubble(w, w.x, w.y - w.r - 22);
+      if (w.attackT <= 0){
+        explosion(w.tank.x, w.tank.y-6, false, 30);
+        floatText(w.tank.x, w.tank.y-30, 'TANK DOWN', '#cdd6c0');
+        w.tank.dead = true; w.tank = null;       // walker lives on to the next target
+      }
+      continue;
+    }
+    w.tank = null;
+
+    // pick the nearest tank ON THIS WALKER'S SIDE; if the side is clear, head for the door
+    let tk = null, bestD = Infinity;
+    for (const t of tanks){ if (t.dead) continue; if (Math.sign(t.x - whX()) !== w.side) continue;
+      const d = Math.abs(w.x - t.x); if (d < bestD){ bestD = d; tk = t; } }
+    const tx = tk ? tk.x : door;
+    w.dir = (tx - w.x) >= 0 ? 1 : -1;
+    w.x += w.dir * w.speed * sp * dt;
+    w.leg += dt*9;
+    positionBubble(w, w.x, w.y - w.r - 22);
+    if (tk){
+      if (Math.abs(w.x - tk.x) < w.r + tk.r){ w.tank = tk; w.attackT = TANK_KILL_TIME; }   // mount + attack
+    } else if (Math.abs(w.x - door) < 14){
+      w.dead = true; emit(w.x, landY(), 'debris', 8, '#46d17a'); houseHit(w.x);
+    }
   }
   walkers = walkers.filter(w=>{ if (w.dead){ removeBubble(w); if (active===w) active=null; return false; } return true; });
   tanks = tanks.filter(t=>!t.dead);
@@ -841,9 +870,15 @@ function updateWalkers(dt){
 // the player's ground tanks — a finite buffer of walker interceptors at the House edges
 function spawnTanks(){
   tanks = [];
+  const r = clamp(whH()*0.28, 20, 36);            // scaled to the White House
   const eL = whX()-whW()/2, eR = whX()+whW()/2;
-  [eL-18, eL-52, eR+18, eR+52].forEach(x =>
-    tanks.push({ x: clamp(x, 24, W-24), y: landY()+4, dead:false, r:16, boom:0 }));
+  const gap = r*1.9;                               // hold the first tank well off the House
+  const perSide = 4;
+  for (let i=0;i<perSide;i++){
+    const f = perSide===1 ? 0 : i/(perSide-1);     // 0 = nearest the House, 1 = at the screen edge
+    tanks.push({ x: lerp(eL-gap, r+10,   f), y: landY()+2, dead:false, r, boom:0 });
+    tanks.push({ x: lerp(eR+gap, W-r-10, f), y: landY()+2, dead:false, r, boom:0 });
+  }
 }
 function updatePowerups(dt){
   for (const p of powerups){
@@ -1140,6 +1175,7 @@ function drawWalker(w, t){
 function drawTank(tk, t){
   const r = tk.r;
   ctx.save(); ctx.translate(tk.x, tk.y);
+  if (tk.shakeT>0){ ctx.translate(rand(-2.5,2.5), rand(-1.5,1.5)); tk.shakeT = Math.max(0, tk.shakeT - 0.016); }
   // treads
   ctx.fillStyle='#2c2f24';
   ctx.beginPath(); ctx.roundRect ? ctx.roundRect(-r,-r*0.1,r*2,r*0.5,4) : ctx.rect(-r,-r*0.1,r*2,r*0.5); ctx.fill();

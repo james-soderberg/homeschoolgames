@@ -316,9 +316,10 @@
   <a href="../../index.html">homeschoolgames.app</a>
 </footer>
 
-<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/sfx.js?v=whoosh"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/canvas-fit.js"></script>
 <script>
 // ============================================================
 // DRAGON SIEGE — an animated medieval typing-defense game.
@@ -493,17 +494,30 @@ const pauseOverlay= document.getElementById('pauseOverlay');
 
 // ---------- Canvas sizing ----------
 let W = 720, H = 480, dpr = 1;
-function setupCanvas() {
-  const r = bf.getBoundingClientRect();
-  W = Math.max(320, r.width);
-  H = r.height;
-  dpr = Math.min(window.devicePixelRatio || 1, 2);
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  buildScenery();
+let fit = null;
+// When the battlefield resizes, move every live thing to its new spot so it keeps
+// its position relative to the walls and ground. x scales by the width ratio; y is
+// remapped RELATIVE TO THE GROUND LINE (groundY = H-64 is a fixed offset, not a
+// proportion) so ground foes stay on the ground and flyers keep their altitude —
+// instead of ending up stranded below the shifted ground (unfair hits / stuck foes).
+function rescaleSiege(sx, prevH) {
+  if (sx === 1 && prevH === H) return;
+  const gyOld = prevH - 64, gyNew = H - 64;        // groundY() = H - 64
+  const air = gyNew / gyOld;                        // scale for height above the ground
+  const rx = x => x * sx;
+  const ry = y => gyNew - (gyOld - y) * air;        // keep height-above-ground proportional
+  for (const t of threats) {
+    t.x = rx(t.x); t.y = ry(t.y);
+    if (t.sx != null) t.sx = rx(t.sx);   if (t.sy != null) t.sy = ry(t.sy);
+    if (t.stopX != null) t.stopX = rx(t.stopX); if (t.entryX != null) t.entryX = rx(t.entryX);
+  }
+  for (const p of projectiles) { p.x = rx(p.x); p.y = ry(p.y); p.sx = rx(p.sx); p.sy = ry(p.sy); p.tx = rx(p.tx); p.ty = ry(p.ty); }
+  for (const p of particles)  { p.x = rx(p.x); p.y = ry(p.y); if (p.vx != null) p.vx *= sx; if (p.vy != null) p.vy *= air; }
+  for (const f of floaters)   { f.x = rx(f.x); f.y = ry(f.y); if (f.vy != null) f.vy *= air; }
+  for (const d of decals)     { d.x = rx(d.x); d.y = ry(d.y); }
+  for (const a of groundArrows){ a.x = rx(a.x); a.y = ry(a.y); }
 }
-window.addEventListener('resize', setupCanvas);
+function setupCanvas() { if (fit) fit.trigger(true); }   // size without rescaling
 
 // ---------- Utils ----------
 const rand  = (a, b) => a + Math.random() * (b - a);
@@ -1870,7 +1884,7 @@ function igniteCatapult(c){
 function smashCatapult(c){
   if (c.state!=='live') return;
   slain++; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
-  if (window.HSGSound) HSGSound.correct();
+  // no tone — the firearrow's whoosh (loose()) is the release sound
   if (active===c) clearActive();
   if (c.bubble){ c.bubble.remove(); c.bubble=null; }
   updateHud();
@@ -1885,7 +1899,7 @@ function slay(th){
   if (th.bubble){ th.bubble.remove(); th.bubble=null; }
   slain++;
   rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
-  if (window.HSGSound) HSGSound.correct();
+  // the arrow's whoosh (played in loose() below) is the release sound now — no tone
   if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
   updateHud();
 
@@ -2027,6 +2041,7 @@ function loose(x,y,tx,ty,kind,onArrive,target){
   // When an arcade arrow has just connected, the castle's own follow-up shots
   // resolve INSTANTLY (their effect fires now) so there's no extra flying arrow.
   if (instantShot){ if (onArrive) onArrive(); return; }
+  if (window.HSGSound && HSGSound.whoosh) HSGSound.whoosh();   // the swish of an arrow loosed
   // everything your castle looses flies slowly enough to watch land —
   // arrows at the foot army and ballista bolts at rocks/dragons alike.
   // a `target` makes the shot home in on a foe that is still moving.
@@ -2221,8 +2236,9 @@ function buildLevel(n){
              : (realmKey==='medium' || realmKey==='hard') ? buildLevelMedium(n)
              : buildLevelStandard(n);
   // a dragon arrives every other level, starting at level 2 (2,4,6,…) —
-  // append a finale dragon to any even level that doesn't already field one
-  if (n>=2 && n%2===0 && !squads.some(sq => sq.units.some(u => u.t==='dragon'))){
+  // append a finale dragon to any even level that doesn't already field one.
+  // EASY is exempt: it stays gentle and schedules its own first dragon at L8.
+  if (realmKey!=='easy' && n>=2 && n%2===0 && !squads.some(sq => sq.units.some(u => u.t==='dragon'))){
     squads = squads.concat([{ units:[ unit('dragon') ] }]);
   }
   return squads;
@@ -2625,7 +2641,15 @@ function roundRect(x,y,w,h,r){
   ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
 }
 
-setupCanvas();
+fit = HSGFit.attach(canvas, bf, {
+  maxDPR: 2, minW: 320, minH: 240,
+  onResize({ rect, size, first }) {
+    const pw = W, ph = H;
+    ({ W, H, dpr } = size(Math.max(320, rect.width), rect.height));
+    if (!first) rescaleSiege(W / pw, ph);
+    buildScenery();
+  }
+});
 updateHud();
 // idle backdrop behind the start overlay so it isn't a blank box
 (function idle(){

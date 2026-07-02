@@ -113,13 +113,59 @@
       tone(900, 0, 0.09, { type: 'square', gain: 0.045, glideTo: 200 });
       tone(1800, 0, 0.05, { type: 'sawtooth', gain: 0.025, glideTo: 700 });
     },
-    // a real explosion — sharp crack + rumbling body + a punchy sub thump
+    // an explosion — layered decaying broadband NOISE (no oscillator tone, so it
+    // can never read as a beep/error): a bright crack transient, then a roaring
+    // body that decays into a low rumble ~0.65s tail. The amplitude decay is
+    // baked into each sample buffer for an instant, natural blast attack; the
+    // filters are low-Q so the noise stays broadband (a boom, not a buzz).
     boom(big) {
       if (muted) return;
-      noiseBurst(0,     big ? 0.55 : 0.36, { gain: big ? 0.52 : 0.42, freq: 4200, freqEnd: 80 });  // crack
-      noiseBurst(0.015, big ? 0.72 : 0.52, { gain: big ? 0.34 : 0.26, freq: 700,  freqEnd: 45 });  // rumble body
-      tone(210, 0, 0.08, { type: 'square', gain: 0.18, glideTo: 70 });                // punch
-      tone(80,  0, big ? 0.46 : 0.32, { type: 'sine', gain: 0.22, glideTo: 32 });     // sub thump
+      const c = ac(); if (!c) return;
+      const t0 = c.currentTime;
+      const S = big ? 1 : 0.72;
+      // one decaying-noise layer; hp=true swaps the lowpass for a highpass (crack)
+      const layer = (dur, cut0, cut1, gain, q, decayPow, hp, atk) => {
+        const len = Math.max(1, Math.floor(c.sampleRate * dur));
+        const buf = c.createBuffer(1, len, c.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, decayPow);
+        const src = c.createBufferSource(); src.buffer = buf;
+        const f = c.createBiquadFilter(); f.type = hp ? 'highpass' : 'lowpass';
+        f.frequency.setValueAtTime(cut0, t0);
+        f.frequency.linearRampToValueAtTime(cut1, t0 + dur * 0.7);
+        f.Q.setValueAtTime(q, t0);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(gain, t0 + (atk || 0.012));   // short attack ramp → soft "whoomph", not a gunshot snap
+        src.connect(f).connect(g).connect(c.destination);
+        src.start(t0); src.stop(t0 + dur + 0.02);
+      };
+      layer(0.14,            1500, 3800, 0.13, 0.5, 2.4, true, 0.006); // soft dark crack (not a bright gunshot)
+      layer(0.80 * S + 0.20, 3400, 900,  0.30, 0.6, 1.3, false, 0.012); // roaring body
+      layer(0.95 * S + 0.20, 1200, 300,  0.30, 0.6, 1.5, false, 0.014); // mid rumble
+      layer(1.05 * S + 0.25, 380,  110,  0.34, 0.7, 1.6, false, 0.014); // deep low boom (low Q → not buzzy)
+    },
+    // the swish of an arrow/projectile loosed — broadband noise through a
+    // sweeping bandpass (a "whoosh", never a tone).
+    whoosh() {
+      if (muted) return;
+      const c = ac(); if (!c) return;
+      const t0 = c.currentTime, dur = 0.26;
+      const len = Math.floor(c.sampleRate * dur);
+      const buf = c.createBuffer(1, len, c.sampleRate);
+      const d = buf.getChannelData(0);
+      for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+      const src = c.createBufferSource(); src.buffer = buf;
+      const f = c.createBiquadFilter(); f.type = 'bandpass'; f.Q.setValueAtTime(0.8, t0);
+      f.frequency.setValueAtTime(700, t0);
+      f.frequency.exponentialRampToValueAtTime(2600, t0 + dur * 0.6);  // sweep up = the swish
+      f.frequency.exponentialRampToValueAtTime(1200, t0 + dur);
+      const g = c.createGain();
+      g.gain.setValueAtTime(0.0001, t0);
+      g.gain.linearRampToValueAtTime(0.24, t0 + 0.04);                 // swell
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);           // fade
+      src.connect(f).connect(g).connect(c.destination);
+      src.start(t0); src.stop(t0 + dur + 0.02);
     },
     // an enemy plasma bolt fired / a warning
     alarm() {
