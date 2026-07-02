@@ -299,6 +299,7 @@ function handleAnswer(chosen, btn){
     document.getElementById('portraitWrap').classList.add('win');
     document.getElementById('feedback').innerHTML = '<span style="color:var(--green)">✓ Correct!</span>';
     addToWall(current);
+    if(window.HSGfx && HSGfx.confetti) HSGfx.confetti({count:18});
   } else {
     if(window.HSGSound) HSGSound.wrong();
     btn.classList.add('wrong');
