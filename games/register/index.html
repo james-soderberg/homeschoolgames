@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register · HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    :root { --till-green:#2A5C3F; --till-green-d:#1c4a31; }
+
+    .reg-page { max-width: 760px; margin: 0 auto; padding: 1.1rem 1rem 3rem; }
+    .reg-page h1 { font-size: 1.9rem; margin: 0 0 .15rem; }
+    .reg-howto { color: var(--ink-light); font-size: .95rem; margin: 0 0 1.1rem; max-width: 62ch; }
+
+    /* ---------- start screen ---------- */
+    .reg-start { text-align:center; }
+    .reg-tiers { display:flex; flex-wrap:wrap; justify-content:center; gap:.7rem; margin:1.2rem 0 1.4rem; }
+    .reg-tier {
+      flex:0 0 auto; width:168px; text-align:left; cursor:pointer; background:#fff;
+      border:2.5px solid var(--border); border-radius:14px; padding:.8rem .9rem;
+      transition:border-color .15s, transform .12s, box-shadow .15s;
+    }
+    .reg-tier:hover { border-color:var(--gold); transform:translateY(-3px); box-shadow:0 8px 18px rgba(26,23,20,.12); }
+    .reg-tier.sel { border-color:var(--till-green); box-shadow:0 8px 18px rgba(42,92,63,.18); }
+    .reg-tier .t-emoji { font-size:1.7rem; line-height:1; }
+    .reg-tier .t-name { font-family:var(--font-serif); font-weight:600; font-size:1.15rem; margin:.25rem 0 .1rem; }
+    .reg-tier .t-desc { font-size:.78rem; color:var(--ink-light); line-height:1.35; }
+    .reg-start .btn-gold { font-size:1.05rem; padding:.7rem 2.2rem; }
+
+    /* ---------- HUD ---------- */
+    .reg-hud { display:flex; align-items:center; justify-content:space-between; gap:.8rem;
+      background:var(--till-green); color:#fff; border-radius:12px; padding:.55rem .9rem; margin-bottom:.9rem; }
+    .reg-hud .till { font-weight:700; font-size:1.35rem; font-variant-numeric:tabular-nums; letter-spacing:.01em; }
+    .reg-hud .till small { display:block; font-size:.6rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; opacity:.8; }
+    .reg-hud .progress { font-size:.82rem; font-weight:600; opacity:.92; }
+    .reg-hud .quit { margin-left:auto; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.3);
+      color:#fff; border-radius:99px; font-size:.72rem; padding:.28rem .8rem; cursor:pointer; font-family:var(--font-sans); }
+    .reg-hud .quit:hover { background:rgba(255,255,255,.26); }
+
+    /* ---------- customer ---------- */
+    .reg-customer { display:flex; align-items:center; gap:.8rem; margin-bottom:.6rem; }
+    .reg-face { font-size:3rem; line-height:1; flex:0 0 auto; transition:transform .2s; }
+    .reg-face.pop { transform:scale(1.18); }
+    .reg-bubble { position:relative; background:#fff; border:2px solid var(--border); border-radius:14px;
+      padding:.5rem .85rem; font-size:.95rem; color:var(--ink); flex:1 1 auto; min-width:0; }
+    .reg-bubble::before { content:''; position:absolute; left:-9px; top:50%; transform:translateY(-50%);
+      border:7px solid transparent; border-right-color:var(--border); }
+    .reg-bubble::after { content:''; position:absolute; left:-6px; top:50%; transform:translateY(-50%);
+      border:6px solid transparent; border-right-color:#fff; }
+    .reg-bubble b { color:var(--till-green); }
+
+    /* patience */
+    .reg-patience { height:12px; border-radius:99px; background:var(--cream-dark); overflow:hidden; margin-bottom:.9rem; border:1px solid var(--border); }
+    .reg-patience i { display:block; height:100%; width:100%; background:linear-gradient(90deg,#2A5C3F,#7A9C5C);
+      transform-origin:left; transition:background .3s; }
+    .reg-patience.warn i { background:linear-gradient(90deg,#E0A53B,#E0853B); }
+    .reg-patience.danger i { background:linear-gradient(90deg,#D62828,#E0531B); }
+
+    /* ---------- counter / receipt ---------- */
+    .reg-counter { background:#fff; border:2px solid var(--border); border-radius:14px; padding:.85rem 1rem; margin-bottom:.9rem; }
+    .reg-items { list-style:none; margin:0 0 .5rem; padding:0; }
+    .reg-items li { display:flex; align-items:center; gap:.6rem; padding:.22rem 0; font-size:1rem; border-bottom:1px dashed var(--border); }
+    .reg-items li:last-child { border-bottom:0; }
+    .reg-items .i-emoji { font-size:1.4rem; }
+    .reg-items .i-name { flex:1 1 auto; }
+    .reg-items .i-price { font-variant-numeric:tabular-nums; font-weight:600; color:var(--ink-light); }
+    .reg-totals { font-variant-numeric:tabular-nums; font-size:.92rem; }
+    .reg-totals .row { display:flex; justify-content:space-between; padding:.1rem 0; color:var(--ink-light); }
+    .reg-totals .row.total { font-size:1.1rem; font-weight:700; color:var(--ink); border-top:2px solid var(--border); margin-top:.25rem; padding-top:.35rem; }
+    .reg-totals .row.paid { color:var(--till-green); font-weight:600; }
+
+    /* change status */
+    .reg-status { display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+      background:var(--cream-dark); border-radius:10px; padding:.55rem .9rem; margin-bottom:.6rem; }
+    .reg-status .lab { font-size:.7rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-light); }
+    .reg-status .amt { font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .reg-status .need .amt { color:var(--ink); }
+    .reg-status .given .amt.ok    { color:var(--green); }
+    .reg-status .given .amt.over  { color:var(--red); }
+    .reg-status .given .amt.under { color:var(--ink-light); }
+
+    /* ---------- change tray ---------- */
+    .reg-tray { min-height:64px; border:2px dashed var(--border); border-radius:12px; padding:.5rem;
+      display:flex; flex-wrap:wrap; gap:.4rem; align-content:flex-start; margin-bottom:.55rem; background:#fbfaf6; transition:transform .08s; }
+    .reg-tray.shake { animation:regShake .4s; }
+    @keyframes regShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+    .reg-tray-empty { color:var(--ink-light); font-size:.85rem; align-self:center; margin:0 auto; opacity:.7; }
+
+    /* ---------- money pieces ---------- */
+    .money { position:relative; cursor:pointer; border:none; font-family:var(--font-sans); font-weight:800;
+      display:inline-flex; align-items:center; justify-content:center; color:#fff; user-select:none;
+      transition:transform .1s, box-shadow .1s; flex:0 0 auto; }
+    .money:hover { transform:translateY(-3px); }
+    .money:active { transform:translateY(0) scale(.94); }
+    .money.coin { border-radius:50%; box-shadow:0 3px 5px rgba(26,23,20,.28), inset 0 2px 3px rgba(255,255,255,.45), inset 0 -3px 4px rgba(0,0,0,.22); text-shadow:0 1px 1px rgba(0,0,0,.25); }
+    .money.bill { border-radius:6px; box-shadow:0 3px 6px rgba(26,23,20,.28), inset 0 0 0 2px rgba(255,255,255,.35); }
+    /* coin faces */
+    .money.penny   { background:radial-gradient(circle at 35% 30%, #e8a06a, #b87333); color:#5a3316; }
+    .money.nickel  { background:radial-gradient(circle at 35% 30%, #e6e8ea, #a9adb2); color:#3a3d40; }
+    .money.dime    { background:radial-gradient(circle at 35% 30%, #eceef0, #b3b7bc); color:#3a3d40; }
+    .money.quarter { background:radial-gradient(circle at 35% 30%, #eceef0, #a9adb2); color:#3a3d40; }
+    /* bill faces */
+    .money.b1   { background:linear-gradient(135deg,#4f8a63,#2f6a44); }
+    .money.b5   { background:linear-gradient(135deg,#5b7fae,#39567f); }
+    .money.b10  { background:linear-gradient(135deg,#b08a4a,#8a6a2f); }
+    .money.b20  { background:linear-gradient(135deg,#6f9c5c,#4f7a3f); }
+    /* sizes — drawer */
+    .reg-drawer .money.coin.penny   { width:52px; height:52px; font-size:.9rem; }
+    .reg-drawer .money.coin.nickel  { width:58px; height:58px; font-size:.92rem; }
+    .reg-drawer .money.coin.dime    { width:46px; height:46px; font-size:.82rem; }
+    .reg-drawer .money.coin.quarter { width:64px; height:64px; font-size:.95rem; }
+    .reg-drawer .money.bill { width:78px; height:48px; font-size:1.1rem; }
+    /* sizes — tray (a touch smaller) */
+    .reg-tray .money.coin { width:42px; height:42px; font-size:.78rem; }
+    .reg-tray .money.coin.quarter { width:48px; height:48px; }
+    .reg-tray .money.coin.dime { width:38px; height:38px; }
+    .reg-tray .money.bill { width:60px; height:38px; font-size:.9rem; }
+    .reg-tray .money::after { content:'✕'; position:absolute; top:-5px; right:-5px; width:15px; height:15px; border-radius:50%;
+      background:var(--red); color:#fff; font-size:.62rem; font-weight:700; display:none; align-items:center; justify-content:center; }
+    .reg-tray .money:hover::after { display:inline-flex; }
+
+    .reg-drawer-lab { font-size:.7rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-light); margin:.2rem 0 .45rem; }
+    .reg-drawer { display:flex; flex-wrap:wrap; gap:.55rem; align-items:center; justify-content:center;
+      background:linear-gradient(#efe7d6,#e4dac2); border:2px solid var(--border); border-radius:12px; padding:.8rem .7rem; }
+
+    /* ---------- actions ---------- */
+    .reg-actions { display:flex; gap:.6rem; margin-top:.9rem; }
+    .reg-actions .btn { flex:1 1 auto; text-align:center; padding:.7rem 1rem; font-size:1rem; }
+    .reg-give { background:var(--till-green); border-color:var(--till-green); }
+    .reg-give:hover { background:var(--till-green-d); border-color:var(--till-green-d); color:#fff; }
+
+    /* ---------- toast / float ---------- */
+    .reg-float { position:fixed; left:50%; top:38%; transform:translateX(-50%); z-index:50;
+      font-family:var(--font-serif); font-weight:700; font-size:2rem; color:var(--green);
+      text-shadow:0 2px 8px rgba(0,0,0,.15); pointer-events:none; animation:regFloat 1.1s ease-out forwards; }
+    @keyframes regFloat { 0%{opacity:0; transform:translate(-50%,10px) scale(.8)} 15%{opacity:1} 100%{opacity:0; transform:translate(-50%,-46px) scale(1.05)} }
+
+    /* ---------- end screen ---------- */
+    .reg-end { text-align:center; }
+    .reg-end .summary { background:#fff; border:2px solid var(--border); border-radius:16px; padding:1.4rem 1.2rem; margin:0 auto 1.2rem; max-width:420px; }
+    .reg-end .big-till { font-size:2.6rem; font-weight:800; color:var(--till-green); font-variant-numeric:tabular-nums; }
+    .reg-end .big-till small { display:block; font-size:.7rem; letter-spacing:.14em; text-transform:uppercase; color:var(--ink-light); font-weight:800; }
+    .reg-end .stats { display:flex; justify-content:center; gap:1.4rem; margin-top:.9rem; color:var(--ink-light); font-size:.9rem; }
+    .reg-end .stats b { display:block; font-size:1.3rem; color:var(--ink); font-family:var(--font-serif); }
+    #regBoard, #startBoard { max-width:420px; margin:1.1rem auto 0; }
+
+    .hidden { display:none !important; }
+
+    @media (max-width:600px) {
+      .reg-tier { width:100%; max-width:280px; }
+      .reg-drawer .money.coin.quarter { width:56px; height:56px; }
+      .reg-hud .till { font-size:1.15rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../subjects/math.html">← Math</a>
+  </nav>
+</header>
+
+<div class="reg-page">
+  <h1>Register 🛒</h1>
+  <p class="reg-howto">You run the corner shop. Ring up each customer, then tap coins and bills into the
+    tray to hand back <b>exact change</b> — before they lose patience. Fast, correct change fills the till.
+    How much can you take in one day?</p>
+
+  <!-- ============ START ============ -->
+  <section id="startScreen" class="reg-start">
+    <div class="reg-tiers" id="tierPicker"></div>
+    <button type="button" class="btn btn-gold" id="startBtn">Open the shop →</button>
+    <div id="startBoard"></div>
+  </section>
+
+  <!-- ============ PLAY ============ -->
+  <section id="playScreen" class="hidden">
+    <div class="reg-hud">
+      <div class="till"><small>Till</small><span id="tillAmt">$0.00</span></div>
+      <div class="progress" id="progress">Customer 1 / 10</div>
+      <button type="button" class="quit" id="quitBtn">End day</button>
+    </div>
+
+    <div class="reg-customer">
+      <div class="reg-face" id="face">🙂</div>
+      <div class="reg-bubble" id="bubble"></div>
+    </div>
+    <div class="reg-patience" id="patience"><i id="patienceBar"></i></div>
+
+    <div class="reg-counter">
+      <ul class="reg-items" id="items"></ul>
+      <div class="reg-totals" id="totals"></div>
+    </div>
+
+    <div class="reg-status">
+      <div class="need"><div class="lab">Change due</div><div class="amt" id="needAmt">$0.00</div></div>
+      <div class="given" style="text-align:right"><div class="lab">In the tray</div><div class="amt under" id="givenAmt">$0.00</div></div>
+    </div>
+
+    <div class="reg-tray" id="tray"></div>
+
+    <div class="reg-drawer-lab">Cash drawer — tap to add</div>
+    <div class="reg-drawer" id="drawer"></div>
+
+    <div class="reg-actions">
+      <button type="button" class="btn btn-outline" id="clearBtn">Clear tray</button>
+      <button type="button" class="btn reg-give" id="giveBtn">Give change</button>
+    </div>
+  </section>
+
+  <!-- ============ END ============ -->
+  <section id="endScreen" class="reg-end hidden">
+    <div class="summary">
+      <div class="big-till"><small>Day's takings</small><span id="endTill">$0.00</span></div>
+      <div class="stats">
+        <div><b id="endServed">0</b>served</div>
+        <div><b id="endPerfect">0</b>perfect change</div>
+        <div><b id="endTips">$0.00</b>tips</div>
+      </div>
+    </div>
+    <div id="regBoard"></div>
+    <div style="margin-top:1.2rem; display:flex; gap:.6rem; justify-content:center;">
+      <button type="button" class="btn btn-outline" id="changeTierBtn">Change level</button>
+      <button type="button" class="btn btn-gold" id="againBtn">New day →</button>
+    </div>
+  </section>
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var rand = function (a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; };
+  var money = function (c) { return '$' + (c / 100).toFixed(2); };
+  var CUSTOMERS_PER_DAY = 10;
+
+  // ---- currency denominations (cents) ----
+  var DEN = {
+    1:   { cls: 'penny coin',   label: '1¢' },
+    5:   { cls: 'nickel coin',  label: '5¢' },
+    10:  { cls: 'dime coin',    label: '10¢' },
+    25:  { cls: 'quarter coin', label: '25¢' },
+    100: { cls: 'b1 bill',   label: '$1' },
+    500: { cls: 'b5 bill',   label: '$5' },
+    1000:{ cls: 'b10 bill',  label: '$10' },
+    2000:{ cls: 'b20 bill',  label: '$20' }
+  };
+
+  // ---- tiers ----
+  var TIERS = {
+    easy: {
+      key: 'easy', name: 'Coins Only', emoji: '🪙',
+      desc: 'Grades 1–2 · make change under $1 with coins',
+      drawer: [25, 10, 5, 1], pay: [100], patience: 20000
+    },
+    bills: {
+      key: 'bills', name: 'Bills & Coins', emoji: '💵',
+      desc: 'Grades 3–4 · dollars and cents together',
+      drawer: [500, 100, 25, 10, 5, 1], pay: [100, 500, 1000, 2000], patience: 22000
+    },
+    fewest: {
+      key: 'fewest', name: 'Fewest Pieces', emoji: '🎯',
+      desc: 'Grades 4–5 · make change the smart way',
+      drawer: [100, 25, 10, 5, 1], pay: [100, 500], patience: 24000, optimal: true
+    },
+    tax: {
+      key: 'tax', name: 'Sales Tax', emoji: '🧾',
+      desc: 'Grades 5–6 · add the % tax, then make change',
+      drawer: [1000, 500, 100, 25, 10, 5, 1], pay: [500, 1000, 2000], patience: 26000, tax: true
+    }
+  };
+  var TIER_ORDER = ['easy', 'bills', 'fewest', 'tax'];
+
+  // ---- shop items (price in cents) ----
+  var ITEMS = [
+    ['🍎','Apple',60],['🍌','Banana',35],['🍞','Bread',215],['🥛','Milk',120],['🧀','Cheese',340],
+    ['🍫','Chocolate',125],['✏️','Pencil',45],['📓','Notebook',230],['🍭','Lollipop',25],['🧃','Juice',110],
+    ['🍪','Cookie',75],['🍦','Ice Cream',160],['🎈','Balloon',90],['🖍️','Crayons',315],['🧦','Socks',275],
+    ['🍕','Pizza',250],['🍩','Donut',95],['🥨','Pretzel',85],['🧼','Soap',180],['🪥','Toothbrush',140],
+    ['🍇','Grapes',210],['🥕','Carrot',40],['🧢','Cap',450],['⚽','Ball',625],['📕','Book',520],['🍊','Orange',55]
+  ];
+  // easy tier: cheap items with tidy (multiple-of-5) prices under $1
+  var EASY_ITEMS = [
+    ['🍭','Lollipop',25],['🍪','Cookie',75],['🍌','Banana',35],['🎈','Balloon',90],['🥕','Carrot',40],
+    ['🍎','Apple',60],['🍩','Donut',95],['🥨','Pretzel',85],['✏️','Pencil',45],['🍬','Candy',20],
+    ['🧃','Juice',55],['🍫','Chocolate',65],['🍏','Pear',50],['🧁','Cupcake',80],['🍒','Cherries',30],['🖊️','Pen',70]
+  ];
+  var NAMES = ['Mia','Leo','Ava','Sam','Zoe','Max','Ivy','Ben','Nora','Eli','Ruby','Kai','Lily','Finn','Cleo','Jude'];
+  var FACES = ['🧑','👩','👨','🧒','👧','👦','👵','👴','🧔','👩‍🦰','🧑‍🦱','👳','🧕','👩‍🦳'];
+
+  // ---- state ----
+  var tier = TIERS.easy, custIdx = 0, till = 0, tipsTotal = 0, servedOK = 0, perfectCount = 0;
+  var cur = null, tray = [], raf = 0, patStart = 0, patDur = 0, active = false, resolved = false;
+
+  // ---- fewest-pieces optimal count (greedy is optimal for these US denominations) ----
+  function optimalPieces(amount, dens) {
+    var d = dens.slice().sort(function (a, b) { return b - a; });
+    var n = 0, r = amount;
+    for (var i = 0; i < d.length; i++) { n += Math.floor(r / d[i]); r %= d[i]; }
+    return n;
+  }
+  function smallestPayOver(amount, bills) {
+    var sorted = bills.slice().sort(function (a, b) { return a - b; });
+    for (var i = 0; i < sorted.length; i++) if (sorted[i] > amount) return sorted[i];
+    // fall back: round up to a whole number of the biggest bill
+    var big = sorted[sorted.length - 1];
+    return (Math.floor(amount / big) + 1) * big;
+  }
+  function pickItems(pool, n) {
+    var copy = pool.slice(), out = [];
+    for (var i = 0; i < n && copy.length; i++) out.push(copy.splice(rand(0, copy.length - 1), 1)[0]);
+    return out;
+  }
+
+  // ---- build one customer for the current tier ----
+  function genCustomer() {
+    for (var attempt = 0; attempt < 60; attempt++) {
+      var items, subtotal = 0, taxRate = 0, taxCents = 0, total, pay, change;
+      if (tier.key === 'easy') {
+        items = pickItems(EASY_ITEMS, Math.random() < 0.55 ? 1 : 2);
+      } else {
+        var n = tier.key === 'fewest' ? rand(1, 2) : rand(1, 3);
+        items = pickItems(ITEMS, n);
+      }
+      items.forEach(function (it) { subtotal += it[2]; });
+
+      // tier subtotal ceilings keep change comfortably under $10
+      if (tier.key === 'easy'   && (subtotal < 15 || subtotal > 95)) continue;
+      if (tier.key === 'bills'  && (subtotal < 40 || subtotal > 1800)) continue;
+      if (tier.key === 'fewest' && (subtotal < 30 || subtotal > 480)) continue;
+      if (tier.key === 'tax'    && (subtotal < 120 || subtotal > 1200)) continue;
+
+      total = subtotal;
+      if (tier.tax) {
+        taxRate = [5, 6, 7, 8][rand(0, 3)];
+        taxCents = Math.round(subtotal * taxRate / 100);
+        total = subtotal + taxCents;
+      }
+      pay = smallestPayOver(total, tier.pay);
+      change = pay - total;
+      if (change <= 0) continue;                 // must be real change to make
+      if (change > 999) continue;                // keep it drawer-friendly
+      if (optimalPieces(change, tier.drawer) > 12) continue; // not a coin avalanche
+
+      return {
+        items: items, subtotal: subtotal, taxRate: taxRate, taxCents: taxCents,
+        total: total, pay: pay, change: change,
+        optimal: optimalPieces(change, tier.drawer),
+        name: NAMES[rand(0, NAMES.length - 1)], face: FACES[rand(0, FACES.length - 1)]
+      };
+    }
+    // extremely unlikely fallback
+    return { items: [['🍎','Apple',60]], subtotal: 60, taxRate: 0, taxCents: 0,
+             total: 60, pay: 100, change: 40, optimal: optimalPieces(40, tier.drawer),
+             name: 'Sam', face: '🧑' };
+  }
+
+  // ---- rendering ----
+  function moneyChip(v, where) {
+    var d = DEN[v];
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'money ' + d.cls;
+    b.textContent = d.label;
+    b.dataset.v = v;
+    b.setAttribute('aria-label', (where === 'drawer' ? 'Add ' : 'Remove ') + d.label);
+    return b;
+  }
+
+  function renderDrawer() {
+    var drawer = $('drawer');
+    drawer.innerHTML = '';
+    tier.drawer.slice().sort(function (a, b) { return b - a; }).forEach(function (v) {
+      var chip = moneyChip(v, 'drawer');
+      chip.addEventListener('click', function () { addPiece(v); });
+      drawer.appendChild(chip);
+    });
+  }
+
+  function renderTray() {
+    var el = $('tray');
+    el.innerHTML = '';
+    if (!tray.length) {
+      el.innerHTML = '<span class="reg-tray-empty">Tap coins &amp; bills to build the change…</span>';
+    } else {
+      tray.forEach(function (v, i) {
+        var chip = moneyChip(v, 'tray');
+        chip.addEventListener('click', function () { removePiece(i); });
+        el.appendChild(chip);
+      });
+    }
+    var given = tray.reduce(function (s, v) { return s + v; }, 0);
+    var g = $('givenAmt');
+    g.textContent = money(given);
+    g.className = 'amt ' + (given === cur.change ? 'ok' : given > cur.change ? 'over' : 'under');
+  }
+
+  function renderCustomer() {
+    resolved = false;
+    tray = [];
+    $('face').textContent = cur.face;
+    $('progress').textContent = 'Customer ' + (custIdx + 1) + ' / ' + CUSTOMERS_PER_DAY;
+
+    // items
+    var ul = $('items');
+    ul.innerHTML = '';
+    cur.items.forEach(function (it) {
+      var li = document.createElement('li');
+      li.innerHTML = '<span class="i-emoji">' + it[0] + '</span>' +
+        '<span class="i-name">' + it[1] + '</span>' +
+        '<span class="i-price">' + money(it[2]) + '</span>';
+      ul.appendChild(li);
+    });
+
+    // totals
+    var t = '';
+    if (tier.tax) {
+      t += '<div class="row"><span>Subtotal</span><span>' + money(cur.subtotal) + '</span></div>';
+      t += '<div class="row"><span>Tax (' + cur.taxRate + '%)</span><span>' + money(cur.taxCents) + '</span></div>';
+    }
+    t += '<div class="row total"><span>Total</span><span>' + money(cur.total) + '</span></div>';
+    t += '<div class="row paid"><span>' + cur.name + ' pays</span><span>' + money(cur.pay) + '</span></div>';
+    $('totals').innerHTML = t;
+
+    $('needAmt').textContent = money(cur.change);
+    $('bubble').innerHTML = 'Hi! I\'ll take ' +
+      (cur.items.length === 1 ? 'this' : 'these ' + cur.items.length + ' things') +
+      ', please. Here\'s <b>' + money(cur.pay) + '</b>.';
+
+    renderTray();
+    renderDrawer();
+    $('giveBtn').disabled = false;
+
+    startPatience();
+  }
+
+  // ---- tray actions ----
+  function addPiece(v) {
+    if (resolved) return;
+    tray.push(v);
+    if (window.HSGSound) HSGSound.tick();
+    renderTray();
+  }
+  function removePiece(i) {
+    if (resolved) return;
+    tray.splice(i, 1);
+    if (window.HSGSound) HSGSound.tick();
+    renderTray();
+  }
+  function clearTray() {
+    if (resolved || !tray.length) return;
+    tray = [];
+    renderTray();
+  }
+
+  // ---- patience timer ----
+  function startPatience() {
+    patDur = tier.patience;
+    patStart = performance.now();
+    active = true;
+    cancelAnimationFrame(raf);
+    tickPatience();
+  }
+  function tickPatience() {
+    if (!active) return;
+    var frac = 1 - (performance.now() - patStart) / patDur;
+    if (frac < 0) frac = 0;
+    var bar = $('patienceBar');
+    bar.style.transform = 'scaleX(' + frac + ')';
+    var pe = $('patience');
+    pe.className = 'reg-patience' + (frac < 0.18 ? ' danger' : frac < 0.4 ? ' warn' : '');
+    var face = $('face');
+    if (!resolved) {
+      face.textContent = frac > 0.6 ? cur.face : frac > 0.35 ? '😐' : frac > 0.15 ? '😟' : '😠';
+    }
+    if (frac <= 0) { failSale(); return; }
+    raf = requestAnimationFrame(tickPatience);
+  }
+  function stopPatience() { active = false; cancelAnimationFrame(raf); }
+
+  // ---- resolve a customer ----
+  function giveChange() {
+    if (resolved) return;
+    var given = tray.reduce(function (s, v) { return s + v; }, 0);
+    if (given === cur.change) {
+      succeed();
+    } else {
+      // wrong — coach, cost a little patience, let them fix it
+      var diff = Math.abs(given - cur.change);
+      var over = given > cur.change;
+      $('bubble').innerHTML = over
+        ? 'That\'s <b>' + money(diff) + ' too much</b> — that comes out of your till!'
+        : 'That\'s <b>' + money(diff) + ' short</b> — I\'m owed a bit more.';
+      var tray$ = $('tray');
+      tray$.classList.remove('shake'); void tray$.offsetWidth; tray$.classList.add('shake');
+      if (window.HSGSound) HSGSound.wrong();
+      // 3-second patience penalty
+      patStart -= 3000;
+    }
+  }
+
+  function succeed() {
+    resolved = true;
+    stopPatience();
+    $('face').textContent = '😄';
+    $('face').classList.add('pop');
+    setTimeout(function () { $('face').classList.remove('pop'); }, 220);
+    if (window.HSGSound) HSGSound.correct();
+
+    // scoring: the sale (total) banks into the till, plus tips
+    var fracLeft = 1 - (performance.now() - patStart) / patDur;
+    if (fracLeft < 0) fracLeft = 0;
+    var speedTip = Math.round(fracLeft * 50);                 // up to 50¢ for a snappy service
+    var usedPieces = tray.length;
+    var wasOptimal = usedPieces === cur.optimal;
+    var neatBonus = wasOptimal ? 25 : 0;                      // 25¢ for fewest pieces
+    var tip = speedTip + neatBonus;
+
+    till += cur.total + tip;
+    tipsTotal += tip;
+    servedOK++;
+    if (wasOptimal) perfectCount++;
+
+    $('tillAmt').textContent = money(till);
+    floatText('+' + money(cur.total + tip) + (wasOptimal ? ' ⭐' : ''));
+    $('bubble').innerHTML = wasOptimal
+      ? 'Perfect change — and the <b>fewest pieces</b>! Thank you!'
+      : 'Perfect, thank you! ' + (speedTip > 25 ? 'Keep the tip 😊' : '');
+
+    setTimeout(nextCustomer, 950);
+  }
+
+  function failSale() {
+    if (resolved) return;
+    resolved = true;
+    stopPatience();
+    $('face').textContent = '😞';
+    $('bubble').innerHTML = '<b>Never mind…</b> I\'m in a hurry. (Lost sale)';
+    if (window.HSGSound) HSGSound.wrong();
+    setTimeout(nextCustomer, 1100);
+  }
+
+  function floatText(txt) {
+    var f = document.createElement('div');
+    f.className = 'reg-float';
+    f.textContent = txt;
+    document.body.appendChild(f);
+    setTimeout(function () { f.remove(); }, 1100);
+  }
+
+  // ---- day flow ----
+  function nextCustomer() {
+    custIdx++;
+    if (custIdx >= CUSTOMERS_PER_DAY) { endDay(); return; }
+    cur = genCustomer();
+    renderCustomer();
+  }
+
+  function startDay() {
+    custIdx = 0; till = 0; tipsTotal = 0; servedOK = 0; perfectCount = 0;
+    $('startScreen').classList.add('hidden');
+    $('endScreen').classList.add('hidden');
+    $('playScreen').classList.remove('hidden');
+    $('tillAmt').textContent = '$0.00';
+    cur = genCustomer();
+    renderCustomer();
+  }
+
+  function endDay() {
+    stopPatience();
+    $('playScreen').classList.add('hidden');
+    $('endScreen').classList.remove('hidden');
+    $('endTill').textContent = money(till);
+    $('endServed').textContent = servedOK;
+    $('endPerfect').textContent = perfectCount;
+    $('endTips').textContent = money(tipsTotal);
+    if (window.HSGSound) HSGSound.finish(servedOK > 0);
+
+    if (window.HSGStreak) {
+      HSGStreak.endPanel('#regBoard', {
+        gameId: 'register', gameName: 'Register',
+        level: tier.key, levelName: tier.name,
+        unit: 'takings', score: till, minStreak: 1
+      });
+    }
+  }
+
+  // ---- start screen ----
+  function buildTierPicker() {
+    var wrap = $('tierPicker');
+    wrap.innerHTML = '';
+    TIER_ORDER.forEach(function (k) {
+      var T = TIERS[k];
+      var el = document.createElement('div');
+      el.className = 'reg-tier' + (T === tier ? ' sel' : '');
+      el.innerHTML = '<div class="t-emoji">' + T.emoji + '</div>' +
+        '<div class="t-name">' + T.name + '</div>' +
+        '<div class="t-desc">' + T.desc + '</div>';
+      el.addEventListener('click', function () {
+        tier = T;
+        buildTierPicker();
+        renderStartBoard();
+      });
+      wrap.appendChild(el);
+    });
+  }
+  function renderStartBoard() {
+    if (window.HSGStreak) {
+      HSGStreak.renderBoardInto('#startBoard', {
+        gameId: 'register', level: tier.key, unit: 'takings', minStreak: 1
+      });
+    }
+  }
+
+  function showStart() {
+    $('playScreen').classList.add('hidden');
+    $('endScreen').classList.add('hidden');
+    $('startScreen').classList.remove('hidden');
+    buildTierPicker();
+    renderStartBoard();
+  }
+
+  // ---- wire up ----
+  $('startBtn').addEventListener('click', startDay);
+  $('againBtn').addEventListener('click', startDay);
+  $('changeTierBtn').addEventListener('click', showStart);
+  $('giveBtn').addEventListener('click', giveChange);
+  $('clearBtn').addEventListener('click', clearTray);
+  $('quitBtn').addEventListener('click', function () {
+    if (window.confirm('End the day now and bank what\'s in the till?')) endDay();
+  });
+  document.addEventListener('keydown', function (e) {
+    if ($('playScreen').classList.contains('hidden')) return;
+    if (e.key === 'Enter') { e.preventDefault(); giveChange(); }
+    else if (e.key === 'Backspace') { e.preventDefault(); if (tray.length) removePiece(tray.length - 1); }
+  });
+
+  showStart();
+})();
+</script>
+
+</body>
+</html>
