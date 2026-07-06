@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    .wr-page { max-width: 800px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    .wr-page { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
     .wr-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
     .wr-top h1 { margin: 0; font-size: 1.8rem; }
@@ -39,7 +39,7 @@
 
     /* ---------- the rotating track ---------- */
     .arena {
-      position: relative; width: min(94vw, 600px); height: min(94vw, 600px);
+      position: relative; width: min(94vw, clamp(600px, 82vh, 780px)); height: min(94vw, clamp(600px, 82vh, 780px));
       margin: 0 auto 0.9rem; border-radius: 18px;
       background: #34302b; overflow: hidden;
       box-shadow: 0 8px 24px rgba(20,33,46,0.24); border: 2px solid #23201b;
@@ -391,12 +391,19 @@ function renderEdges() {
 
 // place every car in its lane (just outside the words) from its character progress
 function positionCars() {
-  const cx = S / 2, cy = S / 2, ln = lines[activeLine];
+  const cx = S / 2, cy = S / 2, ln = lines[activeLine], left = cx - TRACK / 2;
+  const onLast = (activeLine === lines.length - 1) && topSpans.length > 0;
+  // the finish line sits one space past the last letter — the exact x every car stops at.
+  // off the last line there's no finish yet, so use the far corner (= a full-track lap).
+  const finishX = onLast
+    ? left + topSpans[topSpans.length - 1].offsetLeft + topSpans[topSpans.length - 1].offsetWidth + spaceW()
+    : cx + TRACK / 2;
   // your car: innermost lane, right above your caret on the top edge
   const li = clamp(index - ln.start, 0, topSpans.length - 1);
   const span = topSpans[li];
-  let px = cx - TRACK / 2;
-  if (span) px += (index >= ln.end ? span.offsetLeft + span.offsetWidth : span.offsetLeft + span.offsetWidth / 2);
+  let px = left;
+  if (span) px += (index >= ln.end ? span.offsetLeft + span.offsetWidth + (onLast ? spaceW() : 0)  // finished → sit on the line
+                                    : span.offsetLeft + span.offsetWidth / 2);
   pcar.style.left = px + 'px';
   pcar.style.top = laneY[0] + 'px';
   pcar.style.transform = 'translate(-50%,-50%)';
@@ -405,7 +412,8 @@ function positionCars() {
     const f = L ? clamp((c.chars - L.start) / Math.max(1, L.end - L.start), 0, 1) : 0;
     const yOut = laneY[c.lane], R = S / 2 - yOut;    // this rival's lane
     let x, y, rot, show = true;
-    if (rel === 0)      { x = cx - TRACK / 2 + f * TRACK; y = yOut;      rot = 0; }
+    // on the last line the rival converges on finishX (so f=1 lands exactly on the finish line)
+    if (rel === 0)      { x = left + f * (finishX - left);         y = yOut;      rot = 0; }
     else if (rel === 1) { x = cx + R;                     y = cy - TRACK / 2 + f * TRACK; rot = 90; }
     else if (rel === 2) { x = cx + TRACK / 2 - f * TRACK; y = S - yOut;  rot = 180; }
     else if (rel === -1){ x = cx - R;                     y = cy + TRACK / 2 - f * TRACK; rot = 270; }
@@ -413,11 +421,10 @@ function positionCars() {
     c.el.style.display = show ? '' : 'none';
     if (show) { c.el.style.left = x + 'px'; c.el.style.top = y + 'px'; c.el.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)'; }
   });
-  // checkered finish line at the end of the final word — only while on the last line
-  if (activeLine === lines.length - 1 && topSpans.length) {
-    const last = topSpans[topSpans.length - 1];
+  // checkered finish line — one space past the last letter, only while on the last line
+  if (onLast) {
     finishFlag.style.display = '';
-    finishFlag.style.left = (cx - TRACK / 2 + last.offsetLeft + last.offsetWidth + spaceW()) + 'px';
+    finishFlag.style.left = finishX + 'px';
     finishFlag.style.top = CARMARGIN + 'px';
     finishFlag.style.height = (TEXTOFF + LINEH / 2 - CARMARGIN) + 'px';
   } else {
@@ -489,7 +496,7 @@ function loop() {
 
 function updateStats() {
   const mins = Math.max((performance.now() - raceStart) / 60000, 1e-4);
-  const wpm = Math.round((index / 5) / mins);
+  const wpm = Math.round((Math.max(0, index - 1) / 5) / mins);   // index-1: don't credit the free first char
   wpmStat.textContent = isFinite(wpm) ? wpm : 0;
   accStat.textContent = (totalKeystrokes ? Math.round(index / totalKeystrokes * 100) : 100) + '%';
   progressFill.style.width = Math.round((passageLen ? index / passageLen : 0) * 100) + '%';
@@ -519,9 +526,9 @@ function setCommentary(msg, force) {
 function handleHalfway() {
   halfPassed = true;
   const mins = Math.max((performance.now() - raceStart) / 60000, 1e-4);
-  const playerWpmHalf = (index / 5) / mins;
-  // Lock the rivals around your first-half pace: one dead-on, one +3, one -3 WPM.
-  const deltas = shuffle([0, 3, -3]);
+  const playerWpmHalf = (Math.max(0, index - 1) / 5) / mins;   // index-1: the clock started ON the first char
+  // Lock the rivals around your first-half pace: one dead-on, one +7, one -7 WPM.
+  const deltas = shuffle([0, 7, -7]);
   cars.forEach((c, i) => { c.targetWpm = Math.max(8, playerWpmHalf + (deltas[i] || 0)); c.locked = true; });
 }
 
@@ -584,7 +591,7 @@ function finishSequence() {
   pcar.classList.remove('boost');
 
   const mins = Math.max((performance.now() - raceStart) / 60000, 1e-4);
-  const wpm = Math.round((passageLen / 5) / mins);
+  const wpm = Math.round((Math.max(0, passageLen - 1) / 5) / mins);   // index-1: clock started on the first char
   const acc = totalKeystrokes ? Math.round(passageLen / totalKeystrokes * 100) : 100;
 
   // time gap vs you: negative = they crossed the line before you, positive = seconds behind you
