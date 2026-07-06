@@ -24,21 +24,28 @@
 
   /* voyage map (solar system progress) above the stage */
   .voyage-wrap { margin-bottom:.55rem; }
-  .voyage-cap { font-family:var(--font-sans); font-size:.74rem; font-weight:700; letter-spacing:.02em;
-    color:var(--ink-light); text-align:center; margin-bottom:.3rem; }
+  .voyage-cap { font-family:var(--font-sans); font-size:.76rem; font-weight:700; letter-spacing:.02em;
+    color:var(--ink-light); text-align:center; margin-bottom:.35rem; }
   .voyage-cap b { color:var(--gold); }
-  .voyage { display:flex; align-items:center; gap:7px; padding:.55rem .7rem; overflow-x:auto; overflow-y:visible;
-    background:radial-gradient(120% 180% at 0% 50%, #12183a, #0a0e1f); border:1.5px solid #232a44; border-radius:12px;
+  .voyage { display:flex; align-items:center; gap:10px; padding:.55rem .9rem; overflow-x:auto; overflow-y:hidden;
+    background:radial-gradient(150% 220% at 0% 50%, #141a3e, #090d1c); border:1.5px solid #232a44; border-radius:12px;
     scrollbar-width:thin; }
   .voyage::-webkit-scrollbar { height:5px; } .voyage::-webkit-scrollbar-thumb { background:#2c3760; border-radius:9px; }
-  .vy-sun { flex:0 0 auto; font-size:1.25rem; line-height:1; margin-right:1px; }
-  .vy-node { position:relative; flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:44px; height:44px; }
-  .vy-dot { border-radius:50%; display:block; box-shadow:0 0 0 1px rgba(255,255,255,.12); }
-  .vy-node.future { opacity:.3; filter:grayscale(.55); }
-  .vy-node.done .vy-dot { box-shadow:0 0 0 1px rgba(255,255,255,.12), 0 0 7px rgba(140,200,255,.35); }
-  .vy-node.now .vy-dot { box-shadow:0 0 0 3px var(--gold), 0 0 14px rgba(255,210,120,.7); animation:vypulse 1.5s ease-in-out infinite; }
-  @keyframes vypulse { 0%,100%{ box-shadow:0 0 0 3px var(--gold), 0 0 8px rgba(255,210,120,.5) } 50%{ box-shadow:0 0 0 4px var(--gold), 0 0 18px rgba(255,210,120,.9) } }
-  .vy-node.done .vy-check { position:absolute; right:-1px; bottom:-1px; font-size:.62rem; line-height:1; color:#8fe3c0; text-shadow:0 0 3px #0a0e1f; }
+  .vy-node { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px; }
+  .vy-orb { height:62px; display:flex; align-items:center; justify-content:center; }
+  .vy-dot { border-radius:50%; display:block; box-shadow:0 0 0 1px rgba(255,255,255,.14), inset -2px -2px 4px rgba(0,0,0,.35); }
+  .vy-label { font-family:var(--font-sans); font-size:.62rem; font-weight:700; color:#aeb9dd; white-space:nowrap; }
+  .vy-node.future { opacity:.32; filter:grayscale(.5); }
+  .vy-node.done .vy-dot { box-shadow:0 0 0 1px rgba(255,255,255,.14), 0 0 8px rgba(140,200,255,.4), inset -2px -2px 4px rgba(0,0,0,.35); }
+  .vy-node.done .vy-label { color:#cdd8f5; }
+  .vy-node.now .vy-dot { box-shadow:0 0 0 3px var(--gold), 0 0 16px rgba(255,210,120,.75), inset -2px -2px 4px rgba(0,0,0,.3); animation:vypulse 1.5s ease-in-out infinite; }
+  .vy-node.now .vy-label { color:#ffe1a6; }
+  @keyframes vypulse { 0%,100%{ box-shadow:0 0 0 3px var(--gold), 0 0 8px rgba(255,210,120,.5), inset -2px -2px 4px rgba(0,0,0,.3) } 50%{ box-shadow:0 0 0 4px var(--gold), 0 0 20px rgba(255,210,120,.95), inset -2px -2px 4px rgba(0,0,0,.3) } }
+  /* the Sun: a big glowing star, not an emoji */
+  .vy-sun-real { width:58px; height:58px; border-radius:50%;
+    background:radial-gradient(circle at 42% 38%, #fff7dc, #ffd54a 40%, #f6981c 74%, #de720d);
+    box-shadow:0 0 22px rgba(255,185,60,.8), 0 0 52px rgba(255,140,30,.45); }
+  .vy-sun-node .vy-label { color:#ffcf7a; }
 
   .probes-badge b { color:var(--gold); }
   .obj-badge { max-width:46vw; overflow:hidden; text-overflow:ellipsis; }
@@ -515,29 +522,61 @@ function toast(msg) { bonusMsg = msg; bonusT = 1.6; }
 
 // ---------- HUD ----------
 // display radius (px) per destination — roughly to scale by real SIZE (not distance)
-const VY_SIZE = {
-  'the Moon':9, 'Mercury':8, 'Venus':12, 'Mars':9, 'Ceres':5, 'Jupiter':20, 'Europa':6, 'Io':6,
-  'Saturn':18, 'Titan':7, 'Enceladus':5, 'Uranus':14, 'Neptune':14, 'Triton':6, 'Pluto':6, 'Eris':6,
-  'the Oort Cloud':15, 'Voyager 1':8, 'Proxima Centauri b':11, 'TRAPPIST-1e':10, 'Kepler-22b':12,
-  'Betelgeuse':20, 'the Crab Nebula':18, 'Sagittarius A*':16,
-};
+// The voyage map is shown one GROUP at a time (planets first). Each body is
+// labeled and sized roughly to scale (by size, not distance). r = display radius px.
+const VY_GROUPS = [
+  { title: 'The Planets', items: [
+    { n:'Mercury', r:7,  c1:'#cdbfa8', c2:'#7a6a52' },
+    { n:'Venus',   r:11, c1:'#f3e2b0', c2:'#c9a24a' },
+    { n:'Earth',   r:12, c1:'#6ab0f0', c2:'#245e46' },
+    { n:'Mars',    r:8,  c1:'#e0885a', c2:'#a5502f' },
+    { n:'Jupiter', r:22, c1:'#e8cba0', c2:'#a8703a' },
+    { n:'Saturn',  r:19, c1:'#f0e2b6', c2:'#b59a5c' },
+    { n:'Uranus',  r:15, c1:'#bfeef2', c2:'#6aa8b6' },
+    { n:'Neptune', r:15, c1:'#7aa7f0', c2:'#2a4a9a' },
+    { n:'Pluto',   r:6,  c1:'#d8c8b0', c2:'#9a8a72' },
+  ]},
+  { title: 'Moons & Dwarf Worlds', items: [
+    { n:'The Moon',  r:8, c1:'#e8e8ee', c2:'#9a9aa6' },
+    { n:'Ceres',     r:5, c1:'#cfc5b4', c2:'#8a8072' },
+    { n:'Io',        r:7, c1:'#f3e08a', c2:'#b6862f' },
+    { n:'Europa',    r:7, c1:'#eef2f6', c2:'#b9c6d2' },
+    { n:'Titan',     r:8, c1:'#f0b96a', c2:'#b57a2f' },
+    { n:'Enceladus', r:5, c1:'#f2f8ff', c2:'#c2d2de' },
+    { n:'Triton',    r:7, c1:'#e6cfe0', c2:'#9a7f97' },
+    { n:'Eris',      r:6, c1:'#e2e2ea', c2:'#9fa0ad' },
+  ]},
+  { title: 'Into Deep Space', items: [
+    { n:'Oort Cloud',   r:15, c1:'#cfe0e6', c2:'#7f97a3' },
+    { n:'Voyager 1',    r:8,  c1:'#d7dde8', c2:'#8891a3' },
+    { n:'Proxima b',    r:11, c1:'#f0a17a', c2:'#a5502f' },
+    { n:'TRAPPIST-1e',  r:10, c1:'#b8c0e8', c2:'#5a5fa0' },
+    { n:'Kepler-22b',   r:12, c1:'#a7d8c0', c2:'#3f8a6a' },
+    { n:'Betelgeuse',   r:22, c1:'#ff9a6a', c2:'#c0361b' },
+    { n:'Crab Nebula',  r:18, c1:'#d6a7e0', c2:'#7a3f8a' },
+    { n:'Sagittarius A*', r:14, c1:'#b0a0d0', c2:'#2a2440' },
+  ]},
+];
 function renderVoyage() {
   const el = document.getElementById('voyage'); if (!el) return;
   const started = phase !== 'menu' && phase !== 'demo';
-  const curIdx = (level - 1) % TARGETS.length;
-  let html = '<span class="vy-sun" title="Sun">☀️</span>';
-  TARGETS.forEach((t, i) => {
-    const state = !started ? 'future' : (i < curIdx ? 'done' : i === curIdx ? 'now' : 'future');
-    const d = (VY_SIZE[t.name] || 8) * 2;
-    html += '<span class="vy-node ' + state + '" title="' + titleName(t.name) + '">'
-      + '<span class="vy-dot" style="width:' + d + 'px;height:' + d + 'px;background:radial-gradient(circle at 35% 30%,' + t.c1 + ',' + t.c2 + ')"></span>'
-      + (state === 'done' ? '<span class="vy-check">✓</span>' : '')
-      + '</span>';
+  // locate which group the run is in, and the position within it
+  let g = 0, idx = Math.max(0, level - 1);
+  while (g < VY_GROUPS.length - 1 && idx >= VY_GROUPS[g].items.length) { idx -= VY_GROUPS[g].items.length; g++; }
+  const grp = VY_GROUPS[g];
+  let html = '<span class="vy-node vy-sun-node"><span class="vy-orb"><span class="vy-sun-real"></span></span><span class="vy-label">Sun</span></span>';
+  grp.items.forEach((t, i) => {
+    const state = !started ? 'future' : (i < idx ? 'done' : i === idx ? 'now' : 'future');
+    const d = t.r * 2;
+    html += '<span class="vy-node ' + state + '">'
+      + '<span class="vy-orb"><span class="vy-dot" style="width:' + d + 'px;height:' + d + 'px;background:radial-gradient(circle at 36% 32%,' + t.c1 + ',' + t.c2 + ')"></span></span>'
+      + '<span class="vy-label">' + t.n + '</span></span>';
   });
   el.innerHTML = html;
   const cap = document.getElementById('voyageCap');
-  if (started) { const t = TARGETS[curIdx]; cap.innerHTML = 'Now approaching <b>' + t.crest + ' ' + titleName(t.name) + '</b> · stop ' + (curIdx + 1) + ' of ' + TARGETS.length; }
-  else cap.textContent = 'A voyage outward through the solar system and beyond';
+  cap.innerHTML = started
+    ? '<b>' + grp.title + '</b> · ' + (idx + 1) + ' of ' + grp.items.length
+    : 'Your voyage begins with the nine planets';
   const now = el.querySelector('.vy-node.now');
   if (now) el.scrollLeft = now.offsetLeft - el.clientWidth / 2 + now.offsetWidth / 2;   // center current (no page scroll)
 }
