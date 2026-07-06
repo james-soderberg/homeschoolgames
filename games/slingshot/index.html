@@ -292,31 +292,33 @@ const TARGETS = [
 
 // 25 curated levels (design space 960x600); r -> gm = r²·GM_K. kind = gravity swings required.
 const SL_LEVELS = [
-  { pad:{x:96,y:331}, target:{x:800,y:382,r:29}, bodies:[{x:465,y:363,r:80}], kind:'single' },
-  { pad:{x:96,y:351}, target:{x:860,y:164,r:28}, bodies:[{x:539,y:248,r:80}], kind:'single' },
-  { pad:{x:96,y:323}, target:{x:782,y:270,r:28}, bodies:[{x:441,y:299,r:80}], kind:'single' },
-  { pad:{x:86,y:251}, target:{x:825,y:368,r:27}, bodies:[{x:662,y:330,r:49},{x:298,y:228,r:55}], kind:'single' },
-  { pad:{x:96,y:310}, target:{x:817,y:275,r:26}, bodies:[{x:465,y:285,r:80}], kind:'single' },
-  { pad:{x:96,y:391}, target:{x:820,y:147,r:28}, bodies:[{x:473,y:263,r:80}], kind:'single' },
-  { pad:{x:96,y:365}, target:{x:772,y:229,r:25}, bodies:[{x:433,y:291,r:80}], kind:'single' },
-  { pad:{x:86,y:243}, target:{x:839,y:209,r:23}, bodies:[{x:629,y:273,r:50},{x:302,y:224,r:62}], kind:'single' },
-  { pad:{x:86,y:282}, target:{x:812,y:371,r:27}, bodies:[{x:370,y:393,r:51},{x:657,y:311,r:63}], kind:'single' },
-  { pad:{x:86,y:337}, target:{x:837,y:160,r:28}, bodies:[{x:540,y:354,r:60},{x:686,y:241,r:78}], kind:'double' },
-  { pad:{x:86,y:268}, target:{x:810,y:180,r:22}, bodies:[{x:283,y:236,r:69},{x:572,y:199,r:78}], kind:'double' },
-  { pad:{x:86,y:319}, target:{x:846,y:438,r:27}, bodies:[{x:648,y:404,r:57},{x:306,y:344,r:52}], kind:'double' },
-  { pad:{x:86,y:371}, target:{x:826,y:302,r:27}, bodies:[{x:529,y:223,r:77},{x:632,y:369,r:64}], kind:'double' },
-  { pad:{x:86,y:208}, target:{x:808,y:134,r:27}, bodies:[{x:508,y:356,r:68},{x:498,y:139,r:79}], kind:'double' },
-  { pad:{x:86,y:271}, target:{x:837,y:311,r:24}, bodies:[{x:308,y:208,r:67},{x:668,y:314,r:61}], kind:'double' },
-  { pad:{x:86,y:257}, target:{x:860,y:254,r:25}, bodies:[{x:656,y:232,r:70},{x:443,y:110,r:53}], kind:'double' },
-  { pad:{x:86,y:310}, target:{x:850,y:465,r:25}, bodies:[{x:635,y:235,r:68},{x:600,y:487,r:77}], kind:'double' },
-  { pad:{x:86,y:200}, target:{x:826,y:366,r:25}, bodies:[{x:489,y:154,r:65},{x:662,y:307,r:71}], kind:'double' },
-  { pad:{x:86,y:218}, target:{x:836,y:254,r:26}, bodies:[{x:558,y:245,r:79},{x:340,y:349,r:42}], kind:'double' },
-  { pad:{x:86,y:288}, target:{x:843,y:350,r:28}, bodies:[{x:612,y:406,r:80},{x:289,y:472,r:46},{x:523,y:198,r:67}], kind:'double' },
-  { pad:{x:86,y:296}, target:{x:829,y:162,r:27}, bodies:[{x:299,y:531,r:50},{x:625,y:210,r:74},{x:447,y:281,r:51}], kind:'double' },
-  { pad:{x:86,y:309}, target:{x:842,y:400,r:25}, bodies:[{x:404,y:323,r:66},{x:571,y:498,r:74},{x:421,y:101,r:49}], kind:'double' },
-  { pad:{x:86,y:258}, target:{x:827,y:413,r:27}, bodies:[{x:353,y:267,r:38},{x:504,y:382,r:74},{x:582,y:228,r:79}], kind:'triple' },
-  { pad:{x:86,y:389}, target:{x:820,y:275,r:25}, bodies:[{x:521,y:420,r:57},{x:312,y:290,r:65},{x:374,y:130,r:73}], kind:'triple' },
-  { pad:{x:86,y:339}, target:{x:832,y:234,r:28}, bodies:[{x:501,y:310,r:39},{x:403,y:82,r:53},{x:535,y:437,r:56}], kind:'triple' },
+  // --- 9-level difficulty ramp (simulated & ordered easy -> hard) ---
+  { pad:{x:96,y:331}, target:{x:800,y:382,r:29}, bodies:[{x:465,y:363,r:80}], kind:'single' },   // was #1 · L1: single, 1 swing(s) req, 4.06% window
+  { pad:{x:96,y:391}, target:{x:820,y:147,r:28}, bodies:[{x:473,y:263,r:80}], kind:'single' },   // was #6 · L2: single, 1 swing(s) req, 3.42% window
+  { pad:{x:86,y:337}, target:{x:837,y:160,r:28}, bodies:[{x:540,y:354,r:60},{x:686,y:241,r:78}], kind:'double' },   // was #10 · L3: double, 2 swing(s) req, 4.11% window
+  { pad:{x:86,y:268}, target:{x:810,y:180,r:22}, bodies:[{x:283,y:236,r:69},{x:572,y:199,r:78}], kind:'double' },   // was #11 · L4: double, 2 swing(s) req, 3.83% window
+  { pad:{x:86,y:371}, target:{x:826,y:302,r:27}, bodies:[{x:529,y:223,r:77},{x:632,y:369,r:64}], kind:'double' },   // was #13 · L5: double, 2 swing(s) req, 3.24% window
+  { pad:{x:86,y:310}, target:{x:850,y:465,r:25}, bodies:[{x:635,y:235,r:68},{x:600,y:487,r:77}], kind:'double' },   // was #17 · L6: double, 2 swing(s) req, 2.92% window
+  { pad:{x:86,y:288}, target:{x:843,y:350,r:28}, bodies:[{x:612,y:406,r:80},{x:289,y:472,r:46},{x:523,y:198,r:67}], kind:'double' },   // was #20 · L7: double, 2 swing(s) req, 3.18% window
+  { pad:{x:86,y:258}, target:{x:827,y:413,r:27}, bodies:[{x:353,y:267,r:38},{x:504,y:382,r:74},{x:582,y:228,r:79}], kind:'double' },   // was #23 · L8: double, 2 swing(s) req, 2.56% window
+  { pad:{x:86,y:389}, target:{x:820,y:275,r:25}, bodies:[{x:521,y:420,r:57},{x:312,y:290,r:65},{x:374,y:130,r:73}], kind:'triple' },   // was #24 · L9: triple, 3 swing(s) req, 2.38% window
+  // --- remaining levels (kept for review, difficulty-ordered) ---
+  { pad:{x:96,y:351}, target:{x:860,y:164,r:28}, bodies:[{x:539,y:248,r:80}], kind:'single' },   // was #2 · L10: single, 1 swing(s) req, 3.84% window
+  { pad:{x:96,y:323}, target:{x:782,y:270,r:28}, bodies:[{x:441,y:299,r:80}], kind:'single' },   // was #3 · L11: single, 1 swing(s) req, 3.64% window
+  { pad:{x:96,y:365}, target:{x:772,y:229,r:25}, bodies:[{x:433,y:291,r:80}], kind:'single' },   // was #7 · L12: single, 1 swing(s) req, 3.27% window
+  { pad:{x:86,y:208}, target:{x:808,y:134,r:27}, bodies:[{x:508,y:356,r:68},{x:498,y:139,r:79}], kind:'single' },   // was #14 · L13: single, 1 swing(s) req, 3.2% window
+  { pad:{x:96,y:310}, target:{x:817,y:275,r:26}, bodies:[{x:465,y:285,r:80}], kind:'single' },   // was #5 · L14: single, 1 swing(s) req, 3.11% window
+  { pad:{x:86,y:218}, target:{x:836,y:254,r:26}, bodies:[{x:558,y:245,r:79},{x:340,y:349,r:42}], kind:'single' },   // was #19 · L15: single, 1 swing(s) req, 2.96% window
+  { pad:{x:86,y:257}, target:{x:860,y:254,r:25}, bodies:[{x:656,y:232,r:70},{x:443,y:110,r:53}], kind:'single' },   // was #16 · L16: single, 1 swing(s) req, 2.9% window
+  { pad:{x:86,y:251}, target:{x:825,y:368,r:27}, bodies:[{x:662,y:330,r:49},{x:298,y:228,r:55}], kind:'double' },   // was #4 · L17: double, 2 swing(s) req, 3.75% window
+  { pad:{x:86,y:319}, target:{x:846,y:438,r:27}, bodies:[{x:648,y:404,r:57},{x:306,y:344,r:52}], kind:'double' },   // was #12 · L18: double, 2 swing(s) req, 3.63% window
+  { pad:{x:86,y:271}, target:{x:837,y:311,r:24}, bodies:[{x:308,y:208,r:67},{x:668,y:314,r:61}], kind:'double' },   // was #15 · L19: double, 2 swing(s) req, 3.35% window
+  { pad:{x:86,y:243}, target:{x:839,y:209,r:23}, bodies:[{x:629,y:273,r:50},{x:302,y:224,r:62}], kind:'double' },   // was #8 · L20: double, 2 swing(s) req, 3.34% window
+  { pad:{x:86,y:282}, target:{x:812,y:371,r:27}, bodies:[{x:370,y:393,r:51},{x:657,y:311,r:63}], kind:'double' },   // was #9 · L21: double, 2 swing(s) req, 3.24% window
+  { pad:{x:86,y:200}, target:{x:826,y:366,r:25}, bodies:[{x:489,y:154,r:65},{x:662,y:307,r:71}], kind:'double' },   // was #18 · L22: double, 2 swing(s) req, 3.01% window
+  { pad:{x:86,y:309}, target:{x:842,y:400,r:25}, bodies:[{x:404,y:323,r:66},{x:571,y:498,r:74},{x:421,y:101,r:49}], kind:'double' },   // was #22 · L23: double, 2 swing(s) req, 2.91% window
+  { pad:{x:86,y:296}, target:{x:829,y:162,r:27}, bodies:[{x:299,y:531,r:50},{x:625,y:210,r:74},{x:447,y:281,r:51}], kind:'double' },   // was #21 · L24: double, 2 swing(s) req, 2.87% window
+  { pad:{x:86,y:339}, target:{x:832,y:234,r:28}, bodies:[{x:501,y:310,r:39},{x:403,y:82,r:53},{x:535,y:437,r:56}], kind:'double' },   // was #25 · L25: double, 2 swing(s) req, 2.58% window
 ];
 
 // ---------- DOM ----------
