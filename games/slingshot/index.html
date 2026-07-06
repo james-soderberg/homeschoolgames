@@ -22,6 +22,24 @@
     box-shadow:0 12px 34px rgba(8,10,25,.5); background:#070a17; touch-action:none; user-select:none; }
   #scene { position:absolute; inset:0; width:100%; height:100%; display:block; }
 
+  /* voyage map (solar system progress) above the stage */
+  .voyage-wrap { margin-bottom:.55rem; }
+  .voyage-cap { font-family:var(--font-sans); font-size:.74rem; font-weight:700; letter-spacing:.02em;
+    color:var(--ink-light); text-align:center; margin-bottom:.3rem; }
+  .voyage-cap b { color:var(--gold); }
+  .voyage { display:flex; align-items:center; gap:7px; padding:.55rem .7rem; overflow-x:auto; overflow-y:visible;
+    background:radial-gradient(120% 180% at 0% 50%, #12183a, #0a0e1f); border:1.5px solid #232a44; border-radius:12px;
+    scrollbar-width:thin; }
+  .voyage::-webkit-scrollbar { height:5px; } .voyage::-webkit-scrollbar-thumb { background:#2c3760; border-radius:9px; }
+  .vy-sun { flex:0 0 auto; font-size:1.25rem; line-height:1; margin-right:1px; }
+  .vy-node { position:relative; flex:0 0 auto; display:flex; align-items:center; justify-content:center; width:44px; height:44px; }
+  .vy-dot { border-radius:50%; display:block; box-shadow:0 0 0 1px rgba(255,255,255,.12); }
+  .vy-node.future { opacity:.3; filter:grayscale(.55); }
+  .vy-node.done .vy-dot { box-shadow:0 0 0 1px rgba(255,255,255,.12), 0 0 7px rgba(140,200,255,.35); }
+  .vy-node.now .vy-dot { box-shadow:0 0 0 3px var(--gold), 0 0 14px rgba(255,210,120,.7); animation:vypulse 1.5s ease-in-out infinite; }
+  @keyframes vypulse { 0%,100%{ box-shadow:0 0 0 3px var(--gold), 0 0 8px rgba(255,210,120,.5) } 50%{ box-shadow:0 0 0 4px var(--gold), 0 0 18px rgba(255,210,120,.9) } }
+  .vy-node.done .vy-check { position:absolute; right:-1px; bottom:-1px; font-size:.62rem; line-height:1; color:#8fe3c0; text-shadow:0 0 3px #0a0e1f; }
+
   .probes-badge b { color:var(--gold); }
   .obj-badge { max-width:46vw; overflow:hidden; text-overflow:ellipsis; }
   .kind-badge { background:#20305c; border-color:#3a5090; color:#bcd0ff; display:none; }
@@ -36,6 +54,13 @@
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   .ov h2 { font-family:var(--font-serif); font-size:1.95rem; margin:0 0 .4rem; color:#fff; }
   .ov p { color:#b9c6ee; margin:0 0 1.1rem; max-width:42ch; line-height:1.5; }
+  /* start-screen controls overview */
+  .ctl-guide { display:flex; flex-direction:column; gap:.5rem; margin:.3rem auto .9rem; text-align:left; width:max-content; max-width:100%; color:#d3ddf6; font-size:.98rem; }
+  .ctl-row { display:flex; align-items:center; gap:.7rem; }
+  .ctl-keys { flex:0 0 84px; display:flex; gap:.25rem; align-items:center; }
+  .ov kbd { font-family:'Courier New',monospace; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.32);
+    border-radius:5px; padding:.1rem .42rem; font-size:.82rem; color:#fff; }
+  .learn-note { font-size:.85rem !important; color:#9fb0dd !important; font-style:italic; max-width:38ch !important; margin:.1rem auto 1.1rem !important; }
   .ov .final-stats { display:flex; gap:1.4rem; margin-bottom:1.1rem; flex-wrap:wrap; justify-content:center; }
   .ov .fs { display:flex; flex-direction:column; align-items:center; }
   .ov .fs b { font-family:var(--font-serif); font-size:1.9rem; color:#ffd98a; line-height:1; }
@@ -90,7 +115,7 @@
 
   /* screenshot mode (open with ?shot) — hide chrome, fill viewport with the stage */
   body.sl-shot { overflow:hidden; background:#070a17; }
-  body.sl-shot .site-header, body.sl-shot .sl-top, body.sl-shot .sl-hint, body.sl-shot .control-row, body.sl-shot .site-footer { display:none !important; }
+  body.sl-shot .site-header, body.sl-shot .sl-top, body.sl-shot .voyage-wrap, body.sl-shot .sl-hint, body.sl-shot .control-row, body.sl-shot .site-footer { display:none !important; }
   body.sl-shot .sl-page { margin:0 !important; padding:0 !important; max-width:none !important; }
   body.sl-shot .sl-stage { width:100vw !important; height:100vh !important; border-radius:0 !important; border:0 !important; }
 
@@ -116,6 +141,12 @@
     </div>
   </div>
 
+  <!-- voyage map: the solar system in order, roughly to scale by size; fills in as you travel outward -->
+  <div class="voyage-wrap">
+    <div class="voyage-cap" id="voyageCap">A voyage outward through the solar system and beyond</div>
+    <div class="voyage" id="voyage"></div>
+  </div>
+
   <div class="sl-stage" id="stage">
     <canvas id="scene"></canvas>
 
@@ -123,7 +154,13 @@
     <div class="ov" id="startOverlay">
       <div class="crest">🪐</div>
       <h2>Slingshot</h2>
-      <p>Drag from the launch pad to aim and set power, then let go. Gravity bends your path, so read the dotted preview and fling your probe to each world, outward from the Sun. A planet always blocks the straight shot, so you have to curve around it. Later worlds need you to whip around two or three at once.</p>
+      <div class="ctl-guide">
+        <div class="ctl-row"><span class="ctl-keys"><kbd>←</kbd><kbd>→</kbd></span><span><b>Velocity:</b> how hard you launch</span></div>
+        <div class="ctl-row"><span class="ctl-keys"><kbd>↑</kbd><kbd>↓</kbd></span><span><b>Aim:</b> the arc of your shot</span></div>
+        <div class="ctl-row"><span class="ctl-keys"><kbd>Space</kbd></span><span><b>Fire</b>, or tap the Launch button</span></div>
+        <div class="ctl-row"><span class="ctl-keys">drag</span><span>Or drag from the pad to aim &amp; power</span></div>
+      </div>
+      <p class="learn-note">🌍 Every shot shows how gravity curves a moving object's path, the same slingshot trick real spacecraft use to cross the solar system.</p>
       <button class="go-btn" id="beginBtn">Launch mission →</button>
     </div>
 
@@ -145,7 +182,7 @@
       <p id="overMsg">Your mission ends here. The stars will keep for the next voyage.</p>
       <div class="final-stats">
         <div class="fs"><b id="fsScore">0</b><span>Score</span></div>
-        <div class="fs"><b id="fsReached">—</b><span>Reached</span></div>
+        <div class="fs"><b id="fsReached">None</b><span>Reached</span></div>
         <div class="fs"><b id="fsStreak">0</b><span>Best streak</span></div>
       </div>
       <div class="name-entry hidden" id="nameEntry">
@@ -164,7 +201,7 @@
   </div>
 
   <p class="sl-hint">
-    <b>Drag</b> from the pad to aim &amp; power, release to launch — or nudge with
+    <b>Drag</b> from the pad to aim &amp; power, release to launch, or nudge with
     <kbd>←</kbd><kbd>→</kbd> (power), <kbd>↑</kbd><kbd>↓</kbd> (arc), then <kbd>Space</kbd> or <b>Launch</b> to fire.
     The green preview reaches the goal; red means you'll crash.
   </p>
@@ -286,7 +323,7 @@ const streakBadge = document.getElementById('streakBadge');
 let W = DW, H = DH, dpr = 1, view = { scale: 1, ox: 0, oy: 0 };
 let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo
 let diffKey = 'commander', diff = DIFF.commander;   // single fixed difficulty
-let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = '—';
+let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = 'None';
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
 let probe = null, trail = [], particles = [], predicted = null;
 let aim = { angle: 0, power: 0.5, dragging: false };
@@ -477,7 +514,36 @@ function spawnParticle(x, y, vx, vy, life, color, size) { particles.push({ x, y,
 function toast(msg) { bonusMsg = msg; bonusT = 1.6; }
 
 // ---------- HUD ----------
+// display radius (px) per destination — roughly to scale by real SIZE (not distance)
+const VY_SIZE = {
+  'the Moon':9, 'Mercury':8, 'Venus':12, 'Mars':9, 'Ceres':5, 'Jupiter':20, 'Europa':6, 'Io':6,
+  'Saturn':18, 'Titan':7, 'Enceladus':5, 'Uranus':14, 'Neptune':14, 'Triton':6, 'Pluto':6, 'Eris':6,
+  'the Oort Cloud':15, 'Voyager 1':8, 'Proxima Centauri b':11, 'TRAPPIST-1e':10, 'Kepler-22b':12,
+  'Betelgeuse':20, 'the Crab Nebula':18, 'Sagittarius A*':16,
+};
+function renderVoyage() {
+  const el = document.getElementById('voyage'); if (!el) return;
+  const started = phase !== 'menu' && phase !== 'demo';
+  const curIdx = (level - 1) % TARGETS.length;
+  let html = '<span class="vy-sun" title="Sun">☀️</span>';
+  TARGETS.forEach((t, i) => {
+    const state = !started ? 'future' : (i < curIdx ? 'done' : i === curIdx ? 'now' : 'future');
+    const d = (VY_SIZE[t.name] || 8) * 2;
+    html += '<span class="vy-node ' + state + '" title="' + titleName(t.name) + '">'
+      + '<span class="vy-dot" style="width:' + d + 'px;height:' + d + 'px;background:radial-gradient(circle at 35% 30%,' + t.c1 + ',' + t.c2 + ')"></span>'
+      + (state === 'done' ? '<span class="vy-check">✓</span>' : '')
+      + '</span>';
+  });
+  el.innerHTML = html;
+  const cap = document.getElementById('voyageCap');
+  if (started) { const t = TARGETS[curIdx]; cap.innerHTML = 'Now approaching <b>' + t.crest + ' ' + titleName(t.name) + '</b> · stop ' + (curIdx + 1) + ' of ' + TARGETS.length; }
+  else cap.textContent = 'A voyage outward through the solar system and beyond';
+  const now = el.querySelector('.vy-node.now');
+  if (now) el.scrollLeft = now.offsetLeft - el.clientWidth / 2 + now.offsetWidth / 2;   // center current (no page scroll)
+}
+
 function updateHud() {
+  renderVoyage();
   scoreBadge.textContent = score.toLocaleString() + ' pts';
   probesBadge.innerHTML = '🚀 <b>' + Math.max(0, probes) + '</b>';
   streakBadge.classList.toggle('hidden', streak < 2);
@@ -493,16 +559,17 @@ function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {
 // ---------- lifecycle ----------
 function startGame(key) {
   diffKey = key; diff = DIFF[key] || DIFF.pilot;
-  level = 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = '—';
+  level = 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = 'None';
   particles = []; pendingScore = null;
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   setupCanvas(); genLevel(1); phase = 'aim'; updateHud();
 }
 function retryLevel() { if (phase === 'aim') { recomputePredict(); } }
 function toMenu() {
-  phase = 'menu'; probe = null; predicted = null;
+  phase = 'menu'; probe = null; predicted = null; level = 1;
   overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
+  renderVoyage();
 }
 function gameOver() {
   phase = 'over';
@@ -536,7 +603,7 @@ function saveName() {
 function renderBoard(hl) {
   const board = getBoard(), el = document.getElementById('board');
   el.innerHTML = '';
-  if (!board.length) { el.innerHTML = '<div class="board-empty">No flights logged yet — chart the first course!</div>'; return; }
+  if (!board.length) { el.innerHTML = '<div class="board-empty">No flights logged yet. Chart the first course!</div>'; return; }
   const head = document.createElement('div'); head.className = 'board-title'; head.textContent = '🏅 Top Pilots · ' + diff.label; el.appendChild(head);
   board.forEach((e, i) => {
     const me = hl && e.name === hl.name && e.score === hl.score && e.level === hl.level;
@@ -781,6 +848,7 @@ function bootDemo() {
 
 // ---------- boot ----------
 setupCanvas();
+renderVoyage();
 render();
 rafId = requestAnimationFrame(loop);
 if (/[?&]shot\b/.test(location.search)) bootDemo();
