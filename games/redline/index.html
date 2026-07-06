@@ -97,8 +97,8 @@
     <canvas id="cv"></canvas>
 
     <div class="hud" id="hud">
-      <div class="box hud-l"><div class="spd"><span id="spd">0</span></div><div class="unit">KM / H</div></div>
-      <div class="box hud-r"><div class="dist"><span id="dist">0</span> m</div><div class="best" id="hudBest"></div></div>
+      <div class="box hud-l"><div class="spd"><span id="spd">0</span></div><div class="unit">MPH</div></div>
+      <div class="box hud-r"><div class="dist"><span id="dist">0</span> ft</div><div class="best" id="hudBest"></div></div>
       <div class="combo" id="combo"></div>
     </div>
 
@@ -106,7 +106,7 @@
     <div class="ov" id="titleOv">
       <div class="rl-logo">REDLINE</div>
       <div class="rl-tag">Night Highway</div>
-      <div class="rl-racer">Driver: <b id="racerName">Racer</b></div>
+      <div class="rl-racer">How far can you <b>go</b>?</div>
       <p class="rl-deskonly">Weave through traffic and go as far as you can — the faster you go, the more it pays.
         <br><span class="keys"><span class="key">←</span><span class="key">→</span></span> steer &nbsp;·&nbsp;
         <span class="keys"><span class="key">↑</span><span class="key">↓</span></span> throttle / brake &nbsp;·&nbsp; skim cars for <b style="color:#ffd23f">near-miss</b> bonuses.</p>
@@ -121,8 +121,8 @@
       <div class="over-title" id="overTitle">WRECKED</div>
       <div class="over-sub" id="overSub"></div>
       <div class="over-stats">
-        <div class="st hl"><b id="overDist">0</b><span>Metres</span></div>
-        <div class="st"><b id="overSpeed">0</b><span>Top km/h</span></div>
+        <div class="st hl"><b id="overDist">0</b><span>Feet</span></div>
+        <div class="st"><b id="overSpeed">0</b><span>Top mph</span></div>
         <div class="st"><b id="overMiss">0</b><span>Near misses</span></div>
       </div>
       <div id="rlBoard"></div>
@@ -142,12 +142,7 @@
   var rnd = function (a, b) { return a + Math.random() * (b - a); };
   var ri = function (a, b) { return Math.floor(rnd(a, b + 1)); };
 
-  // ---- racer identity (from the secret code) ----
-  var params = new URLSearchParams(location.search);
-  var raw = (params.get('racer') || '').replace(/[^a-zA-Z]/g, '').slice(0, 12);
-  var RACER = raw ? raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase() : 'Racer';
-  var LEVEL = (raw || 'racer').toLowerCase();
-  $('racerName').textContent = RACER;
+  // (kept generic — anyone can play; no player is named)
 
   // ---- canvas ----
   var stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
@@ -205,8 +200,8 @@
   window.addEventListener('resize', resize);
 
   // ---- best score (local) ----
-  function loadBest() { try { return parseInt(localStorage.getItem('hsg_redline_best_' + LEVEL)) || 0; } catch (e) { return 0; } }
-  function saveBest() { try { localStorage.setItem('hsg_redline_best_' + LEVEL, String(best)); } catch (e) {} }
+  function loadBest() { try { return parseInt(localStorage.getItem('hsg_redline_best')) || 0; } catch (e) { return 0; } }
+  function saveBest() { try { localStorage.setItem('hsg_redline_best', String(best)); } catch (e) {} }
 
   // ================= drawing =================
   function drawSky() {
@@ -508,7 +503,7 @@
   function reset() {
     v = 46; roadDist = 0; distance = 0; topV = 46; cars = []; particles = [];
     player.lane = 4; player.off = laneOff(4);
-    combo = 0; comboTimer = 0; nearMisses = 0; spawnT = 0.7; shake = 0; milestoneAt = 1000;
+    combo = 0; comboTimer = 0; nearMisses = 0; spawnT = 0.7; shake = 0; milestoneAt = 2500;
     crashFx = null; flash = 0;
     updateHUD();
   }
@@ -533,7 +528,7 @@
     if (v > topV) topV = v;
 
     roadDist += v * dt * DUNIT;
-    distance += v * dt * 0.92;
+    distance += v * dt * 3.0;   // feet
 
     // steering — glide toward the target lane
     var target = laneOff(player.lane);
@@ -561,7 +556,7 @@
     if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; $('combo').classList.remove('on'); } }
 
     // milestones
-    if (distance >= milestoneAt) { floatFx(Math.round(milestoneAt) + ' m!', cx, H * 0.4, '#35e0ff'); if (window.HSGSound) HSGSound.powerup(); milestoneAt += 1000; }
+    if (distance >= milestoneAt) { floatFx(Math.round(milestoneAt).toLocaleString() + ' ft!', cx, H * 0.4, '#35e0ff'); if (window.HSGSound) HSGSound.powerup(); milestoneAt += 2500; }
 
     updateEngine();
     updateHUD();
@@ -569,9 +564,9 @@
 
   function nearMiss(c) {
     combo++; comboTimer = 2.4; nearMisses++;
-    var bonus = 25 + combo * 15; distance += bonus;
+    var bonus = 80 + combo * 50; distance += bonus;
     var cb = $('combo'); cb.classList.add('on');
-    cb.innerHTML = 'NEAR MISS' + (combo > 1 ? ' ×' + combo : '') + '<small>+' + bonus + ' m</small>';
+    cb.innerHTML = 'NEAR MISS' + (combo > 1 ? ' ×' + combo : '') + '<small>+' + bonus + ' ft</small>';
     var pr = project(PLAYER_D); floatFx('+' + bonus, cx + c.off * roadHalfBot * pr.s, pr.y - 30, '#ffd23f');
     if (window.HSGSound) HSGSound.whoosh();
   }
@@ -615,9 +610,9 @@
 
   // ================= HUD / overlays =================
   function updateHUD() {
-    $('spd').textContent = Math.round(v * 2.4);
+    $('spd').textContent = Math.round(v * 1.5);
     $('dist').textContent = Math.round(distance).toLocaleString();
-    $('hudBest').textContent = best ? 'BEST ' + best.toLocaleString() + ' m' : '';
+    $('hudBest').textContent = best ? 'BEST ' + best.toLocaleString() + ' ft' : '';
   }
   function floatFx(txt, x, y, color) {
     var el = document.createElement('div'); el.className = 'fx-float'; el.textContent = txt;
@@ -632,12 +627,12 @@
   }
   function showOver(finalM) {
     $('overDist').textContent = finalM.toLocaleString();
-    $('overSpeed').textContent = Math.round(topV * 2.4);
+    $('overSpeed').textContent = Math.round(topV * 1.5);
     $('overMiss').textContent = nearMisses;
-    $('overSub').textContent = finalM >= best ? 'New personal best for ' + RACER + '!' : RACER + ', you drove ' + finalM.toLocaleString() + ' metres.';
+    $('overSub').textContent = finalM >= best ? 'New personal best!' : 'You drove ' + finalM.toLocaleString() + ' feet.';
     $('overOv').classList.remove('hidden');
     if (window.HSGStreak) HSGStreak.endPanel('#rlBoard', {
-      gameId: 'redline', gameName: 'Redline', level: LEVEL, levelName: RACER,
+      gameId: 'redline', gameName: 'Redline',
       unit: 'distance', score: finalM, minStreak: 1
     });
   }
@@ -690,7 +685,7 @@
   $('againBtn').addEventListener('click', startGame);
 
   // ================= boot =================
-  if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', level: LEVEL, unit: 'distance', minStreak: 1 });
+  if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', unit: 'distance', minStreak: 1 });
   resize();
   // seed a little idle traffic behind the menu
   for (var i = 0; i < 5; i++) spawnCar();
