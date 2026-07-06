@@ -60,13 +60,18 @@
     board.appendChild(a);
   });
 
-  // Secret game: type "secret game" anywhere on the home page to unlock it.
+  // Secret games: type a code word anywhere on the home page to unlock one.
   (function(){
-    const CODE='secretgame'; let buf='';
+    const CODES=[
+      {code:'secretgame', go:()=>location.href='games/secret-flap/index.html'},
+      {code:'desmond',    go:()=>location.href='games/redline/index.html?racer=desmond'},
+      {code:'connor',     go:()=>location.href='games/redline/index.html?racer=connor'},
+    ];
+    let buf='';
     document.addEventListener('keydown',e=>{
       if(e.key&&e.key.length===1&&/[a-zA-Z ]/.test(e.key)){
-        buf=(buf+e.key.toLowerCase()).replace(/[^a-z]/g,'').slice(-CODE.length);
-        if(buf===CODE) location.href='games/secret-flap/index.html';
+        buf=(buf+e.key.toLowerCase()).replace(/[^a-z]/g,'').slice(-16);
+        for(const c of CODES){ if(buf.endsWith(c.code)){ buf=''; c.go(); return; } }
       }
     });
   })();
