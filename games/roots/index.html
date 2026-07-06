@@ -7,7 +7,9 @@
 <link rel="stylesheet" href="../../assets/css/site.css">
 <link rel="stylesheet" href="../../assets/css/streak-rail.css">
 <style>
-  .roots-wrap { max-width: 980px; margin: 0 auto; padding: 1.1rem 1rem 3rem; }
+  .roots-wrap { max-width: 1200px; margin: 0 auto; padding: 1.1rem 1rem 3rem; }
+  /* widen the centered play column so 3–4 part words sit on one row */
+  .roots-wrap .game-layout { max-width: 1200px; }
   .roots-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; }
   .roots-top h1 { margin:0; font-size:1.7rem; }
   .roots-top .right { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
@@ -17,7 +19,8 @@
 
   /* layout uses shared .game-layout / .game-main (streak-rail.css handles the rail + stacking) */
   .game-main { text-align:center; }
-  .round-card, .start-card { max-width:100%; }
+  .round-card { max-width:620px; margin:0 auto; }
+  .start-card { max-width:600px; margin:.5rem auto; }
 
   /* ---- start / difficulty ---- */
   .start-card { background:#fff; border:2px solid var(--border); border-radius:18px; box-shadow:var(--shadow);
@@ -48,26 +51,30 @@
   .def-text { font-family:var(--font-serif); font-size:1.75rem; line-height:1.3; color:var(--ink); margin:.1rem auto .2rem; max-width:26ch; }
   .word-big { font-family:var(--font-serif); font-size:2.4rem; font-weight:600; color:var(--ink); margin:.1rem 0; }
 
-  .slots { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; margin:1.1rem 0 .3rem; min-height:66px; }
-  .slot { min-width:94px; height:62px; border:2px dashed var(--border); border-radius:12px;
-    display:grid; place-items:center; padding:0 .3rem; transition:border-color .15s, background .15s; }
-  .slot.filled { border-style:solid; border-color:var(--gold-light); background:#fffdf4; }
-  .arrow { align-self:center; color:var(--ink-light); font-size:1.1rem; }
+  /* Tiles and slots share the EXACT same box, so a placed tile fills its slot perfectly. */
+  .slots { display:flex; gap:.5rem; justify-content:center; align-items:center; flex-wrap:wrap; margin:1.15rem 0 .3rem; min-height:64px; }
+  .arrow { color:var(--ink-light); font-size:1.2rem; font-weight:600; margin:0 .05rem; flex:0 0 auto; }
+  .bank { display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap; margin:1.15rem auto .2rem; max-width:592px; }
 
-  .bank { display:flex; gap:.55rem; justify-content:center; flex-wrap:wrap; margin:1.1rem auto .2rem; max-width:620px; }
-  .tile { position:relative; font-family:var(--font-serif); font-size:1.25rem; font-weight:600; color:var(--ink);
-    background:#fff; border:2px solid var(--border); border-radius:12px; padding:.5rem .9rem; cursor:pointer;
-    box-shadow:0 2px 0 var(--border); transition:transform .1s, box-shadow .1s, border-color .12s, opacity .15s; user-select:none; }
-  .tile:hover:not(.spent) { transform:translateY(-2px); border-color:var(--gold); }
-  .tile:active:not(.spent) { transform:translateY(1px); box-shadow:none; }
-  .tile.spent { opacity:.26; pointer-events:none; }
-  .tile.in-slot { box-shadow:none; border-color:var(--gold); }
+  .tile, .slot { box-sizing:border-box; width:100px; height:58px; border-radius:14px; position:relative; flex:0 0 auto;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; user-select:none; }
+  .tile .m, .slot .m { font-family:var(--font-serif); font-size:1.24rem; font-weight:600; color:var(--ink); line-height:1; }
+  .tile .g, .slot .g { font-family:var(--font-sans); font-size:.58rem; font-weight:600; color:var(--ink-light); line-height:1; white-space:nowrap; }
+
+  .slot { border:2px dashed var(--border); background:transparent; }
+  .slot.filled { border:2px solid var(--gold); background:#fffdf4; cursor:pointer; box-shadow:0 3px 0 var(--gold-light); }
+  .slot.filled:hover { transform:translateY(1px); box-shadow:0 1px 0 var(--gold-light); }
+  .slot.correct { border-color:var(--green); background:#f0faf3; box-shadow:0 3px 0 #bfe3cd; }
+  .slot.wrongpick { border-color:var(--red); background:#fdf0f0; box-shadow:0 3px 0 #e8b7b7; }
+
+  .tile { border:2px solid var(--border); background:#fff; cursor:pointer; box-shadow:0 3px 0 var(--border);
+    transition:transform .1s, box-shadow .1s, border-color .12s, opacity .15s; }
+  .tile:hover:not(.spent) { transform:translateY(-2px); border-color:var(--gold); box-shadow:0 5px 0 var(--border); }
+  .tile:active:not(.spent) { transform:translateY(1px); box-shadow:0 1px 0 var(--border); }
+  .tile.spent { opacity:.22; pointer-events:none; }
+  .tile.wide { width:auto; padding:0 1rem; }
   .tile.newroot::after { content:'NEW'; position:absolute; top:-9px; right:-8px; background:var(--green); color:#fff;
     font-family:var(--font-sans); font-size:.52rem; font-weight:700; letter-spacing:.04em; padding:.1rem .3rem; border-radius:99px; }
-  .tile .sub { display:block; font-family:var(--font-sans); font-size:.6rem; font-weight:600; color:var(--ink-light);
-    text-transform:none; letter-spacing:0; margin-top:1px; }
-  .tile.correct { border-color:var(--green); background:#f0faf3; }
-  .tile.wrongpick { border-color:var(--red); background:#fdf0f0; }
   @keyframes shakex { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
   .shake { animation: shakex .4s; }
   @keyframes popin { 0%{transform:scale(.6);opacity:0} 60%{transform:scale(1.12)} 100%{transform:scale(1);opacity:1} }
@@ -143,11 +150,11 @@
         <h2>Build words from their parts</h2>
         <p>Every big word is made of little Greek &amp; Latin building blocks. Learn a handful and you can crack open words you've never seen before.</p>
         <div class="start-ex">
-          <span class="tile" style="cursor:default">tele<span class="sub">far</span></span>
+          <span class="tile" style="cursor:default"><span class="m">tele</span><span class="g">far</span></span>
           <span class="arrow">+</span>
-          <span class="tile" style="cursor:default">scope<span class="sub">see</span></span>
+          <span class="tile" style="cursor:default"><span class="m">scope</span><span class="g">see</span></span>
           <span class="arrow">=</span>
-          <span class="tile" style="cursor:default;border-color:var(--gold)">telescope</span>
+          <span class="tile wide" style="cursor:default;border-color:var(--gold)"><span class="m">telescope</span></span>
         </div>
         <div class="prompt-label">Choose a difficulty</div>
         <div class="diff-grid" id="diffGrid"></div>
@@ -415,7 +422,7 @@ function renderBuild(){
     const t = document.createElement('button');
     t.className = 'tile' + (!codex.has(id) ? ' newroot' : '');
     t.dataset.id = id;
-    t.innerHTML = id + '<span class="sub">' + gloss(id) + '</span>';
+    t.innerHTML = '<span class="m">'+id+'</span><span class="g">'+gloss(id)+'</span>';
     t.addEventListener('click', () => placeTile(id, t));
     bank.appendChild(t);
   });
@@ -431,12 +438,12 @@ function renderSlots(){
   const el = $('slots'); el.innerHTML = '';
   cur.p.forEach((_, i) => {
     if(i > 0){ const a = document.createElement('span'); a.className='arrow'; a.textContent='+'; el.appendChild(a); }
-    const s = document.createElement('div'); s.className = 'slot' + (slots[i] ? ' filled' : ''); s.dataset.slot = i;
-    if(slots[i]){
-      const t = document.createElement('span'); t.className='tile in-slot popin';
-      t.innerHTML = slots[i] + '<span class="sub">' + gloss(slots[i]) + '</span>';
-      t.addEventListener('click', () => removeSlot(i));
-      s.appendChild(t);
+    const s = document.createElement('div'); s.dataset.slot = i;
+    const id = slots[i];
+    s.className = 'slot' + (id ? ' filled' : '');
+    if(id){
+      s.innerHTML = '<span class="m">'+id+'</span><span class="g">'+gloss(id)+'</span>';
+      s.addEventListener('click', () => removeSlot(i));
     }
     el.appendChild(s);
   });
@@ -448,6 +455,7 @@ function placeTile(id, tileEl){
   slots[idx] = id; tileEl.classList.add('spent');
   if(window.HSGSound) HSGSound.tick();
   renderSlots();
+  const s = $('slots').querySelector('.slot[data-slot="'+idx+'"]'); if(s) s.classList.add('popin');
   if(slots.every(Boolean)) showCheck();
 }
 function removeSlot(i){
@@ -481,7 +489,7 @@ function checkBuild(){
   rail.broke();
   $('feedback').innerHTML = '<span style="color:var(--red)">Not quite — check the order.</span>';
   answered = true;
-  setTimeout(()=>{ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .tile')].forEach(t=>t.classList.add('wrongpick')); finishRound(false); }, 900);
+  setTimeout(()=>{ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .slot')].forEach(s=>s.classList.add('wrongpick')); finishRound(false); }, 900);
 }
 
 // ---------- DECODE ----------
@@ -523,7 +531,7 @@ function winRound(mode){
   if(window.HSGfx) HSGfx.confetti({ count: cur.t>=4?70:(milestone?60:24), big: cur.t>=4||milestone });
   if(milestone && window.HSGSound) HSGSound.streak(rail.value);
   $('feedback').innerHTML = '<span style="color:var(--green)">✓ '+(mode==='decode'?'Decoded!':'Forged!')+'</span>';
-  if(mode==='build'){ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .tile')].forEach(t=>t.classList.add('correct')); }
+  if(mode==='build'){ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .slot')].forEach(s=>s.classList.add('correct')); }
   finishRound(true);
   // level up?
   const newLevel = 1 + Math.floor(solved / cfg.perLevel);
