@@ -308,29 +308,60 @@
     }
   }
 
+  // the player rides a motorcycle, seen from behind (rider leans into turns)
   function drawPlayer() {
-    var pr = project(PLAYER_D), w = roadHalfBot * pr.s * (2 / NLANES) * 0.92;
-    var x = cx + player.off * roadHalfBot * pr.s, baseY = pr.y;
-    var h = w * 1.5, top = baseY - h;
+    var pr = project(PLAYER_D), scale = pr.s;
+    var w = roadHalfBot * scale * (2 / NLANES) * 0.92;
+    var x = cx + player.off * roadHalfBot * scale, baseY = pr.y;
+    var H = w * 1.95;
     var lean = clamp((laneOff(player.lane) - player.off) * 3.2, -1, 1);
-    ctx.save(); ctx.translate(x, baseY); ctx.rotate(lean * 0.12); ctx.translate(-x, -baseY);
-    // shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(x, baseY - h * 0.04, w * 0.62, h * 0.13, 0, 0, Math.PI * 2); ctx.fill();
-    // body (hero red/orange)
-    var g = ctx.createLinearGradient(x - w / 2, 0, x + w / 2, 0);
-    g.addColorStop(0, '#b81f14'); g.addColorStop(0.5, '#ff3b2f'); g.addColorStop(1, '#a81810');
-    ctx.fillStyle = g; rr(x - w / 2, top, w, h, w * 0.2); ctx.fill();
-    // racing stripe
-    ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.fillRect(x - w * 0.07, top + h * 0.05, w * 0.14, h * 0.9);
-    // cabin + rear glass
-    ctx.fillStyle = '#ff6a4a'; rr(x - w * 0.4, top + h * 0.16, w * 0.8, h * 0.32, w * 0.14); ctx.fill();
-    ctx.fillStyle = 'rgba(15,20,38,0.95)'; rr(x - w * 0.33, top + h * 0.2, w * 0.66, h * 0.22, w * 0.1); ctx.fill();
-    // spoiler
-    ctx.fillStyle = '#7a0f08'; ctx.fillRect(x - w * 0.5, top + h * 0.02, w, h * 0.07);
-    // taillights (brake glow if braking)
     var braking = keys['ArrowDown'];
-    light(x - w * 0.32, top + h * 0.12, w * (braking ? 0.55 : 0.36), braking ? '#ff2030' : '#ff5a4a', 'rgba(255,60,60,0.9)');
-    light(x + w * 0.32, top + h * 0.12, w * (braking ? 0.55 : 0.36), braking ? '#ff2030' : '#ff5a4a', 'rgba(255,60,60,0.9)');
+    var Y = function (f) { return baseY - H * f; };
+
+    ctx.save();
+    var pvy = Y(0.45);
+    ctx.translate(x, pvy); ctx.rotate(lean * 0.32); ctx.translate(-x, -pvy);
+
+    // neon underglow
+    var ug = ctx.createRadialGradient(x, Y(0.02), 1, x, Y(0.02), w * 0.9);
+    ug.addColorStop(0, 'rgba(53,224,255,0.55)'); ug.addColorStop(1, 'rgba(53,224,255,0)');
+    ctx.fillStyle = ug; ctx.beginPath(); ctx.ellipse(x, Y(0.02), w * 0.9, H * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    // shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(x, Y(0.01), w * 0.42, H * 0.045, 0, 0, Math.PI * 2); ctx.fill();
+
+    // chrome exhaust (right)
+    ctx.fillStyle = '#c3ccda'; rr(x + w * 0.16, Y(0.34), w * 0.1, H * 0.26, w * 0.04); ctx.fill();
+    // rear tyre
+    var tw = w * 0.32, tTop = Y(0.42);
+    ctx.fillStyle = '#0b0b11'; rr(x - tw / 2, tTop, tw, baseY - tTop, tw * 0.34); ctx.fill();
+    ctx.fillStyle = 'rgba(150,160,185,0.18)';
+    for (var sp = 0; sp < 3; sp++) ctx.fillRect(x - tw * 0.4, Y(0.30 - sp * 0.08), tw * 0.8, Math.max(1, H * 0.012));
+    ctx.fillStyle = '#454b60'; rr(x - tw * 0.3, Y(0.30), tw * 0.6, H * 0.12, tw * 0.18); ctx.fill();
+
+    // bike tail/body (hero red)
+    var bg = ctx.createLinearGradient(x - w * 0.2, 0, x + w * 0.2, 0);
+    bg.addColorStop(0, '#7a0f08'); bg.addColorStop(0.5, '#ff3b2f'); bg.addColorStop(1, '#7a0f08');
+    ctx.fillStyle = bg; rr(x - w * 0.2, Y(0.62), w * 0.4, H * 0.28, w * 0.1); ctx.fill();
+    // taillight (brighter when braking)
+    light(x, Y(0.52), w * (braking ? 0.5 : 0.32), braking ? '#ff2030' : '#ff5a4a', 'rgba(255,60,60,0.95)');
+
+    // rider — hips, jacket, shoulders, arms, helmet
+    ctx.fillStyle = '#141824'; rr(x - w * 0.2, Y(0.66), w * 0.4, H * 0.14, w * 0.08); ctx.fill();
+    var jg = ctx.createLinearGradient(x - w * 0.24, 0, x + w * 0.24, 0);
+    jg.addColorStop(0, '#111119'); jg.addColorStop(0.5, '#2c2c3a'); jg.addColorStop(1, '#111119');
+    ctx.fillStyle = jg; rr(x - w * 0.23, Y(0.88), w * 0.46, H * 0.26, w * 0.13); ctx.fill();
+    ctx.fillStyle = 'rgba(53,224,255,0.75)'; ctx.fillRect(x - w * 0.018, Y(0.86), w * 0.036, H * 0.2); // spine light
+    ctx.fillStyle = '#22222e'; rr(x - w * 0.3, Y(0.86), w * 0.6, H * 0.1, w * 0.07); ctx.fill();       // shoulders
+    ctx.strokeStyle = '#22222e'; ctx.lineWidth = w * 0.13; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x - w * 0.2, Y(0.82)); ctx.lineTo(x - w * 0.33, Y(0.68)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x + w * 0.2, Y(0.82)); ctx.lineTo(x + w * 0.33, Y(0.68)); ctx.stroke();
+    ctx.fillStyle = '#0b0b11'; ctx.beginPath(); ctx.arc(x - w * 0.35, Y(0.66), w * 0.05, 0, Math.PI * 2); ctx.arc(x + w * 0.35, Y(0.66), w * 0.05, 0, Math.PI * 2); ctx.fill();
+    var hg = ctx.createLinearGradient(0, Y(1.0), 0, Y(0.84));
+    hg.addColorStop(0, '#f4f6fa'); hg.addColorStop(1, '#aeb4c4');
+    ctx.fillStyle = hg; ctx.beginPath(); ctx.ellipse(x, Y(0.9), w * 0.17, H * 0.1, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(18,22,38,0.92)'; rr(x - w * 0.13, Y(0.93), w * 0.26, H * 0.045, w * 0.03); ctx.fill(); // visor
+    ctx.fillStyle = '#ff3b2f'; ctx.fillRect(x - w * 0.02, Y(1.0), w * 0.04, H * 0.1);                          // helmet stripe
+
     ctx.restore();
   }
 
