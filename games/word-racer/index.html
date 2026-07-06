@@ -39,7 +39,7 @@
 
     /* ---------- the rotating track ---------- */
     .arena {
-      position: relative; width: min(94vw, 540px); height: min(94vw, 540px);
+      position: relative; width: min(94vw, 600px); height: min(94vw, 600px);
       margin: 0 auto 0.9rem; border-radius: 18px;
       background: #34302b; overflow: hidden;
       box-shadow: 0 8px 24px rgba(20,33,46,0.24); border: 2px solid #23201b;
@@ -283,7 +283,7 @@ function layout() {
   S = arena.clientWidth || 440;
   FS = Math.round(Math.min(24, Math.max(16, S / 22)));
   LINEH = Math.round(FS * 1.62);
-  LANE_H = Math.max(12, Math.round(S / 40));
+  LANE_H = Math.max(26, Math.round(S / 22));   // lane pitch — must clear the (now larger) cars so they don't stack
   CARMARGIN = 8;
   const gapToText = 6;
   const textTop = CARMARGIN + NLANES * LANE_H + gapToText;
