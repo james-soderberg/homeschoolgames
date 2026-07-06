@@ -62,10 +62,11 @@
 
   // Secret games: type a code word anywhere on the home page to unlock one.
   (function(){
+    const RL=()=>location.href='games/redline/index.html';
     const CODES=[
       {code:'secretgame', go:()=>location.href='games/secret-flap/index.html'},
-      {code:'desmond',    go:()=>location.href='games/redline/index.html?racer=desmond'},
-      {code:'connor',     go:()=>location.href='games/redline/index.html?racer=connor'},
+      {code:'desmond', go:RL}, {code:'connor', go:RL}, {code:'emily', go:RL},
+      {code:'ella', go:RL}, {code:'ellia', go:RL}, {code:'mercy', go:RL}, {code:'melody', go:RL},
     ];
     let buf='';
     document.addEventListener('keydown',e=>{
