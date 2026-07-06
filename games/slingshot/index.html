@@ -60,6 +60,12 @@
   .kind-badge.triple { display:inline-block; background:#5c2b3a; border-color:#a05470; color:#ffc7da; }
   .thrust-badge { display:none; background:#4a3410; border-color:#c88a1e; color:#ffd98a; }
   .thrust-badge.on { display:inline-block; }
+  .god-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:.45rem; margin:.6rem 0 1rem; width:min(92%,340px); }
+  .god-grid button { font-family:var(--font-sans); font-weight:800; font-size:.92rem; padding:.5rem 0; cursor:pointer;
+    border-radius:9px; border:1.5px solid #3a5090; background:#20305c; color:#bcd0ff; transition:transform .08s, background .12s; }
+  .god-grid button:hover { background:#2c4a86; transform:translateY(-1px); }
+  .god-grid button.slow { border-color:#c88a1e; background:#4a3410; color:#ffd98a; }
+  .god-grid button.slow:hover { background:#5e4315; }
 
   /* overlays */
   .ov { position:absolute; inset:0; z-index:12; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -178,6 +184,15 @@
       </div>
       <p class="learn-note">🌍 Every shot shows how gravity curves a moving object's path, the same slingshot trick real spacecraft use to cross the solar system.</p>
       <button class="go-btn" id="beginBtn">Launch mission →</button>
+    </div>
+
+    <!-- God mode: hidden level picker (type "godmode" to open) -->
+    <div class="ov hidden" id="godOverlay">
+      <div class="crest">🛸</div>
+      <h2>God mode</h2>
+      <p class="learn-note">Jump straight to any level.</p>
+      <div class="god-grid" id="godGrid"></div>
+      <button class="go-btn secondary" id="godClose">Close</button>
     </div>
 
     <!-- Arrival fact card -->
@@ -627,12 +642,13 @@ function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch
 function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
 
 // ---------- lifecycle ----------
-function startGame(key) {
+function startGame(key, startLevel) {
   diffKey = key; diff = DIFF[key] || DIFF.pilot;
-  level = 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = 'None';
+  level = startLevel || 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = 'None';
   particles = []; pendingScore = null;
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
-  setupCanvas(); genLevel(1); phase = 'aim'; updateHud();
+  const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
+  setupCanvas(); genLevel(level); phase = 'aim'; updateHud();
 }
 function retryLevel() { if (phase === 'aim') { recomputePredict(); } }
 function toMenu() {
@@ -888,6 +904,35 @@ document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPro
 document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopPropagation(); toMenu(); });
 document.getElementById('saveNameBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); saveName(); });
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveName(); } });
+
+// ---------- god mode: type "godmode" anywhere to open a level picker ----------
+(function () {
+  const grid = document.getElementById('godGrid');
+  const god = document.getElementById('godOverlay');
+  SL_LEVELS.forEach((spec, i) => {
+    const n = i + 1;
+    const btn = document.createElement('button');
+    btn.textContent = n;
+    if (spec.vmax && spec.vmax < 1) btn.classList.add('slow');   // mark low-thrust levels
+    btn.title = 'Level ' + n + (spec.vmax && spec.vmax < 1 ? ' · low thrust' : '');
+    btn.addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame('commander', n); });
+    grid.appendChild(btn);
+  });
+  document.getElementById('godClose').addEventListener('click', (e) => {
+    e.stopPropagation(); god.classList.add('hidden');
+    if (phase === 'menu') startOverlay.classList.remove('hidden');
+  });
+  let buf = '';
+  window.addEventListener('keydown', (e) => {
+    if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+    if (e.key && e.key.length === 1) buf = (buf + e.key.toLowerCase()).slice(-7);
+    if (buf.endsWith('godmode')) {
+      buf = '';
+      startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
+      god.classList.remove('hidden');
+    }
+  });
+})();
 
 // ---------- screenshot / hero demo (open with ?shot) ----------
 let demo = null;
