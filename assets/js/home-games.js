@@ -7,7 +7,6 @@ const GAMES = [
   { key:'word-racer',    name:'Word Racer',       href:'games/word-racer/index.html',   subject:'Typing',    emoji:'🏎️', blurb:'Type fast to win the race.',         photo:'assets/img/home/shots/word-racer.jpg' },
   { key:'letter-snake',  name:'Letter Snake',     href:'games/letter-snake/index.html', subject:'Spelling',  emoji:'🐍', blurb:'Spell words as you slither.',        photo:'assets/img/home/shots/letter-snake.jpg' },
   { key:'roots',         name:'Roots',            href:'games/roots/index.html',        subject:'Vocabulary', emoji:'🧩', blurb:'Forge words from Greek & Latin roots.', photo:'assets/img/home/shots/roots.jpg', badge:'✦ New' },
-  { key:'morph',         name:'Morph',            href:'games/morph/index.html',        subject:'Vocabulary', emoji:'🦋', blurb:'Grow a root with prefixes & suffixes.', photo:'assets/img/home/shots/morph.jpg', badge:'✦ New' },
   { key:'bible-trivia',  name:'The Exodus Journey', href:'games/bible-trivia/index.html', subject:'Bible Trivia', emoji:'📜', blurb:'From slavery in Egypt to the Promised Land.', photo:'assets/img/home/shots/bible-trivia.jpg' },
   { key:'register',      name:'Register',         href:'games/register/index.html',     subject:'Math',      emoji:'🛒', blurb:'Run the shop and make the change.', photo:'assets/img/home/shots/register.jpg', badge:'✦ New' },
   { key:'bridge-run',    name:'Bridge Run',       href:'games/bridge-run/index.html',   subject:'Math',      emoji:'🌉', blurb:'Solve the gap and sprint across.',   photo:'assets/img/home/shots/bridge-run.jpg' },

@@ -6,3 +6,6 @@ node_modules/
 
 # Personal Claude Code settings (do not commit)
 .claude/settings.local.json
+
+# Claude Code worktrees (transient)
+.claude/worktrees/

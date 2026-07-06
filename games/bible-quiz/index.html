@@ -150,12 +150,23 @@
     .land-stats .fs b { font-family: var(--font-serif); font-size: 1.7rem; color: var(--gold); line-height: 1; }
     .land-stats .fs span { font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-light); margin-top: 0.2rem; }
 
-    .control-row { display: flex; justify-content: center; flex: 0 0 auto; }
+    .control-row { display: flex; align-items: center; justify-content: center; gap: 0.9rem; flex: 0 0 auto; min-height: 2.7rem; }
     .reset-link {
       background: none; border: none; color: var(--ink-light); font-size: 0.82rem; cursor: pointer;
       font-family: var(--font-sans); text-decoration: underline; padding: 0.15rem 0.5rem;
     }
     .reset-link:hover { color: var(--ink); }
+    .next-inline { padding: 0.5rem 1.3rem; font-size: 0.95rem; box-shadow: 0 4px 0 #a07f2c; }
+    .next-inline:active { transform: translateY(3px); box-shadow: 0 1px 0 #a07f2c; }
+    /* auto-continue toggle (mirrors Who Said It) */
+    .auto-toggle { display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.32rem 0.8rem; font-family: var(--font-sans); font-size: 0.8rem; font-weight: 700;
+      color: var(--ink-light); }
+    .auto-toggle:hover { background: #efe7d6; }
+    .auto-toggle .dot { width: 0.7rem; height: 0.7rem; border-radius: 50%; background: #c2b69c; transition: background 0.15s; }
+    .auto-toggle[aria-checked="true"] { color: var(--ink); border-color: var(--gold); background: #fbf3df; }
+    .auto-toggle[aria-checked="true"] .dot { background: var(--gold); }
 
     /* On phones/short screens, stop fitting to the viewport — stack and allow scroll. */
     @media (max-width: 760px) {
@@ -200,9 +211,9 @@
       <div class="ov" id="startOverlay">
         <div class="crest">⛵</div>
         <h2>Paul's Voyage</h2>
-        <p>Retrace Paul's journeys all the way to Rome. Name the book each clue comes from. Five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
+        <p>Retrace Paul's journeys all the way to Rome. A Bible story appears with a short overview, and you name the book it's told in. Five right answers carry you to the next port, where you'll see what really happened there. Pick a level to begin.</p>
         <div class="pace-row">
-          <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3–7</span></button>
+          <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3-7</span></button>
           <button class="pace-btn" data-level="medium">Medium<span class="p-sub">High school</span></button>
           <button class="pace-btn" data-level="hard">Hard<span class="p-sub">Adult</span></button>
           <button class="pace-btn" data-level="einstein">Einstein<span class="p-sub">Expert</span></button>
@@ -227,6 +238,10 @@
   </div>
 
   <div class="control-row">
+    <button class="auto-toggle" id="autoToggle" type="button" role="switch" aria-checked="false" title="When off, you tap Next to sail on after each answer">
+      <span class="dot"></span><span id="autoLabel">Auto-continue: Off</span>
+    </button>
+    <button class="play-btn next-inline" id="nextQBtn" style="visibility:hidden">Sail on →</button>
     <button class="reset-link" onclick="toMenu()">Quit to harbor</button>
   </div>
 
@@ -248,105 +263,164 @@
 // happened there (Acts). Six ports lie between Antioch and Rome.
 // ============================================================
 
-// ---------------- Question deck (which book is this from?) ----------------
-const DECK = [
-  // TORAH GROUP
-  {name:"Noah's Ark", books:["Genesis"], verse:"Come thou and all thy house into the ark.", blurb:"An ark built to survive the flood.", tier:"gimme", cat:"story"},
-  {name:"Sodom and Gomorrah", books:["Genesis"], verse:"Look not behind thee.", blurb:"Cities of fire. A wife turned to salt.", tier:"medium", cat:"story"},
-  {name:"Wrestling the Angel", books:["Genesis"], verse:"I will not let thee go, except thou bless me.", blurb:"A patriarch wrestles God until dawn.", tier:"niche", cat:"story"},
-  {name:"Joseph's Coat", books:["Genesis"], verse:"Behold, this dreamer cometh.", blurb:"Sold by his brothers in a coat of many colors.", tier:"niche", cat:"story"},
-  {name:"Burning Bush", books:["Exodus"], verse:"I AM THAT I AM.", blurb:"A flame that does not consume.", tier:"medium", cat:"story"},
-  {name:"Parting the Sea", books:["Exodus"], verse:"Stand still, and see the salvation of the LORD.", blurb:"Dry ground between walls of water.", tier:"gimme", cat:"story"},
-  {name:"Golden Calf", books:["Exodus"], verse:"These be thy gods, O Israel.", blurb:"An idol built while the prophet was on the mountain.", tier:"medium", cat:"story"},
-  {name:"Scapegoat", books:["Leviticus"], verse:"The goat shall bear upon him all their iniquities.", blurb:"Sin carried into the wilderness on a goat.", tier:"niche", cat:"story"},
-  {name:"Bronze Serpent", books:["Numbers"], verse:"Make thee a fiery serpent, and set it upon a pole.", blurb:"Lifted up in the wilderness for healing.", tier:"niche", cat:"story"},
-  {name:"The Talking Donkey", books:["Numbers"], verse:"What have I done unto thee, that thou hast smitten me?", blurb:"An animal rebukes its rider.", tier:"niche", cat:"story"},
-  {name:"Shema", books:["Deuteronomy"], verse:"Hear, O Israel: The LORD our God is one LORD.", blurb:"Israel's great confession of faith.", tier:"niche", cat:"verse"},
+// ---------------- Story deck ----------------
+// Each entry is a Bible STORY with a short overview; you name the book it's told in.
+// lvl 1-4 sets which difficulty it appears at (familiar → obscure). `books` lists
+// every book the story is told in (any counts). `era` is a gentle context tag.
+const STORIES = [
+  // ===== LEVEL 1 — famous Sunday-school stories =====
+  {name:"Noah's Ark", books:["Genesis"], lvl:1, era:"In the Beginning",
+   overview:"God told Noah to build a great ark to survive a coming flood. Noah gathered his family and two of every animal, and after the waters went down, a rainbow sealed God's promise never to flood the whole earth again."},
+  {name:"Adam and Eve", books:["Genesis"], lvl:1, era:"In the Beginning",
+   overview:"God placed the first man and woman in the garden of Eden and told them not to eat from one tree. A serpent tempted them, they disobeyed, and they had to leave the garden."},
+  {name:"Joseph and His Coat of Many Colors", books:["Genesis"], lvl:1, era:"The Patriarchs",
+   overview:"Jacob loved his son Joseph best and gave him a beautiful coat. His jealous brothers sold him into Egypt, but God was with Joseph and raised him to rule the land and save his family from famine."},
+  {name:"Baby Moses in the Basket", books:["Exodus"], lvl:1, era:"Out of Egypt",
+   overview:"To save her baby from Pharaoh's order, a mother hid Moses in a basket among the reeds of the Nile. Pharaoh's own daughter found him and raised him as a prince of Egypt."},
+  {name:"The Burning Bush", books:["Exodus"], lvl:1, era:"Out of Egypt",
+   overview:"While tending sheep, Moses saw a bush that burned but was not consumed. From it God called him to go and free the Israelites from slavery in Egypt."},
+  {name:"Parting the Red Sea", books:["Exodus"], lvl:1, era:"Out of Egypt",
+   overview:"With Pharaoh's army closing in, Moses stretched out his hand and God parted the sea. The people crossed on dry ground, and the waters closed over the army behind them."},
+  {name:"The Ten Commandments", books:["Exodus"], lvl:1, era:"Out of Egypt",
+   overview:"On Mount Sinai, amid thunder and smoke, God gave Moses two stone tablets carved with ten commandments to guide his people."},
+  {name:"The Walls of Jericho", books:["Joshua"], lvl:1, era:"The Promised Land",
+   overview:"Israel marched around the walled city once a day for six days. On the seventh they marched seven times, blew their trumpets and shouted, and the walls came tumbling down."},
+  {name:"Samson and Delilah", books:["Judges"], lvl:1, era:"The Promised Land",
+   overview:"Samson was the strongest man alive, his strength tied to his uncut hair. Delilah coaxed out the secret and cut his hair as he slept, but his strength returned for one last mighty act."},
+  {name:"David and Goliath", books:["1 Samuel"], lvl:1, era:"The Kingdom Years",
+   overview:"When no soldier dared face the giant Goliath, the shepherd boy David stepped up with a sling and five smooth stones. One stone to the forehead felled the giant and won the day for Israel."},
+  {name:"In the Lions' Den", books:["Daniel"], lvl:1, era:"The Prophets",
+   overview:"A man kept praying at his open window three times a day, even after the king made it a crime, so he was thrown into a den of lions. God shut the lions' mouths, and at dawn he walked out without a scratch."},
+  {name:"The Fiery Furnace", books:["Daniel"], lvl:1, era:"The Prophets",
+   overview:"Three young men refused to bow to the king's golden statue and were thrown into a blazing furnace. They walked in the flames unburned, with a mysterious fourth figure beside them."},
+  {name:"Swallowed by the Great Fish", books:["Jonah"], lvl:1, era:"The Prophets",
+   overview:"Running from God's call to preach against the wicked city of Nineveh, a prophet was thrown overboard in a storm and swallowed by a great fish. After three days inside it he prayed, the fish spat him out, and he finally went."},
+  {name:"The Birth of Jesus", books:["Matthew","Luke"], lvl:1, era:"Jesus' Life",
+   overview:"There was no room at the inn, so Mary laid the newborn Jesus in a manger. Angels announced his birth to shepherds, who hurried to Bethlehem to see him."},
+  {name:"Jesus Feeds the Five Thousand", books:["Matthew","Mark","Luke","John"], lvl:1, era:"Jesus' Life",
+   overview:"A huge crowd grew hungry with only five loaves and two fish among them. Jesus blessed the food, it multiplied, and everyone ate with twelve baskets left over."},
+  {name:"Jesus Walks on Water", books:["Matthew","Mark","John"], lvl:1, era:"Jesus' Life",
+   overview:"In the middle of a stormy night the disciples saw Jesus walking toward their boat on the sea. Peter stepped out to join him, and when he began to sink, Jesus caught him."},
+  {name:"The Good Samaritan", books:["Luke"], lvl:1, era:"Jesus' Life",
+   overview:"Jesus told of a man beaten by robbers and left on the road. Religious men passed by, but a despised Samaritan stopped, bandaged his wounds, and paid for his care."},
+  {name:"The Empty Tomb", books:["Matthew","Mark","Luke","John"], lvl:1, era:"Jesus' Life",
+   overview:"On the third day after the crucifixion, women came to the tomb and found the stone rolled away. An angel told them that Jesus had risen from the dead."},
 
-  // HISTORICAL BOOKS
-  {name:"Walls of Jericho", books:["Joshua"], verse:"Shout; for the LORD hath given you the city.", blurb:"Walls fall to a march and a shout.", tier:"medium", cat:"story"},
-  {name:"Gideon's 300", books:["Judges"], verse:"By the three hundred men... will I save you.", blurb:"Trumpets and pitchers rout an army.", tier:"niche", cat:"story"},
-  {name:"Samson's Strength", books:["Judges"], verse:"If I be shaven, then my strength will go from me.", blurb:"A strongman undone by his hair.", tier:"medium", cat:"story"},
-  {name:"Hannah's Prayer", books:["1 Samuel"], verse:"For this child I prayed.", blurb:"A barren woman prays for a son and receives him.", tier:"niche", cat:"story"},
-  {name:"David and Goliath", books:["1 Samuel"], verse:"I come to thee in the name of the LORD of hosts.", blurb:"A shepherd boy fells a giant with a stone.", tier:"gimme", cat:"story"},
-  {name:"Absalom's Rebellion", books:["2 Samuel"], verse:"O my son Absalom, my son, my son.", blurb:"A prince revolts and dies caught in an oak.", tier:"niche", cat:"story"},
-  {name:"The Widow's Oil", books:["1 Kings"], verse:"The barrel of meal shall not waste.", blurb:"Flour and oil that never run out.", tier:"niche", cat:"story"},
-  {name:"Fire on the Mountain", books:["1 Kings"], verse:"The God that answereth by fire, let him be God.", blurb:"An altar consumed; false prophets fail.", tier:"niche", cat:"story"},
-  {name:"Naboth's Vineyard", books:["1 Kings"], verse:"Hast thou killed, and also taken possession?", blurb:"A king's wife murders a man for his land.", tier:"niche", cat:"story"},
-  {name:"Chariot of Fire", books:["2 Kings"], verse:"There appeared a chariot of fire... and he went up.", blurb:"A prophet taken up in a whirlwind.", tier:"niche", cat:"story"},
-  {name:"Naaman's Leprosy", books:["2 Kings"], verse:"Wash in Jordan seven times.", blurb:"A general healed by dipping in a river.", tier:"niche", cat:"story"},
-  {name:"The Floating Axe", books:["2 Kings"], verse:"And the iron did swim.", blurb:"A borrowed tool lost and miraculously recovered.", tier:"niche", cat:"story"},
-  {name:"If I Perish, I Perish", books:["Esther"], verse:"If I perish, I perish.", blurb:"A queen risks death to save her people.", tier:"niche", cat:"story"},
+  // ===== LEVEL 2 — well-known stories =====
+  {name:"Cain and Abel", books:["Genesis"], lvl:2, era:"In the Beginning",
+   overview:"The first two brothers each brought an offering to God. When Abel's was accepted and his own was not, Cain grew jealous and killed his brother in the field."},
+  {name:"The Tower of Babel", books:["Genesis"], lvl:2, era:"In the Beginning",
+   overview:"People built a great tower to reach the heavens and make a name for themselves. God confused their language so they could not understand each other, and scattered them across the earth."},
+  {name:"Abraham Offers Isaac", books:["Genesis"], lvl:2, era:"The Patriarchs",
+   overview:"God tested Abraham by asking him to offer his son Isaac. As Abraham raised the knife, an angel stopped him, and God provided a ram caught in a thicket instead."},
+  {name:"Jacob's Ladder", books:["Genesis"], lvl:2, era:"The Patriarchs",
+   overview:"Fleeing his brother, Jacob slept with a stone for a pillow and dreamed of a ladder reaching heaven, angels going up and down, and God promising to be with him."},
+  {name:"The Golden Calf", books:["Exodus"], lvl:2, era:"Out of Egypt",
+   overview:"While Moses was up on the mountain, the impatient people melted their gold into a calf and worshiped it. Moses returned and shattered the stone tablets in anger."},
+  {name:"Gideon's Three Hundred", books:["Judges"], lvl:2, era:"The Promised Land",
+   overview:"God shrank Gideon's army to just three hundred men. Armed only with trumpets and torches hidden in jars, they surrounded the enemy camp by night and won without a sword."},
+  {name:"Where You Go, I Will Go", books:["Ruth"], lvl:2, era:"The Promised Land",
+   overview:"After both their husbands died, a young Moabite widow refused to leave her mother-in-law Naomi, saying 'where you go, I will go.' She gleaned in the fields of a kind landowner named Boaz, who married her."},
+  {name:"Speak, Lord, Your Servant Hears", books:["1 Samuel"], lvl:2, era:"The Kingdom Years",
+   overview:"As a boy serving in the temple, he heard a voice call his name in the night. Three times he ran to the old priest Eli, until Eli realized it was the Lord calling the child."},
+  {name:"Elijah and the Prophets of Baal", books:["1 Kings"], lvl:2, era:"The Kingdom Years",
+   overview:"On Mount Carmel, Elijah challenged the prophets of Baal to call down fire. Their god was silent, but when Elijah prayed, fire fell and consumed his water-soaked altar."},
+  {name:"Elijah and the Widow of Zarephath", books:["1 Kings"], lvl:2, era:"The Kingdom Years",
+   overview:"During a long drought, Elijah asked a starving widow for bread. She had only a handful of flour and a little oil, but as she trusted him, they never ran out until the rains returned."},
+  {name:"Naaman Healed in the Jordan", books:["2 Kings"], lvl:2, era:"The Kingdom Years",
+   overview:"Naaman, a foreign commander with leprosy, was told to wash seven times in the Jordan River. Insulted at first, he finally obeyed, and his skin became clean like a child's."},
+  {name:"Elijah Taken in a Whirlwind", books:["2 Kings"], lvl:2, era:"The Kingdom Years",
+   overview:"As Elisha watched, a chariot of fire and horses of fire appeared, and Elijah was swept up to heaven in a whirlwind, leaving his cloak behind for his successor."},
+  {name:"The Man Who Lost Everything", books:["Job"], lvl:2, era:"Wisdom & Poetry",
+   overview:"In a single day a righteous man lost his children, his wealth, and his health, yet he would not curse God. At the last, God answered him out of a whirlwind and gave back more than he had lost."},
+  {name:"For Such a Time as This", books:["Esther"], lvl:2, era:"Exile & Return",
+   overview:"A young Jewish woman became queen of Persia, then risked her life by going before the king uninvited to expose a plot to wipe out her people. Her courage turned the gallows back on their enemy Haman."},
+  {name:"The Writing on the Wall", books:["Daniel"], lvl:2, era:"The Prophets",
+   overview:"At a royal feast a mysterious hand appeared and wrote words on the wall. Only the exiled prophet could read them: the king had been weighed in the balances and found wanting, and that very night his kingdom fell."},
+  {name:"The Transfiguration", books:["Matthew","Mark","Luke"], lvl:2, era:"Jesus' Life",
+   overview:"On a high mountain Jesus' face and clothes shone like light, and Moses and Elijah appeared beside him. A voice from a cloud said, 'This is my beloved Son.'"},
+  {name:"The Prodigal Son", books:["Luke"], lvl:2, era:"Jesus' Life",
+   overview:"A younger son demanded his inheritance and wasted it in a far country. Starving, he came home expecting to be a servant, but his father ran to meet him and threw a feast."},
+  {name:"The Road to Damascus", books:["Acts"], lvl:2, era:"The Early Church",
+   overview:"Saul was traveling to arrest Christians when a blinding light stopped him and a voice asked, 'Why do you persecute me?' He was struck blind, then baptized, and became the apostle Paul."},
+  {name:"Pentecost", books:["Acts"], lvl:2, era:"The Early Church",
+   overview:"Fifty days after Easter, a sound like rushing wind filled the house and tongues of fire rested on the believers. They spoke in many languages, and thousands believed that day."},
 
-  // WISDOM BOOKS
-  {name:"Scraping with a Potsherd", books:["Job"], verse:"The LORD gave, and the LORD hath taken away.", blurb:"A righteous man sits in ashes, covered in sores.", tier:"niche", cat:"story"},
-  {name:"Be Still", books:["Psalms"], verse:"Be still, and know that I am God.", blurb:"A command to the anxious soul.", tier:"medium", cat:"verse"},
-  {name:"The Lord is My Shepherd", books:["Psalms"], verse:"The LORD is my shepherd; I shall not want.", blurb:"The most beloved psalm.", tier:"gimme", cat:"verse"},
-  {name:"Trust in the Lord", books:["Proverbs"], verse:"Trust in the LORD with all thine heart; and lean not unto thine own understanding.", blurb:"Wisdom for the path ahead.", tier:"niche", cat:"verse"},
-  {name:"To Every Thing a Season", books:["Ecclesiastes"], verse:"To every thing there is a season, and a time to every purpose.", blurb:"The teacher's meditation on time.", tier:"niche", cat:"verse"},
+  // ===== LEVEL 3 — less familiar stories =====
+  {name:"Enoch Walks with God", books:["Genesis"], lvl:3, era:"In the Beginning",
+   overview:"Enoch so pleased God that he never died. The Scripture simply says he 'walked with God, and he was not, for God took him.'"},
+  {name:"Esau Sells His Birthright", books:["Genesis"], lvl:3, era:"The Patriarchs",
+   overview:"Coming in famished from the field, Esau traded his birthright as firstborn to his twin brother Jacob for a single bowl of red stew."},
+  {name:"Balaam's Talking Donkey", books:["Numbers"], lvl:3, era:"In the Wilderness",
+   overview:"Hired to curse Israel, the prophet Balaam was stopped when his donkey saw an angel blocking the road and spoke aloud to rebuke him."},
+  {name:"The Bronze Serpent", books:["Numbers"], lvl:3, era:"In the Wilderness",
+   overview:"When venomous snakes bit the complaining Israelites, God told Moses to lift a bronze serpent on a pole, and everyone who looked at it lived."},
+  {name:"Achan's Hidden Sin", books:["Joshua"], lvl:3, era:"The Promised Land",
+   overview:"After the fall of Jericho, one soldier secretly kept forbidden plunder, and Israel lost the next battle until the hidden sin was uncovered."},
+  {name:"Deborah and Barak", books:["Judges"], lvl:3, era:"The Promised Land",
+   overview:"The prophetess Deborah summoned Barak to battle, and the enemy general Sisera was routed and then slain in a tent by a woman named Jael."},
+  {name:"Hannah Prays for a Son", books:["1 Samuel"], lvl:3, era:"The Kingdom Years",
+   overview:"Weeping in the temple, the childless Hannah vowed that if God gave her a son she would give him back to God. She bore a boy, and when he was weaned she brought him to serve the Lord, just as she had promised."},
+  {name:"Absalom's Rebellion", books:["2 Samuel"], lvl:3, era:"The Kingdom Years",
+   overview:"David's son Absalom stole the hearts of Israel and seized the throne, but was caught by his hair in an oak tree and killed, leaving David to weep, 'O my son.'"},
+  {name:"Solomon's Wise Judgment", books:["1 Kings"], lvl:3, era:"The Kingdom Years",
+   overview:"Two women claimed the same baby, so Solomon offered to cut the child in two. The true mother gave the baby up to spare its life, revealing which woman was the mother."},
+  {name:"Naboth's Vineyard", books:["1 Kings"], lvl:3, era:"The Kingdom Years",
+   overview:"When Naboth refused to sell his family vineyard to King Ahab, Queen Jezebel had him falsely accused and killed so the king could seize the land."},
+  {name:"The Floating Axe Head", books:["2 Kings"], lvl:3, era:"The Kingdom Years",
+   overview:"When a borrowed iron axe head fell into the river, the prophet Elisha threw in a stick, and the iron rose and floated to the surface."},
+  {name:"Here Am I, Send Me", books:["Isaiah"], lvl:3, era:"The Prophets",
+   overview:"A young prophet saw the Lord high and lifted up, with angels crying 'Holy, holy, holy.' A seraph touched a live coal to his lips to cleanse them, and he answered the call, 'Here am I; send me.'"},
+  {name:"The Valley of Dry Bones", books:["Ezekiel"], lvl:3, era:"The Prophets",
+   overview:"In a vision the prophet saw a valley full of dry bones. As he prophesied, they rattled together, took on flesh, and stood up as a vast living army."},
+  {name:"Nicodemus Comes by Night", books:["John"], lvl:3, era:"Jesus' Life",
+   overview:"A ruler named Nicodemus came to Jesus in the dark and was told that a person must be 'born again' to see the kingdom of God."},
+  {name:"The Woman at the Well", books:["John"], lvl:3, era:"Jesus' Life",
+   overview:"Tired at a well in Samaria, Jesus asked a woman for a drink and offered her 'living water,' revealing that he knew everything she had ever done."},
+  {name:"Zacchaeus in the Sycamore Tree", books:["Luke"], lvl:3, era:"Jesus' Life",
+   overview:"A short, wealthy tax collector climbed a tree to see Jesus over the crowd. Jesus called him down by name, and Zacchaeus repaid fourfold everyone he had cheated."},
+  {name:"Stephen the First Martyr", books:["Acts"], lvl:3, era:"The Early Church",
+   overview:"Full of the Spirit, Stephen preached boldly before the council and was stoned to death, praying for his killers, while a young man named Saul looked on."},
+  {name:"Peter Freed from Prison", books:["Acts"], lvl:3, era:"The Early Church",
+   overview:"Chained between two guards, Peter was awakened by an angel. His chains fell off, the iron gate opened by itself, and he walked out of the prison free."},
 
-  // MAJOR PROPHETS
-  {name:"Isaiah's Coal", books:["Isaiah"], verse:"Lo, this hath touched thy lips.", blurb:"A seraph cleanses a prophet's unclean lips.", tier:"niche", cat:"story"},
-  {name:"Plans to Prosper You", books:["Jeremiah"], verse:"Thoughts of peace, and not of evil, to give you an expected end.", blurb:"A letter written to exiles in Babylon.", tier:"niche", cat:"verse"},
-  {name:"New Every Morning", books:["Lamentations"], verse:"His compassions fail not. They are new every morning.", blurb:"Mercy found in the ruins of Jerusalem.", tier:"niche", cat:"verse"},
-  {name:"Valley of Dry Bones", books:["Ezekiel"], verse:"Can these bones live?", blurb:"Bones rattle, connect, and breathe again.", tier:"niche", cat:"story"},
-  {name:"The Fiery Furnace", books:["Daniel"], verse:"Our God whom we serve is able to deliver us.", blurb:"Three men refuse to bow and walk unharmed in fire.", tier:"medium", cat:"story"},
-  {name:"The Lions' Den", books:["Daniel"], verse:"My God hath sent his angel.", blurb:"A man of prayer keeps his window open.", tier:"medium", cat:"story"},
-
-  // MINOR PROPHETS
-  {name:"Swallowed by the Great Fish", books:["Jonah"], verse:"Out of the belly of hell cried I.", blurb:"Three days in the deep.", tier:"medium", cat:"story"},
-  {name:"Let Justice Roll Down", books:["Amos"], verse:"Let judgment run down as waters, and righteousness as a mighty stream.", blurb:"A shepherd-prophet's cry for justice.", tier:"niche", cat:"verse"},
-  {name:"Do Justly, Love Mercy", books:["Micah"], verse:"Do justly, and to love mercy, and to walk humbly with thy God.", blurb:"What the LORD requires.", tier:"niche", cat:"verse"},
-  {name:"The Just Shall Live by Faith", books:["Habakkuk"], verse:"The just shall live by his faith.", blurb:"A watchman waits on his tower.", tier:"niche", cat:"verse"},
-
-  // GOSPEL WILDS (any correct gospel counts)
-  {name:"Nativity", books:["Matthew","Luke"], verse:"Unto you is born this day a Saviour.", blurb:"A child born in Bethlehem, laid in a manger.", tier:"gimme", cat:"wild"},
-  {name:"Sermon on the Mount", books:["Matthew","Luke"], verse:"Blessed are the pure in heart.", blurb:"Teaching on the Beatitudes from a hillside.", tier:"medium", cat:"wild"},
-  {name:"Calming the Storm", books:["Matthew","Mark","Luke"], verse:"Peace, be still.", blurb:"Wind and waves stilled with two words.", tier:"medium", cat:"wild"},
-  {name:"Walking on Water", books:["Matthew","Mark","John"], verse:"Be of good cheer; be not afraid.", blurb:"Footsteps on the sea at night.", tier:"medium", cat:"wild"},
-  {name:"Transfiguration", books:["Matthew","Mark","Luke"], verse:"This is my beloved Son.", blurb:"A mountaintop glow with Moses and Elijah present.", tier:"niche", cat:"wild"},
-  {name:"Last Supper", books:["Matthew","Mark","Luke","John","1 Corinthians"], verse:"This do in remembrance of me.", blurb:"Bread broken and cup poured among the twelve.", tier:"medium", cat:"wild"},
-  {name:"The Crucifixion", books:["Matthew","Mark","Luke","John"], verse:"Father, forgive them.", blurb:"Three crosses at Golgotha.", tier:"gimme", cat:"wild"},
-
-  // ACTS
-  {name:"Pentecost", books:["Acts"], verse:"They were all filled with the Holy Ghost.", blurb:"Tongues of fire and a rushing wind.", tier:"medium", cat:"story"},
-  {name:"Damascus Road", books:["Acts"], verse:"Why persecutest thou me?", blurb:"A persecutor struck blind by a great light.", tier:"medium", cat:"story"},
-  {name:"Ananias and Sapphira", books:["Acts"], verse:"Why hath Satan filled thine heart?", blurb:"A husband and wife lie about an offering and fall dead.", tier:"niche", cat:"story"},
-
-  // MULTI-BOOK CHARACTERS (any correct book counts)
-  {name:"Moses", books:["Exodus","Numbers","Deuteronomy","Joshua","Hebrews"], verse:"Choosing rather to suffer affliction with the people of God.", blurb:"Lawgiver. Prophet. Reluctant leader of a nation.", tier:"niche", cat:"character"},
-  {name:"Peter", books:["Matthew","Mark","Luke","John","Acts","1 Peter","2 Peter"], verse:"Thou art the Christ.", blurb:"Fisherman. Apostle. Denier. Pillar of the church.", tier:"niche", cat:"character"},
-  {name:"John the Apostle", books:["John","1 John","2 John","3 John","Revelation"], verse:"Beloved, let us love one another.", blurb:"Beloved disciple. Seer on the isle of Patmos.", tier:"niche", cat:"character"},
-  {name:"Abraham", books:["Genesis","Romans","Galatians","Hebrews","James"], verse:"And he believed in the LORD; and he counted it to him for righteousness.", blurb:"Father of faith. Friend of God.", tier:"niche", cat:"character"},
-  {name:"Elijah", books:["1 Kings","2 Kings","Malachi","Matthew","Mark","Luke","James"], verse:"A man subject to like passions as we are.", blurb:"Prophet of fire and whirlwind.", tier:"niche", cat:"character"},
-  {name:"Melchizedek", books:["Genesis","Psalms","Hebrews"], verse:"A priest for ever after the order of Melchizedek.", blurb:"Mysterious priest-king of Salem who appears and vanishes.", tier:"niche", cat:"character"},
-  {name:"Sarah", books:["Genesis","Romans","Hebrews","1 Peter"], verse:"Through faith also Sara herself received strength.", blurb:"She laughed. Then bore a son in old age.", tier:"niche", cat:"character"},
-  {name:"Rahab", books:["Joshua","Matthew","Hebrews","James"], verse:"By faith the harlot Rahab perished not.", blurb:"Hid the spies. Hung a scarlet cord from her window.", tier:"niche", cat:"character"},
-  {name:"Enoch", books:["Genesis","Hebrews","Jude"], verse:"He walked with God: and he was not.", blurb:"Walked with God. Taken alive without dying.", tier:"niche", cat:"character"},
-  {name:"Balaam", books:["Numbers","2 Peter","Jude","Revelation"], verse:"Following the way of Balaam.", blurb:"Prophet for hire. Rebuked by his own donkey.", tier:"niche", cat:"character"},
-  {name:"David", books:["1 Samuel","2 Samuel","1 Kings","Psalms","Matthew","Acts","Hebrews"], verse:"A man after mine own heart.", blurb:"Shepherd. Warrior. Psalmist. King.", tier:"medium", cat:"character"},
-  {name:"Noah (character)", books:["Genesis","Matthew","Luke","Hebrews","1 Peter","2 Peter"], verse:"By faith, being warned of God of things not seen as yet.", blurb:"Found grace in his generation.", tier:"niche", cat:"character"},
-  {name:"John the Baptist", books:["Matthew","Mark","Luke","John"], verse:"Prepare ye the way of the Lord.", blurb:"Voice in the wilderness. Baptizer in the Jordan.", tier:"medium", cat:"character"},
-  {name:"Adam", books:["Genesis","Romans","1 Corinthians","1 Timothy"], verse:"By one man sin entered into the world.", blurb:"Formed of dust. The first man.", tier:"niche", cat:"character"},
-  {name:"Mary the Mother", books:["Matthew","Luke","John","Acts"], verse:"My soul doth magnify the Lord.", blurb:"Yielded handmaid. Mother of the Christ.", tier:"medium", cat:"character"},
-  {name:"Elisha", books:["2 Kings","Luke"], verse:"Let a double portion of thy spirit be upon me.", blurb:"Successor to Elijah. Worker of miracles.", tier:"niche", cat:"character"},
-  {name:"Samson (character)", books:["Judges","Hebrews"], verse:"By faith Samson... waxed valiant in fight.", blurb:"Strongman. Betrayed. Brought the temple down.", tier:"niche", cat:"character"},
-  {name:"Deborah", books:["Judges","Hebrews"], verse:"By faith... the women received their dead raised to life.", blurb:"Prophet and judge of Israel.", tier:"niche", cat:"character"},
-
-  // TRAPS (look multi-book, are single book)
-  {name:"Joseph (Son of Jacob)", books:["Genesis"], verse:"Ye thought evil against me; but God meant it unto good.", blurb:"Dreamer. Sold. Ruler in Egypt. Only in one book.", tier:"niche", cat:"trap"},
-  {name:"Jacob", books:["Genesis"], verse:"Jacob have I loved.", blurb:"Stole a birthright. Wrestled an angel.", tier:"niche", cat:"trap"},
-  {name:"Solomon", books:["1 Kings"], verse:"Give therefore thy servant an understanding heart.", blurb:"Wisest king of Israel.", tier:"niche", cat:"trap"},
-
-  // NT VERSE CARDS
-  {name:"For God So Loved", books:["John"], verse:"For God so loved the world, that he gave his only begotten Son.", blurb:"The most memorized verse in the Bible.", tier:"medium", cat:"verse"},
-  {name:"All Things Work Together", books:["Romans"], verse:"All things work together for good to them that love God.", blurb:"A promise to the faithful.", tier:"niche", cat:"verse"},
-  {name:"I Can Do All Things", books:["Philippians"], verse:"I can do all things through Christ which strengtheneth me.", blurb:"Written from prison.", tier:"niche", cat:"verse"},
-  {name:"Now Faith Is", books:["Hebrews"], verse:"Now faith is the substance of things hoped for, the evidence of things not seen.", blurb:"Faith defined in one sentence.", tier:"niche", cat:"verse"},
-  {name:"Cast Your Care", books:["1 Peter"], verse:"Casting all your care upon him; for he careth for you.", blurb:"A word to the burdened.", tier:"niche", cat:"verse"},
-  {name:"Armor of God", books:["Ephesians"], verse:"Put on the whole armour of God.", blurb:"Helmet, breastplate, sword, shield.", tier:"niche", cat:"verse"},
-  {name:"Fruit of the Spirit", books:["Galatians"], verse:"Love, joy, peace, longsuffering, gentleness, goodness, faith.", blurb:"What the Spirit grows in a believer.", tier:"niche", cat:"verse"},
-  {name:"Faith Without Works", books:["James"], verse:"Faith, if it hath not works, is dead.", blurb:"Belief that must breathe.", tier:"niche", cat:"verse"},
+  // ===== LEVEL 4 — obscure stories & easily-confused books =====
+  {name:"Ehud and King Eglon", books:["Judges"], lvl:4, era:"The Promised Land",
+   overview:"The left-handed judge Ehud hid a dagger on his right side to slip past the guards and struck down the fat Moabite king Eglon in his private chamber."},
+  {name:"Jephthah's Rash Vow", books:["Judges"], lvl:4, era:"The Promised Land",
+   overview:"The judge Jephthah vowed to offer whatever met him first if he won the battle, and to his grief his own daughter came out to greet him with dancing."},
+  {name:"The Witch of Endor", books:["1 Samuel"], lvl:4, era:"The Kingdom Years",
+   overview:"On the eve of battle, the desperate King Saul disguised himself and asked a medium at Endor to call up the spirit of the prophet who had anointed him. The ghostly figure only foretold his coming defeat and death."},
+  {name:"Uzzah and the Ark", books:["2 Samuel","1 Chronicles"], lvl:4, era:"The Kingdom Years",
+   overview:"As the ark of God was carried on a cart, the oxen stumbled and Uzzah reached out to steady it, and he was struck dead for touching the holy thing."},
+  {name:"Elisha and the Two Bears", books:["2 Kings"], lvl:4, era:"The Kingdom Years",
+   overview:"When a crowd of youths jeered 'Go up, bald head!' at the prophet Elisha, two bears came out of the woods against them."},
+  {name:"Gehazi's Greed", books:["2 Kings"], lvl:4, era:"The Kingdom Years",
+   overview:"Elisha's servant Gehazi secretly chased down Naaman to take payment the prophet had refused, and was struck with the very leprosy Naaman had been healed of."},
+  {name:"Hezekiah's Backward Shadow", books:["2 Kings","Isaiah"], lvl:4, era:"The Prophets",
+   overview:"As a sign that the sick King Hezekiah would recover and live fifteen more years, God made the shadow on the stairway go backward ten steps."},
+  {name:"Josiah Finds the Lost Law", books:["2 Kings","2 Chronicles"], lvl:4, era:"The Prophets",
+   overview:"While repairing the temple, the young king Josiah's men found the forgotten Book of the Law. He tore his robes in sorrow and led the nation to renew its covenant with God."},
+  {name:"Nebuchadnezzar Eats Grass", books:["Daniel"], lvl:4, era:"The Prophets",
+   overview:"The proud king was driven from his throne and lived like an ox in the fields, eating grass, until he lifted his eyes to heaven and his reason returned."},
+  {name:"The Prophet and His Unfaithful Wife", books:["Hosea"], lvl:4, era:"The Prophets",
+   overview:"God told a prophet to marry a woman named Gomer and keep loving her through every betrayal, as a living picture of how Israel wandered from God and how God still would not give up on his people."},
+  {name:"The Herdsman of Tekoa", books:["Amos"], lvl:4, era:"The Prophets",
+   overview:"A herdsman and tender of fig trees from the town of Tekoa was called by God to leave his flocks and thunder against the rich who trampled the poor: 'let judgment run down as waters.'"},
+  {name:"The Watchman's Complaint", books:["Habakkuk"], lvl:4, era:"The Prophets",
+   overview:"A prophet climbed his watchtower and demanded to know why God let the wicked prosper. God answered that the proud would surely fall, but 'the just shall live by his faith.'"},
+  {name:"Philip and the Ethiopian", books:["Acts"], lvl:4, era:"The Early Church",
+   overview:"On a desert road Philip found an Ethiopian official puzzling over a scroll of the prophet in his chariot, explained that the passage pointed to Jesus, and baptized him on the spot."},
+  {name:"Eutychus Falls from the Window", books:["Acts"], lvl:4, era:"The Early Church",
+   overview:"During Paul's long midnight sermon, a young man named Eutychus dozed off, fell from a third-story window, and was taken up dead, but Paul embraced him alive."},
+  {name:"Rhoda at the Door", books:["Acts"], lvl:4, era:"The Early Church",
+   overview:"So overjoyed to hear the freed Peter's voice at the gate, the servant girl Rhoda ran to tell everyone and left him standing outside, still knocking."},
+  {name:"Onesimus the Runaway Slave", books:["Philemon"], lvl:4, era:"The Letters",
+   overview:"Paul wrote a whole short letter to a slave-owner, urging him to welcome back his runaway slave Onesimus, now 'a brother beloved.'"},
+  {name:"Melchizedek, Priest-King of Salem", books:["Genesis","Hebrews"], lvl:4, era:"The Patriarchs",
+   overview:"This mysterious king of Salem brought out bread and wine and blessed Abraham, then vanished from the story, later called a priest 'without beginning of days.'"},
+  {name:"The Doom of Nineveh", books:["Nahum"], lvl:4, era:"The Prophets",
+   overview:"Long after the great city of Nineveh had once repented and been spared, a prophet foretold its total downfall, for it had gone back to its cruelty and would not escape a second time."},
 ];
 
 // Full canon — used to draw plausible wrong-answer options.
@@ -362,7 +436,6 @@ const CANON = [
   "1 John","2 John","3 John","Jude","Revelation",
 ];
 
-const CAT_LABEL = { story:"Story", verse:"Verse", character:"Character", wild:"Many Books", trap:"Tricky" };
 const KEYS = ['A','B','C','D'];
 const CORRECT_TO_LAND = 5;   // correct verses needed to reach the next port (bar fills 20% each)
 const SHIP_X0 = 0.16, SHIP_X1 = 0.60;  // ship sails from left → right across the screen as a leg progresses
@@ -377,7 +450,7 @@ const ITINERARY = [
     text:"In Athens, Paul stood on Mars' Hill surrounded by idols and pointed to an altar inscribed 'TO THE UNKNOWN GOD.' He told the philosophers of the one true God 'in whom we live, and move, and have our being.'" },
   { port:"Ephesus", acts:"Acts 19", title:"Scrolls in the Fire", vignette:"ephesus",
     text:"At Ephesus many believers burned their costly books of magic in the open. A riot erupted in the great theater: 'Great is Diana of the Ephesians!' Years later Paul would write this very city the letter of Ephesians." },
-  { port:"Malta", acts:"Acts 27–28", title:"Shipwreck on Malta", vignette:"malta",
+  { port:"Malta", acts:"Acts 27-28", title:"Shipwreck on Malta", vignette:"malta",
     text:"A fierce storm wrecked the ship on the island of Malta, yet all 276 aboard reached shore alive, exactly as God had promised. When a viper fastened on Paul's hand, he simply shook it into the fire and felt no harm." },
   { port:"Rome", acts:"Acts 28", title:"Paul Reaches Rome", vignette:"rome", final:true,
     text:"At last Paul came to Rome. Though chained to a soldier, he preached the kingdom of God boldly, 'no man forbidding him,' and from that house he wrote his Prison Letters: Ephesians, Philippians, Colossians, and Philemon." },
@@ -391,27 +464,8 @@ const LEVELS = {
   hard:     { key:'hard',     lvl:3, drain:2.4, loss:18, calm:13 },   // Adult
   einstein: { key:'einstein', lvl:4, drain:3.2, loss:22, calm:11 },   // Expert
 };
-// Reading-level bands, curated by how familiar each story is to a child.
-// Easy = Sunday-school classics; Medium = well-known; the rest = Hard;
-// multi-book people & trick cards = Einstein (you must know every book they appear in).
-const EASY_CARDS = new Set([
-  "Noah's Ark","Parting the Sea","Burning Bush","Golden Calf","Joseph's Coat","David and Goliath",
-  "Walls of Jericho","Samson's Strength","The Fiery Furnace","The Lions' Den","Swallowed by the Great Fish",
-  "The Lord is My Shepherd","Be Still","For God So Loved","Nativity","The Crucifixion",
-  "Calming the Storm","Walking on Water","Sermon on the Mount","Last Supper","Pentecost",
-]);
-const MEDIUM_CARDS = new Set([
-  "Sodom and Gomorrah","Wrestling the Angel","Shema","Gideon's 300","Hannah's Prayer","Absalom's Rebellion",
-  "Fire on the Mountain","Naaman's Leprosy","Chariot of Fire","If I Perish, I Perish","Trust in the Lord",
-  "To Every Thing a Season","Valley of Dry Bones","Damascus Road","Transfiguration","Armor of God",
-  "Fruit of the Spirit","I Can Do All Things","Bronze Serpent","The Talking Donkey","Isaiah's Coal",
-]);
-function cardLevel(card) {
-  if (card.cat === 'character' || card.cat === 'trap') return 4;
-  if (EASY_CARDS.has(card.name)) return 1;
-  if (MEDIUM_CARDS.has(card.name)) return 2;
-  return 3;
-}
+// Each story carries its own difficulty band (lvl 1-4), curated by familiarity.
+function cardLevel(card) { return card.lvl || 3; }
 // Well-known books — keeps Easy wrong-answers recognizable rather than obscure.
 const EASY_BOOKS = new Set(["Genesis","Exodus","Joshua","Judges","1 Samuel","Psalms","Proverbs","Jonah","Daniel","Matthew","Mark","Luke","John","Acts","Revelation"]);
 const BEST_KEY = 'bible_quiz_voyage_best';
@@ -1139,7 +1193,7 @@ function loop(ts) {
 // ============================================================
 // Question flow
 // ============================================================
-function activeDeck() { return DECK.filter(c => cardLevel(c) === level.lvl); }
+function activeDeck() { return STORIES.filter(c => cardLevel(c) === level.lvl); }
 function drawCard() { if (!queue.length) queue = shuffle(activeDeck()); return queue.pop(); }
 
 const NT_START = CANON.indexOf('Matthew');
@@ -1173,27 +1227,23 @@ function setQuestionLayout() {
 
 function nextQuestion() {
   setQuestionLayout();
+  showNextBtn(false);
   answered = false;
   current = drawCard();
   const { answer, options } = buildOptions(current);
   current._answer = answer; current._options = options;
 
+  // Every round is a story: show its name + a short overview, then name the book.
+  // Easy/Medium get the era hint tag as a scaffold; Hard/Einstein just say "Story".
   const tag = document.getElementById('qtag');
-  tag.textContent = CAT_LABEL[current.cat] || current.cat;
-  tag.className = 'qtag tag-' + current.cat;
-  if (level.lvl === 1) {
-    // Easy: show the famous story/scene by name with its description — recognizable
-    qtextEl.classList.remove('quoted'); qtextEl.classList.add('plain');
-    qtextEl.textContent = current.name.replace(/ \(.*\)$/, '');
-    document.getElementById('qblurb').textContent = current.blurb;
-    document.getElementById('qprompt').textContent = 'Which book of the Bible tells this?';
-  } else {
-    // Medium shows the quote plus a hint; Hard/Einstein show the quote alone
-    qtextEl.classList.add('quoted'); qtextEl.classList.remove('plain');
-    qtextEl.textContent = current.verse;
-    document.getElementById('qblurb').textContent = level.lvl === 2 ? current.blurb : '';
-    document.getElementById('qprompt').textContent = 'Which book of the Bible is this from?';
-  }
+  const showEra = level.lvl <= 2 && current.era;
+  tag.textContent = showEra ? current.era : 'Bible Story';
+  tag.className = 'qtag ' + (showEra ? 'tag-story' : 'tag-verse');
+
+  qtextEl.classList.remove('quoted'); qtextEl.classList.add('plain');
+  qtextEl.textContent = current.name.replace(/ \(.*\)$/, '');
+  document.getElementById('qblurb').textContent = current.overview;
+  document.getElementById('qprompt').textContent = 'Which book of the Bible tells this story?';
   document.getElementById('qreveal').textContent = '';
 
   answersEl.innerHTML = '';
@@ -1235,13 +1285,16 @@ function answer_(idx) {
   }
   showReveal(correct);
   updateBadges();
-  revealT = correct ? 0.95 : 1.7;
+  // Auto-continue on → pause, then sail on by itself. Off → wait for the Next button.
+  if (autoAdvance) { revealT = correct ? 2.4 : 3.2; showNextBtn(false); }
+  else { revealT = Infinity; showNextBtn(true); }
 }
 
 function showReveal(wasCorrect) {
-  const others = current.books.filter(b => b !== current._answer);
-  let line = (wasCorrect ? '✓ ' : '✗ This is from ' + current._answer + ', ') + current.name.replace(/ \(.*\)$/, '');
-  if (others.length) line += ' (also in ' + others.join(', ') + ')';
+  const name = current.name.replace(/ \(.*\)$/, '');
+  const where = current.books.join(' / ');
+  const line = wasCorrect ? ('✓ ' + name + ' · ' + where)
+                          : ('✗ ' + name + ' is told in ' + where);
   const el = document.getElementById('qreveal');
   el.textContent = line;
   el.style.color = wasCorrect ? 'var(--green)' : 'var(--red)';
@@ -1257,6 +1310,7 @@ function afterReveal() {
 // ============================================================
 function arrive() {
   const stop = ITINERARY[legIndex];
+  showNextBtn(false);
   state = 'landing'; landT = 0; confettiFired = false;
   if (stop.vignette === 'malta') { shake = 10; if (window.HSGSound) HSGSound.wrong(); }
   if (bestStreak > getBest()) setBest(bestStreak);
@@ -1345,6 +1399,7 @@ function updateBadges() {
 
 function toMenu() {
   bankVoyage(false);   // quitting mid-voyage still banks the longest streak (prompts if Top 10)
+  showNextBtn(false);
   state = 'menu';
   storm = START_STORM; legIndex = 0; legCorrect = 0; legWrong = 0;
   shipFrac = 0.40;             // centered for the idle menu scene
@@ -1365,7 +1420,40 @@ document.querySelectorAll('.pace-btn').forEach(b => {
 });
 function paceKey() { return level.key; }
 
+// ---- auto-continue toggle (persisted) ----
+let autoAdvance = false;
+try { autoAdvance = localStorage.getItem('bq_autoadvance') === '1'; } catch (e) {}
+const autoToggle = document.getElementById('autoToggle');
+const nextQBtn = document.getElementById('nextQBtn');
+function showNextBtn(show) { nextQBtn.style.visibility = show ? 'visible' : 'hidden'; }
+function manualAdvance() {
+  if (state !== 'sail' || !answered) return;
+  showNextBtn(false);
+  afterReveal();
+}
+function renderAutoToggle() {
+  autoToggle.setAttribute('aria-checked', autoAdvance ? 'true' : 'false');
+  document.getElementById('autoLabel').textContent = 'Auto-continue: ' + (autoAdvance ? 'On' : 'Off');
+}
+autoToggle.addEventListener('click', () => {
+  autoAdvance = !autoAdvance;
+  try { localStorage.setItem('bq_autoadvance', autoAdvance ? '1' : '0'); } catch (e) {}
+  renderAutoToggle();
+  if (window.HSGSound) HSGSound.tick();
+  if (state === 'sail' && answered) {
+    if (autoAdvance) { revealT = 2.4; showNextBtn(false); }   // start the countdown now
+    else { revealT = Infinity; showNextBtn(true); }           // hand control back to the button
+  }
+});
+renderAutoToggle();
+nextQBtn.addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); manualAdvance(); });
+
 document.addEventListener('keydown', e => {
+  // when a result is showing, Space/Enter sails on (manual mode)
+  if (state === 'sail' && answered) {
+    if (!autoAdvance && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); manualAdvance(); }
+    return;
+  }
   if (state !== 'sail' || answered) return;
   const i = ['a', 'b', 'c', 'd'].indexOf(e.key.toLowerCase());
   if (i === -1) return;
@@ -1377,6 +1465,9 @@ setupCanvas();
 updateBadges();
 updateMapCaption();
 rafId = requestAnimationFrame(loop);
+
+// homepage-tile / screenshot hook: ?shot jumps straight into a leg
+if (location.search.indexOf('shot') >= 0) setTimeout(() => startGame('medium'), 80);
 </script>
 
 </body>

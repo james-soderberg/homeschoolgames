@@ -102,12 +102,12 @@
 
     .race-hint { text-align: center; font-size: 0.85rem; color: var(--ink-light); margin-top: 0.5rem; }
 
-    /* countdown */
-    .countdown { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(20,18,16,0.5); z-index: 20; }
-    .lights { display: flex; gap: 0.55rem; padding: 0.5rem 0.8rem; background: #14110e; border-radius: 10px; box-shadow: 0 4px 14px rgba(0,0,0,0.4); }
-    .light { width: 26px; height: 26px; border-radius: 50%; background: #3a0d0d; border: 2px solid #0c0c0c; box-shadow: inset 0 -2px 4px rgba(0,0,0,0.6); transition: background 0.1s; }
-    .light.on { background: radial-gradient(circle at 40% 35%, #ff8a8a, #d61f1f 72%); box-shadow: 0 0 14px rgba(214,40,40,0.9); }
-    .countdown.go .light { background: radial-gradient(circle at 40% 35%, #9bffae, #1fb04a 72%); box-shadow: 0 0 16px rgba(40,180,80,0.95); }
+    /* "start typing to begin" prompt */
+    .type-prompt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(20,18,16,0.45); z-index: 20; }
+    .type-prompt span { background: #14110e; color: #fff; font-family: var(--font-sans); font-weight: 700; font-size: 1.05rem;
+      padding: 0.7rem 1.3rem; border-radius: 99px; box-shadow: 0 4px 14px rgba(0,0,0,0.4); animation: tpPulse 1.2s ease-in-out infinite; }
+    @keyframes tpPulse { 0%,100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.05); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .type-prompt span { animation: none; } }
 
     .commentary { text-align: center; min-height: 1.5rem; font-family: var(--font-sans); font-weight: 800; font-size: 1.02rem; color: var(--ink); margin-bottom: 0.5rem; }
     .commentary.pop { animation: cpop 0.35s cubic-bezier(.34,1.56,.64,1); }
@@ -158,15 +158,7 @@
     <div class="best-badge" id="bestBadge">Best: — WPM</div>
   </div>
 
-  <section class="wr-start" id="startScreen">
-    <div class="big-icon">🏎️</div>
-    <h2>Type to Race</h2>
-    <p>A verse of Scripture forms the track. Type the line along the top and your car follows exactly where you are. Finish the line and the whole square rotates back — the next line rolls up from the right. Race the rivals around the loop!</p>
-    <br>
-    <button class="start-race-btn" onclick="startRace()">Start Race →</button>
-  </section>
-
-  <section class="hidden" id="raceScreen">
+  <section id="raceScreen">
     <div class="commentary" id="commentary"></div>
     <div class="race-stats">
       <div class="stat"><b id="wpmStat">0</b><span>WPM</span></div>
@@ -185,7 +177,7 @@
         <div class="pcar" id="pcar"><span class="flame">🔥</span></div>
       </div>
       <div class="lap-note" id="verseRef"></div>
-      <div class="countdown hidden" id="countdown"></div>
+      <div class="type-prompt hidden" id="typePrompt"><span>⌨️ Start typing to begin…</span></div>
     </div>
 
     <div class="race-hint">Type the top line — your car rides right where you are.</div>
@@ -279,7 +271,15 @@ pcar.insertAdjacentHTML('afterbegin', carSVG('#D62828', '#FFD23F', 1));
 let S = 440, LINEH = 30, FS = 17, TRACK = 300, DD = 150, TEXTOFF = 90;
 let laneY = [], CARMARGIN = 8, LANE_H = 15;
 const NLANES = 4;          // your car + 3 rivals, each its own concentric lane
+let _spaceW = 0;
+function spaceW() {   // width of one space in the track font, cached (reset in layout)
+  if (_spaceW) return _spaceW;
+  const s = document.createElement('span'); s.className = 'ch'; s.textContent = ' ';
+  s.style.cssText = 'visibility:hidden;position:absolute'; edgeTop.appendChild(s);
+  _spaceW = s.offsetWidth || 8; s.remove(); return _spaceW;
+}
 function layout() {
+  _spaceW = 0;
   S = arena.clientWidth || 440;
   FS = Math.round(Math.min(24, Math.max(16, S / 22)));
   LINEH = Math.round(FS * 1.62);
@@ -308,7 +308,7 @@ let passage = '', chars = [], passageLen = 0;
 let lines = [];              // [{start,end}]
 let activeLine = 0, topSpans = [];
 let index = 0, errors = 0, totalKeystrokes = 0;
-let racing = false, raceStart = 0, lastFrame = 0, rafId = 0;
+let racing = false, armed = false, raceStart = 0, lastFrame = 0, rafId = 0;
 let lastPassage = -1;
 let bestWpm = loadBest();
 let keyTimes = [], combo = 0;
@@ -323,6 +323,8 @@ function saveBest() { try { localStorage.setItem(BEST_KEY, String(bestWpm)); } c
 function showBest() { document.getElementById('bestBadge').textContent = bestWpm ? `Best: ${bestWpm} WPM` : 'Best: — WPM'; }
 function recentWpm() { const now = performance.now(); while (keyTimes.length && now - keyTimes[0] > 2500) keyTimes.shift(); return keyTimes.length * (12 / 2.5); }
 function ordinal(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+// seconds gap: show tenths when it's close (< 10s), whole seconds otherwise
+function fmtSecs(sec) { const s = Math.abs(sec); return (s < 10 ? s.toFixed(1) : Math.round(s)) + 's'; }
 function pickPassage() { let i; do { i = Math.floor(Math.random() * PASSAGES.length); } while (i === lastPassage && PASSAGES.length > 1); lastPassage = i; return PASSAGES[i]; }
 
 // break the passage into lines that fit one side of the square
@@ -334,6 +336,36 @@ function measureLines() {
   let top = null, start = 0;
   spans.forEach((s, i) => { if (s.offsetTop !== top) { if (top !== null) lines.push({ start, end: i }); top = s.offsetTop; start = i; } });
   lines.push({ start, end: passageLen });
+  balanceLastLine();
+}
+
+// natural word-wrap can leave a stubby final line (e.g. "should boast"). Pull trailing
+// words down from the line above so the finish sits after a fuller line (aim ~4 words),
+// as long as the last line still fits one edge (width = the measure box).
+let _mw = null;
+function measureWidth(str) {
+  if (!_mw) { _mw = document.createElement('span');
+    _mw.style.cssText = 'position:absolute;left:-99999px;top:0;visibility:hidden;white-space:pre;font-family:var(--font-serif)';
+    document.body.appendChild(_mw); }
+  _mw.style.fontSize = FS + 'px'; _mw.textContent = str; return _mw.offsetWidth;
+}
+function balanceLastLine() {
+  if (lines.length < 2) return;
+  const maxW = measure.clientWidth;
+  const wordCount = (a, b) => { const t = passage.slice(a, b).trim(); return t ? t.split(/\s+/).length : 0; };
+  let guard = 0;
+  while (guard++ < 60) {
+    const last = lines[lines.length - 1], prev = lines[lines.length - 2];
+    if (wordCount(last.start, last.end) >= 4) break;        // final line is full enough
+    let e = last.start;
+    while (e > prev.start && passage[e - 1] === ' ') e--;    // step over the boundary space(s)
+    let sp = -1;
+    for (let i = e - 1; i > prev.start; i--) { if (passage[i] === ' ') { sp = i; break; } }
+    if (sp < 0) break;                                       // line above has one word — leave it
+    const newStart = sp + 1;                                 // pull that word onto the last line
+    if (measureWidth(passage.slice(newStart, last.end)) > maxW) break;   // would overflow the edge
+    prev.end = newStart; last.start = newStart;
+  }
 }
 function lineIndexForChar(ch) {
   ch = clamp(ch, 0, passageLen - 1);
@@ -385,7 +417,7 @@ function positionCars() {
   if (activeLine === lines.length - 1 && topSpans.length) {
     const last = topSpans[topSpans.length - 1];
     finishFlag.style.display = '';
-    finishFlag.style.left = (cx - TRACK / 2 + last.offsetLeft + last.offsetWidth + 2) + 'px';
+    finishFlag.style.left = (cx - TRACK / 2 + last.offsetLeft + last.offsetWidth + spaceW()) + 'px';
     finishFlag.style.top = CARMARGIN + 'px';
     finishFlag.style.height = (TEXTOFF + LINEH / 2 - CARMARGIN) + 'px';
   } else {
@@ -399,21 +431,22 @@ function buildOpponents() {
   OPPONENTS.forEach((o, i) => {
     const el = document.createElement('div'); el.className = 'ecar'; el.innerHTML = carSVG(o.body, o.accent, o.num);
     ring.appendChild(el);
-    cars.push({ el, name: o.name, color: o.body, chars: 0, bias: randRange(-2.5, 2.5), targetWpm: 0, locked: false, lane: i + 1 });
+    cars.push({ el, name: o.name, color: o.body, chars: 0, bias: randRange(-2.5, 2.5), targetWpm: 0, locked: false, lane: i + 1, finishTime: 0 });
   });
 }
 
 function startRace() {
   if (window.HSGSound) HSGSound.tick();
   const sel = pickPassage();
-  passage = sel.text; chars = passage.split(''); passageLen = chars.length;
+  // trim trailing punctuation/space so the race ends on the last letter — the final
+  // period (or ! ? " …) isn't required; typing the last letter finishes the race.
+  passage = sel.text.replace(/[^\p{L}\p{N}]+$/u, ''); chars = passage.split(''); passageLen = chars.length;
   document.getElementById('verseRef').innerHTML = sel.ref +
     '<br><span style="font-size:.72em;letter-spacing:.18em;opacity:.7">KJV</span>';
   index = 0; errors = 0; totalKeystrokes = 0; activeLine = 0;
   racing = false; keyTimes = []; combo = 0;
   halfPassed = false; lastLeader = ''; said85 = false; lastCommentaryMsg = ''; lastCommentaryTime = 0;
 
-  document.getElementById('startScreen').classList.add('hidden');
   document.getElementById('resultScreen').classList.add('hidden');
   document.getElementById('raceScreen').classList.remove('hidden');
   document.getElementById('commentary').textContent = '';
@@ -423,23 +456,18 @@ function startRace() {
 
   layout(); measureLines(); buildOpponents(); renderEdges(); positionCars();
   wpmStat.textContent = '0'; accStat.textContent = '100%'; placeStat.textContent = '—'; progressFill.style.width = '0%';
-  runLights();
+
+  // arm: the race begins the moment the player types their first character
+  armed = true;
+  document.getElementById('typePrompt').classList.remove('hidden');
 }
 
-function runLights() {
-  const cd = document.getElementById('countdown');
-  cd.classList.remove('hidden', 'go');
-  cd.innerHTML = '<div class="lights">' + '<span class="light"></span>'.repeat(5) + '</div>';
-  const lights = [...cd.querySelectorAll('.light')];
-  let i = 0;
-  const step = () => {
-    if (i < 5) { lights[i].classList.add('on'); i++; setTimeout(step, 460); }
-    else setTimeout(() => { cd.classList.add('go'); setTimeout(() => { cd.classList.add('hidden'); beginRace(); }, 220); }, 520 + Math.random() * 500);
-  };
-  step();
+// called on the first real keystroke — starts the clock and the animation loop
+function beginRace() {
+  armed = false;
+  document.getElementById('typePrompt').classList.add('hidden');
+  racing = true; raceStart = performance.now(); lastFrame = raceStart; rafId = requestAnimationFrame(loop);
 }
-
-function beginRace() { racing = true; raceStart = performance.now(); lastFrame = raceStart; rafId = requestAnimationFrame(loop); }
 
 function loop() {
   if (!racing) return;
@@ -451,6 +479,7 @@ function loop() {
     if (c.locked) wpm = c.targetWpm;
     else { const rubber = clamp((index - c.chars) * 0.6, -18, 18); wpm = clamp(pSpeed + c.bias + rubber, 6, pSpeed + 16); }
     c.chars = Math.min(passageLen, c.chars + (wpm * 5 / 60) * dt);
+    if (c.chars >= passageLen && !c.finishTime) c.finishTime = now;   // stamp when a rival crosses the line
   });
   positionCars();
   updateStats();
@@ -512,9 +541,14 @@ function rotateSquare() {
 }
 
 function onKeyDown(e) {
-  if (!racing) return;
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key;
+  if (!racing) {
+    // waiting for the player to start: the first printable key kicks off the race
+    if (!armed || k.length !== 1) return;
+    beginRace();
+    // fall through so this keystroke counts as the first character typed
+  }
   if (k === 'Backspace' || k === 'Tab') { e.preventDefault(); return; }
   if (k.length !== 1) return;
   e.preventDefault();
@@ -553,9 +587,18 @@ function finishSequence() {
   const wpm = Math.round((passageLen / 5) / mins);
   const acc = totalKeystrokes ? Math.round(passageLen / totalKeystrokes * 100) : 100;
 
-  const you = { name: 'You', color: '#D62828', chars: passageLen, you: true };
-  const ahead = cars.filter(c => c.chars >= passageLen).map(c => ({ name: c.name, color: c.color, chars: c.chars, you: false })).sort((a, b) => b.chars - a.chars);
-  const behind = cars.filter(c => c.chars < passageLen).map(c => ({ name: c.name, color: c.color, chars: c.chars, you: false })).sort((a, b) => b.chars - a.chars);
+  // time gap vs you: negative = they crossed the line before you, positive = seconds behind you
+  const nowMs = performance.now();
+  const playerSec = (nowMs - raceStart) / 1000;
+  const gapFor = c => {
+    if (c.finishTime) return (c.finishTime - nowMs) / 1000;          // finished already → ahead of you
+    const cps = c.chars / Math.max(playerSec, 1e-4);                  // their average chars/sec so far
+    return cps > 0 ? (passageLen - c.chars) / cps : 999;             // project remaining time → behind you
+  };
+  const mapCar = c => ({ name: c.name, color: c.color, chars: c.chars, you: false, gap: gapFor(c) });
+  const you = { name: 'You', color: '#D62828', chars: passageLen, you: true, time: playerSec };
+  const ahead = cars.filter(c => c.chars >= passageLen).map(mapCar).sort((a, b) => b.chars - a.chars);
+  const behind = cars.filter(c => c.chars < passageLen).map(mapCar).sort((a, b) => b.chars - a.chars);
   const racers = [...ahead, you, ...behind];
   const place = ahead.length + 1;
 
@@ -603,8 +646,11 @@ function showResults(place, racers, wpm, acc, isBest) {
   const list = document.getElementById('standings'); list.innerHTML = '';
   racers.forEach((r, i) => {
     const row = document.createElement('div'); row.className = 'standing-row' + (r.you ? ' you' : '');
-    const pct = r.chars >= passageLen ? 'finished' : Math.round(r.chars / passageLen * 100) + '%';
-    row.innerHTML = `<span class="pos">${ordinal(i + 1)}</span><span class="car-dot" style="background:${r.color}"></span><span class="who">${r.you ? 'You' : r.name}</span><span class="pct">${pct}</span>`;
+    let gapText;
+    if (r.you) gapText = 'your time · ' + fmtSecs(r.time);
+    else if (r.gap < 0.05) gapText = fmtSecs(-r.gap) + ' ahead';
+    else gapText = fmtSecs(r.gap) + ' behind';
+    row.innerHTML = `<span class="pos">${ordinal(i + 1)}</span><span class="car-dot" style="background:${r.color}"></span><span class="who">${r.you ? 'You' : r.name}</span><span class="pct">${gapText}</span>`;
     list.appendChild(row);
   });
 }
@@ -613,6 +659,7 @@ function focusGame() {}
 window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
 document.addEventListener('keydown', onKeyDown);
 showBest();
+startRace();   // no intro screen — drop straight into the track, armed and waiting for the first keystroke
 </script>
 
 </body>
