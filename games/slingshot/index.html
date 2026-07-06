@@ -58,6 +58,8 @@
   .kind-badge { background:#20305c; border-color:#3a5090; color:#bcd0ff; display:none; }
   .kind-badge.double { display:inline-block; background:#3a2b5c; border-color:#6a54a0; color:#d9c7ff; }
   .kind-badge.triple { display:inline-block; background:#5c2b3a; border-color:#a05470; color:#ffc7da; }
+  .thrust-badge { display:none; background:#4a3410; border-color:#c88a1e; color:#ffd98a; }
+  .thrust-badge.on { display:inline-block; }
 
   /* overlays */
   .ov { position:absolute; inset:0; z-index:12; display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -150,6 +152,7 @@
       <div class="stat-badge probes-badge" id="probesBadge">🚀 <b>5</b></div>
       <div class="stat-badge obj-badge" id="objBadge">Reach the Moon</div>
       <div class="stat-badge kind-badge" id="kindBadge">Double slingshot</div>
+      <div class="stat-badge thrust-badge" id="thrustBadge"></div>
       <div class="stat-badge streak hidden" id="streakBadge">🔥 0</div>
     </div>
   </div>
@@ -302,23 +305,24 @@ const SL_LEVELS = [
   { pad:{x:86,y:288}, target:{x:843,y:350,r:28}, bodies:[{x:612,y:406,r:80},{x:289,y:472,r:46},{x:523,y:198,r:67}], kind:'double' },   // was #20 · L7: double, 2 swing(s) req, 3.18% window
   { pad:{x:86,y:258}, target:{x:827,y:413,r:27}, bodies:[{x:353,y:267,r:38},{x:504,y:382,r:74},{x:582,y:228,r:79}], kind:'double' },   // was #23 · L8: double, 2 swing(s) req, 2.56% window
   { pad:{x:86,y:389}, target:{x:820,y:275,r:25}, bodies:[{x:521,y:420,r:57},{x:312,y:290,r:65},{x:374,y:130,r:73}], kind:'triple' },   // was #24 · L9: triple, 3 swing(s) req, 2.38% window
-  // --- remaining levels (kept for review, difficulty-ordered) ---
-  { pad:{x:96,y:351}, target:{x:860,y:164,r:28}, bodies:[{x:539,y:248,r:80}], kind:'single' },   // was #2 · L10: single, 1 swing(s) req, 3.84% window
-  { pad:{x:96,y:323}, target:{x:782,y:270,r:28}, bodies:[{x:441,y:299,r:80}], kind:'single' },   // was #3 · L11: single, 1 swing(s) req, 3.64% window
-  { pad:{x:96,y:365}, target:{x:772,y:229,r:25}, bodies:[{x:433,y:291,r:80}], kind:'single' },   // was #7 · L12: single, 1 swing(s) req, 3.27% window
-  { pad:{x:86,y:208}, target:{x:808,y:134,r:27}, bodies:[{x:508,y:356,r:68},{x:498,y:139,r:79}], kind:'single' },   // was #14 · L13: single, 1 swing(s) req, 3.2% window
-  { pad:{x:96,y:310}, target:{x:817,y:275,r:26}, bodies:[{x:465,y:285,r:80}], kind:'single' },   // was #5 · L14: single, 1 swing(s) req, 3.11% window
-  { pad:{x:86,y:218}, target:{x:836,y:254,r:26}, bodies:[{x:558,y:245,r:79},{x:340,y:349,r:42}], kind:'single' },   // was #19 · L15: single, 1 swing(s) req, 2.96% window
-  { pad:{x:86,y:257}, target:{x:860,y:254,r:25}, bodies:[{x:656,y:232,r:70},{x:443,y:110,r:53}], kind:'single' },   // was #16 · L16: single, 1 swing(s) req, 2.9% window
-  { pad:{x:86,y:251}, target:{x:825,y:368,r:27}, bodies:[{x:662,y:330,r:49},{x:298,y:228,r:55}], kind:'double' },   // was #4 · L17: double, 2 swing(s) req, 3.75% window
-  { pad:{x:86,y:319}, target:{x:846,y:438,r:27}, bodies:[{x:648,y:404,r:57},{x:306,y:344,r:52}], kind:'double' },   // was #12 · L18: double, 2 swing(s) req, 3.63% window
-  { pad:{x:86,y:271}, target:{x:837,y:311,r:24}, bodies:[{x:308,y:208,r:67},{x:668,y:314,r:61}], kind:'double' },   // was #15 · L19: double, 2 swing(s) req, 3.35% window
-  { pad:{x:86,y:243}, target:{x:839,y:209,r:23}, bodies:[{x:629,y:273,r:50},{x:302,y:224,r:62}], kind:'double' },   // was #8 · L20: double, 2 swing(s) req, 3.34% window
-  { pad:{x:86,y:282}, target:{x:812,y:371,r:27}, bodies:[{x:370,y:393,r:51},{x:657,y:311,r:63}], kind:'double' },   // was #9 · L21: double, 2 swing(s) req, 3.24% window
-  { pad:{x:86,y:200}, target:{x:826,y:366,r:25}, bodies:[{x:489,y:154,r:65},{x:662,y:307,r:71}], kind:'double' },   // was #18 · L22: double, 2 swing(s) req, 3.01% window
-  { pad:{x:86,y:309}, target:{x:842,y:400,r:25}, bodies:[{x:404,y:323,r:66},{x:571,y:498,r:74},{x:421,y:101,r:49}], kind:'double' },   // was #22 · L23: double, 2 swing(s) req, 2.91% window
-  { pad:{x:86,y:296}, target:{x:829,y:162,r:27}, bodies:[{x:299,y:531,r:50},{x:625,y:210,r:74},{x:447,y:281,r:51}], kind:'double' },   // was #21 · L24: double, 2 swing(s) req, 2.87% window
-  { pad:{x:86,y:339}, target:{x:832,y:234,r:28}, bodies:[{x:501,y:310,r:39},{x:403,y:82,r:53},{x:535,y:437,r:56}], kind:'double' },   // was #25 · L25: double, 2 swing(s) req, 2.58% window
+  // --- L10-13: uncapped multi-gravity threading (harder than L9, full velocity) ---
+  { pad:{x:95,y:336}, target:{x:796,y:291,r:26}, bodies:[{x:534,y:440,r:72},{x:340,y:321,r:79},{x:510,y:143,r:77}], kind:'triple' },   // L10: threading, win 453
+  { pad:{x:91,y:241}, target:{x:816,y:439,r:25}, bodies:[{x:642,y:365,r:75},{x:242,y:253,r:62},{x:280,y:458,r:52}], kind:'triple' },   // L11: threading, win 374
+  { pad:{x:92,y:275}, target:{x:801,y:333,r:28}, bodies:[{x:573,y:369,r:59},{x:249,y:247,r:75},{x:432,y:128,r:57}], kind:'triple' },   // L12: threading, win 361
+  { pad:{x:90,y:375}, target:{x:805,y:399,r:27}, bodies:[{x:258,y:405,r:74},{x:634,y:461,r:68},{x:460,y:290,r:52}], kind:'triple' },   // L13: threading, win 356
+  // --- L14-25: low-thrust gravity loops (velocity capped so gravity dominates; window shrinks toward the near-impossible L25) ---
+  { pad:{x:86,y:262}, target:{x:861,y:189,r:26}, bodies:[{x:336,y:418,r:67},{x:640,y:248,r:81},{x:268,y:240,r:60}], kind:'triple', vmax:0.32 },   // L14: slow loop, cap 0.32, win 445
+  { pad:{x:95,y:412}, target:{x:847,y:369,r:26}, bodies:[{x:291,y:422,r:60},{x:632,y:396,r:56},{x:484,y:142,r:81}], kind:'triple', vmax:0.32 },   // L15: slow loop, cap 0.32, win 414
+  { pad:{x:97,y:220}, target:{x:797,y:172,r:26}, bodies:[{x:296,y:218,r:67},{x:686,y:454,r:72},{x:529,y:167,r:78}], kind:'triple', vmax:0.32 },   // L16: slow loop, cap 0.32, win 358
+  { pad:{x:91,y:422}, target:{x:856,y:255,r:27}, bodies:[{x:394,y:218,r:81},{x:470,y:416,r:76},{x:678,y:300,r:72}], kind:'triple', vmax:0.32 },   // L17: slow loop, cap 0.32, win 290
+  { pad:{x:84,y:372}, target:{x:798,y:425,r:26}, bodies:[{x:484,y:142,r:81},{x:621,y:391,r:73},{x:238,y:429,r:81}], kind:'triple', vmax:0.39 },   // L18: slow loop, cap 0.39, win 262
+  { pad:{x:90,y:282}, target:{x:856,y:245,r:23}, bodies:[{x:696,y:174,r:59},{x:562,y:359,r:84},{x:284,y:308,r:75}], kind:'triple', vmax:0.32 },   // L19: slow loop, cap 0.32, win 231
+  { pad:{x:82,y:319}, target:{x:830,y:479,r:23}, bodies:[{x:327,y:352,r:79},{x:390,y:150,r:74},{x:525,y:469,r:58}], kind:'triple', vmax:0.32 },   // L20: slow loop, cap 0.32, win 193
+  { pad:{x:83,y:307}, target:{x:861,y:358,r:25}, bodies:[{x:372,y:358,r:79},{x:250,y:476,r:61},{x:550,y:269,r:74}], kind:'triple', vmax:0.32 },   // L21: slow loop, cap 0.32, win 163
+  { pad:{x:86,y:238}, target:{x:860,y:435,r:24}, bodies:[{x:391,y:510,r:69},{x:342,y:339,r:80},{x:669,y:374,r:70}], kind:'triple', vmax:0.32 },   // L22: slow loop, cap 0.32, win 136
+  { pad:{x:97,y:268}, target:{x:851,y:151,r:26}, bodies:[{x:393,y:310,r:79},{x:259,y:125,r:72},{x:602,y:257,r:79}], kind:'triple', vmax:0.39 },   // L23: slow loop, cap 0.39, win 73
+  { pad:{x:88,y:373}, target:{x:844,y:171,r:23}, bodies:[{x:612,y:258,r:84},{x:429,y:169,r:72},{x:257,y:285,r:74}], kind:'triple', vmax:0.39 },   // L24: slow loop, cap 0.39, win 64
+  { pad:{x:96,y:285}, target:{x:815,y:124,r:25}, bodies:[{x:464,y:157,r:70},{x:242,y:519,r:83},{x:284,y:258,r:68}], kind:'triple', vmax:0.45 },   // L25: slow loop, cap 0.45, win 18
 ];
 
 // ---------- DOM ----------
@@ -332,6 +336,7 @@ const scoreBadge = document.getElementById('scoreBadge');
 const probesBadge = document.getElementById('probesBadge');
 const objBadge = document.getElementById('objBadge');
 const kindBadge = document.getElementById('kindBadge');
+const thrustBadge = document.getElementById('thrustBadge');
 const streakBadge = document.getElementById('streakBadge');
 
 // ---------- state ----------
@@ -340,6 +345,7 @@ let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo
 let diffKey = 'commander', diff = DIFF.commander;   // single fixed difficulty
 let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = 'None';
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
+let levelVmax = 1;   // per-level max launch velocity (1 = full; <1 caps thrust so gravity dominates)
 let probe = null, trail = [], particles = [], predicted = null;
 let aim = { angle: 0, power: 0.5, dragging: false };
 let sceneTime = 0, shake = 0, flashR = 0, flashG = 0, flightT = 0, flightAcc = 0, bonusMsg = '', bonusT = 0;
@@ -423,10 +429,16 @@ function genLevel(n) {
     return { x: b.x, y: b.y, r: b.r, role: 'grav', gm: b.r * b.r * GM_K, c1: pal[0], c2: pal[1], ring: (b.r >= 68 && i % 2 === 0) };
   });
   levelKind = spec.kind;
-  maneuver = levelKind === 'triple' ? 'Triple gravity assist' : levelKind === 'double' ? 'Double slingshot' : 'Gravity slingshot';
+  levelVmax = spec.vmax || 1;
+  maneuver = levelVmax < 1 ? 'Low-thrust gravity loop'
+           : levelKind === 'triple' ? 'Triple gravity assist' : levelKind === 'double' ? 'Double slingshot' : 'Gravity slingshot';
   objective = 'Reach ' + info.name; objBadge.textContent = objective;
   kindBadge.className = 'stat-badge kind-badge' + (levelKind !== 'single' ? ' ' + levelKind : '');
   kindBadge.textContent = levelKind === 'triple' ? '3 slingshots' : levelKind === 'double' ? '2 slingshots' : '';
+  if (thrustBadge) {
+    thrustBadge.className = 'stat-badge thrust-badge' + (levelVmax < 1 ? ' on' : '');
+    thrustBadge.textContent = levelVmax < 1 ? '⚡ Low thrust' : '';
+  }
 
   aim.angle = Math.atan2(target.y - pad.y, target.x - pad.x);
   aim.power = 0.6; aim.dragging = false;
@@ -438,7 +450,8 @@ function allBodies() { return bodies.concat(target); }
 
 // ---------- aiming ----------
 function aimVelocity() {
-  const spd = lerp(SPEED_MIN, SPEED_MAX, clamp01(aim.power));
+  const cappedMax = lerp(SPEED_MIN, SPEED_MAX, levelVmax);   // low-thrust levels throttle top speed
+  const spd = lerp(SPEED_MIN, cappedMax, clamp01(aim.power));
   return { vx: Math.cos(aim.angle) * spd, vy: Math.sin(aim.angle) * spd };
 }
 function recomputePredict() {
