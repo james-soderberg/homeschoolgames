@@ -79,9 +79,14 @@
 
   .sl-hint { text-align:center; font-size:.82rem; color:var(--ink-light); margin-top:.7rem; line-height:1.5; }
   .sl-hint kbd { font-family:'Courier New',monospace; background:var(--cream-dark); border:1px solid var(--border); border-radius:4px; padding:.05rem .35rem; }
-  .control-row { display:flex; justify-content:center; gap:1rem; margin-top:.35rem; }
+  .control-row { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:.5rem; }
   .reset-link { background:none; border:none; color:var(--ink-light); font-size:.85rem; cursor:pointer; font-family:var(--font-sans); text-decoration:underline; padding:.3rem .5rem; }
   .reset-link:hover { color:var(--ink); }
+  .launch-btn { font-family:var(--font-sans); font-weight:800; font-size:.95rem; color:var(--ink); cursor:pointer;
+    background:var(--gold); border:none; border-radius:99px; padding:.5rem 1.4rem; box-shadow:0 4px 0 #a07f2c; }
+  .launch-btn:hover { filter:brightness(1.05); }
+  .launch-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #a07f2c; }
+  .launch-btn:disabled { opacity:.45; cursor:default; box-shadow:0 4px 0 #a07f2c; }
 
   /* screenshot mode (open with ?shot) — hide chrome, fill viewport with the stage */
   body.sl-shot { overflow:hidden; background:#070a17; }
@@ -119,11 +124,7 @@
       <div class="crest">🪐</div>
       <h2>Slingshot</h2>
       <p>Drag from the launch pad to aim and set power, then let go. Gravity bends your path, so read the dotted preview and fling your probe to each world, outward from the Sun. A planet always blocks the straight shot, so you have to curve around it. Later worlds need you to whip around two or three at once.</p>
-      <div class="diff-row">
-        <button class="diff-btn" data-diff="cadet">Cadet<span class="d-sub">Long preview · calm</span></button>
-        <button class="diff-btn" data-diff="pilot">Pilot<span class="d-sub">Short preview</span></button>
-        <button class="diff-btn" data-diff="commander">Commander<span class="d-sub">Barely a peek</span></button>
-      </div>
+      <button class="go-btn" id="beginBtn">Launch mission →</button>
     </div>
 
     <!-- Arrival fact card -->
@@ -157,18 +158,19 @@
       <div class="board" id="board"></div>
       <div class="overlay-actions">
         <button class="go-btn" id="againBtn">Launch again 🚀</button>
-        <button class="go-btn secondary" id="menuBtn">Change crew</button>
+        <button class="go-btn secondary" id="menuBtn">Main menu</button>
       </div>
     </div>
   </div>
 
   <p class="sl-hint">
     <b>Drag</b> from the pad to aim &amp; power, release to launch — or nudge with
-    <kbd>←</kbd><kbd>→</kbd> (angle), <kbd>↑</kbd><kbd>↓</kbd> (power), <kbd>Space</kbd> to fire.
+    <kbd>←</kbd><kbd>→</kbd> (power), <kbd>↑</kbd><kbd>↓</kbd> (arc), then <kbd>Space</kbd> or <b>Launch</b> to fire.
     The green preview reaches the goal; red means you'll crash.
   </p>
   <div class="control-row">
     <button class="reset-link" onclick="retryLevel()">Reset aim</button>
+    <button class="launch-btn" id="launchBtn">🚀 Launch</button>
     <button class="reset-link" onclick="toMenu()">Quit to base</button>
   </div>
 </div>
@@ -196,6 +198,7 @@ const SPEED_MIN = 145, SPEED_MAX = 560;
 const MAX_FLIGHT = 13;   // seconds before "lost in space"
 const TRAIL_MAX = 70;
 const FIXED_H = 1 / 120; // physics runs at a fixed step, so flight matches the preview exactly
+const FLIGHT_RATE = 0.55; // play the flight back slower than real time (same path, nicer to watch)
 
 // Everything plays inside a fixed design space; the canvas just scales it to fit,
 // so every baked level behaves identically on any screen.
@@ -282,7 +285,7 @@ const streakBadge = document.getElementById('streakBadge');
 // ---------- state ----------
 let W = DW, H = DH, dpr = 1, view = { scale: 1, ox: 0, oy: 0 };
 let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo
-let diffKey = 'pilot', diff = DIFF.pilot;
+let diffKey = 'commander', diff = DIFF.commander;   // single fixed difficulty
 let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = '—';
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
 let probe = null, trail = [], particles = [], predicted = null;
@@ -689,8 +692,9 @@ function loop(ts) {
   bonusT = Math.max(0, bonusT - dt);
   for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.97; p.vy *= 0.97; if (p.life <= 0) particles.splice(i, 1); }
 
+  { const lb = document.getElementById('launchBtn'); if (lb) lb.disabled = (phase !== 'aim'); }
   if (phase === 'flight' && probe) {
-    flightAcc += dt; let n = 0;
+    flightAcc += dt * FLIGHT_RATE; let n = 0;
     while (flightAcc >= FIXED_H && phase === 'flight' && n < 600) { stepFlight(FIXED_H); flightAcc -= FIXED_H; n++; }
     if (probe && phase === 'flight') {
       trail.push({ x: probe.x, y: probe.y }); if (trail.length > TRAIL_MAX) trail.shift();
@@ -731,15 +735,17 @@ document.addEventListener('keydown', e => {
   if (phase === 'fact' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onward(); return; }
   if (phase !== 'aim') return;
   const k = e.key;
-  if (k === 'ArrowLeft')  { aim.angle -= 0.035; recomputePredict(); e.preventDefault(); }
-  else if (k === 'ArrowRight') { aim.angle += 0.035; recomputePredict(); e.preventDefault(); }
-  else if (k === 'ArrowUp')    { aim.power = clamp01(aim.power + 0.03); recomputePredict(); e.preventDefault(); }
-  else if (k === 'ArrowDown')  { aim.power = clamp01(aim.power - 0.03); recomputePredict(); e.preventDefault(); }
+  // flipped: left/right control power, up/down control the arc (launch angle)
+  if (k === 'ArrowRight')      { aim.power = clamp01(aim.power + 0.03); recomputePredict(); e.preventDefault(); }
+  else if (k === 'ArrowLeft')  { aim.power = clamp01(aim.power - 0.03); recomputePredict(); e.preventDefault(); }
+  else if (k === 'ArrowUp')    { aim.angle -= 0.035; recomputePredict(); e.preventDefault(); }   // arc up
+  else if (k === 'ArrowDown')  { aim.angle += 0.035; recomputePredict(); e.preventDefault(); }   // arc down
   else if (k === ' ' || k === 'Enter') { launch(); e.preventDefault(); }
 });
 
 // ---------- wiring ----------
-document.querySelectorAll('.diff-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.diff); }));
+document.getElementById('beginBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame('commander'); });
+document.getElementById('launchBtn').addEventListener('click', (e) => { e.stopPropagation(); launch(); });
 document.getElementById('onwardBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); onward(); });
 document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(diffKey); });
 document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopPropagation(); toMenu(); });
