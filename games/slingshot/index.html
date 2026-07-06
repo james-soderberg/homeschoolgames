@@ -27,14 +27,20 @@
   .voyage-cap { font-family:var(--font-sans); font-size:.76rem; font-weight:700; letter-spacing:.02em;
     color:var(--ink-light); text-align:center; margin-bottom:.35rem; }
   .voyage-cap b { color:var(--gold); }
-  .voyage { display:flex; align-items:center; gap:10px; padding:.55rem .9rem; overflow-x:auto; overflow-y:hidden;
+  .voyage { overflow-x:auto; overflow-y:hidden; padding:.5rem .7rem;
     background:radial-gradient(150% 220% at 0% 50%, #141a3e, #090d1c); border:1.5px solid #232a44; border-radius:12px;
     scrollbar-width:thin; }
   .voyage::-webkit-scrollbar { height:5px; } .voyage::-webkit-scrollbar-thumb { background:#2c3760; border-radius:9px; }
-  .vy-node { flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .vy-orb { height:62px; display:flex; align-items:center; justify-content:center; }
+  /* planets are placed by real distance from the Sun (compressed), so the bar reads as a distance ruler */
+  .vy-track { position:relative; width:100%; min-width:720px; height:104px; }
+  .vy-line { position:absolute; left:14px; right:10px; top:50%; height:2px; transform:translateY(-50%);
+    background:linear-gradient(90deg, rgba(255,220,150,.35), rgba(150,180,255,.10)); border-radius:2px; }
+  .vy-node { position:absolute; top:50%; transform:translate(-50%,-50%); }
   .vy-dot { border-radius:50%; display:block; box-shadow:0 0 0 1px rgba(255,255,255,.14), inset -2px -2px 4px rgba(0,0,0,.35); }
-  .vy-label { font-family:var(--font-sans); font-size:.62rem; font-weight:700; color:#aeb9dd; white-space:nowrap; }
+  .vy-label { position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap;
+    font-family:var(--font-sans); font-size:.62rem; font-weight:700; color:#aeb9dd; }
+  .vy-node.below .vy-label { top:32px; }
+  .vy-node.above .vy-label { bottom:32px; }
   .vy-node.future { opacity:.32; filter:grayscale(.5); }
   .vy-node.done .vy-dot { box-shadow:0 0 0 1px rgba(255,255,255,.14), 0 0 8px rgba(140,200,255,.4), inset -2px -2px 4px rgba(0,0,0,.35); }
   .vy-node.done .vy-label { color:#cdd8f5; }
@@ -42,7 +48,7 @@
   .vy-node.now .vy-label { color:#ffe1a6; }
   @keyframes vypulse { 0%,100%{ box-shadow:0 0 0 3px var(--gold), 0 0 8px rgba(255,210,120,.5), inset -2px -2px 4px rgba(0,0,0,.3) } 50%{ box-shadow:0 0 0 4px var(--gold), 0 0 20px rgba(255,210,120,.95), inset -2px -2px 4px rgba(0,0,0,.3) } }
   /* the Sun: a big glowing star, not an emoji */
-  .vy-sun-real { width:58px; height:58px; border-radius:50%;
+  .vy-dot.vy-sun-real { width:56px; height:56px;
     background:radial-gradient(circle at 42% 38%, #fff7dc, #ffd54a 40%, #f6981c 74%, #de720d);
     box-shadow:0 0 22px rgba(255,185,60,.8), 0 0 52px rgba(255,140,30,.45); }
   .vy-sun-node .vy-label { color:#ffcf7a; }
@@ -359,7 +365,7 @@ function setupCanvas() {
   view = { scale, ox: (W - DW * scale) / 2, oy: (H - DH * scale) / 2 };
   buildStars();
 }
-window.addEventListener('resize', () => { setupCanvas(); if (phase === 'menu' || phase === 'over') render(); });
+window.addEventListener('resize', () => { setupCanvas(); renderVoyage(); if (phase === 'menu' || phase === 'over') render(); });
 window.addEventListener('load', setupCanvas);
 
 function buildStars() {
@@ -525,16 +531,16 @@ function toast(msg) { bonusMsg = msg; bonusT = 1.6; }
 // The voyage map is shown one GROUP at a time (planets first). Each body is
 // labeled and sized roughly to scale (by size, not distance). r = display radius px.
 const VY_GROUPS = [
-  { title: 'The Planets', items: [
-    { n:'Mercury', r:7,  c1:'#cdbfa8', c2:'#7a6a52' },
-    { n:'Venus',   r:11, c1:'#f3e2b0', c2:'#c9a24a' },
-    { n:'Earth',   r:12, c1:'#6ab0f0', c2:'#245e46' },
-    { n:'Mars',    r:8,  c1:'#e0885a', c2:'#a5502f' },
-    { n:'Jupiter', r:22, c1:'#e8cba0', c2:'#a8703a' },
-    { n:'Saturn',  r:19, c1:'#f0e2b6', c2:'#b59a5c' },
-    { n:'Uranus',  r:15, c1:'#bfeef2', c2:'#6aa8b6' },
-    { n:'Neptune', r:15, c1:'#7aa7f0', c2:'#2a4a9a' },
-    { n:'Pluto',   r:6,  c1:'#d8c8b0', c2:'#9a8a72' },
+  { title: 'The Planets', scaled: true, items: [
+    { n:'Mercury', r:7,  d:0.39, c1:'#cdbfa8', c2:'#7a6a52' },
+    { n:'Venus',   r:11, d:0.72, c1:'#f3e2b0', c2:'#c9a24a' },
+    { n:'Earth',   r:12, d:1.00, c1:'#6ab0f0', c2:'#245e46' },
+    { n:'Mars',    r:8,  d:1.52, c1:'#e0885a', c2:'#a5502f' },
+    { n:'Jupiter', r:22, d:5.20, c1:'#e8cba0', c2:'#a8703a' },
+    { n:'Saturn',  r:19, d:9.58, c1:'#f0e2b6', c2:'#b59a5c' },
+    { n:'Uranus',  r:15, d:19.2, c1:'#bfeef2', c2:'#6aa8b6' },
+    { n:'Neptune', r:15, d:30.1, c1:'#7aa7f0', c2:'#2a4a9a' },
+    { n:'Pluto',   r:6,  d:39.5, c1:'#d8c8b0', c2:'#9a8a72' },
   ]},
   { title: 'Moons & Dwarf Worlds', items: [
     { n:'The Moon',  r:8, c1:'#e8e8ee', c2:'#9a9aa6' },
@@ -564,21 +570,31 @@ function renderVoyage() {
   let g = 0, idx = Math.max(0, level - 1);
   while (g < VY_GROUPS.length - 1 && idx >= VY_GROUPS[g].items.length) { idx -= VY_GROUPS[g].items.length; g++; }
   const grp = VY_GROUPS[g];
-  let html = '<span class="vy-node vy-sun-node"><span class="vy-orb"><span class="vy-sun-real"></span></span><span class="vy-label">Sun</span></span>';
+  const LO = 11, HI = 97;   // percent range the bodies span across the track
+  let pos;
+  if (grp.scaled) {   // place by real distance from the Sun, sqrt-compressed so inner planets don't collide
+    const s = grp.items.map(t => Math.sqrt(t.d)), lo = Math.min.apply(null, s), hi = Math.max.apply(null, s);
+    pos = s.map(v => LO + (v - lo) / (hi - lo) * (HI - LO));
+  } else {            // moons / deep space: even spacing
+    const n = grp.items.length;
+    pos = grp.items.map((_, i) => n > 1 ? LO + i / (n - 1) * (HI - LO) : 50);
+  }
+  let nodes = '<span class="vy-node vy-sun-node below" style="left:32px"><span class="vy-dot vy-sun-real"></span><span class="vy-label">Sun</span></span>';
   grp.items.forEach((t, i) => {
     const state = !started ? 'future' : (i < idx ? 'done' : i === idx ? 'now' : 'future');
+    const side = (i % 2 === 0) ? 'below' : 'above';   // zig-zag labels so close ones stay readable
     const d = t.r * 2;
-    html += '<span class="vy-node ' + state + '">'
-      + '<span class="vy-orb"><span class="vy-dot" style="width:' + d + 'px;height:' + d + 'px;background:radial-gradient(circle at 36% 32%,' + t.c1 + ',' + t.c2 + ')"></span></span>'
+    nodes += '<span class="vy-node ' + state + ' ' + side + '" style="left:' + pos[i].toFixed(2) + '%">'
+      + '<span class="vy-dot" style="width:' + d + 'px;height:' + d + 'px;background:radial-gradient(circle at 36% 32%,' + t.c1 + ',' + t.c2 + ')"></span>'
       + '<span class="vy-label">' + t.n + '</span></span>';
   });
-  el.innerHTML = html;
+  el.innerHTML = '<div class="vy-track"><span class="vy-line"></span>' + nodes + '</div>';
   const cap = document.getElementById('voyageCap');
   cap.innerHTML = started
     ? '<b>' + grp.title + '</b> · ' + (idx + 1) + ' of ' + grp.items.length
     : 'Your voyage begins with the nine planets';
   const now = el.querySelector('.vy-node.now');
-  if (now) el.scrollLeft = now.offsetLeft - el.clientWidth / 2 + now.offsetWidth / 2;   // center current (no page scroll)
+  if (now) el.scrollLeft = now.offsetLeft - el.clientWidth / 2;   // center current if the track scrolls
 }
 
 function updateHud() {
