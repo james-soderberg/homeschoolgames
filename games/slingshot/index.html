@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slingshot · HomeschoolGames</title>
+<link rel="stylesheet" href="../../assets/css/site.css">
+<style>
+  .sl-page { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
+  .sl-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:.6rem; }
+  .sl-top h1 { margin:0; font-size:1.7rem; }
+  .sl-top h1 .sub { display:block; font-family:var(--font-sans); font-size:.68rem; font-weight:700;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ink-light); margin-top:.15rem; }
+  .stat-group { display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+  .stat-badge { background:var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .9rem; font-weight:700; font-size:.86rem; font-family:var(--font-sans); color:var(--ink); white-space:nowrap; }
+  .stat-badge.streak { background:#F3E7C6; border-color:var(--gold); color:#7A5C00; }
+
+  /* the stage: a slice of space, fits the viewport */
+  .sl-stage { position:relative; width:100%; height:min(66vh,620px); min-height:400px;
+    border-radius:16px; overflow:hidden; border:2.5px solid #232a44;
+    box-shadow:0 12px 34px rgba(8,10,25,.5); background:#070a17; touch-action:none; user-select:none; }
+  #scene { position:absolute; inset:0; width:100%; height:100%; display:block; }
+
+  .probes-badge b { color:var(--gold); }
+  .obj-badge { max-width:46vw; overflow:hidden; text-overflow:ellipsis; }
+  .kind-badge { background:#20305c; border-color:#3a5090; color:#bcd0ff; display:none; }
+  .kind-badge.double { display:inline-block; background:#3a2b5c; border-color:#6a54a0; color:#d9c7ff; }
+  .kind-badge.triple { display:inline-block; background:#5c2b3a; border-color:#a05470; color:#ffc7da; }
+
+  /* overlays */
+  .ov { position:absolute; inset:0; z-index:12; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:1.4rem 1.25rem; background:rgba(9,12,26,.86); backdrop-filter:blur(3px); color:#eaf0ff; overflow-y:auto; }
+  .ov.hidden { display:none; }
+  .ov .crest { font-size:3rem; line-height:1; margin-bottom:.25rem; animation:bob 2.6s ease-in-out infinite; }
+  @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
+  .ov h2 { font-family:var(--font-serif); font-size:1.95rem; margin:0 0 .4rem; color:#fff; }
+  .ov p { color:#b9c6ee; margin:0 0 1.1rem; max-width:42ch; line-height:1.5; }
+  .ov .final-stats { display:flex; gap:1.4rem; margin-bottom:1.1rem; flex-wrap:wrap; justify-content:center; }
+  .ov .fs { display:flex; flex-direction:column; align-items:center; }
+  .ov .fs b { font-family:var(--font-serif); font-size:1.9rem; color:#ffd98a; line-height:1; }
+  .ov .fs span { font-size:.66rem; text-transform:uppercase; letter-spacing:.09em; color:#a9b6dd; margin-top:.25rem; }
+
+  .diff-row { display:flex; gap:.6rem; flex-wrap:wrap; justify-content:center; margin-bottom:.4rem; }
+  .diff-btn, .go-btn {
+    background:linear-gradient(#ffd062,#e6b23c); color:#2a1f08; border:none; border-radius:12px;
+    padding:.75rem 1.25rem; font-size:1rem; font-weight:800; font-family:var(--font-sans);
+    cursor:pointer; transition:transform .1s, filter .12s; box-shadow:0 5px 0 #a07f2c; }
+  .diff-btn:hover, .go-btn:hover { filter:brightness(1.05); }
+  .diff-btn:active, .go-btn:active { transform:translateY(4px); box-shadow:0 1px 0 #a07f2c; }
+  .diff-btn { display:flex; flex-direction:column; gap:.15rem; min-width:118px; }
+  .diff-btn .d-sub { font-size:.64rem; font-weight:600; opacity:.8; text-transform:uppercase; letter-spacing:.04em; }
+  .go-btn.secondary { background:rgba(255,255,255,.14); color:#eaf0ff; box-shadow:0 5px 0 rgba(0,0,0,.3); }
+  .overlay-actions { display:flex; gap:.6rem; flex-wrap:wrap; justify-content:center; }
+
+  /* fact card (on arrival) */
+  .fact-card { max-width:360px; }
+  .fact-card .planet-name { font-family:var(--font-serif); font-size:1.7rem; color:#fff; margin:.1rem 0 .1rem; }
+  .fact-card .maneuver { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
+    color:#8fe3c0; margin-bottom:.7rem; }
+  .fact-card .fact { color:#cdd8f5; font-size:.98rem; line-height:1.5; margin-bottom:1.1rem; }
+
+  /* leaderboard */
+  .board { width:100%; max-width:340px; margin:.2rem auto 1.1rem; }
+  .board-title { font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#a9b6dd; margin-bottom:.45rem; }
+  .board-row { display:flex; align-items:center; gap:.55rem; padding:.32rem .6rem; border-radius:8px; color:#dbe4ff; font-family:var(--font-sans); font-size:.92rem; }
+  .board-row:nth-child(even){ background:rgba(255,255,255,.05); }
+  .board-row.me { background:var(--gold); color:#2a1f08; font-weight:800; }
+  .bk-rank { width:1.4rem; text-align:right; opacity:.75; font-weight:700; font-size:.82rem; }
+  .bk-name { flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .bk-score { font-weight:800; }
+  .board-empty { color:#a9b6dd; font-style:italic; font-size:.88rem; text-align:center; }
+  .name-entry { margin-bottom:1rem; }
+  .name-entry.hidden { display:none; }
+  .ne-label { display:block; font-size:.85rem; color:#ffe1a6; font-weight:700; margin-bottom:.5rem; }
+  .ne-row { display:flex; gap:.5rem; justify-content:center; }
+  #nameInput { border:2px solid var(--border); border-radius:10px; padding:.55rem .8rem; font-size:1rem; font-family:var(--font-sans);
+    width:170px; max-width:52vw; color:var(--ink); background:#fff; }
+
+  .sl-hint { text-align:center; font-size:.82rem; color:var(--ink-light); margin-top:.7rem; line-height:1.5; }
+  .sl-hint kbd { font-family:'Courier New',monospace; background:var(--cream-dark); border:1px solid var(--border); border-radius:4px; padding:.05rem .35rem; }
+  .control-row { display:flex; justify-content:center; gap:1rem; margin-top:.35rem; }
+  .reset-link { background:none; border:none; color:var(--ink-light); font-size:.85rem; cursor:pointer; font-family:var(--font-sans); text-decoration:underline; padding:.3rem .5rem; }
+  .reset-link:hover { color:var(--ink); }
+
+  /* screenshot mode (open with ?shot) — hide chrome, fill viewport with the stage */
+  body.sl-shot { overflow:hidden; background:#070a17; }
+  body.sl-shot .site-header, body.sl-shot .sl-top, body.sl-shot .sl-hint, body.sl-shot .control-row, body.sl-shot .site-footer { display:none !important; }
+  body.sl-shot .sl-page { margin:0 !important; padding:0 !important; max-width:none !important; }
+  body.sl-shot .sl-stage { width:100vw !important; height:100vh !important; border-radius:0 !important; border:0 !important; }
+
+  @media (max-width:520px){ .diff-btn{ min-width:104px; } .obj-badge{ max-width:60vw; } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav"><a href="../../subjects/science.html">← Science</a></nav>
+</header>
+
+<div class="sl-page">
+  <div class="sl-top">
+    <h1>Slingshot<span class="sub">Gravity &amp; Orbits · a voyage through the solar system</span></h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="scoreBadge">0 pts</div>
+      <div class="stat-badge probes-badge" id="probesBadge">🚀 <b>5</b></div>
+      <div class="stat-badge obj-badge" id="objBadge">Reach the Moon</div>
+      <div class="stat-badge kind-badge" id="kindBadge">Double slingshot</div>
+      <div class="stat-badge streak hidden" id="streakBadge">🔥 0</div>
+    </div>
+  </div>
+
+  <div class="sl-stage" id="stage">
+    <canvas id="scene"></canvas>
+
+    <!-- Start -->
+    <div class="ov" id="startOverlay">
+      <div class="crest">🪐</div>
+      <h2>Slingshot</h2>
+      <p>Drag from the launch pad to aim and set power, then let go. Gravity bends your path, so read the dotted preview and fling your probe to each world, outward from the Sun. A planet always blocks the straight shot, so you have to curve around it. Later worlds need you to whip around two or three at once.</p>
+      <div class="diff-row">
+        <button class="diff-btn" data-diff="cadet">Cadet<span class="d-sub">Long preview · calm</span></button>
+        <button class="diff-btn" data-diff="pilot">Pilot<span class="d-sub">Short preview</span></button>
+        <button class="diff-btn" data-diff="commander">Commander<span class="d-sub">Barely a peek</span></button>
+      </div>
+    </div>
+
+    <!-- Arrival fact card -->
+    <div class="ov hidden" id="factOverlay">
+      <div class="crest" id="factCrest">🛰️</div>
+      <div class="fact-card">
+        <div class="maneuver" id="factManeuver">Gravity assist</div>
+        <div class="planet-name" id="factName">Mars</div>
+        <div class="fact" id="factText"></div>
+        <button class="go-btn" id="onwardBtn">Onward →</button>
+      </div>
+    </div>
+
+    <!-- Game over -->
+    <div class="ov hidden" id="overOverlay">
+      <div class="crest">💥</div>
+      <h2 id="overTitle">Out of probes</h2>
+      <p id="overMsg">Your mission ends here. The stars will keep for the next voyage.</p>
+      <div class="final-stats">
+        <div class="fs"><b id="fsScore">0</b><span>Score</span></div>
+        <div class="fs"><b id="fsReached">—</b><span>Reached</span></div>
+        <div class="fs"><b id="fsStreak">0</b><span>Best streak</span></div>
+      </div>
+      <div class="name-entry hidden" id="nameEntry">
+        <span class="ne-label">🏅 New high score! Add your name:</span>
+        <div class="ne-row">
+          <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off">
+          <button class="go-btn" id="saveNameBtn">Save</button>
+        </div>
+      </div>
+      <div class="board" id="board"></div>
+      <div class="overlay-actions">
+        <button class="go-btn" id="againBtn">Launch again 🚀</button>
+        <button class="go-btn secondary" id="menuBtn">Change crew</button>
+      </div>
+    </div>
+  </div>
+
+  <p class="sl-hint">
+    <b>Drag</b> from the pad to aim &amp; power, release to launch — or nudge with
+    <kbd>←</kbd><kbd>→</kbd> (angle), <kbd>↑</kbd><kbd>↓</kbd> (power), <kbd>Space</kbd> to fire.
+    The green preview reaches the goal; red means you'll crash.
+  </p>
+  <div class="control-row">
+    <button class="reset-link" onclick="retryLevel()">Reset aim</button>
+    <button class="reset-link" onclick="toMenu()">Quit to base</button>
+  </div>
+</div>
+
+<footer class="site-footer"><a href="../../index.html">homeschoolgames.app</a></footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script>
+// ============================================================
+// SLINGSHOT — fling a probe and let planetary gravity curve it
+// to each world in turn, outward from the Sun. A live forward
+// simulation shows exactly how gravity will bend your path, so
+// the game IS the physics. The 25 levels are a hand-vetted
+// campaign: each is proven solvable and to REQUIRE a gravity
+// slingshot; the harder ones force you to whip around two or
+// three worlds in a single shot.
+// ============================================================
+
+// ---------- tuning ----------
+const GM_K = 2000;       // a body's pull ∝ radius² · GM_K
+const SOFT = 14;         // softening so gravity never blows up near a center
+const PROBE_R = 6;
+const SPEED_MIN = 145, SPEED_MAX = 560;
+const MAX_FLIGHT = 13;   // seconds before "lost in space"
+const TRAIL_MAX = 70;
+const FIXED_H = 1 / 120; // physics runs at a fixed step, so flight matches the preview exactly
+
+// Everything plays inside a fixed design space; the canvas just scales it to fit,
+// so every baked level behaves identically on any screen.
+const DW = 960, DH = 600;
+
+const DIFF = {
+  cadet:     { label:'Cadet',     predict:360, probes:20, scoreMult:1 },
+  pilot:     { label:'Pilot',     predict:190, probes:20, scoreMult:1.4 },
+  commander: { label:'Commander', predict:96,  probes:20, scoreMult:2 },
+};
+const PAL = [['#8fb0e6','#2a4a86'],['#e0b98f','#8a5a2a'],['#b79ae0','#5a3a8a'],['#8fd6c0','#2f6a58'],['#e79ab0','#8a3a56']];
+
+// worlds, outward from the Sun — one per level (cycles after 25)
+const TARGETS = [
+  { name:'the Moon',        crest:'🌙', c1:'#e8ecf3', c2:'#9aa2b0', fact:"Earth's only natural satellite, and the only other world humans have walked on. It drifts about 4 cm farther away every year." },
+  { name:'Mercury',         crest:'☿️', c1:'#cdbfa8', c2:'#7a6a52', fact:"The smallest planet and the closest to the Sun. Strangely, a single day on Mercury lasts longer than its whole year." },
+  { name:'Venus',           crest:'♀️', c1:'#f6e3a1', c2:'#c99a45', fact:"The hottest planet, hot enough to melt lead, wrapped in thick clouds of carbon dioxide that trap the Sun's heat." },
+  { name:'Mars',            crest:'🔴', c1:'#e57a45', c2:'#8f3a1e', fact:"The Red Planet, colored by rusty dust. It has Olympus Mons, the tallest volcano in the solar system, three times the height of Everest." },
+  { name:'Ceres',           crest:'🪨', c1:'#d8cdb8', c2:'#8a7c63', fact:"The largest object in the asteroid belt, round enough to count as a dwarf planet. It may hide a layer of salty water under its crust." },
+  { name:'Jupiter',         crest:'🟠', c1:'#e8cba0', c2:'#a8703a', ring:false, fact:"The largest planet. Over 1,300 Earths would fit inside, and its Great Red Spot is a storm wider than our whole planet." },
+  { name:'Europa',          crest:'🧊', c1:'#dfe6ef', c2:'#9bb0c6', fact:"An icy moon of Jupiter. Beneath its frozen shell lies a saltwater ocean that may hold more water than all of Earth's seas." },
+  { name:'Io',              crest:'🌋', c1:'#f3e08a', c2:'#b6862f', fact:"The most volcanic world we know of. Jupiter's gravity squeezes it so hard that hundreds of volcanoes erupt across its surface." },
+  { name:'Saturn',          crest:'🪐', c1:'#f0dcae', c2:'#b99a5a', ring:true,  fact:"Famous for its dazzling rings of ice and rock. Saturn is so light that it would float in a big enough tub of water." },
+  { name:'Titan',           crest:'🟠', c1:'#d9a55a', c2:'#8a5e2a', fact:"Saturn's largest moon and the only moon with a thick atmosphere. It rains liquid methane there, filling rivers, lakes and seas." },
+  { name:'Enceladus',       crest:'❄️', c1:'#eaf3fb', c2:'#a9c3d6', fact:"A small, bright moon of Saturn that shoots geysers of water into space through cracks near its south pole." },
+  { name:'Uranus',          crest:'🩵', c1:'#bdeef0', c2:'#5aa6ad', ring:true,  fact:"An ice giant that rolls on its side, so each pole spends 42 years in sunlight and then 42 years in darkness." },
+  { name:'Neptune',         crest:'🔵', c1:'#7aa7f0', c2:'#2a4a9a', fact:"The windiest world, with gales faster than the speed of sound. It was found by math before anyone ever saw it." },
+  { name:'Triton',          crest:'🌑', c1:'#cfe0e6', c2:'#7f97a3', fact:"Neptune's biggest moon, and it orbits backward. It is one of the coldest places known, with geysers of icy nitrogen." },
+  { name:'Pluto',           crest:'🤍', c1:'#e6d8c4', c2:'#9a8a76', fact:"A dwarf planet in the icy Kuiper Belt. Since it was found in 1930, it still hasn't finished a single trip around the Sun." },
+  { name:'Eris',            crest:'⚪', c1:'#dfe1e6', c2:'#9a9ba3', fact:"A distant dwarf planet even heavier than Pluto. Finding it is what led astronomers to rethink what counts as a planet." },
+  { name:"Halley's Comet",  crest:'☄️', c1:'#cfeaff', c2:'#6fa8d8', comet:true, fact:"A comet that loops past Earth about every 76 years, growing a glowing tail as the Sun boils off its ice. Next visit: 2061." },
+  { name:'the Oort Cloud',  crest:'🌐', c1:'#cdd8f0', c2:'#6675a8', fact:"A vast shell of icy bodies wrapped around the solar system, so far out that sunlight takes many months to reach it." },
+  { name:'Voyager 1',       crest:'🛰️', c1:'#d7dde8', c2:'#8891a3', fact:"Launched in 1977, it is the farthest human-made object, now drifting in interstellar space and still whispering back to Earth." },
+  { name:'Proxima Centauri b', crest:'🪐', c1:'#f0a17a', c2:'#a5502f', fact:"The closest exoplanet to Earth, circling the nearest star. Even so, a probe at today's speeds would need thousands of years to arrive." },
+  { name:'TRAPPIST-1e',     crest:'🌎', c1:'#8fd0c0', c2:'#2f7a68', fact:"One of seven Earth-sized planets around a single small star, several of them in the zone where liquid water could exist." },
+  { name:'Kepler-22b',      crest:'🌍', c1:'#8fe0b8', c2:'#2f7a68', fact:"An exoplanet orbiting in its star's habitable zone, more than 600 light-years from home." },
+  { name:'Betelgeuse',      crest:'🔴', c1:'#ff9a6a', c2:'#a83a1e', fact:"A red supergiant star so huge that if it replaced the Sun it would swallow Mars. One day it will explode as a supernova." },
+  { name:'the Crab Nebula', crest:'🌌', c1:'#f0a9d0', c2:'#6a3a8a', fact:"The glowing wreckage of a star that exploded in the year 1054, so bright that people recorded seeing it in daylight." },
+  { name:'Sagittarius A*',  crest:'🕳️', c1:'#ffce87', c2:'#3a2a10', fact:"The supermassive black hole at the center of our galaxy, about four million times the mass of the Sun. Everything here orbits it." },
+];
+
+// 25 curated levels (design space 960x600); r -> gm = r²·GM_K. kind = gravity swings required.
+const SL_LEVELS = [
+  { pad:{x:96,y:331}, target:{x:800,y:382,r:29}, bodies:[{x:465,y:363,r:80}], kind:'single' },
+  { pad:{x:96,y:351}, target:{x:860,y:164,r:28}, bodies:[{x:539,y:248,r:80}], kind:'single' },
+  { pad:{x:96,y:323}, target:{x:782,y:270,r:28}, bodies:[{x:441,y:299,r:80}], kind:'single' },
+  { pad:{x:86,y:251}, target:{x:825,y:368,r:27}, bodies:[{x:662,y:330,r:49},{x:298,y:228,r:55}], kind:'single' },
+  { pad:{x:96,y:310}, target:{x:817,y:275,r:26}, bodies:[{x:465,y:285,r:80}], kind:'single' },
+  { pad:{x:96,y:391}, target:{x:820,y:147,r:28}, bodies:[{x:473,y:263,r:80}], kind:'single' },
+  { pad:{x:96,y:365}, target:{x:772,y:229,r:25}, bodies:[{x:433,y:291,r:80}], kind:'single' },
+  { pad:{x:86,y:243}, target:{x:839,y:209,r:23}, bodies:[{x:629,y:273,r:50},{x:302,y:224,r:62}], kind:'single' },
+  { pad:{x:86,y:282}, target:{x:812,y:371,r:27}, bodies:[{x:370,y:393,r:51},{x:657,y:311,r:63}], kind:'single' },
+  { pad:{x:86,y:337}, target:{x:837,y:160,r:28}, bodies:[{x:540,y:354,r:60},{x:686,y:241,r:78}], kind:'double' },
+  { pad:{x:86,y:268}, target:{x:810,y:180,r:22}, bodies:[{x:283,y:236,r:69},{x:572,y:199,r:78}], kind:'double' },
+  { pad:{x:86,y:319}, target:{x:846,y:438,r:27}, bodies:[{x:648,y:404,r:57},{x:306,y:344,r:52}], kind:'double' },
+  { pad:{x:86,y:371}, target:{x:826,y:302,r:27}, bodies:[{x:529,y:223,r:77},{x:632,y:369,r:64}], kind:'double' },
+  { pad:{x:86,y:208}, target:{x:808,y:134,r:27}, bodies:[{x:508,y:356,r:68},{x:498,y:139,r:79}], kind:'double' },
+  { pad:{x:86,y:271}, target:{x:837,y:311,r:24}, bodies:[{x:308,y:208,r:67},{x:668,y:314,r:61}], kind:'double' },
+  { pad:{x:86,y:257}, target:{x:860,y:254,r:25}, bodies:[{x:656,y:232,r:70},{x:443,y:110,r:53}], kind:'double' },
+  { pad:{x:86,y:310}, target:{x:850,y:465,r:25}, bodies:[{x:635,y:235,r:68},{x:600,y:487,r:77}], kind:'double' },
+  { pad:{x:86,y:200}, target:{x:826,y:366,r:25}, bodies:[{x:489,y:154,r:65},{x:662,y:307,r:71}], kind:'double' },
+  { pad:{x:86,y:218}, target:{x:836,y:254,r:26}, bodies:[{x:558,y:245,r:79},{x:340,y:349,r:42}], kind:'double' },
+  { pad:{x:86,y:288}, target:{x:843,y:350,r:28}, bodies:[{x:612,y:406,r:80},{x:289,y:472,r:46},{x:523,y:198,r:67}], kind:'double' },
+  { pad:{x:86,y:296}, target:{x:829,y:162,r:27}, bodies:[{x:299,y:531,r:50},{x:625,y:210,r:74},{x:447,y:281,r:51}], kind:'double' },
+  { pad:{x:86,y:309}, target:{x:842,y:400,r:25}, bodies:[{x:404,y:323,r:66},{x:571,y:498,r:74},{x:421,y:101,r:49}], kind:'double' },
+  { pad:{x:86,y:258}, target:{x:827,y:413,r:27}, bodies:[{x:353,y:267,r:38},{x:504,y:382,r:74},{x:582,y:228,r:79}], kind:'triple' },
+  { pad:{x:86,y:389}, target:{x:820,y:275,r:25}, bodies:[{x:521,y:420,r:57},{x:312,y:290,r:65},{x:374,y:130,r:73}], kind:'triple' },
+  { pad:{x:86,y:339}, target:{x:832,y:234,r:28}, bodies:[{x:501,y:310,r:39},{x:403,y:82,r:53},{x:535,y:437,r:56}], kind:'triple' },
+];
+
+// ---------- DOM ----------
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('scene');
+const ctx = canvas.getContext('2d');
+const startOverlay = document.getElementById('startOverlay');
+const factOverlay = document.getElementById('factOverlay');
+const overOverlay = document.getElementById('overOverlay');
+const scoreBadge = document.getElementById('scoreBadge');
+const probesBadge = document.getElementById('probesBadge');
+const objBadge = document.getElementById('objBadge');
+const kindBadge = document.getElementById('kindBadge');
+const streakBadge = document.getElementById('streakBadge');
+
+// ---------- state ----------
+let W = DW, H = DH, dpr = 1, view = { scale: 1, ox: 0, oy: 0 };
+let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo
+let diffKey = 'pilot', diff = DIFF.pilot;
+let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = '—';
+let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
+let probe = null, trail = [], particles = [], predicted = null;
+let aim = { angle: 0, power: 0.5, dragging: false };
+let sceneTime = 0, shake = 0, flashR = 0, flashG = 0, flightT = 0, flightAcc = 0, bonusMsg = '', bonusT = 0;
+let pendingScore = null;
+let lastTs = 0, rafId = null;
+let stars = [];
+
+const BOARD_KEY = () => 'slingshot_board_' + diffKey;
+const NAME_KEY = 'slingshot_name';
+
+// ---------- helpers ----------
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const clamp01 = v => Math.max(0, Math.min(1, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const dist2 = (ax, ay, bx, by) => { const dx = ax - bx, dy = ay - by; return dx * dx + dy * dy; };
+
+function setupCanvas() {
+  const r = stage.getBoundingClientRect();
+  W = Math.max(320, r.width); H = Math.max(300, r.height);
+  dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const scale = Math.min(W / DW, H / DH);
+  view = { scale, ox: (W - DW * scale) / 2, oy: (H - DH * scale) / 2 };
+  buildStars();
+}
+window.addEventListener('resize', () => { setupCanvas(); if (phase === 'menu' || phase === 'over') render(); });
+window.addEventListener('load', setupCanvas);
+
+function buildStars() {
+  stars = [];
+  const n = Math.round(W * H / 4200);
+  for (let i = 0; i < n; i++) stars.push({ x: Math.random() * W, y: Math.random() * H, r: rand(0.4, 1.7), tw: rand(0, 6.28), sp: rand(0.4, 1.6), d: rand(0.3, 1) });
+}
+
+// ---------- physics (design space) ----------
+function bodyPos(b) { return { x: b.x, y: b.y }; }
+function accel(x, y, list) {
+  let axo = 0, ayo = 0;
+  for (const b of list) {
+    const p = b._p; const dx = p.x - x, dy = p.y - y;
+    const r2 = dx * dx + dy * dy; const r = Math.sqrt(r2);
+    const mag = b.gm / (r2 + SOFT * SOFT);
+    axo += mag * dx / (r || 1); ayo += mag * dy / (r || 1);
+  }
+  return [axo, ayo];
+}
+// forward simulation from (x,y,vx,vy): returns {pts, outcome, end}
+function simulate(x, y, vx, vy, steps, list) {
+  const h = FIXED_H, pts = [];
+  let px = x, py = y, pvx = vx, pvy = vy;
+  const bnd = DW * 0.28;
+  for (let i = 0; i < steps; i++) {
+    const [axx, ayy] = accel(px, py, list);
+    pvx += axx * h; pvy += ayy * h; px += pvx * h; py += pvy * h;
+    if (i % 3 === 0) pts.push({ x: px, y: py });
+    for (const b of list) {
+      const p = b._p; const rr = b.r + PROBE_R;
+      if (dist2(px, py, p.x, p.y) < (b.role === 'target' ? (rr + 5) * (rr + 5) : rr * rr)) {
+        pts.push({ x: px, y: py });
+        return { pts, outcome: b.role === 'target' ? 'hit' : 'crash', end: { x: px, y: py } };
+      }
+    }
+    if (px < -bnd || px > DW + bnd || py < -bnd || py > DH + bnd) { pts.push({ x: px, y: py }); return { pts, outcome: 'escape', end: { x: px, y: py } }; }
+  }
+  return { pts, outcome: 'open', end: { x: px, y: py } };
+}
+
+// ---------- level loading ----------
+function targetInfoFor(n) { return TARGETS[(n - 1) % TARGETS.length]; }
+function genLevel(n) {
+  const info = targetInfoFor(n); targetInfo = info;
+  const spec = SL_LEVELS[(n - 1) % SL_LEVELS.length];
+  pad = { x: spec.pad.x, y: spec.pad.y };
+  const tR = spec.target.r;
+  target = { x: spec.target.x, y: spec.target.y, r: tR, role: 'target', gm: tR * tR * GM_K, info,
+             c1: info.c1, c2: info.c2, ring: info.ring, comet: info.comet };
+  bodies = spec.bodies.map((b, i) => {
+    const pal = PAL[i % PAL.length];
+    return { x: b.x, y: b.y, r: b.r, role: 'grav', gm: b.r * b.r * GM_K, c1: pal[0], c2: pal[1], ring: (b.r >= 68 && i % 2 === 0) };
+  });
+  levelKind = spec.kind;
+  maneuver = levelKind === 'triple' ? 'Triple gravity assist' : levelKind === 'double' ? 'Double slingshot' : 'Gravity slingshot';
+  objective = 'Reach ' + info.name; objBadge.textContent = objective;
+  kindBadge.className = 'stat-badge kind-badge' + (levelKind !== 'single' ? ' ' + levelKind : '');
+  kindBadge.textContent = levelKind === 'triple' ? '3 slingshots' : levelKind === 'double' ? '2 slingshots' : '';
+
+  aim.angle = Math.atan2(target.y - pad.y, target.x - pad.x);
+  aim.power = 0.6; aim.dragging = false;
+  probe = null; trail = []; predicted = null; attempts = 0;
+  refreshBodyPositions(); recomputePredict();
+}
+function refreshBodyPositions() { for (const b of bodies) b._p = bodyPos(b); if (target) target._p = bodyPos(target); }
+function allBodies() { return bodies.concat(target); }
+
+// ---------- aiming ----------
+function aimVelocity() {
+  const spd = lerp(SPEED_MIN, SPEED_MAX, clamp01(aim.power));
+  return { vx: Math.cos(aim.angle) * spd, vy: Math.sin(aim.angle) * spd };
+}
+function recomputePredict() {
+  if (phase !== 'aim') { predicted = null; return; }
+  refreshBodyPositions();
+  const v = aimVelocity();
+  predicted = simulate(pad.x, pad.y, v.vx, v.vy, diff.predict, allBodies());
+}
+
+// ---------- launch / flight ----------
+function launch() {
+  if (phase !== 'aim') return;
+  const v = aimVelocity();
+  probe = { x: pad.x, y: pad.y, vx: v.vx, vy: v.vy, ang: aim.angle, bent: 0 };
+  trail = [{ x: pad.x, y: pad.y }];
+  predicted = null; phase = 'flight'; flightT = 0; flightAcc = 0; attempts++;
+  shake = 5; flashG = 0.12; if (window.HSGSound) HSGSound.laser();
+}
+// ONE fixed physics step — identical to the preview, so a green preview always hits
+function stepFlight(h) {
+  refreshBodyPositions();
+  const list = allBodies();
+  const [ax, ay] = accel(probe.x, probe.y, list);
+  const spd = Math.hypot(probe.vx, probe.vy) || 1;
+  probe.bent += Math.abs(ax * probe.vy - ay * probe.vx) / (spd * spd) * h;   // how sharply gravity is turning us
+  probe.vx += ax * h; probe.vy += ay * h;
+  probe.x += probe.vx * h; probe.y += probe.vy * h;
+  probe.ang = Math.atan2(probe.vy, probe.vx);
+  for (const b of list) {
+    const p = b._p, rr = b.r + PROBE_R;
+    if (dist2(probe.x, probe.y, p.x, p.y) < (b.role === 'target' ? (rr + 5) * (rr + 5) : rr * rr)) {
+      if (b.role === 'target') win(); else crash('Crashed into a planet!');
+      return;
+    }
+  }
+  const bnd = DW * 0.28;
+  if (probe.x < -bnd || probe.x > DW + bnd || probe.y < -bnd || probe.y > DH + bnd) { crash('Lost in space!'); return; }
+  flightT += h;
+  if (flightT > MAX_FLIGHT) { crash('Ran low on time!'); return; }
+}
+
+// ---------- outcomes ----------
+function win() {
+  const firstTry = attempts <= 1;
+  const kindBonus = levelKind === 'triple' ? 120 : levelKind === 'double' ? 60 : 0;
+  const gain = Math.round((100 + level * 20 + (firstTry ? 60 : 0) + kindBonus + (probe.bent > 1.6 ? 40 : 0)) * (diff.scoreMult || 1));
+  score += gain;
+  streak++; if (streak > bestStreak) bestStreak = streak;
+  reachedName = targetInfo.name;
+  for (let i = 0; i < 26; i++) spawnParticle(target._p.x, target._p.y, rand(-160, 160), rand(-160, 160), rand(.4, .9), i % 2 ? target.c1 : '#ffe6a0', rand(2, 4));
+  flashG = 0.4; shake = 6;
+  if (window.HSGSound) HSGSound.correct();
+  if (window.HSGfx) HSGfx.confetti({ count: 28 });
+  if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
+  if (level % 5 === 0) { probes++; toast('+1 probe!'); }   // every 5th world earns a spare probe
+  updateHud();
+  phase = 'fact';
+  showFact(gain, firstTry);
+}
+function crash(msg) {
+  probes--; streak = 0;
+  for (let i = 0; i < 22; i++) spawnParticle(probe.x, probe.y, rand(-210, 210), rand(-210, 210), rand(.35, .8), i % 2 ? '#ff9a5a' : '#ffd27a', rand(2, 4.5));
+  flashR = 0.45; shake = 11; probe = null; predicted = null;
+  if (window.HSGSound) HSGSound.boom();
+  if (window.HSGfx) HSGfx.flash('rgba(150,40,40,.25)');
+  updateHud();
+  toast(msg);
+  if (probes <= 0) { setTimeout(gameOver, 700); phase = 'crashwait'; return; }
+  phase = 'crashwait';
+  setTimeout(() => { if (phase === 'crashwait') { phase = 'aim'; refreshBodyPositions(); recomputePredict(); } }, 750);
+}
+
+function showFact(gain, firstTry) {
+  document.getElementById('factCrest').textContent = targetInfo.crest;
+  document.getElementById('factManeuver').textContent = maneuver + ' · +' + gain + (firstTry ? ' (first try!)' : '');
+  document.getElementById('factName').textContent = titleName(targetInfo.name);
+  document.getElementById('factText').textContent = targetInfo.fact;
+  factOverlay.classList.remove('hidden');
+}
+function titleName(n) { return n.replace(/^the /, 'The '); }
+function onward() {
+  factOverlay.classList.add('hidden');
+  level++; genLevel(level); phase = 'aim'; updateHud();
+}
+
+// ---------- particles / fx ----------
+function spawnParticle(x, y, vx, vy, life, color, size) { particles.push({ x, y, vx, vy, life, max: life, color, size }); }
+function toast(msg) { bonusMsg = msg; bonusT = 1.6; }
+
+// ---------- HUD ----------
+function updateHud() {
+  scoreBadge.textContent = score.toLocaleString() + ' pts';
+  probesBadge.innerHTML = '🚀 <b>' + Math.max(0, probes) + '</b>';
+  streakBadge.classList.toggle('hidden', streak < 2);
+  streakBadge.textContent = '🔥 ' + streak;
+}
+
+// ---------- leaderboard ----------
+function getBoard() { try { const a = JSON.parse(localStorage.getItem(BOARD_KEY())); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function saveBoard(b) { try { localStorage.setItem(BOARD_KEY(), JSON.stringify(b)); } catch (e) {} }
+function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
+function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
+
+// ---------- lifecycle ----------
+function startGame(key) {
+  diffKey = key; diff = DIFF[key] || DIFF.pilot;
+  level = 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = '—';
+  particles = []; pendingScore = null;
+  startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
+  setupCanvas(); genLevel(1); phase = 'aim'; updateHud();
+}
+function retryLevel() { if (phase === 'aim') { recomputePredict(); } }
+function toMenu() {
+  phase = 'menu'; probe = null; predicted = null;
+  overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
+  startOverlay.classList.remove('hidden');
+}
+function gameOver() {
+  phase = 'over';
+  document.getElementById('fsScore').textContent = score.toLocaleString();
+  document.getElementById('fsReached').textContent = titleName(reachedName);
+  document.getElementById('fsStreak').textContent = bestStreak;
+  const board = getBoard();
+  const qualifies = score > 0 && (board.length < 10 || score > board[board.length - 1].score);
+  const ne = document.getElementById('nameEntry');
+  if (qualifies) {
+    pendingScore = { score, streak: bestStreak, level };
+    ne.classList.remove('hidden');
+    const inp = document.getElementById('nameInput'); inp.value = lastName();
+    setTimeout(() => inp.focus(), 60);
+  } else { pendingScore = null; ne.classList.add('hidden'); }
+  renderBoard(null);
+  overOverlay.classList.remove('hidden');
+  if (window.HSGSound) HSGSound.finish(false);
+}
+function saveName() {
+  if (!pendingScore) return;
+  const inp = document.getElementById('nameInput');
+  const name = ((inp.value || '').trim() || 'Pilot').slice(0, 12);
+  setLastName(name);
+  const entry = { name, score: pendingScore.score, streak: pendingScore.streak, level: pendingScore.level };
+  const board = getBoard(); board.push(entry); board.sort((a, b) => b.score - a.score);
+  saveBoard(board.slice(0, 10)); pendingScore = null;
+  document.getElementById('nameEntry').classList.add('hidden');
+  renderBoard(entry); updateHud();
+}
+function renderBoard(hl) {
+  const board = getBoard(), el = document.getElementById('board');
+  el.innerHTML = '';
+  if (!board.length) { el.innerHTML = '<div class="board-empty">No flights logged yet — chart the first course!</div>'; return; }
+  const head = document.createElement('div'); head.className = 'board-title'; head.textContent = '🏅 Top Pilots · ' + diff.label; el.appendChild(head);
+  board.forEach((e, i) => {
+    const me = hl && e.name === hl.name && e.score === hl.score && e.level === hl.level;
+    const row = document.createElement('div'); row.className = 'board-row' + (me ? ' me' : '');
+    const rk = document.createElement('span'); rk.className = 'bk-rank'; rk.textContent = (i + 1);
+    const nm = document.createElement('span'); nm.className = 'bk-name'; nm.textContent = e.name;
+    const sc = document.createElement('span'); sc.className = 'bk-score'; sc.textContent = (e.score || 0).toLocaleString();
+    row.append(rk, nm, sc); el.appendChild(row);
+  });
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+function drawBackground(t) {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0a0f24'); g.addColorStop(0.6, '#0b0e1f'); g.addColorStop(1, '#070813');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  for (let i = 0; i < 2; i++) {   // nebula wisps
+    const nx = W * (0.25 + i * 0.5), ny = H * (0.3 + i * 0.35), nr = Math.min(W, H) * 0.55;
+    const ng = ctx.createRadialGradient(nx, ny, 10, nx, ny, nr);
+    ng.addColorStop(0, i ? 'rgba(90,60,150,0.10)' : 'rgba(40,90,160,0.10)'); ng.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = ng; ctx.fillRect(0, 0, W, H);
+  }
+  for (const s of stars) {
+    const a = 0.3 + 0.6 * (0.5 + 0.5 * Math.sin(t * s.sp + s.tw)) * s.d;
+    ctx.globalAlpha = a; ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, 6.28); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawPlanet(b) {
+  const p = b._p, r = b.r;
+  const ag = ctx.createRadialGradient(p.x, p.y, r, p.x, p.y, r * 3.4);   // gravity aura
+  ag.addColorStop(0, 'rgba(150,180,255,0.10)'); ag.addColorStop(1, 'rgba(150,180,255,0)');
+  ctx.fillStyle = ag; ctx.beginPath(); ctx.arc(p.x, p.y, r * 3.4, 0, 6.28); ctx.fill();
+  if (b.ring) {   // ring behind
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(-0.45); ctx.scale(1, 0.32);
+    ctx.strokeStyle = 'rgba(230,220,180,0.55)'; ctx.lineWidth = r * 0.34;
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.7, 0, Math.PI); ctx.stroke(); ctx.restore();
+  }
+  if (b.comet) {
+    ctx.save();
+    const tg = ctx.createLinearGradient(p.x, p.y, p.x - 150, p.y - 34);
+    tg.addColorStop(0, 'rgba(180,230,255,0.6)'); tg.addColorStop(1, 'rgba(180,230,255,0)');
+    ctx.fillStyle = tg; ctx.beginPath(); ctx.moveTo(p.x, p.y - r); ctx.lineTo(p.x - 150, p.y - 34); ctx.lineTo(p.x - 150, p.y + 34); ctx.lineTo(p.x, p.y + r); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  const sg = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.35, r * 0.15, p.x, p.y, r);
+  sg.addColorStop(0, b.c1); sg.addColorStop(1, b.c2);
+  ctx.fillStyle = sg; ctx.beginPath(); ctx.arc(p.x, p.y, r, 0, 6.28); ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1.5; ctx.stroke();
+  if (b.ring) { ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(-0.45); ctx.scale(1, 0.32);
+    ctx.strokeStyle = 'rgba(245,236,205,0.85)'; ctx.lineWidth = r * 0.34;
+    ctx.beginPath(); ctx.arc(0, 0, r * 1.7, Math.PI, 6.28); ctx.stroke(); ctx.restore(); }
+}
+function drawTarget(t) {
+  const p = target._p, r = target.r;
+  const pulse = 0.5 + 0.5 * Math.sin(t * 3);
+  ctx.strokeStyle = 'rgba(150,240,190,' + (0.35 + 0.4 * pulse) + ')'; ctx.lineWidth = 2.5;
+  ctx.beginPath(); ctx.arc(p.x, p.y, r + 10 + pulse * 6, 0, 6.28); ctx.stroke();
+  drawPlanet(target);
+  ctx.fillStyle = 'rgba(200,255,220,' + (0.5 + 0.5 * pulse) + ')';
+  ctx.beginPath(); ctx.arc(p.x, p.y - r - 16, 3.2, 0, 6.28); ctx.fill();
+}
+function drawPad() {
+  ctx.save(); ctx.translate(pad.x, pad.y);
+  ctx.fillStyle = '#2b3560'; ctx.beginPath(); ctx.ellipse(0, 8, 26, 8, 0, 0, 6.28); ctx.fill();
+  ctx.fillStyle = '#3d4a80'; ctx.fillRect(-16, -4, 32, 10);
+  ctx.strokeStyle = '#6b7ac0'; ctx.lineWidth = 2; ctx.strokeRect(-16, -4, 32, 10);
+  ctx.restore();
+}
+function outcomeColor(o) { return o === 'hit' ? '#7dffb0' : o === 'crash' ? '#ff6b6b' : o === 'escape' ? '#8fb6ff' : '#93a2c8'; }
+function drawPredict() {
+  if (!predicted) return;
+  const col = outcomeColor(predicted.outcome), pts = predicted.pts;
+  for (let i = 0; i < pts.length; i++) {
+    const a = 0.9 * (1 - i / pts.length) + 0.1;
+    ctx.globalAlpha = a; ctx.fillStyle = col;
+    ctx.beginPath(); ctx.arc(pts[i].x, pts[i].y, 2.4, 0, 6.28); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+  if (predicted.outcome === 'hit' || predicted.outcome === 'crash') {
+    const e = predicted.end; ctx.strokeStyle = col; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(e.x, e.y, 9, 0, 6.28); ctx.stroke();
+  }
+  const L = 26 + aim.power * 30;   // aim vector from the pad
+  ctx.strokeStyle = 'rgba(255,220,120,0.9)'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(pad.x, pad.y); ctx.lineTo(pad.x + Math.cos(aim.angle) * L, pad.y + Math.sin(aim.angle) * L); ctx.stroke();
+}
+function drawProbe() {
+  if (!probe) return;
+  if (trail.length > 1) {
+    for (let i = 1; i < trail.length; i++) {
+      const a = (i / trail.length) * 0.8;
+      ctx.strokeStyle = 'rgba(120,200,255,' + a + ')'; ctx.lineWidth = 1 + a * 2.5; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke();
+    }
+  }
+  ctx.save(); ctx.translate(probe.x, probe.y); ctx.rotate(probe.ang);
+  const fl = 6 + Math.random() * 5;   // thruster flame
+  const fg = ctx.createLinearGradient(-6, 0, -6 - fl, 0); fg.addColorStop(0, '#ffd27a'); fg.addColorStop(1, 'rgba(255,120,40,0)');
+  ctx.fillStyle = fg; ctx.beginPath(); ctx.moveTo(-6, -3); ctx.lineTo(-6 - fl, 0); ctx.lineTo(-6, 3); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#e9eefb'; ctx.beginPath(); ctx.moveTo(9, 0); ctx.lineTo(-6, -5); ctx.lineTo(-3, 0); ctx.lineTo(-6, 5); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#5bd0ff'; ctx.beginPath(); ctx.arc(1, 0, 2, 0, 6.28); ctx.fill();
+  ctx.restore();
+}
+function drawParticles() {
+  for (const p of particles) {
+    const a = clamp01(p.life / p.max);
+    ctx.globalAlpha = a; ctx.fillStyle = p.color;
+    ctx.beginPath(); ctx.arc(p.x, p.y, p.size * (0.5 + a * 0.5), 0, 6.28); ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+function drawBanner() {
+  if (bonusT <= 0) return;
+  const a = clamp01(bonusT / 0.4) * clamp01(bonusT);
+  ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.font = '800 22px Georgia, serif'; ctx.fillStyle = '#ffe6a0';
+  ctx.fillText(bonusMsg, W / 2, H * 0.17); ctx.globalAlpha = 1;
+}
+function drawScene() {
+  refreshBodyPositions();
+  for (const b of bodies) drawPlanet(b);
+  if (target) drawTarget(sceneTime);
+  if (pad) drawPad();
+  if (phase === 'aim') drawPredict();
+  drawProbe();
+  drawParticles();
+}
+function render() {
+  drawBackground(sceneTime);                 // screen space, full bleed
+  ctx.save();
+  let sx = 0, sy = 0; if (shake > 0) { sx = rand(-shake, shake); sy = rand(-shake, shake); }
+  ctx.translate(view.ox + sx, view.oy + sy); ctx.scale(view.scale, view.scale);
+  drawScene();                               // design space
+  ctx.restore();
+  if (flashG > 0) { ctx.fillStyle = 'rgba(120,230,150,' + flashG * 0.5 + ')'; ctx.fillRect(0, 0, W, H); }
+  if (flashR > 0) { ctx.fillStyle = 'rgba(220,70,50,' + flashR * 0.5 + ')'; ctx.fillRect(0, 0, W, H); }
+  drawBanner();
+}
+
+// ============================================================
+// LOOP
+// ============================================================
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000; lastTs = ts; if (dt > 0.05) dt = 0.05;
+  sceneTime += dt;
+  shake = Math.max(0, shake - dt * 26);
+  flashG = Math.max(0, flashG - dt * 1.6); flashR = Math.max(0, flashR - dt * 1.4);
+  bonusT = Math.max(0, bonusT - dt);
+  for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.97; p.vy *= 0.97; if (p.life <= 0) particles.splice(i, 1); }
+
+  if (phase === 'flight' && probe) {
+    flightAcc += dt; let n = 0;
+    while (flightAcc >= FIXED_H && phase === 'flight' && n < 600) { stepFlight(FIXED_H); flightAcc -= FIXED_H; n++; }
+    if (probe && phase === 'flight') {
+      trail.push({ x: probe.x, y: probe.y }); if (trail.length > TRAIL_MAX) trail.shift();
+      if (Math.random() < 0.6) spawnParticle(probe.x, probe.y, -probe.vx * 0.05, -probe.vy * 0.05, rand(.25, .5), '#8fd0ff', rand(1.4, 3));
+    }
+  }
+  if (phase === 'demo') stepDemo(dt);
+  render();
+}
+
+// ============================================================
+// INPUT
+// ============================================================
+function stagePoint(e) {
+  const r = stage.getBoundingClientRect();
+  const cx = (e.touches ? e.touches[0].clientX : e.clientX) - r.left;
+  const cy = (e.touches ? e.touches[0].clientY : e.clientY) - r.top;
+  const sx = cx * (W / r.width), sy = cy * (H / r.height);
+  return { x: (sx - view.ox) / view.scale, y: (sy - view.oy) / view.scale };
+}
+function setAimFromPoint(pt) {
+  const dx = pt.x - pad.x, dy = pt.y - pad.y;
+  aim.angle = Math.atan2(dy, dx);
+  aim.power = clamp01(Math.hypot(dx, dy) / (DW * 0.24));
+}
+function onDown(e) {
+  if (phase !== 'aim') return;
+  aim.dragging = true; setAimFromPoint(stagePoint(e)); recomputePredict(); e.preventDefault();
+}
+function onMove(e) { if (phase === 'aim' && aim.dragging) { setAimFromPoint(stagePoint(e)); recomputePredict(); e.preventDefault(); } }
+function onUp(e) {
+  if (phase === 'aim' && aim.dragging) { aim.dragging = false; if (aim.power > 0.04) launch(); e.preventDefault(); }
+}
+stage.addEventListener('mousedown', onDown); window.addEventListener('mousemove', onMove); window.addEventListener('mouseup', onUp);
+stage.addEventListener('touchstart', onDown, { passive: false }); stage.addEventListener('touchmove', onMove, { passive: false }); stage.addEventListener('touchend', onUp, { passive: false });
+
+document.addEventListener('keydown', e => {
+  if (phase === 'fact' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onward(); return; }
+  if (phase !== 'aim') return;
+  const k = e.key;
+  if (k === 'ArrowLeft')  { aim.angle -= 0.035; recomputePredict(); e.preventDefault(); }
+  else if (k === 'ArrowRight') { aim.angle += 0.035; recomputePredict(); e.preventDefault(); }
+  else if (k === 'ArrowUp')    { aim.power = clamp01(aim.power + 0.03); recomputePredict(); e.preventDefault(); }
+  else if (k === 'ArrowDown')  { aim.power = clamp01(aim.power - 0.03); recomputePredict(); e.preventDefault(); }
+  else if (k === ' ' || k === 'Enter') { launch(); e.preventDefault(); }
+});
+
+// ---------- wiring ----------
+document.querySelectorAll('.diff-btn').forEach(b => b.addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.diff); }));
+document.getElementById('onwardBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); onward(); });
+document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(diffKey); });
+document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopPropagation(); toMenu(); });
+document.getElementById('saveNameBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); saveName(); });
+document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveName(); } });
+
+// ---------- screenshot / hero demo (open with ?shot) ----------
+let demo = null;
+function stepDemo(dt) {
+  demo.th += dt * 0.5; demo.tr += dt * 0.5;
+  probe.x = demo.cx + Math.cos(demo.th) * demo.rx;
+  probe.y = demo.cy + Math.sin(demo.th) * demo.ry;
+  const nx = demo.cx + Math.cos(demo.th + 0.05) * demo.rx, ny = demo.cy + Math.sin(demo.th + 0.05) * demo.ry;
+  probe.ang = Math.atan2(ny - probe.y, nx - probe.x);
+  trail.push({ x: probe.x, y: probe.y }); if (trail.length > TRAIL_MAX) trail.shift();
+}
+function bootDemo() {
+  document.body.classList.add('sl-shot'); setupCanvas();
+  diffKey = 'pilot'; diff = DIFF.pilot; level = 9; score = 4820; probes = 5; streak = 6;
+  const cx = DW * 0.5, cy = DH * 0.5;
+  bodies = [{ x: cx, y: cy, r: 62, role: 'grav', gm: 62 * 62 * GM_K, c1: '#e8cba0', c2: '#a8703a', ring: true }];
+  target = { x: DW * 0.84, y: DH * 0.26, r: 26, role: 'target', gm: 26 * 26 * GM_K, info: TARGETS[8], c1: '#7aa7f0', c2: '#2a4a9a' };
+  pad = { x: DW * 0.11, y: DH * 0.74 };
+  refreshBodyPositions();
+  demo = { cx, cy, rx: DW * 0.30, ry: DH * 0.30, th: -0.7, tr: 0 };
+  probe = { x: 0, y: 0, vx: 0, vy: 0, ang: 0, bent: 0 };
+  trail = [];
+  for (let i = 0; i < TRAIL_MAX; i++) { const th = demo.th - (TRAIL_MAX - i) * 0.5 * (1 / 60); trail.push({ x: cx + Math.cos(th) * demo.rx, y: cy + Math.sin(th) * demo.ry }); }
+  objBadge.textContent = 'Slingshot to Saturn';
+  phase = 'demo';
+  startOverlay.classList.add('hidden');
+}
+
+// ---------- boot ----------
+setupCanvas();
+render();
+rafId = requestAnimationFrame(loop);
+if (/[?&]shot\b/.test(location.search)) bootDemo();
+</script>
+</body>
+</html>

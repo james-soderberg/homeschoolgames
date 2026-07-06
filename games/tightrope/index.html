@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tightrope — HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .tr-page { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+    .game-layout-wide { max-width: min(2200px, 98vw); gap: 1rem; }
+    @media (min-width: 1001px) {
+      .game-layout-wide { justify-content: center; }
+      .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
+    }
+
+    .tr-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .tr-top h1 { margin: 0; font-size: 1.8rem; }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.4rem 0.9rem; font-weight: 700; font-size: 0.9rem; font-family: var(--font-sans);
+      color: var(--ink); white-space: nowrap;
+    }
+    .hearts { letter-spacing: 0.05em; line-height: 1; }
+    .hearts .spent { filter: grayscale(1) opacity(0.4); }
+
+    /* value to place */
+    .tr-prompt { display: flex; align-items: center; justify-content: center; gap: 0.8rem; margin: 0.35rem 0 0.7rem; min-height: 62px; }
+    .tr-prompt-label { font-family: var(--font-serif); font-size: 1.15rem; color: var(--ink-light); font-weight: 600; }
+    .tr-value {
+      font-family: var(--font-sans); font-weight: 800; color: var(--ink);
+      background: #fffdf5; border: 2.5px solid var(--gold); border-radius: 14px;
+      padding: 0.15rem 1.1rem; min-width: 76px; text-align: center; line-height: 1;
+      box-shadow: 0 4px 0 #d9b74e, 0 6px 16px rgba(40,25,5,0.18); font-size: 2.3rem;
+    }
+    /* stacked fraction inside the value card */
+    .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 0.92; vertical-align: middle; font-size: 0.62em; }
+    .frac .num { padding: 0 0.15em; }
+    .frac .den { padding: 0 0.15em; border-top: 0.11em solid currentColor; }
+    .frac.neg { flex-direction: row; align-items: center; }
+    .frac.neg .sign { font-size: 1.5em; margin-right: 0.06em; }
+    .tr-value .mixnum { vertical-align: middle; margin-right: 0.14em; }
+    .tr-value.pop { animation: trPop 0.32s cubic-bezier(.34,1.56,.64,1); }
+    @keyframes trPop { 0% { transform: scale(0.72); } 60% { transform: scale(1.09); } 100% { transform: scale(1); } }
+
+    /* the stage */
+    .tr-stage {
+      position: relative; width: 100%; height: min(60vh, 540px); min-height: 360px;
+      border-radius: 16px; overflow: hidden; border: 2.5px solid #6d5636;
+      box-shadow: 0 10px 30px rgba(40,25,5,0.28); user-select: none; touch-action: none;
+      background: #bfe3f2;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; }
+    #scene.grabbing { cursor: grabbing; }
+
+    .tr-balance-btn {
+      position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 6;
+      background: var(--gold); color: var(--ink); border: none; border-radius: 99px;
+      padding: 0.7rem 1.8rem; font-family: var(--font-sans); font-size: 1.05rem; font-weight: 800;
+      cursor: pointer; box-shadow: 0 5px 0 #a07f2c; transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    .tr-balance-btn:hover { background: #d0ab48; }
+    .tr-balance-btn:active { transform: translateX(-50%) translateY(4px); box-shadow: 0 1px 0 #a07f2c; }
+    .tr-balance-btn.hidden { display: none; }
+
+    /* overlays */
+    .tr-overlay {
+      position: absolute; inset: 0; z-index: 12; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; padding: 1.5rem;
+      background: rgba(20,28,40,0.82); backdrop-filter: blur(2px); color: #fdf7ec;
+    }
+    .tr-overlay.hidden { display: none; }
+    .tr-overlay h2 { font-family: var(--font-serif); color: #fff; font-size: 2.1rem; margin: 0 0 0.3rem; }
+    .tr-overlay p { color: #e7ddcf; margin: 0 0 1.1rem; max-width: 40ch; font-size: 0.98rem; line-height: 1.5; }
+    .tr-crest { font-size: 3rem; line-height: 1; margin-bottom: 0.3rem; }
+
+    .tier-row { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 380px; }
+    .tier-btn {
+      display: flex; align-items: center; gap: 0.75rem; text-align: left;
+      background: rgba(255,253,244,0.96); border: 2.5px solid var(--border); border-radius: 12px;
+      padding: 0.7rem 0.95rem; cursor: pointer; font-family: var(--font-sans); color: var(--ink);
+      transition: transform 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .tier-btn:hover { transform: translateY(-2px); border-color: var(--gold); background: #fff; }
+    .tier-btn .t-icon { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
+    .tier-btn .t-name { font-weight: 800; font-size: 1.1rem; }
+    .tier-btn .t-desc { font-size: 0.76rem; color: var(--ink-light); }
+
+    .play-btn {
+      background: var(--gold); color: var(--ink); border: none; border-radius: 99px; padding: 0.8rem 2rem;
+      font-family: var(--font-sans); font-size: 1.05rem; font-weight: 800; cursor: pointer;
+      box-shadow: 0 5px 0 #a07f2c; transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    .play-btn:hover { background: #d0ab48; }
+    .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07f2c; }
+    .play-btn.secondary { background: transparent; color: #fdf7ec; border: 2px solid rgba(253,247,236,0.5); box-shadow: none; font-size: 0.95rem; padding: 0.55rem 1.4rem; }
+    .play-btn.secondary:hover { background: rgba(253,247,236,0.12); }
+    .overlay-actions { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+    .final-stats { display: flex; gap: 1.4rem; margin-bottom: 1.1rem; }
+    .final-stats .fs { display: flex; flex-direction: column; align-items: center; }
+    .final-stats .fs b { font-family: var(--font-serif); font-size: 2.1rem; line-height: 1; color: var(--gold-light); }
+    .final-stats .fs span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.09em; color: #cdc2b4; margin-top: 0.25rem; }
+
+    /* feedback + hint */
+    .tr-feedback { text-align: center; min-height: 1.6rem; margin: 0.7rem 0 0.2rem; font-weight: 700; font-size: 1.02rem; }
+    .tr-feedback .sub { display: block; font-weight: 500; font-size: 0.85rem; color: var(--ink-light); margin-top: 0.1rem; }
+    .tr-hint { text-align: center; font-size: 0.84rem; color: var(--ink-light); margin: 0.2rem 0 0; line-height: 1.5; }
+    .tr-hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; font-size: 0.8rem; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.55rem; }
+    .reset-link { background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem; }
+    .reset-link:hover { color: var(--ink); }
+
+    @media (max-width: 600px) { .tr-stage { height: 54vh; min-height: 320px; } .tr-value { font-size: 1.9rem; } }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../subjects/math.html">← Math</a>
+  </nav>
+</header>
+
+<div class="game-layout game-layout-wide">
+<div class="tr-page game-main">
+
+  <div class="tr-top">
+    <h1>Tightrope</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="tierBadge">🌱 Easy</div>
+      <div class="stat-badge" id="streakBadge">🔥 0</div>
+      <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️</div>
+    </div>
+  </div>
+
+  <div class="tr-prompt">
+    <span class="tr-prompt-label">Balance on</span>
+    <div class="tr-value" id="valueCard">½</div>
+  </div>
+
+  <div class="tr-stage" id="stage">
+    <canvas id="scene"></canvas>
+    <button class="tr-balance-btn hidden" id="balanceBtn">Balance! ⚖️</button>
+
+    <!-- Start / tier picker -->
+    <div class="tr-overlay" id="startOverlay">
+      <div class="tr-crest">🎪</div>
+      <h2>Tightrope</h2>
+      <p>A value appears — slide the walker to where it sits on the line. Let go: close means they balance, off means they teeter. The line is only labeled at the ends, so you have to <em>feel</em> the size.</p>
+      <div class="tier-row" id="tierRow"></div>
+    </div>
+
+    <!-- Game over -->
+    <div class="tr-overlay hidden" id="overOverlay">
+      <div class="tr-crest" id="overCrest">🎪</div>
+      <h2 id="overTitle">Nice walking!</h2>
+      <div class="final-stats">
+        <div class="fs"><b id="fsStreak">0</b><span>Best Streak</span></div>
+        <div class="fs"><b id="fsAcc">0%</b><span>Accuracy</span></div>
+        <div class="fs"><b id="fsRounds">0</b><span>Crossings</span></div>
+      </div>
+      <div class="hsg-board" id="trBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
+      <div class="overlay-actions">
+        <button class="play-btn" id="againBtn">Walk Again 🥾</button>
+        <button class="play-btn secondary" id="changeTierBtn">Change Level</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tr-feedback" id="feedback"></div>
+  <p class="tr-hint">Drag the walker along the rope, then press <kbd>Balance</kbd> (or <kbd>Space</kbd>). Nudge with <kbd>←</kbd> <kbd>→</kbd>.</p>
+  <div class="control-row"><button class="reset-link" id="quitBtn">Quit &amp; Choose Level</button></div>
+
+</div><!-- /.tr-page -->
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.app</a>
+</footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script>
+// ============================================================
+// TIGHTROPE — place a value on a number line labeled only at its
+// ends; a walker balances if you're close, teeters/falls if you're
+// off. Trains magnitude sense for fractions, decimals, %, negatives.
+// ============================================================
+
+// ---------- Utils ----------
+const rand  = (a,b)=> a + Math.random()*(b-a);
+const randi = (a,b)=> Math.floor(rand(a,b+1));
+const choice= a => a[Math.floor(Math.random()*a.length)];
+const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
+const lerp  = (a,b,t)=> a + (b-a)*t;
+
+// Round a value to a short decimal string (trim trailing zeros).
+function decStr(v){
+  if (Number.isInteger(v)) return String(v);
+  let s = v.toFixed(3).replace(/0+$/,'').replace(/\.$/,'');
+  return s;
+}
+
+// ---------- Value pools per level ----------
+// A round = { lo, hi, value, label, kind, hideEnds }
+function fracLabel(n,d){ return (n<0?'-':'') + Math.abs(n) + '/' + d; }
+function mixedLabel(w,n,d){ return (w<0?'-':'') + Math.abs(w) + ' ' + n + '/' + d; }
+function frac(n,d){ return { value:n/d, label:fracLabel(n,d), kind:'frac' }; }
+function mixed(w,n,d){ return { value:(w<0?-1:1)*(Math.abs(w)+n/d), label:mixedLabel(w,n,d), kind:'mixed' }; }
+
+// -- EASY: whole numbers + friendly halves/quarters, endpoints labeled --
+function genEasy(){
+  const r=Math.random();
+  if(r<0.4){ const v=randi(1,9); return {lo:0,hi:10,value:v,label:String(v),kind:'int'}; }
+  if(r<0.65){ const v=randi(1,9)*10; return {lo:0,hi:100,value:v,label:String(v),kind:'int'}; }
+  const o=choice([frac(1,2),frac(1,4),frac(3,4),{value:0.5,label:'0.5',kind:'dec'},{value:0.25,label:'0.25',kind:'dec'},
+                  {value:0.75,label:'0.75',kind:'dec'},{value:0.5,label:'50%',kind:'pct'},{value:0.25,label:'25%',kind:'pct'}]);
+  return {lo:0,hi:1, ...o};
+}
+
+// -- MEDIUM: fractions, decimals & percents on 0–1 (the classic misconceptions) --
+const FRACS = [[1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[1,8],[3,8],[5,8],[7,8],[1,10],[3,10],[7,10],[9,10],[1,6],[5,6]];
+const MIX_DECS = [0.1,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.6,0.65,0.7,0.75,0.8,0.9,0.05,0.15];
+const MIX_PCTS = [10,15,20,25,40,45,50,60,75,80,90,5,35,65,30];
+function genMedium(){
+  const r=Math.random();
+  if(r<0.4){ const [n,d]=choice(FRACS); return {lo:0,hi:1, ...frac(n,d)}; }
+  if(r<0.68){ const v=choice(MIX_DECS); return {lo:0,hi:1,value:v,label:decStr(v),kind:'dec'}; }
+  if(r<0.9){ const p=choice(MIX_PCTS); return {lo:0,hi:1,value:p/100,label:p+'%',kind:'pct'}; }
+  const v=choice([1.5,2.5,3.5,4.5,6.5,7.5,8.8,4.2]); return {lo:0,hi:10,value:v,label:decStr(v),kind:'dec'};
+}
+
+// -- HARD: improper fractions, mixed numbers, offset/negative ranges, %>100 --
+function genHard(){
+  switch(randi(0,5)){
+    case 0: { const o=choice([[7,4],[5,3],[9,4],[11,8],[5,2],[7,3],[13,8],[9,8],[8,3],[7,6]]);
+              return {lo:0, hi:(o[0]/o[1]>3?4:3), ...frac(o[0],o[1])}; }                 // improper fractions
+    case 1: { const m=choice([mixed(1,1,2),mixed(2,1,4),mixed(1,3,4),mixed(2,2,3),mixed(1,1,3),mixed(2,1,2),mixed(1,5,8),mixed(2,3,4)]);
+              return {lo:0,hi:3, ...m}; }                                                // mixed numbers
+    case 2: { if(Math.random()<0.5){ const v=choice([-0.75,-0.4,-0.6,-0.25,-0.1,0.35,0.65,0.85,-0.85]); return {lo:-1,hi:1,value:v,label:decStr(v),kind:'dec'}; }
+              const [n,d]=choice([[-3,4],[-1,3],[-2,3],[1,3],[3,4],[-1,4]]); return {lo:-1,hi:1, ...frac(n,d)}; }
+    case 3: { const R=choice([[2,5,[2.5,3,3.5,4.25,4.5]],[10,20,[12,13,14.5,17,18.5]],[-5,5,[-2,-3.5,1.5,3,-4]],
+                              [-3,7,[0,-1,2,4.5,-2.5]],[5,15,[7,8.5,11,13.5]]]);
+              const v=choice(R[2]); return {lo:R[0],hi:R[1],value:v,label:decStr(v),kind:'dec'}; }   // unusual visible ranges
+    case 4: { if(Math.random()<0.5){ const v=choice([0.05,0.15,0.35,0.375,0.625,0.85,0.95,0.45,0.55]); return {lo:0,hi:1,value:v,label:decStr(v),kind:'dec'}; }
+              const v=choice([1.4,1.6,0.4,1.25,1.75,0.75,1.1]); return {lo:0,hi:2,value:v,label:decStr(v),kind:'dec'}; }
+    default:{ const p=choice([120,140,150,175,80,110]); return {lo:0,hi:(p>100?2:1),value:p/100,label:p+'%',kind:'pct'}; }  // percents past 100
+  }
+}
+
+// -- EINSTEIN: irrationals, hidden endpoints, big denominators, wild ranges --
+function genEinstein(){
+  switch(randi(0,6)){
+    case 0: { const o=choice([['√2',Math.SQRT2,2],['√3',Math.sqrt(3),2],['√5',Math.sqrt(5),3],['π',Math.PI,4],
+                              ['e',Math.E,3],['φ',1.618034,2],['π/2',Math.PI/2,2],['√7',Math.sqrt(7),3]]);
+              return {lo:0,hi:o[2],value:o[1],label:o[0],kind:'irr'}; }                  // irrationals!
+    case 1: { const o=choice([frac(3,7),frac(5,12),frac(7,16),frac(5,6),frac(2,9),frac(7,12),frac(3,16),frac(11,12),
+                              {value:0.42,label:'0.42',kind:'dec'},{value:0.58,label:'0.58',kind:'dec'},{value:0.37,label:'37%',kind:'pct'}]);
+              return {lo:0,hi:1, ...o, hideEnds:true}; }                                 // blank ends — pure proportion
+    case 2: { const R=choice([[0.2,0.8,[0.3,0.5,0.65,0.35,0.75]],[3,8,[4.25,5.5,6.75,3.5,7.5]],[-2.5,2.5,[-1.25,0.75,-0.5,1.75,-2]],
+                              [-7,13,[0,2,-3,5,-5,9]],[100,1000,[250,550,325,775,900]],[-1.5,2.5,[0,1,-1,0.5,2]]]);
+              const v=choice(R[2]); return {lo:R[0],hi:R[1],value:v,label:decStr(v),kind:'dec'}; }   // wild non-round ranges
+    case 3: { const o=choice([[13,5,5],[17,8,3],[11,3,4],[19,6,4],[23,8,3]]); return {lo:0,hi:o[2], ...frac(o[0],o[1])}; }  // improper on odd range
+    case 4: { const [n,d]=choice([[5,12],[7,16],[11,12],[3,16],[7,12],[5,16],[9,16],[5,9],[4,9],[7,9]]); return {lo:0,hi:1, ...frac(n,d)}; }  // big denominators
+    case 5: { if(Math.random()<0.5){ const o=choice([[-5,4],[-7,3],[-11,8],[-9,4],[-7,6]]); return {lo:-3,hi:1, ...frac(o[0],o[1])}; }
+              const m=choice([mixed(-1,3,4),mixed(-2,1,3),mixed(-1,1,2)]); return {lo:-3,hi:1, ...m}; }   // negative improper / mixed
+    default:{ const o=choice([frac(2,7),frac(3,7),frac(4,7),frac(1,9),frac(2,9),frac(5,9),frac(1,6),frac(5,6)]);
+              return {lo:0,hi:1, ...o, hideEnds: Math.random()<0.5}; }                   // recurring decimals, sometimes hidden
+  }
+}
+
+const TIERS = {
+  easy:     { label:'Easy',     icon:'🌱', desc:'Whole numbers & simple halves',              gen:genEasy,     balTol:0.056, saveTol:0.120 },
+  medium:   { label:'Medium',   icon:'✏️', desc:'Fractions, decimals & percents (0–1)',        gen:genMedium,   balTol:0.045, saveTol:0.095 },
+  hard:     { label:'Hard',     icon:'🔥', desc:'Improper fractions, mixed #s, offset ranges', gen:genHard,     balTol:0.034, saveTol:0.074 },
+  einstein: { label:'Einstein', icon:'🧠', desc:'Irrationals, hidden ends, wild ranges',       gen:genEinstein, balTol:0.026, saveTol:0.058 },
+};
+const TIER_ORDER = ['easy','medium','hard','einstein'];
+const START_LIVES = 3;
+const FALL_STRUGGLE = 1.5;   // seconds a doomed walker slowly teeters before toppling
+
+function currentGen(){ return TIERS[tierKey].gen; }
+function tolsFor(){
+  const st = TIERS[tierKey];
+  const k = 1 - Math.min(0.25, streak*0.018);   // tightens with streak — mastery pressure, capped 25%
+  return { bal: st.balTol*k, save: st.saveTol*k };
+}
+
+// ---------- DOM ----------
+const stage      = document.getElementById('stage');
+const canvas     = document.getElementById('scene');
+const ctx        = canvas.getContext('2d');
+const valueCard  = document.getElementById('valueCard');
+const tierBadge  = document.getElementById('tierBadge');
+const streakBadge= document.getElementById('streakBadge');
+const heartsBadge= document.getElementById('heartsBadge');
+const balanceBtn = document.getElementById('balanceBtn');
+const startOverlay = document.getElementById('startOverlay');
+const overOverlay  = document.getElementById('overOverlay');
+const feedbackEl = document.getElementById('feedback');
+
+// ---------- Canvas sizing ----------
+let W=900, H=500, dpr=1;
+function setupCanvas(){
+  const r = stage.getBoundingClientRect();
+  W = Math.max(360, r.width); H = r.height;
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  buildScenery();
+}
+window.addEventListener('resize', setupCanvas);
+
+// ---------- Geometry ----------
+function ropeLeftX(){ return W*0.11; }
+function ropeRightX(){ return W*0.89; }
+function ropeLen(){ return ropeRightX() - ropeLeftX(); }
+function ropeBaseY(){ return H*0.50; }
+const SAG = () => Math.min(28, H*0.055);
+function ropeYAt(x){ const t=clamp((x-ropeLeftX())/ropeLen(),0,1); return ropeBaseY() + SAG()*Math.sin(Math.PI*t); }
+function xForValue(v){ const t=(v-round.lo)/(round.hi-round.lo); return ropeLeftX() + t*ropeLen(); }
+function errFracOf(x){ return Math.abs(x - actualX)/ropeLen(); }
+
+// ---------- State ----------
+let tierKey='easy', tier=TIERS.easy;
+let state='menu';          // menu | aim | result | over
+let round=null, actualX=0, walkerX=0;
+let lives=START_LIVES, streak=0, bestStreak=0, rounds=0, successes=0;
+let outcome=null, resultT=0, wobbleAmp=0, tipDir=1, fallY=0, fellFx=false, advanced=false, revealed=false;
+let dragging=false, running=false, rafId=null, lastTs=0, sceneT=0;
+
+const rail = HSGStreak.init({
+  gameId:'tightrope', gameName:'Tightrope', minStreak:3,
+  level:'easy', levelName:'Easy',
+  mount: document.getElementById('streakRail')
+});
+
+// ---------- Scenery ----------
+let clouds=[], hills=[], birds=[];
+function buildScenery(){
+  clouds=[]; for(let i=0;i<5;i++) clouds.push({x:rand(0,W),y:rand(H*0.08,H*0.32),s:rand(0.7,1.5),v:rand(3,8)});
+  hills=[]; for(let i=0;i<3;i++) hills.push({y:H*(0.60+i*0.06), amp:rand(16,30), col:['#8fb98a','#7aa876','#659463'][i], off:rand(0,6.28)});
+  birds=[]; for(let i=0;i<3;i++) birds.push({x:rand(0,W),y:rand(H*0.14,H*0.3),v:rand(10,20),ph:rand(0,6.28)});
+}
+function drawSky(){
+  const g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#8fd0ec'); g.addColorStop(0.45,'#bfe6f3'); g.addColorStop(0.75,'#eaf6e6'); g.addColorStop(1,'#dcecd0');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // sun glow
+  const sx=W*0.82, sy=H*0.18;
+  const hg=ctx.createRadialGradient(sx,sy,4,sx,sy,90); hg.addColorStop(0,'rgba(255,246,205,0.85)'); hg.addColorStop(1,'rgba(255,246,205,0)');
+  ctx.fillStyle=hg; ctx.beginPath(); ctx.arc(sx,sy,90,0,6.28); ctx.fill();
+  ctx.fillStyle='#fff3c4'; ctx.beginPath(); ctx.arc(sx,sy,26,0,6.28); ctx.fill();
+  // clouds
+  for(const c of clouds){ c.x -= c.v*0.016; if(c.x<-60) c.x=W+60; drawCloud(c.x,c.y,c.s); }
+  // birds (little m shapes)
+  ctx.strokeStyle='rgba(60,70,80,0.55)'; ctx.lineWidth=2;
+  for(const b of birds){ b.x += b.v*0.016; if(b.x>W+20) b.x=-20; const f=Math.sin(sceneT*6+b.ph)*3;
+    ctx.beginPath(); ctx.moveTo(b.x-7,b.y); ctx.quadraticCurveTo(b.x-3,b.y-4-f,b.x,b.y); ctx.quadraticCurveTo(b.x+3,b.y-4-f,b.x+7,b.y); ctx.stroke(); }
+  // rolling hills
+  for(const h of hills){
+    ctx.fillStyle=h.col; ctx.beginPath(); ctx.moveTo(0,H);
+    for(let x=0;x<=W;x+=24) ctx.lineTo(x, h.y + Math.sin(x*0.012+h.off)*h.amp);
+    ctx.lineTo(W,H); ctx.closePath(); ctx.fill();
+  }
+}
+function drawCloud(x,y,s){
+  ctx.fillStyle='rgba(255,255,255,0.9)';
+  for(const [ox,oy,r] of [[-20,4,15],[0,-5,20],[22,3,16],[6,7,18]]){ ctx.beginPath(); ctx.ellipse(x+ox*s,y+oy*s,r*s,r*0.72*s,0,0,6.28); ctx.fill(); }
+}
+// the canyon the rope crosses
+function drawCanyon(){
+  const topY = ropeBaseY()+SAG()+70;
+  const g=ctx.createLinearGradient(0,topY,0,H);
+  g.addColorStop(0,'rgba(120,150,120,0.0)'); g.addColorStop(0.25,'#6f5a48'); g.addColorStop(1,'#3f3226');
+  ctx.fillStyle=g; ctx.fillRect(0,topY,W,H-topY);
+  // hazy depth lines
+  ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=2;
+  for(let i=1;i<5;i++){ const y=topY+i*(H-topY)/5; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+}
+
+// ---------- Posts, rope, labels ----------
+function drawPosts(){
+  for(const side of [0,1]){
+    const x = side? ropeRightX() : ropeLeftX();
+    const y = ropeBaseY();
+    // platform
+    ctx.fillStyle='#8a6a44'; ctx.fillRect(x-26, y-6, 52, 14);
+    ctx.fillStyle='#6f5334'; ctx.fillRect(x-26, y+6, 52, 5);
+    // post going down into canyon
+    ctx.fillStyle='#7a5c3a'; ctx.fillRect(x-7, y+8, 14, H*0.5);
+    // little flag on outer edge
+    const fx = side? x+22 : x-22, fy=y-42;
+    ctx.strokeStyle='#5a4326'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(fx,y-4); ctx.lineTo(fx,fy); ctx.stroke();
+    ctx.fillStyle= side? '#c0453a':'#3a6ea5'; ctx.beginPath(); ctx.moveTo(fx,fy); ctx.lineTo(fx+(side?-20:20),fy+7); ctx.lineTo(fx,fy+14); ctx.closePath(); ctx.fill();
+  }
+}
+function drawRope(){
+  ctx.strokeStyle='#e9d9a8'; ctx.lineWidth=4; ctx.lineCap='round';
+  ctx.beginPath();
+  for(let x=ropeLeftX(); x<=ropeRightX(); x+=8){ const y=ropeYAt(x); if(x===ropeLeftX()) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+  ctx.lineTo(ropeRightX(), ropeYAt(ropeRightX())); ctx.stroke();
+  // shadow strand
+  ctx.strokeStyle='rgba(120,90,40,0.35)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); for(let x=ropeLeftX(); x<=ropeRightX(); x+=8){ const y=ropeYAt(x)+3; if(x===ropeLeftX()) ctx.moveTo(x,y); else ctx.lineTo(x,y); } ctx.stroke();
+}
+function endpointLabel(v){ return decStr(v); }
+function drawEndLabels(){
+  const hide = round && round.hideEnds && state!=='result';
+  ctx.font='800 20px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(const side of [0,1]){
+    const x = side? ropeRightX() : ropeLeftX(); const y=ropeBaseY()-26;
+    const txt = hide ? '?' : endpointLabel(side? round.hi : round.lo);
+    const w = ctx.measureText(txt).width + 18;
+    ctx.fillStyle='#fffdf5'; ctx.strokeStyle='#6d5636'; ctx.lineWidth=2;
+    roundRect(x-w/2, y-15, w, 28, 7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle= hide? '#a08b5a' : '#33291a'; ctx.fillText(txt, x, y);
+  }
+}
+
+// ---------- The reveal marker (true position) ----------
+function drawMarker(){
+  if(!revealed) return;
+  const x=actualX, y=ropeYAt(x);
+  ctx.strokeStyle='#2A5C3F'; ctx.lineWidth=2.5; ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x, y-58); ctx.stroke(); ctx.setLineDash([]);
+  // flag
+  ctx.fillStyle='#2A5C3F'; ctx.beginPath(); ctx.moveTo(x,y-58); ctx.lineTo(x+26,y-52); ctx.lineTo(x,y-46); ctx.closePath(); ctx.fill();
+  // value readout
+  const txt = revealText();
+  ctx.font='800 15px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='bottom';
+  const w=ctx.measureText(txt).width+14;
+  ctx.fillStyle='#2A5C3F'; roundRect(x-w/2, y-84, w, 22, 6); ctx.fill();
+  ctx.fillStyle='#fff'; ctx.fillText(txt, x, y-65);
+  // dot on rope
+  ctx.fillStyle='#2A5C3F'; ctx.beginPath(); ctx.arc(x,y,5,0,6.28); ctx.fill();
+}
+function revealText(){
+  const d = decStr(round.value);
+  return (round.label===d) ? d : (round.label + ' = ' + d);
+}
+
+// ---------- The walker ----------
+function drawWalker(){
+  const x = walkerX, y = ropeYAt(walkerX);
+  let tilt=0, dy=0, extraRot=0, mood='focus';
+  const idle = (state==='aim');
+  const idleTilt = idle ? Math.sin(sceneT*1.6)*0.028 : 0;   // gentle breathing sway
+  const idleBob  = idle ? Math.sin(sceneT*2.3)*0.7 : 0;
+  if(state==='result'){
+    if(outcome==='fall'){
+      mood='scared';
+      if(resultT < FALL_STRUGGLE){                 // slow teeter — leaning worse and worse
+        const sp = resultT/FALL_STRUGGLE;
+        const sway = Math.sin(resultT*5.2);        // slow, wide sway (~0.8 Hz)
+        tilt = tipDir*(sp*sp*0.55 + (0.26+sp*0.28)*sway);
+      } else {                                      // lost it — tip past the point of no return and drop
+        const tp = resultT - FALL_STRUGGLE;
+        tilt = tipDir*Math.min(1.55, 0.55 + tp*2.4);
+        dy = fallY;
+      }
+    }
+    else { tilt = tipDir * wobbleAmp * Math.cos(resultT*9) * Math.exp(-resultT*3.1);
+           mood = (Math.abs(tilt)>0.09) ? 'wobble' : 'happy'; }   // steadies → smiles in place
+  }
+
+  ctx.save();
+  ctx.translate(x, y+dy+idleBob);
+  ctx.rotate(tilt + idleTilt + extraRot);
+  // shadow on the rope (fades once falling)
+  if(!(outcome==='fall' && fallY>4)){ ctx.fillStyle='rgba(0,0,0,0.12)'; ctx.beginPath(); ctx.ellipse(0,2,12,3,0,0,6.28); ctx.fill(); }
+
+  // legs
+  ctx.strokeStyle='#3a3f4a'; ctx.lineWidth=3.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(-4,-14); ctx.moveTo(0,0); ctx.lineTo(4,-14); ctx.stroke();
+  // body
+  ctx.strokeStyle='#c0453a'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(0,-14); ctx.lineTo(0,-34); ctx.stroke();
+
+  // balance pole — counter-rotates against the lean (a real walker keeps it level)
+  // with a lively micro-wobble while aiming; arms reach from the shoulders to it.
+  const shoulderY = -28;
+  const poleA = -(tilt+idleTilt)*0.62 + (idle?Math.sin(sceneT*3)*0.05:0);
+  const pl = Math.min(150, ropeLen()*0.18), hr = pl*0.26;
+  const px=Math.cos(poleA), py=Math.sin(poleA);
+  ctx.strokeStyle='#7a5c3a'; ctx.lineWidth=3;
+  ctx.beginPath(); ctx.moveTo(-pl*px, shoulderY-pl*py); ctx.lineTo(pl*px, shoulderY+pl*py); ctx.stroke();
+  ctx.fillStyle='#5a4326';
+  ctx.beginPath(); ctx.arc(-pl*px, shoulderY-pl*py,3,0,6.28); ctx.fill();
+  ctx.beginPath(); ctx.arc(pl*px, shoulderY+pl*py,3,0,6.28); ctx.fill();
+  // arms from shoulders to the grip points on the pole
+  ctx.strokeStyle='#c0453a'; ctx.lineWidth=4;
+  ctx.beginPath(); ctx.moveTo(0,-30); ctx.lineTo(-hr*px, shoulderY-hr*py); ctx.moveTo(0,-30); ctx.lineTo(hr*px, shoulderY+hr*py); ctx.stroke();
+
+  // head + face
+  ctx.fillStyle='#f0c9a0'; ctx.beginPath(); ctx.arc(0,-42,8,0,6.28); ctx.fill();
+  drawFace(mood);
+  ctx.fillStyle='#3a3f4a'; ctx.beginPath(); ctx.arc(0,-48,8,Math.PI*1.05,Math.PI*1.95); ctx.fill(); // hair cap
+  ctx.restore();
+
+  // grab hint chevrons while aiming
+  if(state==='aim'){
+    ctx.fillStyle='rgba(60,63,74,'+(0.32+0.24*Math.sin(sceneT*4))+')';
+    ctx.font='800 16px Inter'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('‹ ›', x, y+18);
+  }
+}
+// tiny expression on the head, in the walker's local (rotated) frame
+function drawFace(mood){
+  ctx.fillStyle='#2a2f38'; ctx.strokeStyle='#2a2f38';
+  if(mood==='scared'){
+    ctx.beginPath(); ctx.arc(-3,-43,2,0,6.28); ctx.arc(3,-43,2,0,6.28); ctx.fill();
+    ctx.lineWidth=1.2; ctx.beginPath(); ctx.arc(0,-38.5,2.2,0,6.28); ctx.stroke();          // open "O"
+  } else if(mood==='happy'){
+    ctx.beginPath(); ctx.arc(-3,-43.5,1.3,0,6.28); ctx.arc(3,-43.5,1.3,0,6.28); ctx.fill();
+    ctx.lineWidth=1.3; ctx.beginPath(); ctx.arc(0,-40,3,0.15*Math.PI,0.85*Math.PI); ctx.stroke(); // smile
+  } else if(mood==='wobble'){
+    ctx.beginPath(); ctx.arc(-3,-43,1.3,0,6.28); ctx.arc(3,-43,1.3,0,6.28); ctx.fill();
+    ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(-2.5,-39); ctx.lineTo(2.5,-39); ctx.stroke();  // tense
+  } else {
+    ctx.beginPath(); ctx.arc(-3,-43,1.3,0,6.28); ctx.arc(3,-43,1.3,0,6.28); ctx.fill();
+    ctx.lineWidth=1.1; ctx.beginPath(); ctx.moveTo(-2,-39); ctx.lineTo(2,-39); ctx.stroke();
+  }
+}
+
+// ---------- Main render ----------
+function draw(){
+  ctx.clearRect(0,0,W,H);
+  drawSky();
+  drawCanyon();
+  drawPosts();
+  drawRope();
+  drawBenchmarks();     // faint ¼/½/¾ landmarks, only on reveal
+  drawMarker();
+  drawEndLabels();
+  drawWalker();
+}
+// benchmark landmarks appear on reveal so kids see where the value sits relative
+// to friendly reference points — but stay hidden while aiming (no cheating).
+function drawBenchmarks(){
+  if(!revealed || !round) return;
+  const lo=round.lo, hi=round.hi;
+  let vals, labs;
+  if(lo===0 && hi===1){ vals=[0,0.25,0.5,0.75,1]; labs=['0','¼','½','¾','1']; }
+  else { const s=hi-lo; vals=[lo,lo+s*0.25,lo+s*0.5,lo+s*0.75,hi]; labs=vals.map(decStr); }
+  ctx.font='700 11px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='top';
+  for(let i=0;i<vals.length;i++){
+    const x=xForValue(vals[i]), y=ropeYAt(x), isEnd=(i===0||i===vals.length-1);
+    ctx.strokeStyle='rgba(74,69,63,0.32)'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(x, y+7); ctx.lineTo(x, y+15); ctx.stroke();
+    if(!isEnd){ ctx.fillStyle='rgba(74,69,63,0.55)'; ctx.fillText(labs[i], x, y+17); }
+  }
+}
+
+// ---------- Loop ----------
+function tick(ts){
+  if(!running){ return; }
+  if(!lastTs) lastTs=ts; let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05) dt=0.05;
+  sceneT += dt;
+  if(state==='result'){
+    resultT += dt;
+    if(outcome==='fall'){
+      if(resultT > FALL_STRUGGLE){                 // teetered long enough — now they go over
+        if(!fellFx){ fellFx=true;
+          if(window.HSGSound) HSGSound.wrong();
+          if(window.HSGfx){ HSGfx.flash('rgba(139,32,32,0.4)'); HSGfx.shake(); }
+          feedbackEl.innerHTML = '<span style="color:var(--red)">Toppled!</span><span class="sub">'+missHint(errFracOf(walkerX))+'</span>';
+        }
+        const tp = resultT - FALL_STRUGGLE;
+        if(tp>0.28) fallY += dt*Math.min(1000, 200+tp*760);
+      }
+      if(resultT > FALL_STRUGGLE+1.0 && !advanced) advance();
+    }
+    else if(resultT>1.6 && !advanced) advance();   // teeter settles in place — no walking on
+  }
+  draw();
+  rafId=requestAnimationFrame(tick);
+}
+
+// ---------- Round flow ----------
+function newRound(){
+  round = currentGen()();
+  actualX = xForValue(round.value);
+  walkerX = (ropeLeftX()+ropeRightX())/2;
+  outcome=null; resultT=0; wobbleAmp=0; fallY=0; fellFx=false; advanced=false; revealed=false;
+  state='aim';
+  renderValueCard(round.label);
+  feedbackEl.innerHTML='';
+  balanceBtn.classList.remove('hidden');
+}
+function commit(){
+  if(state!=='aim') return;
+  const T = tolsFor();
+  const e = errFracOf(walkerX);
+  tipDir = (walkerX>=actualX) ? 1 : -1;
+  outcome = e<=T.bal ? 'balance' : (e<=T.save ? 'save' : 'fall');
+  const success = outcome!=='fall';
+  rounds++;
+  revealed=true; state='result'; resultT=0;
+  balanceBtn.classList.add('hidden');
+
+  if(success){
+    successes++;
+    streak++; if(streak>bestStreak) bestStreak=streak; rail.hit();
+    // teeter scales with how far off you were: 0 = dead-center → rock steady,
+    // 1 = right at the edge of "still counts" → nearly topples, then recovers.
+    const rel = clamp(e / T.save, 0, 1);
+    wobbleAmp = Math.pow(rel, 1.35) * 0.9;   // radians (0 … ~0.9 = almost falls)
+    if(window.HSGSound) HSGSound.correct();
+    if(outcome==='balance' && e<=0.02){ if(window.HSGfx) HSGfx.confetti({big:true, count:60}); }
+    else if(outcome==='balance'){ if(window.HSGfx) HSGfx.confetti({count:22}); }
+    if(window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
+    const msg = outcome==='balance'
+      ? (e<=0.02 ? 'Bullseye balance! 🎯' : 'Balanced! ✔')
+      : 'Wobbly — but held on!';
+    feedbackEl.innerHTML = '<span style="color:var(--green)">'+msg+'</span><span class="sub">'+revealText()+'</span>';
+  } else {
+    streak=0; lives--; rail.broke();
+    // they teeter first (see tick) — the "oh no" sound, flash & verdict land when they actually go over
+    feedbackEl.innerHTML = '<span style="color:#b0803a">Wobbling…</span>';
+  }
+  updateHud();
+}
+function missHint(e){
+  const dirWord = walkerX>actualX ? 'too far right' : 'too far left';
+  const rel = walkerX>actualX ? 'smaller' : 'bigger';
+  return revealText() + ' — you were ' + dirWord + '. It’s ' + rel + ' than you placed it.';
+}
+function advance(){
+  advanced=true;
+  if(lives<=0){ gameOver(); return; }
+  newRound();
+}
+
+// ---------- Lifecycle ----------
+function startGame(key){
+  tierKey=key; tier=TIERS[key];
+  lives=START_LIVES; streak=0; bestStreak=0; rounds=0; successes=0;
+  rail.setLevel(key, tier.label);
+  setupCanvas(); updateHud();
+  startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden');
+  running=true; lastTs=0; state='aim';
+  newRound();
+  if(rafId) cancelAnimationFrame(rafId);
+  rafId=requestAnimationFrame(tick);
+}
+function gameOver(){
+  state='over'; running=false; if(rafId) cancelAnimationFrame(rafId);
+  balanceBtn.classList.add('hidden');
+  const acc = rounds? Math.round(successes/rounds*100) : 0;
+  document.getElementById('fsStreak').textContent = bestStreak;
+  document.getElementById('fsAcc').textContent = acc+'%';
+  document.getElementById('fsRounds').textContent = successes;
+  document.getElementById('overTitle').textContent = bestStreak>=8 ? 'Star of the show! ⭐' : (bestStreak>=4 ? 'Nice walking!' : 'Keep practicing!');
+  document.getElementById('overCrest').textContent = bestStreak>=8 ? '⭐' : '🎪';
+  overOverlay.classList.remove('hidden');
+  if(window.HSGSound) HSGSound.finish(bestStreak>=4);
+  if(window.HSGfx && bestStreak>=6) HSGfx.confetti({count:60, big:true});
+  rail.gameOver(bestStreak, document.getElementById('trBoard'));   // inline placement + name entry
+}
+function quitToMenu(){
+  if(rounds>0 || bestStreak>0) rail.gameOver(bestStreak);
+  running=false; state='menu'; if(rafId) cancelAnimationFrame(rafId);
+  balanceBtn.classList.add('hidden'); overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
+  ctx.clearRect(0,0,W,H); drawSky();
+}
+
+// ---------- HUD + value card ----------
+function updateHud(){
+  tierBadge.textContent = tier.icon+' '+tier.label;
+  streakBadge.textContent = '🔥 '+streak;
+  let h=''; for(let i=0;i<START_LIVES;i++) h += i<lives? '❤️' : '<span class="spent">🤍</span>';
+  heartsBadge.innerHTML = h;
+}
+// Renders "3/8" as a stacked fraction, "-3/4" with a sign, else plain text.
+function renderValueCard(label){
+  const mm = label.match(/^(-?)(\d+)\s+(\d+)\/(\d+)$/);   // mixed number "w n/d"
+  const fm = label.match(/^(-?)(\d+)\/(\d+)$/);           // simple or improper fraction "n/d"
+  if(mm){
+    valueCard.innerHTML = '<span class="mixnum">'+(mm[1]?'–':'')+mm[2]+'</span>'
+      + '<span class="frac"><span class="num">'+mm[3]+'</span><span class="den">'+mm[4]+'</span></span>';
+  } else if(fm){
+    valueCard.innerHTML = (fm[1]?'<span class="frac neg"><span class="sign">–</span>':'<span class="frac">')
+      + '<span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span>';
+  } else {
+    valueCard.textContent = label;
+  }
+  valueCard.classList.remove('pop'); void valueCard.offsetWidth; valueCard.classList.add('pop');
+}
+
+// ---------- Input ----------
+function pointerX(e){ const r=canvas.getBoundingClientRect(); const px=(e.touches? e.touches[0].clientX : e.clientX); return px - r.left; }
+function grab(e){ if(state!=='aim') return; dragging=true; canvas.classList.add('grabbing'); walkerX=clamp(pointerX(e), ropeLeftX(), ropeRightX()); e.preventDefault(); }
+function moveTo(e){ if(!dragging||state!=='aim') return; walkerX=clamp(pointerX(e), ropeLeftX(), ropeRightX()); e.preventDefault(); }
+function release(){ dragging=false; canvas.classList.remove('grabbing'); }
+canvas.addEventListener('mousedown', grab);
+window.addEventListener('mousemove', moveTo);
+window.addEventListener('mouseup', release);
+canvas.addEventListener('touchstart', grab, {passive:false});
+canvas.addEventListener('touchmove', moveTo, {passive:false});
+window.addEventListener('touchend', release);
+
+document.addEventListener('keydown', e=>{
+  if(state!=='aim') return;
+  const step = ropeLen()*(e.shiftKey?0.004:0.012);   // Shift = fine nudge
+  if(e.key==='ArrowLeft'){ walkerX=clamp(walkerX-step, ropeLeftX(), ropeRightX()); if(window.HSGSound) HSGSound.tick(); e.preventDefault(); }
+  else if(e.key==='ArrowRight'){ walkerX=clamp(walkerX+step, ropeLeftX(), ropeRightX()); if(window.HSGSound) HSGSound.tick(); e.preventDefault(); }
+  else if(e.key===' '||e.key==='Enter'){ commit(); e.preventDefault(); }
+});
+balanceBtn.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); commit(); });
+document.getElementById('quitBtn').addEventListener('click', quitToMenu);
+document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(tierKey); });
+document.getElementById('changeTierBtn').addEventListener('click', ()=>{ overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden'); });
+
+// tier buttons
+const tierRow=document.getElementById('tierRow');
+TIER_ORDER.forEach(k=>{
+  const t=TIERS[k];
+  const b=document.createElement('button'); b.className='tier-btn';
+  b.innerHTML='<span class="t-icon">'+t.icon+'</span><span><span class="t-name">'+t.label+'</span><br><span class="t-desc">'+t.desc+'</span></span>';
+  b.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(k); });
+  tierRow.appendChild(b);
+});
+
+// small canvas helper
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+// homepage-tile capture hook: ?shot jumps straight into a play screen
+if (location.search.indexOf('shot') >= 0) { setTimeout(()=>startGame('medium'), 60); }
+
+// idle backdrop behind the start overlay
+setupCanvas(); updateHud();
+(function idle(){ if(!running){ ctx.clearRect(0,0,W,H); drawSky(); drawCanyon(); drawPosts();
+  // a still rope with a resting walker
+  ctx.strokeStyle='#e9d9a8'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(ropeLeftX(),ropeBaseY());
+  for(let x=ropeLeftX();x<=ropeRightX();x+=8) ctx.lineTo(x,ropeYAt(x)); ctx.stroke();
+  sceneT+=0.016; requestAnimationFrame(idle); } })();
+</script>
+</body>
+</html>

@@ -389,6 +389,8 @@ let active = null;
 // wave bookkeeping
 let toSpawn = 0, spawnTimer = 0, gap = 2, isBossWave = false, boss = null;
 let secretBuf = '';
+// secret arcade mode: no typing — aim with the arrows, the cannon auto-fires
+let arcade = false, arcadeFireT = 0, aimKeys = { left:false, right:false, up:false, down:false };
 
 // ---------- Geometry: the White House sits centred at the base ----------
 function whW(){ return clamp(W * 0.26, 150, 280); }
@@ -588,6 +590,7 @@ function drawWhiteHouse(t){
 //  WORD BUBBLES (DOM labels over the canvas)
 // ===================================================================
 function makeBubble(o, cls){
+  if (arcade) return;                 // arcade mode has no words to type
   const b = document.createElement('div');
   b.className = 'word-bubble' + (cls ? ' '+cls : '');
   o.bubble = b; bubbleLayer.appendChild(b); renderBubble(o);
@@ -687,7 +690,7 @@ function maybeSpawnPowerup(){
   makeBubble(p, 'power');
   powerups.push(p);
 }
-function descSpeed(){ return realm.descBase + (wave-1)*realm.descStep; }
+function descSpeed(){ return (realm.descBase + (wave-1)*realm.descStep) * (arcade?1.5:1); }
 
 // ===================================================================
 //  WAVES / LEVELS
@@ -701,10 +704,10 @@ function startWave(n){
     toSpawn = Math.min(3, 1 + Math.floor(n/BOSS_EVERY));   // a couple of escorts, then the boss
     spawnTimer = 0.8; gap = 1.4;
   } else {
-    toSpawn = 4 + n;                       // grows each wave
+    toSpawn = (4 + n) * (arcade?2:1);       // grows each wave (arcade: swarms)
     spawnTimer = 0.5;
-    gap = Math.max(realm.gapMin, realm.gapBase - (n-1)*realm.gapStep);
-    flashWave('WAVE ' + n, waveSub(n));
+    gap = Math.max(realm.gapMin, realm.gapBase - (n-1)*realm.gapStep) * (arcade?0.45:1);
+    flashWave((arcade?'🕹 WAVE ':'WAVE ') + n, waveSub(n));
   }
   // occasional power-up wave
   if (!isBossWave && n>1 && Math.random() < 0.30) maybeSpawnPowerup();
@@ -904,14 +907,36 @@ function updateBullets(dt){
     if (b.target){
       const dx=b.x-b.target.x, dy=b.y-b.target.y;
       if (dx*dx+dy*dy < (b.target.r+8)*(b.target.r+8)) hit = true;
+    } else if (b.arcade){
+      const o = arcadeHitTest(b.x, b.y);              // free-flying arcade shot
+      if (o){ arcadeDestroy(o); hit = true; }
     }
-    if (hit || b.y < -20 || b.life<=0){
+    if (hit || b.x < -20 || b.x > W+20 || b.y < -20 || b.y > H+10 || b.life<=0){
       b.dead = true;
       if (b.onKill){ b.onKill(); b.onKill = null; }   // the target dies WHEN the shot lands
       else if (hit) emit(b.x,b.y,'spark',4,b.color);
     }
   }
   bullets = bullets.filter(b=>!b.dead);
+}
+// arcade: which enemy (if any) is under this point?
+function arcadeHitTest(x, y){
+  const near = (o)=>{ const dx=x-o.x, dy=y-o.y; return dx*dx+dy*dy < (o.r+6)*(o.r+6); };
+  for (const a of aliens){ if (!a.dead && !a.doomed && near(a)) return a; }
+  for (const bo of bolts){ if (!bo.dead && near(bo)) return bo; }
+  for (const w of walkers){ if (!w.dead && near(w)) return w; }
+  for (const p of powerups){ if (!p.dead && near(p)) return p; }
+  if (boss && !boss.dead && near(boss)) return boss;
+  return null;
+}
+function arcadeDestroy(o){
+  if (o.dead) return;
+  if (o.kind==='boss'){ o.hp--; o.flinch=0.4; explosion(o.x,o.y,false,300); shake=Math.max(shake,6);
+    if (o.hp<=0) destroyBoss(o); return; }
+  if (powerups.indexOf(o)>=0){ grabPowerup(o); return; }
+  o.dead = true; if (active===o) active=null;
+  explosion(o.x, o.y, false, o.hue||20);
+  registerKill(o);
 }
 function updateParticles(dt){
   for (const p of particles){
@@ -1347,7 +1372,7 @@ function acquire(ch){
   return best;
 }
 function handleChar(chRaw){
-  if (!running || paused || gameLost) return;
+  if (!running || paused || gameLost || arcade) return;
   const ch = chRaw.toLowerCase();
   if (!/^[a-z]$/.test(ch)) return;
   let tgt = active;
@@ -1477,10 +1502,12 @@ function revealEndScreen(){
   document.getElementById('fsKills').textContent = kills;
   document.getElementById('fsBest').textContent = bestStreak;
   document.getElementById('fsWave').textContent = wave;
-  document.getElementById('overTitle').textContent = bestStreak>=15 ? 'Heroic Last Stand!' : 'The White House Has Fallen';
+  document.getElementById('overTitle').textContent = arcade ? '🕹 Arcade Over' : (bestStreak>=15 ? 'Heroic Last Stand!' : 'The White House Has Fallen');
   const oc = document.getElementById('overCrest'); if (oc) oc.textContent = '👽';
   overOverlay.classList.remove('hidden');
-  endRun(true);
+  // arcade is a cheat mode — it never touches the leaderboard
+  if (arcade) HSGStreak.renderBoardInto('#tiBoard', { gameId:'type-invaders', level:realmKey, minStreak:3 });
+  else endRun(true);
 }
 // Bank the run's longest streak. On the game-over screen it shows the inline
 // placement + name entry; a quiet retreat falls back to the modal.
@@ -1505,6 +1532,7 @@ function tick(ts){
   if (shieldT>0) shieldT -= dt;
   if (slowT>0) slowT -= dt;
 
+  if (arcade) updateArcade(dt);
   updateSpawns(dt);
   updateAliens(dt, sceneTime);
   updateBolts(dt);
@@ -1516,6 +1544,28 @@ function tick(ts){
 
   draw(sceneTime);
   rafId = requestAnimationFrame(tick);
+}
+// arcade: sweep the cannon with the arrows and hose out bullets automatically
+function updateArcade(dt){
+  const rot = 2.4;   // rad/sec — a full 360° in ~2.6s
+  if (aimKeys.left)  cannonAng -= rot*dt;
+  if (aimKeys.right) cannonAng += rot*dt;
+  if (aimKeys.up)    cannonAng = lerp(cannonAng, -Math.PI/2, Math.min(1, dt*4));
+  // full circle — reach the walkers on the ground too. Just keep the value tidy.
+  if (cannonAng > Math.PI)  cannonAng -= 2*Math.PI;
+  if (cannonAng < -Math.PI) cannonAng += 2*Math.PI;
+  arcadeFireT -= dt;
+  while (arcadeFireT <= 0){
+    arcadeFire();
+    arcadeFireT += 0.085;   // ~12 shots / second
+  }
+}
+function arcadeFire(){
+  const c = cannon(), spd = 1500;
+  bullets.push({ x:c.x, y:c.y, px:c.x, py:c.y, vx:Math.cos(cannonAng)*spd, vy:Math.sin(cannonAng)*spd,
+    spd, target:null, onKill:null, arcade:true, life:2.2, color:'#ffe08a' });
+  cannonRecoil = 1;
+  if (window.HSGSound && Math.random()<0.45) HSGSound.laser();
 }
 // idle scene — behind the start menu and during the defeat "conquered" hold
 function idle(ts){
@@ -1540,14 +1590,17 @@ const rail = HSGStreak.init({
   mount: document.getElementById('streakRail')
 });
 
-function startGame(key){
+function startGame(key, isArcade){
+  arcade = !!isArcade;
   realmKey = key; realm = REALMS[key];
   lives = START_LIVES; kills = 0; bestStreak = 0; gameLost = false; paused = false; constIdx = 0;
-  shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0;
+  shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0; cannonAng=-Math.PI/2; arcadeFireT=0;
+  aimKeys.left=aimKeys.right=aimKeys.up=aimKeys.down=false;
   for (const o of allTargets()) removeBubble(o);
   aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; roofAliens=[]; boss=null; active=null;
   rail.setLevel(key, REALM_LABELS[key] || key);     // per-difficulty leaderboard; resets streak
   document.body.classList.add('ti-active');
+  bubbleLayer.style.display = arcade ? 'none' : '';
   setupCanvas();
   spawnTanks();                                     // deploy the ground defenses
   updateHearts();
@@ -1557,12 +1610,21 @@ function startGame(key){
   pauseOverlay.classList.add('hidden');
   pauseBtn.classList.remove('hidden');
   startWave(1);
-  running = true; lastTs = 0; focusCatcher();
+  running = true; lastTs = 0;
+  if (!arcade) focusCatcher(); else { try { catcher.blur(); } catch(e){} }
   rafId = requestAnimationFrame(tick);
 }
+// the secret arcade mode: pause, then type "arcade"
+function enterArcade(){
+  secretBuf = '';
+  startGame('impossible', true);
+  flashWave('🕹 ARCADE MODE', 'Aim with ← → arrows — the cannon fires itself!');
+  if (window.HSGSound) HSGSound.powerup();
+}
 function quitToMenu(){
-  if (running && !gameLost) endRun(false);          // bank the run (modal if it qualifies)
-  running = false; paused = false; gameLost = false; if (rafId) cancelAnimationFrame(rafId);
+  if (running && !gameLost && !arcade) endRun(false);   // bank the run (arcade never scores)
+  running = false; paused = false; gameLost = false; arcade = false; if (rafId) cancelAnimationFrame(rafId);
+  bubbleLayer.style.display = '';
   for (const o of allTargets()) removeBubble(o);
   aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; roofAliens=[]; boss=null; active=null;
   document.body.classList.remove('ti-active');
@@ -1578,21 +1640,32 @@ function togglePause(force){
   if (want===paused) return;
   paused = want;
   if (paused){ pauseOverlay.classList.remove('hidden'); }
-  else { pauseOverlay.classList.add('hidden'); secretBuf=''; lastTs=0; focusCatcher(); }
+  else { pauseOverlay.classList.add('hidden'); secretBuf=''; lastTs=0; if (!arcade) focusCatcher(); }
 }
 function focusCatcher(){ try{ catcher.focus({preventScroll:true}); }catch(e){} }
 
 // ===================================================================
 //  INPUT WIRING
 // ===================================================================
-catcher.addEventListener('input', ()=>{ const v=catcher.value; catcher.value=''; if (paused||gameLost) return; for (const ch of v) handleChar(ch); });
+catcher.addEventListener('input', ()=>{ const v=catcher.value; catcher.value=''; if (paused||gameLost||arcade) return; for (const ch of v) handleChar(ch); });
+const AIM = { ArrowLeft:'left', ArrowRight:'right', ArrowUp:'up', ArrowDown:'down' };
 document.addEventListener('keydown', e=>{
   if (e.key==='Escape'){ togglePause(); return; }
-  if (!running || gameLost) return;
-  // secret: type "ufo" on the title to... (kept simple — just refocus)
-  if (e.key.length===1 && /[a-zA-Z]/.test(e.key)){ focusCatcher(); }
+  // secret: pause, then spell "arcade" to unlock auto-fire arcade mode
+  if (paused && !gameLost && !arcade && e.key.length===1 && /[a-z]/i.test(e.key)){
+    secretBuf = (secretBuf + e.key.toLowerCase()).slice(-8);
+    if (secretBuf.includes('arcade')) enterArcade();
+    return;
+  }
+  if (!running || gameLost || paused) return;
+  if (arcade){
+    if (AIM[e.key]){ aimKeys[AIM[e.key]] = true; e.preventDefault(); }
+    return;
+  }
+  if (e.key.length===1 && /[a-zA-Z]/.test(e.key)) focusCatcher();
 });
-sky.addEventListener('pointerdown', ()=>{ if (running && !paused) focusCatcher(); });
+document.addEventListener('keyup', e=>{ if (AIM[e.key]) aimKeys[AIM[e.key]] = false; });
+sky.addEventListener('pointerdown', ()=>{ if (running && !paused && !arcade) focusCatcher(); });
 document.querySelectorAll('.realm-btn').forEach(b=> b.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.realm); }));
 document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(realmKey); });
 document.getElementById('changeRealmBtn').addEventListener('click', quitToMenu);
@@ -1603,6 +1676,7 @@ pauseBtn.addEventListener('click', ()=>togglePause());
 setupCanvas();
 buildStars();
 requestAnimationFrame(idle);
+
 
 // Screenshot mode: open this page with ?shot to hide the page chrome, fill the
 // viewport with the stage, and auto-start a wave — used to capture the home tile.
