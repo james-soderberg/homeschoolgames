@@ -206,7 +206,7 @@ function decStr(v){
 }
 
 // ---------- Value pools per level ----------
-// A round = { lo, hi, value, label, kind, hideEnds }
+// A round = { lo, hi, value, label, kind }
 function fracLabel(n,d){ return (n<0?'-':'') + Math.abs(n) + '/' + d; }
 function mixedLabel(w,n,d){ return (w<0?'-':'') + Math.abs(w) + ' ' + n + '/' + d; }
 function frac(n,d){ return { value:n/d, label:fracLabel(n,d), kind:'frac' }; }
@@ -234,50 +234,59 @@ function genMedium(){
   const v=choice([1.5,2.5,3.5,4.5,6.5,7.5,8.8,4.2]); return {lo:0,hi:10,value:v,label:decStr(v),kind:'dec'};
 }
 
-// -- HARD: improper fractions, mixed numbers, offset/negative ranges, %>100 --
+// -- HARD: improper fractions, mixed numbers, %>100, and asymmetric scales --
+const HARD_RANGES = [
+  [-10,30,[-5,0,5,15,20,25]], [-30,90,[-15,0,30,45,60,75]], [40,190,[70,100,130,160,55]],
+  [-7,13,[-4,0,2,5,9]], [-25,75,[-10,0,25,40,60]], [12,88,[30,50,62,75,20]],
+  [-2,8,[-1,0,1,3,5,6.5]], [5,20,[7,9.5,12,16,18]], [-50,50,[-30,-15,10,25,40]],
+];
 function genHard(){
-  switch(randi(0,5)){
-    case 0: { const o=choice([[7,4],[5,3],[9,4],[11,8],[5,2],[7,3],[13,8],[9,8],[8,3],[7,6]]);
+  switch(randi(0,6)){
+    case 0: { const o=choice([[7,4],[5,3],[9,4],[11,8],[5,2],[7,3],[13,8],[9,8],[8,3],[7,6],[11,4],[10,3]]);
               return {lo:0, hi:(o[0]/o[1]>3?4:3), ...frac(o[0],o[1])}; }                 // improper fractions
-    case 1: { const m=choice([mixed(1,1,2),mixed(2,1,4),mixed(1,3,4),mixed(2,2,3),mixed(1,1,3),mixed(2,1,2),mixed(1,5,8),mixed(2,3,4)]);
-              return {lo:0,hi:3, ...m}; }                                                // mixed numbers
-    case 2: { if(Math.random()<0.5){ const v=choice([-0.75,-0.4,-0.6,-0.25,-0.1,0.35,0.65,0.85,-0.85]); return {lo:-1,hi:1,value:v,label:decStr(v),kind:'dec'}; }
-              const [n,d]=choice([[-3,4],[-1,3],[-2,3],[1,3],[3,4],[-1,4]]); return {lo:-1,hi:1, ...frac(n,d)}; }
-    case 3: { const R=choice([[2,5,[2.5,3,3.5,4.25,4.5]],[10,20,[12,13,14.5,17,18.5]],[-5,5,[-2,-3.5,1.5,3,-4]],
-                              [-3,7,[0,-1,2,4.5,-2.5]],[5,15,[7,8.5,11,13.5]]]);
-              const v=choice(R[2]); return {lo:R[0],hi:R[1],value:v,label:decStr(v),kind:'dec'}; }   // unusual visible ranges
-    case 4: { if(Math.random()<0.5){ const v=choice([0.05,0.15,0.35,0.375,0.625,0.85,0.95,0.45,0.55]); return {lo:0,hi:1,value:v,label:decStr(v),kind:'dec'}; }
-              const v=choice([1.4,1.6,0.4,1.25,1.75,0.75,1.1]); return {lo:0,hi:2,value:v,label:decStr(v),kind:'dec'}; }
-    default:{ const p=choice([120,140,150,175,80,110]); return {lo:0,hi:(p>100?2:1),value:p/100,label:p+'%',kind:'pct'}; }  // percents past 100
+    case 1: { const m=choice([mixed(1,1,2),mixed(2,1,4),mixed(1,3,4),mixed(2,2,3),mixed(1,1,3),mixed(2,1,2),mixed(1,5,8),mixed(2,3,4),mixed(3,1,3),mixed(1,2,3)]);
+              return {lo:0,hi:4, ...m}; }                                                // mixed numbers
+    case 2:
+    case 3: { const R=choice(HARD_RANGES); const v=choice(R[2]); return {lo:R[0],hi:R[1],value:v,label:decStr(v),kind:'dec'}; }  // asymmetric scales
+    case 4: { if(Math.random()<0.5){ const [n,d]=choice([[-3,4],[-1,3],[-2,3],[1,3],[3,4],[-1,4],[-5,6]]); return {lo:-1,hi:1, ...frac(n,d)}; }
+              const v=choice([0.05,0.15,0.35,0.375,0.625,0.85,0.95,0.45,0.55]); return {lo:0,hi:1,value:v,label:decStr(v),kind:'dec'}; }
+    default:{ const p=choice([120,140,150,175,80,110,225]); return {lo:0,hi:(p>200?3:(p>100?2:1)),value:p/100,label:p+'%',kind:'pct'}; }  // percents past 100
   }
 }
 
-// -- EINSTEIN: irrationals, hidden endpoints, big denominators, wild ranges --
+// -- EINSTEIN: irrationals, brutal off-kilter scales, improper on shifted ranges --
+const EIN_RANGES = [
+  [-60,200,[-30,0,25,75,130,175]], [-150,50,[-100,-75,-25,0,25]], [30,330,[80,130,205,280,55]],
+  [-80,120,[-40,0,30,75,-20]], [-0.5,2.5,[-0.25,0,0.75,1.5,2.1]], [0.4,1.6,[0.55,0.7,1,1.3,1.45]],
+  [-3.5,6.5,[-2,0,1.5,4,-1.25]], [17,83,[29,41,55,68,76]], [-45,15,[-30,-22,-8,0,6]],
+  [125,875,[230,400,560,710,815]], [-12,88,[-6,0,13,40,70]], [8,23,[11,14.5,17,20,9.5]],
+];
 function genEinstein(){
   switch(randi(0,6)){
-    case 0: { const o=choice([['√2',Math.SQRT2,2],['√3',Math.sqrt(3),2],['√5',Math.sqrt(5),3],['π',Math.PI,4],
-                              ['e',Math.E,3],['φ',1.618034,2],['π/2',Math.PI/2,2],['√7',Math.sqrt(7),3]]);
-              return {lo:0,hi:o[2],value:o[1],label:o[0],kind:'irr'}; }                  // irrationals!
-    case 1: { const o=choice([frac(3,7),frac(5,12),frac(7,16),frac(5,6),frac(2,9),frac(7,12),frac(3,16),frac(11,12),
-                              {value:0.42,label:'0.42',kind:'dec'},{value:0.58,label:'0.58',kind:'dec'},{value:0.37,label:'37%',kind:'pct'}]);
-              return {lo:0,hi:1, ...o, hideEnds:true}; }                                 // blank ends — pure proportion
-    case 2: { const R=choice([[0.2,0.8,[0.3,0.5,0.65,0.35,0.75]],[3,8,[4.25,5.5,6.75,3.5,7.5]],[-2.5,2.5,[-1.25,0.75,-0.5,1.75,-2]],
-                              [-7,13,[0,2,-3,5,-5,9]],[100,1000,[250,550,325,775,900]],[-1.5,2.5,[0,1,-1,0.5,2]]]);
-              const v=choice(R[2]); return {lo:R[0],hi:R[1],value:v,label:decStr(v),kind:'dec'}; }   // wild non-round ranges
-    case 3: { const o=choice([[13,5,5],[17,8,3],[11,3,4],[19,6,4],[23,8,3]]); return {lo:0,hi:o[2], ...frac(o[0],o[1])}; }  // improper on odd range
-    case 4: { const [n,d]=choice([[5,12],[7,16],[11,12],[3,16],[7,12],[5,16],[9,16],[5,9],[4,9],[7,9]]); return {lo:0,hi:1, ...frac(n,d)}; }  // big denominators
-    case 5: { if(Math.random()<0.5){ const o=choice([[-5,4],[-7,3],[-11,8],[-9,4],[-7,6]]); return {lo:-3,hi:1, ...frac(o[0],o[1])}; }
-              const m=choice([mixed(-1,3,4),mixed(-2,1,3),mixed(-1,1,2)]); return {lo:-3,hi:1, ...m}; }   // negative improper / mixed
-    default:{ const o=choice([frac(2,7),frac(3,7),frac(4,7),frac(1,9),frac(2,9),frac(5,9),frac(1,6),frac(5,6)]);
-              return {lo:0,hi:1, ...o, hideEnds: Math.random()<0.5}; }                   // recurring decimals, sometimes hidden
+    case 0: { const o=choice([                                                          // irrationals on varied scales
+        ['√2',Math.SQRT2,[0,2],[1,3],[-1,3]], ['√3',Math.sqrt(3),[0,2],[1,4],[0,5]],
+        ['√5',Math.sqrt(5),[0,3],[1,4],[0,5]], ['π',Math.PI,[0,4],[1,5],[0,10]],
+        ['e',Math.E,[0,3],[1,4],[-1,5]], ['φ',1.618034,[0,2],[1,3],[0,5]],
+        ['√7',Math.sqrt(7),[0,3],[1,4],[0,5]], ['2π',2*Math.PI,[0,8],[4,8],[0,10]],
+        ['√10',Math.sqrt(10),[0,4],[2,5],[0,10]] ]);
+      const R=choice([o[2],o[3],o[4]]); return {lo:R[0],hi:R[1],value:o[1],label:o[0],kind:'irr'}; }
+    case 1:
+    case 2: { const R=choice(EIN_RANGES); const v=choice(R[2]); return {lo:R[0],hi:R[1],value:v,label:decStr(v),kind:'dec'}; }  // brutal asymmetric scales
+    case 3: { if(Math.random()<0.5){ const o=choice([[13,5,[0,5]],[17,8,[1,4]],[11,3,[0,5]],[19,6,[-1,5]],[23,8,[1,4]],[7,2,[1,5]],[15,4,[2,6]]]);
+                return {lo:o[2][0],hi:o[2][1], ...frac(o[0],o[1])}; }                    // improper on shifted range
+              const [n,d]=choice([[5,12],[7,16],[11,12],[3,16],[7,12],[5,16],[9,16],[5,9],[7,9],[11,16]]); return {lo:0,hi:1, ...frac(n,d)}; }
+    case 4: { if(Math.random()<0.5){ const o=choice([[-5,4],[-7,3],[-11,8],[-9,4],[-7,6],[-13,5]]); return {lo:-3,hi:1, ...frac(o[0],o[1])}; }
+              const m=choice([mixed(-1,3,4),mixed(-2,1,3),mixed(-1,1,2),mixed(-2,3,4)]); return {lo:-4,hi:2, ...m}; }   // negative improper / mixed
+    default:{ const o=choice([frac(2,7),frac(3,7),frac(4,7),frac(5,7),frac(1,9),frac(2,9),frac(4,9),frac(5,9),frac(7,9),frac(5,6)]);
+              return {lo:0,hi:1, ...o}; }                                                // recurring sevenths / ninths
   }
 }
 
 const TIERS = {
   easy:     { label:'Easy',     icon:'🌱', desc:'Whole numbers & simple halves',              gen:genEasy,     balTol:0.056, saveTol:0.120 },
   medium:   { label:'Medium',   icon:'✏️', desc:'Fractions, decimals & percents (0–1)',        gen:genMedium,   balTol:0.045, saveTol:0.095 },
-  hard:     { label:'Hard',     icon:'🔥', desc:'Improper fractions, mixed #s, offset ranges', gen:genHard,     balTol:0.034, saveTol:0.074 },
-  einstein: { label:'Einstein', icon:'🧠', desc:'Irrationals, hidden ends, wild ranges',       gen:genEinstein, balTol:0.026, saveTol:0.058 },
+  hard:     { label:'Hard',     icon:'🔥', desc:'Improper fractions, mixed #s & shifting scales', gen:genHard,     balTol:0.031, saveTol:0.068 },
+  einstein: { label:'Einstein', icon:'🧠', desc:'Irrationals & brutal off-kilter scales',         gen:genEinstein, balTol:0.020, saveTol:0.046 },
 };
 const TIER_ORDER = ['easy','medium','hard','einstein'];
 const START_LIVES = 3;
@@ -410,15 +419,15 @@ function drawRope(){
 }
 function endpointLabel(v){ return decStr(v); }
 function drawEndLabels(){
-  const hide = round && round.hideEnds && state!=='result';
+  // endpoints are ALWAYS labeled — the scale is the whole point.
   ctx.font='800 20px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for(const side of [0,1]){
     const x = side? ropeRightX() : ropeLeftX(); const y=ropeBaseY()-26;
-    const txt = hide ? '?' : endpointLabel(side? round.hi : round.lo);
+    const txt = endpointLabel(side? round.hi : round.lo);
     const w = ctx.measureText(txt).width + 18;
     ctx.fillStyle='#fffdf5'; ctx.strokeStyle='#6d5636'; ctx.lineWidth=2;
     roundRect(x-w/2, y-15, w, 28, 7); ctx.fill(); ctx.stroke();
-    ctx.fillStyle= hide? '#a08b5a' : '#33291a'; ctx.fillText(txt, x, y);
+    ctx.fillStyle='#33291a'; ctx.fillText(txt, x, y);
   }
 }
 
