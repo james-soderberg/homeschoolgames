@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Treasure Hunt · HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    :root { --gold:#c8a24a; --gold-lt:#e7c979; --parch:#e9dcc0; --parch-d:#d8c69f; --ink2:#2c2213;
+            --stone:#1a1712; --stone-lt:#26211a; --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
+    body.th-body { background:#0c0a07; color:#e9e2d2; }
+    .th-header { background:#0f0c08; border-bottom:1px solid #241d12; }
+    .th-header .site-logo { color:#e9e2d2; } .th-header .site-logo span { color:var(--gold); }
+    .th-header .site-nav a { color:#9a8a63; } .th-header .site-nav a:hover { color:var(--gold-lt); }
+
+    .th-wrap { max-width: 780px; margin: 0 auto; padding: 1.1rem 0.9rem 3rem; }
+
+    /* ---- the vault ---- */
+    .th-vault { position:relative; border-radius:16px; overflow:hidden; padding:1.1rem 1.1rem 1.4rem;
+      background:
+        radial-gradient(120% 80% at 50% -10%, #2a2116 0%, #16110b 55%, #0c0906 100%);
+      border:1px solid #2c2415; box-shadow:0 0 0 1px #000, inset 0 0 120px rgba(0,0,0,.7), 0 20px 60px rgba(0,0,0,.6); }
+    .th-vault::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:16px;
+      box-shadow:inset 0 0 140px rgba(0,0,0,.85); animation:flicker 5s ease-in-out infinite; }
+    @keyframes flicker { 0%,100%{opacity:1} 45%{opacity:.86} 70%{opacity:.95} }
+
+    /* ---- top bar: seals + meters ---- */
+    .th-top { display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1rem; flex-wrap:wrap; }
+    .th-rail { display:flex; gap:.42rem; flex-wrap:wrap; }
+    .seal { width:22px; height:22px; border-radius:50%; position:relative; background:radial-gradient(circle at 38% 32%, #2b2417, #14100a);
+      border:1.5px solid #3a2f1b; box-shadow:inset 0 1px 2px rgba(0,0,0,.7); transition:.3s; }
+    .seal.done { background:radial-gradient(circle at 38% 32%, var(--gold-lt), #8a6a26); border-color:var(--gold);
+      box-shadow:0 0 8px rgba(200,162,74,.7), inset 0 1px 2px rgba(255,255,255,.4); }
+    .seal.cur { border-color:var(--gold-lt); box-shadow:0 0 0 2px rgba(231,201,121,.35), 0 0 10px rgba(200,162,74,.5); animation:pulse 1.6s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{box-shadow:0 0 0 2px rgba(231,201,121,.3),0 0 8px rgba(200,162,74,.4)} 50%{box-shadow:0 0 0 3px rgba(231,201,121,.5),0 0 16px rgba(200,162,74,.7)} }
+    .th-meters { display:flex; gap:1.1rem; font-family:var(--font-sans); }
+    .th-meters .m { text-align:right; }
+    .th-meters .m b { display:block; font-size:1.05rem; font-weight:800; color:var(--gold-lt); font-variant-numeric:tabular-nums; line-height:1; }
+    .th-meters .m span { font-size:.56rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#8a7a55; }
+
+    /* ---- parchment card ---- */
+    .parchment { position:relative; background:linear-gradient(160deg,#efe4ca,#e2d2ac 60%,#d3bf94);
+      color:var(--ink2); border-radius:5px; padding:1.6rem 1.7rem 1.5rem;
+      box-shadow:0 2px 0 #b8a271, 0 16px 34px rgba(0,0,0,.55), inset 0 0 60px rgba(150,120,70,.28);
+      background-blend-mode:multiply; }
+    .parchment::before { content:''; position:absolute; inset:0; border-radius:5px; pointer-events:none;
+      box-shadow:inset 0 0 0 1px rgba(120,90,45,.3), inset 0 0 40px rgba(120,90,45,.25);
+      background:radial-gradient(120% 100% at 85% 10%, rgba(120,90,45,.12), transparent 40%),
+                 radial-gradient(80% 80% at 10% 90%, rgba(120,90,45,.14), transparent 45%); }
+    .parchment.solved { animation:solveGlow .8s ease; }
+    @keyframes solveGlow { 0%{box-shadow:0 2px 0 #b8a271,0 16px 34px rgba(0,0,0,.55)} 40%{box-shadow:0 0 0 3px var(--gold-lt),0 0 44px rgba(231,201,121,.85),0 16px 34px rgba(0,0,0,.55)} 100%{box-shadow:0 2px 0 #b8a271,0 16px 34px rgba(0,0,0,.55)} }
+    .parchment.wrong { animation:wrongShake .4s; }
+    @keyframes wrongShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+
+    .ch-tag { font-family:var(--font-sans); font-size:.64rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:#9a7526; }
+    .ch-name { font-family:var(--font-serif); font-weight:600; font-size:1.7rem; line-height:1.1; margin:.1rem 0 .1rem; }
+    .ch-num { font-style:italic; color:#7a5f2c; font-size:1rem; }
+    .ch-prompt { font-family:var(--font-serif); font-size:1.32rem; line-height:1.5; margin:.9rem 0 .2rem; }
+    .ch-prompt b { color:#6e2f12; }
+    .ch-extra { margin:1rem 0 .2rem; font-family:var(--mono); font-size:.92rem; letter-spacing:.06em; color:#3a2c15;
+      background:rgba(120,90,45,.12); border:1px dashed rgba(120,90,45,.4); border-radius:4px; padding:.7rem .8rem; overflow-x:auto; }
+    .ch-extra table { border-collapse:collapse; margin:0 auto; }
+    .ch-extra td { padding:.05rem .34rem; text-align:center; }
+    .ch-extra .row2 td { color:#8a3a1a; }
+
+    .ch-form { margin-top:1.2rem; display:flex; gap:.55rem; flex-wrap:wrap; }
+    .ch-input { flex:1 1 220px; min-width:0; font-family:var(--font-serif); font-size:1.25rem; color:var(--ink2);
+      background:rgba(255,252,244,.6); border:none; border-bottom:2px solid #a98a4e; padding:.5rem .6rem; outline:none; }
+    .ch-input:focus { border-bottom-color:#6e2f12; background:rgba(255,252,244,.85); }
+    .ch-input::placeholder { color:#a08a5e; font-style:italic; }
+    .btn-seal { font-family:var(--font-sans); font-weight:800; letter-spacing:.03em; border:none; cursor:pointer; border-radius:6px;
+      padding:.6rem 1.4rem; font-size:.98rem; transition:transform .1s, box-shadow .15s, background .15s; }
+    .btn-try { background:linear-gradient(180deg,#8a3a1a,#6e2f12); color:#f3e6c8; box-shadow:0 4px 0 #4a1f0c; }
+    .btn-try:hover { background:#7c3416; } .btn-try:active { transform:translateY(4px); box-shadow:0 1px 0 #4a1f0c; }
+    .btn-hint { background:rgba(120,90,45,.16); color:#6e551f; border:1px solid rgba(120,90,45,.45); }
+    .btn-hint:hover:not(:disabled) { background:rgba(120,90,45,.28); }
+    .btn-hint:disabled { opacity:.4; cursor:default; }
+
+    .ch-feedback { min-height:1.3em; margin-top:.7rem; font-family:var(--font-serif); font-style:italic; font-size:1.05rem; }
+    .ch-feedback.bad { color:#8a2a12; } .ch-feedback.good { color:#2f6a2f; font-style:normal; font-weight:700; }
+    .ch-hints { margin-top:.7rem; }
+    .ch-hints .hint { font-family:var(--font-sans); font-size:.92rem; color:#5a4a24; border-left:3px solid var(--gold); padding:.15rem 0 .15rem .6rem; margin:.35rem 0; }
+    .ch-hints .hint::before { content:'Margin note — '; font-weight:800; letter-spacing:.04em; color:#9a7526; text-transform:uppercase; font-size:.66rem; }
+
+    .th-foot { display:flex; justify-content:space-between; align-items:center; margin-top:.9rem; font-family:var(--font-sans); }
+    .th-restart { background:none; border:none; color:#6a5a3a; font-size:.72rem; letter-spacing:.04em; cursor:pointer; text-decoration:underline; }
+    .th-restart:hover { color:var(--gold-lt); }
+    .th-note { font-size:.7rem; color:#5a4d34; }
+
+    /* ---- overlays (intro / complete) ---- */
+    .th-ov { position:absolute; inset:0; z-index:20; overflow-y:auto; padding:1.3rem;
+      display:flex; align-items:center; justify-content:center; text-align:center;
+      background:radial-gradient(120% 90% at 50% 20%, rgba(28,22,14,.86), rgba(8,6,4,.96));
+      -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); border-radius:16px; }
+    .th-ov.hidden { display:none !important; }
+    .th-ov > .inner { margin:auto; width:100%; max-width:520px; }
+    .th-title { font-family:var(--font-serif); font-weight:700; font-size:clamp(2.4rem,9vw,3.8rem); line-height:.95;
+      background:linear-gradient(180deg,#f3e2b4,#c8a24a 60%,#8a6a26); -webkit-background-clip:text; background-clip:text;
+      -webkit-text-fill-color:transparent; filter:drop-shadow(0 2px 10px rgba(200,162,74,.4)); margin-bottom:.1rem; }
+    .th-sub { font-family:var(--font-sans); font-weight:800; letter-spacing:.3em; text-transform:uppercase; font-size:.72rem; color:var(--gold); margin-bottom:1.1rem; }
+    .th-ov p { color:#cfc2a2; font-family:var(--font-serif); font-size:1.15rem; line-height:1.55; max-width:40ch; margin:0 auto 1.3rem; }
+    .th-ov p em { color:var(--gold-lt); font-style:italic; }
+    .btn-begin { font-family:var(--font-sans); font-weight:800; letter-spacing:.05em; border:none; cursor:pointer; border-radius:10px;
+      padding:.85rem 2.4rem; font-size:1.12rem; color:#1a1207; background:linear-gradient(180deg,var(--gold-lt),var(--gold));
+      box-shadow:0 6px 0 #7a5c1f, 0 12px 30px rgba(200,162,74,.4); transition:transform .1s; }
+    .btn-begin:hover { transform:translateY(-1px); } .btn-begin:active { transform:translateY(5px); box-shadow:0 1px 0 #7a5c1f; }
+    .th-stats { display:flex; gap:1.6rem; justify-content:center; margin:0 0 1.2rem; flex-wrap:wrap; }
+    .th-stats .st b { display:block; font-family:var(--font-sans); font-weight:900; font-size:1.9rem; color:var(--gold-lt); line-height:1; }
+    .th-stats .st span { font-size:.6rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#8a7a55; margin-top:.3rem; display:block; }
+    .th-best { font-family:var(--font-sans); font-size:.78rem; color:#8a7a55; margin-top:.9rem; }
+    #thBoard, #thBoardIntro { max-width:360px; margin:1.1rem auto 0; text-align:left; }
+
+    @media (max-width:560px){ .parchment{padding:1.3rem 1.2rem;} .ch-prompt{font-size:1.18rem;} }
+    @media (prefers-reduced-motion: reduce){ .th-vault::after,.seal.cur{animation:none;} }
+  </style>
+</head>
+<body class="th-body">
+
+<header class="site-header th-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav"><a href="../../subjects/logic.html">← Logic</a></nav>
+</header>
+
+<div class="th-wrap">
+  <div class="th-vault" id="vault">
+
+    <div class="th-top">
+      <div class="th-rail" id="rail"></div>
+      <div class="th-meters">
+        <div class="m"><b id="mTime">0:00</b><span>Time</span></div>
+        <div class="m"><b id="mHints">0</b><span>Hints</span></div>
+      </div>
+    </div>
+
+    <div class="parchment" id="card">
+      <div class="ch-tag" id="chTag">Riddle</div>
+      <div class="ch-name" id="chName">The Antechamber <span class="ch-num" id="chNum">· I of X</span></div>
+      <div class="ch-prompt" id="chPrompt"></div>
+      <div class="ch-extra hidden" id="chExtra"></div>
+      <div class="ch-form">
+        <input class="ch-input" id="chInput" type="text" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="inscribe your answer…">
+        <button type="button" class="btn-seal btn-try" id="tryBtn">Try the lock</button>
+        <button type="button" class="btn-seal btn-hint" id="hintBtn">Consult the margins</button>
+      </div>
+      <div class="ch-feedback" id="feedback"></div>
+      <div class="ch-hints" id="hints"></div>
+    </div>
+
+    <div class="th-foot">
+      <span class="th-note">No guides. No mercy. The Cartographer's Hoard awaits.</span>
+      <button type="button" class="th-restart" id="restartBtn">Abandon &amp; restart</button>
+    </div>
+
+    <!-- INTRO -->
+    <div class="th-ov" id="introOv">
+      <div class="inner">
+        <div class="th-title">Treasure Hunt</div>
+        <div class="th-sub">The Cartographer's Hoard</div>
+        <p>Ten sealed chambers lie between you and a fortune of maps. Each door holds a single riddle —
+          a cipher, a paradox, a trick of logic. <em>Solve to descend.</em> These are not for children.</p>
+        <button type="button" class="btn-begin" id="beginBtn">Begin the descent →</button>
+        <div class="th-best" id="introBest"></div>
+        <div id="thBoardIntro"></div>
+      </div>
+    </div>
+
+    <!-- COMPLETE -->
+    <div class="th-ov hidden" id="doneOv">
+      <div class="inner">
+        <div class="th-title">The Hoard</div>
+        <div class="th-sub">All ten seals broken</div>
+        <p id="doneFlavor">The last lock falls open. Behind it, the Cartographer's every hidden thing — now yours.</p>
+        <div class="th-stats">
+          <div class="st"><b id="doneScore">0</b><span>Score</span></div>
+          <div class="st"><b id="doneHints">0</b><span>Hints used</span></div>
+          <div class="st"><b id="doneTime">0:00</b><span>Time</span></div>
+        </div>
+        <div id="thBoard"></div>
+        <div style="margin-top:1.2rem;">
+          <button type="button" class="btn-begin" id="againBtn">Hunt again →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer class="site-footer" style="border-top-color:#241d12;"><a href="../../index.html" style="color:#9a8a63;">homeschoolgames.app</a></footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+  var ROMAN = ['I','II','III','IV','V','VI','VII','VIII','IX','X'];
+
+  // ================= the hunt =================
+  var atbashTable =
+    '<table><tr><td>A</td><td>B</td><td>C</td><td>D</td><td>E</td><td>F</td><td>G</td><td>H</td><td>I</td><td>J</td><td>K</td><td>L</td><td>M</td></tr>' +
+    '<tr class="row2"><td>Z</td><td>Y</td><td>X</td><td>W</td><td>V</td><td>U</td><td>T</td><td>S</td><td>R</td><td>Q</td><td>P</td><td>O</td><td>N</td></tr></table>';
+
+  var PUZZLES = [
+    { name:'The Antechamber', tag:'Riddle',
+      prompt:`One English word keeps its exact sound even when <b>four of its five letters</b> are struck away. Name the word.`,
+      answers:['queue'],
+      hints:['Say the whole word, then say only its first letter aloud.','It is a line you wait in.','Q_ _ _ _'] },
+
+    { name:'Hall of Mirrors', tag:'Cipher · Atbash',
+      prompt:`Carved above the arch, the letters run <b>backwards</b> through the alphabet — A is Z, B is Y, and so on. Read the guardian's name:`,
+      extra:'<div style="text-align:center;font-size:1.4rem;letter-spacing:.3em;margin-bottom:.6rem;color:#6e2f12">H P V O V G L M</div>' + atbashTable,
+      answers:['skeleton'],
+      hints:['Mirror each letter across the alphabet using the table.','It stands guard, yet has no flesh.'] },
+
+    { name:"The Cartographer's Cipher", tag:'Cipher · Rotation',
+      prompt:`The mapmaker rotated every letter <b>thirteen places</b> forward. Obey the message he left; the final word is what the lock wants:`,
+      extra:'<div style="text-align:center;font-size:1.25rem;letter-spacing:.18em;color:#6e2f12">GUR XRL VF ANGHER</div>',
+      answers:['nature'],
+      hints:['Shift each letter 13 forward — A becomes N, B becomes O…','The message reads: THE KEY IS ______.'] },
+
+    { name:'The Weighing Room', tag:'Logic',
+      prompt:`Twelve identical coins rest on a plinth. Exactly one is counterfeit and differs in weight — but you are <b>not told</b> whether it is heavier or lighter. With only a balance scale, what is the <b>fewest number of weighings</b> that always finds the fake?`,
+      answers:['3','three'],
+      hints:['Halving the pile wastes information. Think in thirds.','It is more than two, and fewer than four.'] },
+
+    { name:'The Cryptic Gate', tag:'Cryptic clue',
+      prompt:`A single crossword clue is filed into the lock:<br><b>“Die of cold? (3,4)”</b>`,
+      answers:['icecube'],
+      hints:['“Die” is a noun here — a small cube.','You drop it into a cold drink.'] },
+
+    { name:'The Serpent Sequence', tag:'Sequence',
+      prompt:`The serpent's scales read, in order:<br><b>1, 11, 21, 1211, 111221, 312211, …</b><br>Speak the next term exactly.`,
+      answers:['13112221'],
+      hints:['Do not add or multiply. Describe the line above, aloud.','312211 is “one 3, one 1, two 2s, two 1s”.'] },
+
+    { name:'The Gallows', tag:'Anagram',
+      prompt:`Eleven letters hang from the rope:<br><b>A ROPE ENDS IT</b><br>Rearranged, they spell a single word — a feeling of the doomed.`,
+      answers:['desperation'],
+      hints:['Every letter is used exactly once.','It begins with D and ends with N.'] },
+
+    { name:'The Fallen Aviator', tag:'Lateral',
+      prompt:`A man lies dead in an open field. Beside him is a small, <b>unopened package</b>. There are no other people, no footprints, and no roads for miles. He was alive moments before. How did he die?`,
+      any:['parachute'],
+      hints:['The “package” was strapped to his back.','He fell a very long way.'] },
+
+    { name:'The Ditloid Door', tag:'Enigma',
+      prompt:`One equation bars the way. Expand the initials into the full phrase:<br><b>4 = H. of the A.</b>`,
+      any:['horsemen'],
+      hints:['H. = Horsemen.','They ride out at the end of the world.'] },
+
+    { name:'The Hoard', tag:'Finale',
+      prompt:`The final guardian speaks:<br><em>“I have cities, but no houses. Mountains, but no trees. Water, but no fish. Roads, but no cars.”</em><br>Name what it is, and the hoard is yours.`,
+      answers:['map','amap','themap'],
+      hints:['You have been chasing one this whole descent.','It shows the way, drawn on paper.'] }
+  ];
+
+  var WRONG = ['The lock holds fast.', 'The mechanism does not yield.', 'Stone remains stone.',
+    'The tumblers refuse.', 'Nothing moves. Try again.', 'The seal will not break — not with that.'];
+
+  // ================= state =================
+  var idx = 0, hintsUsed = 0, startTs = 0, done = false, shownHints = 0, timerId = 0, resumeMode = false;
+  var SAVE = 'hsg_treasure_save', BEST = 'hsg_treasure_best';
+
+  function loadSave() { try { return JSON.parse(localStorage.getItem(SAVE)) || null; } catch (e) { return null; } }
+  function writeSave() { try { localStorage.setItem(SAVE, JSON.stringify({ idx: idx, hintsUsed: hintsUsed, startTs: startTs, done: done })); } catch (e) {} }
+  function clearSave() { try { localStorage.removeItem(SAVE); } catch (e) {} }
+  function loadBest() { try { return JSON.parse(localStorage.getItem(BEST)) || null; } catch (e) { return null; } }
+
+  function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
+  function check(p, raw) {
+    var n = norm(raw); if (!n) return false;
+    if (p.answers && p.answers.indexOf(n) >= 0) return true;
+    if (p.any) for (var i = 0; i < p.any.length; i++) if (n.indexOf(p.any[i]) >= 0) return true;
+    return false;
+  }
+  function fmtTime(ms) {
+    var s = Math.floor(ms / 1000), m = Math.floor(s / 60), h = Math.floor(m / 60);
+    s %= 60; m %= 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
+  }
+
+  // ================= rendering =================
+  function renderRail() {
+    var rail = $('rail'); rail.innerHTML = '';
+    for (var i = 0; i < PUZZLES.length; i++) {
+      var s = document.createElement('div');
+      s.className = 'seal' + (i < idx ? ' done' : (i === idx && !done ? ' cur' : ''));
+      rail.appendChild(s);
+    }
+  }
+  function renderChamber() {
+    var p = PUZZLES[idx];
+    shownHints = 0;
+    $('chTag').textContent = p.tag;
+    $('chName').innerHTML = p.name + ' <span class="ch-num">· ' + ROMAN[idx] + ' of X</span>';
+    $('chPrompt').innerHTML = p.prompt;
+    var ex = $('chExtra');
+    if (p.extra) { ex.innerHTML = p.extra; ex.classList.remove('hidden'); } else { ex.classList.add('hidden'); ex.innerHTML = ''; }
+    $('chInput').value = ''; $('feedback').textContent = ''; $('feedback').className = 'ch-feedback';
+    $('hints').innerHTML = '';
+    var hb = $('hintBtn'); hb.disabled = false; hb.textContent = 'Consult the margins';
+    $('mHints').textContent = hintsUsed;
+    renderRail();
+    setTimeout(function () { try { $('chInput').focus(); } catch (e) {} }, 40);
+  }
+
+  function submit() {
+    var p = PUZZLES[idx], val = $('chInput').value;
+    if (!norm(val)) return;
+    if (check(p, val)) {
+      var fb = $('feedback'); fb.textContent = 'The seal breaks.'; fb.className = 'ch-feedback good';
+      var card = $('card'); card.classList.remove('wrong'); void card.offsetWidth; card.classList.add('solved');
+      if (window.HSGSound) HSGSound.correct();
+      idx++; done = (idx >= PUZZLES.length); writeSave();
+      renderRail();
+      setTimeout(function () {
+        card.classList.remove('solved');
+        if (done) complete(); else renderChamber();
+      }, 780);
+    } else {
+      var fb2 = $('feedback'); fb2.textContent = WRONG[Math.floor(Math.random() * WRONG.length)]; fb2.className = 'ch-feedback bad';
+      var card2 = $('card'); card2.classList.remove('wrong'); void card2.offsetWidth; card2.classList.add('wrong');
+      if (window.HSGSound) HSGSound.wrong();
+    }
+  }
+
+  function hint() {
+    var p = PUZZLES[idx];
+    if (shownHints >= p.hints.length) return;
+    var h = document.createElement('div'); h.className = 'hint'; h.textContent = p.hints[shownHints];
+    $('hints').appendChild(h);
+    shownHints++; hintsUsed++; writeSave();
+    $('mHints').textContent = hintsUsed;
+    if (window.HSGSound) HSGSound.tick();
+    if (shownHints >= p.hints.length) { $('hintBtn').disabled = true; $('hintBtn').textContent = 'No more notes'; }
+  }
+
+  // ================= flow =================
+  function startTimer() {
+    stopTimer();
+    timerId = setInterval(function () { if (startTs) $('mTime').textContent = fmtTime(Date.now() - startTs); }, 1000);
+  }
+  function stopTimer() { if (timerId) { clearInterval(timerId); timerId = 0; } }
+
+  function begin(fresh) {
+    if (fresh) { idx = 0; hintsUsed = 0; startTs = Date.now(); done = false; writeSave(); }
+    $('introOv').classList.add('hidden'); $('doneOv').classList.add('hidden');
+    $('mHints').textContent = hintsUsed; $('mTime').textContent = fmtTime(Date.now() - startTs);
+    renderChamber(); startTimer();
+  }
+
+  function complete() {
+    stopTimer();
+    var elapsed = Date.now() - startTs;
+    var secs = Math.floor(elapsed / 1000);
+    var score = Math.max(0, 100000 - hintsUsed * 8000 - Math.min(7999, secs));
+    $('doneScore').textContent = score.toLocaleString();
+    $('doneHints').textContent = hintsUsed;
+    $('doneTime').textContent = fmtTime(elapsed);
+    $('doneFlavor').textContent = hintsUsed === 0
+      ? 'Not a single margin consulted. The Cartographer would be furious — and impressed.'
+      : 'The last lock falls open. Behind it, the Cartographer\'s every hidden thing — now yours.';
+    // best (fewest hints, then fastest)
+    var best = loadBest();
+    if (!best || hintsUsed < best.hints || (hintsUsed === best.hints && secs < best.secs)) {
+      try { localStorage.setItem(BEST, JSON.stringify({ hints: hintsUsed, secs: secs, score: score })); } catch (e) {}
+    }
+    renderRail();
+    $('doneOv').classList.remove('hidden');
+    if (window.HSGSound) HSGSound.finish(true);
+    if (window.HSGStreak) HSGStreak.endPanel('#thBoard', { gameId: 'treasure-hunt', gameName: 'Treasure Hunt', unit: 'points', score: score, minStreak: 1 });
+  }
+
+  function showIntro() {
+    stopTimer();
+    $('doneOv').classList.add('hidden'); $('introOv').classList.remove('hidden');
+    var b = loadBest();
+    $('introBest').textContent = b ? 'Your best: ' + b.hints + ' hint' + (b.hints === 1 ? '' : 's') + ' · ' + fmtTime(b.secs * 1000) : '';
+    if (window.HSGStreak) HSGStreak.renderBoardInto('#thBoardIntro', { gameId: 'treasure-hunt', unit: 'points', minStreak: 1 });
+    $('beginBtn').textContent = 'Begin the descent →';
+  }
+
+  // ================= wire up =================
+  $('tryBtn').addEventListener('click', submit);
+  $('hintBtn').addEventListener('click', hint);
+  $('beginBtn').addEventListener('click', function () { begin(!resumeMode); });
+  $('againBtn').addEventListener('click', function () { begin(true); });
+  $('restartBtn').addEventListener('click', function () {
+    if (window.confirm('Abandon this descent and start over from the first chamber?')) { clearSave(); begin(true); }
+  });
+  $('chInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+
+  // ---- boot: resume an unfinished descent, else show the gate ----
+  (function boot() {
+    var s = loadSave();
+    if (s && !s.done && s.idx > 0 && s.idx < PUZZLES.length) {
+      idx = s.idx; hintsUsed = s.hintsUsed || 0; startTs = s.startTs || Date.now(); done = false;
+      resumeMode = true;
+      $('introBest').textContent = 'A descent is already in progress — chamber ' + ROMAN[idx] + '.';
+      $('beginBtn').textContent = 'Resume the descent →';
+      if (window.HSGStreak) HSGStreak.renderBoardInto('#thBoardIntro', { gameId: 'treasure-hunt', unit: 'points', minStreak: 1 });
+      renderRail();
+    } else {
+      idx = 0; hintsUsed = 0; startTs = 0; done = false; resumeMode = false;
+      showIntro(); renderRail();
+    }
+  })();
+})();
+</script>
+
+</body>
+</html>

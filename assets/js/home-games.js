@@ -17,4 +17,5 @@ const GAMES = [
   { key:'slingshot',     name:'Slingshot',        href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg', badge:'✦ New' },
   { key:'bible-quiz',    name:"Paul's Journey",   href:'games/bible-quiz/index.html',   subject:'Passage Identification', emoji:'📖', blurb:'Test how well you know scripture.',  photo:'assets/img/home/shots/bible-quiz.jpg' },
   { key:'letter-catch',  name:'Letter Catch',     href:'games/letter-catch/index.html', subject:'Spelling',  emoji:'🪣', blurb:'Catch letters to spell the word.',   photo:'assets/img/home/shots/letter-catch.jpg' },
+  { key:'treasure-hunt', name:'Treasure Hunt',    href:'games/treasure-hunt/index.html',subject:'Logic',     emoji:'🗝️', blurb:'Ciphers and riddles guard the hoard.', photo:'assets/img/home/shots/treasure-hunt.jpg', badge:'✦ New' },
 ];
