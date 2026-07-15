@@ -64,8 +64,8 @@
     /* ============ Start overlay ============ */
     .ov {
       position: absolute; inset: 0; z-index: 12;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 1.5rem; background: rgba(14,32,52,0.84);
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+      overflow-y: auto; text-align: center; padding: 1.5rem 1.25rem; background: rgba(14,32,52,0.84);
       backdrop-filter: blur(2px); color: #fff;
     }
     .ov.hidden { display: none; }
@@ -216,7 +216,7 @@
           <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3-7</span></button>
           <button class="pace-btn" data-level="medium">Medium<span class="p-sub">High school</span></button>
           <button class="pace-btn" data-level="hard">Hard<span class="p-sub">Adult</span></button>
-          <button class="pace-btn" data-level="einstein">Einstein<span class="p-sub">Expert</span></button>
+          <button class="pace-btn" data-level="solomon">Solomon<span class="p-sub">Expert</span></button>
         </div>
       </div>
     </div>
@@ -462,7 +462,7 @@ const LEVELS = {
   easy:     { key:'easy',     lvl:1, drain:0.8, loss:10, calm:18 },   // Grades 3–7
   medium:   { key:'medium',   lvl:2, drain:1.6, loss:14, calm:15 },   // High school
   hard:     { key:'hard',     lvl:3, drain:2.4, loss:18, calm:13 },   // Adult
-  einstein: { key:'einstein', lvl:4, drain:3.2, loss:22, calm:11 },   // Expert
+  solomon:  { key:'solomon',  lvl:4, drain:3.2, loss:22, calm:11 },   // Expert
 };
 // Each story carries its own difficulty band (lvl 1-4), curated by familiarity.
 function cardLevel(card) { return card.lvl || 3; }
@@ -1208,7 +1208,7 @@ function buildOptions(card) {
     if (opp.length >= 3) pool = opp;
     else { const t = pool.filter(b => isNT(b) !== isNT(answer)); if (t.length >= 3) pool = t; }
   } else if (level.lvl >= 3) {
-    // Hard/Einstein: wrong answers from the SAME testament; Einstein picks nearby books
+    // Hard/Solomon: wrong answers from the SAME testament; Solomon picks nearby books
     let same = pool.filter(b => isNT(b) === isNT(answer));
     if (level.lvl === 4) {
       const ai = CANON.indexOf(answer);
@@ -1234,7 +1234,7 @@ function nextQuestion() {
   current._answer = answer; current._options = options;
 
   // Every round is a story: show its name + a short overview, then name the book.
-  // Easy/Medium get the era hint tag as a scaffold; Hard/Einstein just say "Story".
+  // Easy/Medium get the era hint tag as a scaffold; Hard/Solomon just say "Story".
   const tag = document.getElementById('qtag');
   const showEra = level.lvl <= 2 && current.era;
   tag.textContent = showEra ? current.era : 'Bible Story';
