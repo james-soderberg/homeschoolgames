@@ -290,7 +290,6 @@ const TIERS = {
 };
 const TIER_ORDER = ['easy','medium','hard','einstein'];
 const START_LIVES = 3;
-const FALL_STRUGGLE = 1.5;   // seconds a doomed walker slowly teeters before toppling
 
 function currentGen(){ return TIERS[tierKey].gen; }
 function tolsFor(){
@@ -340,6 +339,7 @@ let state='menu';          // menu | aim | result | over
 let round=null, actualX=0, walkerX=0;
 let lives=START_LIVES, streak=0, bestStreak=0, rounds=0, successes=0;
 let outcome=null, resultT=0, wobbleAmp=0, tipDir=1, fallY=0, fellFx=false, advanced=false, revealed=false;
+let fallSev=0, struggleT=0;   // fall dynamics scale with how far off the guess was
 let dragging=false, running=false, rafId=null, lastTs=0, sceneT=0;
 
 const rail = HSGStreak.init({
@@ -463,13 +463,14 @@ function drawWalker(){
   if(state==='result'){
     if(outcome==='fall'){
       mood='scared';
-      if(resultT < FALL_STRUGGLE){                 // slow teeter — leaning worse and worse
-        const sp = resultT/FALL_STRUGGLE;
-        const sway = Math.sin(resultT*5.2);        // slow, wide sway (~0.8 Hz)
-        tilt = tipDir*(sp*sp*0.55 + (0.26+sp*0.28)*sway);
-      } else {                                      // lost it — tip past the point of no return and drop
-        const tp = resultT - FALL_STRUGGLE;
-        tilt = tipDir*Math.min(1.55, 0.55 + tp*2.4);
+      if(resultT < struggleT){                       // teeter — a near-miss fights it; a far miss barely does
+        const sp = struggleT>0 ? resultT/struggleT : 1;
+        const wob = 1 - fallSev;                      // far off → essentially no wobble
+        const sway = Math.sin(resultT * lerp(4.4, 9, fallSev));
+        tilt = tipDir*( sp*sp*(0.5+fallSev*0.35) + (0.2+sp*0.3)*sway*wob );
+      } else {                                        // over the edge — tip and drop (far = faster & tumbling)
+        const tp = resultT - struggleT;
+        tilt = tipDir*Math.min(lerp(1.35,8,fallSev), (0.45+fallSev*0.35) + tp*lerp(1.8,7,fallSev));
         dy = fallY;
       }
     }
@@ -572,16 +573,18 @@ function tick(ts){
   if(state==='result'){
     resultT += dt;
     if(outcome==='fall'){
-      if(resultT > FALL_STRUGGLE){                 // teetered long enough — now they go over
+      if(resultT > struggleT){                      // over the edge — now they drop
         if(!fellFx){ fellFx=true;
           if(window.HSGSound) HSGSound.wrong();
-          if(window.HSGfx){ HSGfx.flash('rgba(139,32,32,0.4)'); HSGfx.shake(); }
-          feedbackEl.innerHTML = '<span style="color:var(--red)">Toppled!</span><span class="sub">'+missHint(errFracOf(walkerX))+'</span>';
+          if(fallSev>0.45 && window.HSGfx && HSGfx.shake) HSGfx.shake();   // impact shake for hard falls only — no flash
+          feedbackEl.innerHTML = '<span style="color:var(--red)">'+(fallSev>0.6?'Off the rope!':'Toppled!')+'</span><span class="sub">'+missHint(errFracOf(walkerX))+'</span>';
         }
-        const tp = resultT - FALL_STRUGGLE;
-        if(tp>0.28) fallY += dt*Math.min(1000, 200+tp*760);
+        const tp = resultT - struggleT;
+        // fall speed scales with how far off you were: near-miss slumps, far miss plummets
+        const fallSpeed = Math.min(lerp(700,1650,fallSev), lerp(150,660,fallSev) + tp*lerp(500,1550,fallSev));
+        fallY += dt*fallSpeed;
       }
-      if(resultT > FALL_STRUGGLE+1.0 && !advanced) advance();
+      if(resultT > struggleT+1.0 && !advanced) advance();
     }
     else if(resultT>1.6 && !advanced) advance();   // teeter settles in place — no walking on
   }
@@ -614,10 +617,10 @@ function commit(){
   if(success){
     successes++;
     streak++; if(streak>bestStreak) bestStreak=streak; rail.hit();
-    // teeter scales with how far off you were: 0 = dead-center → rock steady,
-    // 1 = right at the edge of "still counts" → nearly topples, then recovers.
-    const rel = clamp(e / T.save, 0, 1);
-    wobbleAmp = Math.pow(rel, 1.35) * 0.9;   // radians (0 … ~0.9 = almost falls)
+    // On the mark → rock steady (no shake). In the "save" band → a real wobble
+    // that grows toward the fall threshold, then visibly corrects.
+    if(e <= T.bal){ wobbleAmp = Math.pow(e/T.bal, 2) * 0.12; }        // solidly balanced: barely a flicker
+    else { const rs = clamp((e-T.bal)/(T.save-T.bal),0,1); wobbleAmp = 0.14 + Math.pow(rs,1.3)*0.85; }  // near-miss save: wobble & recover
     if(window.HSGSound) HSGSound.correct();
     if(outcome==='balance' && e<=0.02){ if(window.HSGfx) HSGfx.confetti({big:true, count:60}); }
     else if(outcome==='balance'){ if(window.HSGfx) HSGfx.confetti({count:22}); }
@@ -628,8 +631,11 @@ function commit(){
     feedbackEl.innerHTML = '<span style="color:var(--green)">'+msg+'</span><span class="sub">'+revealText()+'</span>';
   } else {
     streak=0; lives--; rail.broke();
-    // they teeter first (see tick) — the "oh no" sound, flash & verdict land when they actually go over
-    feedbackEl.innerHTML = '<span style="color:#b0803a">Wobbling…</span>';
+    // how badly you missed shapes the fall: a hair past the line → teeter then slump;
+    // way off → almost no wobble, an immediate fast plummet.
+    fallSev = clamp((e - T.save) / 0.17, 0, 1);
+    struggleT = lerp(0.85, 0.05, fallSev);
+    feedbackEl.innerHTML = '<span style="color:#b0803a">'+(fallSev>0.6?'Overbalanced!':'Wobbling…')+'</span>';
   }
   updateHud();
 }
