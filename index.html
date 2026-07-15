@@ -40,6 +40,15 @@
 
   .foot{text-align:center;margin-top:3rem;color:#6c5836;font-weight:600;font-size:.95rem;}
   .foot a{color:#6c5836;}
+
+  /* a clue pressed into the corkboard — Morse for the buried game */
+  .morse{display:flex;flex-direction:column;align-items:center;gap:.55rem;margin-top:1.6rem;}
+  .morse .mrow{display:flex;align-items:center;gap:16px;}
+  .morse .mlet{display:flex;align-items:center;gap:6px;}
+  .morse .dot{width:8px;height:8px;border-radius:50%;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
+  .morse .dash{width:22px;height:8px;border-radius:4px;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
+  .morse .mkey{display:flex;align-items:center;gap:7px;font-size:.56rem;letter-spacing:.28em;color:rgba(64,40,12,.6);font-weight:800;text-transform:uppercase;}
+  .morse .mkey .dot{width:6px;height:6px;} .morse .mkey .dash{width:15px;height:6px;}
 </style>
 </head>
 <body>
@@ -49,6 +58,7 @@
     </div>
     <div class="grid" id="board"></div>
     <div class="foot">homeschoolgames.app · made for curious kids</div>
+    <div class="morse" id="morse" aria-hidden="true"></div>
   </div>
 <script src="assets/js/home-games.js"></script>
 <script>
