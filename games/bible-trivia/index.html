@@ -44,8 +44,8 @@
     /* ============ Overlays ============ */
     .ov {
       position: absolute; inset: 0; z-index: 12;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 1.5rem; background: rgba(40,24,10,0.84);
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+      overflow-y: auto; text-align: center; padding: 1.5rem; background: rgba(40,24,10,0.84);
       backdrop-filter: blur(2px); color: #fff;
     }
     .ov.hidden { display: none; }
@@ -211,7 +211,7 @@
         <button class="pace-btn" data-pace="easy">Easy<span class="p-sub">Grades 3–7</span></button>
         <button class="pace-btn" data-pace="medium">Medium<span class="p-sub">High school</span></button>
         <button class="pace-btn" data-pace="hard">Hard<span class="p-sub">Adult</span></button>
-        <button class="pace-btn" data-pace="einstein">Einstein<span class="p-sub">Expert</span></button>
+        <button class="pace-btn" data-pace="solomon">Solomon<span class="p-sub">Expert</span></button>
       </div>
     </div>
 
@@ -615,7 +615,7 @@ const DECK = {
     {"q":"Complete the verse: \"A soft answer turneth away ___: but grievous words stir up anger\" (Proverbs 15:1).","a":"wrath","wrong":["strife","malice","fury"],"cat":"words"},
     {"q":"Complete the verse: \"And the ark rested in the seventh month... upon the mountains of ___\" (Genesis 8:4).","a":"Ararat","wrong":["Sinai","Nebo","Horeb"],"cat":"words"}
   ],
-  einstein: [
+  solomon: [
     {"q":"Who was the father of the child named Maher-Shalal-Hash-Baz?","a":"Isaiah","wrong":["Hosea","Amos","Micah"],"cat":"people"},
     {"q":"Who went down into a pit on a snowy day and killed a lion?","a":"Benaiah","wrong":["Abishai","Eleazar","Shammah"],"cat":"people"},
     {"q":"Who prayed that God would enlarge his territory and was more honorable than his brothers?","a":"Jabez","wrong":["Othniel","Caleb","Achan"],"cat":"people"},
@@ -740,7 +740,7 @@ const LEVEL_META = {
   easy:     { label:'Easy',     sub:'Grades 3–7' },
   medium:   { label:'Medium',   sub:'High school' },
   hard:     { label:'Hard',     sub:'Adult' },
-  einstein: { label:'Einstein', sub:'Expert' },
+  solomon: { label:'Solomon', sub:'Expert' },
 };
 const BEST_KEY = 'exodus_journey_best';
 // Only stage 3 (the chase) uses the army gap. drain = lead lost per second a
