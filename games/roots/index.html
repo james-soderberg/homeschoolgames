@@ -601,7 +601,7 @@ function leaveGame(dest){
   if(leaving) return; leaving = true;
   const go = ()=>{ if(dest) window.location.href = dest; };
   if(window.HSGStreak && HSGStreak.record && cfg){
-    HSGStreak.record({ gameId:'roots', gameName:'Roots', score:bestStreak, minStreak:3, unit:'streak', onDone:()=>{ leaving=false; go(); } });
+    HSGStreak.record({ gameId:'roots', gameName:'Roots', level:cfg.key, levelName:cfg.label, score:bestStreak, minStreak:3, unit:'streak', onDone:()=>{ leaving=false; go(); } });
   } else go();
 }
 $('quitBtn').addEventListener('click', ()=> leaveGame('../../index.html'));

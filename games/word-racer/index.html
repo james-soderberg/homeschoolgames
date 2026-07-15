@@ -39,7 +39,7 @@
 
     /* ---------- the rotating track ---------- */
     .arena {
-      position: relative; width: min(94vw, clamp(600px, 82vh, 780px)); height: min(94vw, clamp(600px, 82vh, 780px));
+      position: relative; width: min(94vw, clamp(340px, 82vh, 780px)); height: min(94vw, clamp(340px, 82vh, 780px));
       margin: 0 auto 0.9rem; border-radius: 18px;
       background: #34302b; overflow: hidden;
       box-shadow: 0 8px 24px rgba(20,33,46,0.24); border: 2px solid #23201b;
@@ -168,6 +168,8 @@
     <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
 
     <div class="arena" id="arena" onclick="focusGame()">
+      <input id="typeGrab" type="text" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" inputmode="text" tabindex="-1"
+             aria-label="Type here" style="position:absolute;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;background:transparent;caret-color:transparent;z-index:-1">
       <div class="ring" id="ring">
         <div class="edge left" id="edgeLeft"></div>
         <div class="edge bottom" id="edgeBottom"></div>
@@ -467,6 +469,7 @@ function startRace() {
   // arm: the race begins the moment the player types their first character
   armed = true;
   document.getElementById('typePrompt').classList.remove('hidden');
+  if (TOUCH) focusGrab();   // summon the mobile keyboard for this race
 }
 
 // called on the first real keystroke — starts the clock and the animation loop
@@ -547,19 +550,13 @@ function rotateSquare() {
   ring.style.transform = 'rotate(0deg)';
 }
 
-function onKeyDown(e) {
-  if (e.metaKey || e.ctrlKey || e.altKey) return;
-  const k = e.key;
+// Feed one typed character into the race. Shared by the physical keyboard
+// (onKeyDown) and the mobile soft keyboard (hidden input's 'input' event).
+function feedChar(k) {
   if (!racing) {
-    // waiting for the player to start: the first printable key kicks off the race
-    if (!armed || k.length !== 1) return;
+    if (!armed) return;      // the first printable char kicks off the race
     beginRace();
-    // fall through so this keystroke counts as the first character typed
   }
-  if (k === 'Backspace' || k === 'Tab') { e.preventDefault(); return; }
-  if (k.length !== 1) return;
-  e.preventDefault();
-
   totalKeystrokes++;
   if (k === chars[index]) {
     keyTimes.push(performance.now());
@@ -583,6 +580,19 @@ function onKeyDown(e) {
     const cur = topSpans[index - lines[activeLine].start];
     if (cur) { cur.classList.add('err'); setTimeout(() => cur.classList.remove('err'), 200); }
   }
+}
+
+// Desktop physical-keyboard path. On touch devices the hidden input feeds chars instead.
+const TOUCH = !!(window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+function onKeyDown(e) {
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key;
+  if (k === 'Backspace' || k === 'Tab') { e.preventDefault(); return; }
+  if (k.length !== 1) return;
+  if (!racing && !armed) return;
+  e.preventDefault();
+  if (TOUCH) return;          // mobile: the #typeGrab input's 'input' event handles it
+  feedChar(k);
 }
 
 function finishSequence() {
@@ -662,7 +672,16 @@ function showResults(place, racers, wpm, acc, isBest) {
   });
 }
 
-function focusGame() {}
+// Mobile: a hidden input summons the soft keyboard; its 'input' event feeds chars.
+const typeGrab = document.getElementById('typeGrab');
+function focusGrab() { if (typeGrab) { try { typeGrab.focus({ preventScroll: true }); } catch (e) { typeGrab.focus(); } } }
+function focusGame() { if (TOUCH) focusGrab(); }   // tapping the arena re-summons the keyboard
+if (typeGrab) {
+  typeGrab.addEventListener('input', () => {
+    const v = typeGrab.value; typeGrab.value = '';   // read what was typed, then clear so it never accumulates
+    for (const ch of v) if (ch.length === 1) feedChar(ch);
+  });
+}
 window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
 document.addEventListener('keydown', onKeyDown);
 showBest();

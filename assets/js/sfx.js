@@ -145,6 +145,43 @@
       layer(0.95 * S + 0.20, 1200, 300,  0.30, 0.6, 1.5, false, 0.014); // mid rumble
       layer(1.05 * S + 0.25, 380,  110,  0.34, 0.7, 1.6, false, 0.014); // deep low boom (low Q → not buzzy)
     },
+    // A fiery explosion — a soft-swelling WHOOSH + flickering crackle rather than a
+    // bang/gunshot. No sharp transient: everything ramps in and the noise sweeps
+    // downward (fire spreading), with a bright sizzle on top (embers).
+    fireburst(big) {
+      if (muted) return;
+      const c = ac(); if (!c) return;
+      const t0 = c.currentTime;
+      const S = big ? 1 : 0.75;
+      // noise layer: soft attack, frequency sweep, exp decay, optional flicker (crackle)
+      const layer = (dur, type, cut0, cut1, q, gain, atk, crackle) => {
+        const len = Math.max(1, Math.floor(c.sampleRate * dur));
+        const buf = c.createBuffer(1, len, c.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < len; i++) {
+          let a = Math.pow(1 - i / len, 1.4);                    // overall decay
+          if (crackle) a *= (Math.random() < 0.45 ? 1 : 0.14);   // sparse flicker → fiery sizzle
+          d[i] = (Math.random() * 2 - 1) * a;
+        }
+        const src = c.createBufferSource(); src.buffer = buf;
+        const f = c.createBiquadFilter(); f.type = type;
+        f.frequency.setValueAtTime(cut0, t0);
+        f.frequency.exponentialRampToValueAtTime(Math.max(60, cut1), t0 + dur * 0.85);
+        f.Q.setValueAtTime(q, t0);
+        const g = c.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(gain, t0 + atk);          // soft swell — no gunshot snap
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+        src.connect(f).connect(g).connect(c.destination);
+        src.start(t0); src.stop(t0 + dur + 0.02);
+      };
+      // 1) the WHOOSH: airy roar sweeping downward (fire billowing out)
+      layer(0.55 * S + 0.30, 'lowpass',  1000, 240, 0.4, 0.30, 0.045, false);
+      // 2) bright fiery sizzle/crackle on top (flickering embers)
+      layer(0.70 * S + 0.28, 'highpass', 1700, 3400, 0.5, 0.11, 0.030, true);
+      // 3) warm low swell for weight — soft, not a thump
+      layer(0.70 * S + 0.25, 'lowpass',  340,  90,  0.6, 0.22, 0.055, false);
+    },
     // the swish of an arrow/projectile loosed — broadband noise through a
     // sweeping bandpass (a "whoosh", never a tone).
     whoosh() {

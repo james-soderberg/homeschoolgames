@@ -60,9 +60,9 @@
       position: relative; width: 100%; border-radius: 16px; overflow: hidden;
       border: 2.5px solid var(--border); box-shadow: 0 8px 26px rgba(26,23,20,0.18);
       background: #20302a; touch-action: none;
-      height: min(72vh, 680px); min-height: 460px;
+      height: min(72vh, 680px); min-height: 380px;
     }
-    @media (max-width: 600px) { .stage { height: 62vh; min-height: 380px; } }
+    @media (max-width: 600px) { .stage { height: 62vh; min-height: 340px; } }
     #snakeCanvas { display: block; width: 100%; height: 100%; }
 
     /* between-words prompt — a pill under the clue; the board stays fully visible */
@@ -125,8 +125,8 @@
 
     .bf-overlay {
       position: absolute; inset: 0; z-index: 12;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 1.5rem; background: rgba(16,26,22,0.85);
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center; overflow-y: auto;
+      text-align: center; padding: 1.3rem 1.25rem; background: rgba(16,26,22,0.85);
       backdrop-filter: blur(2px); color: #fdf7ec;
     }
     .bf-overlay.hidden { display: none; }
@@ -144,6 +144,16 @@
     .level-btn .l-icon { font-size: 1.7rem; }
     .level-btn .l-name { font-weight: 800; display: block; }
     .level-btn .l-desc { font-size: 0.78rem; color: var(--ink-light); display: block; }
+    /* short windows: compress the menu so every level fits without a scroll */
+    @media (max-height: 680px) {
+      .bf-overlay { padding-top: 0.7rem; padding-bottom: 0.7rem; }
+      .bf-overlay .crest { font-size: 1.8rem; margin-bottom: 0.15rem; }
+      .bf-overlay h2 { font-size: 1.5rem; margin-bottom: 0.15rem; }
+      .bf-overlay p { font-size: 0.82rem; margin-bottom: 0.55rem; line-height: 1.35; }
+      .level-row { gap: 0.4rem; }
+      .level-btn { padding: 0.45rem 0.9rem; }
+      .level-btn .l-icon { font-size: 1.4rem; }
+    }
 
     .hint { text-align: center; font-size: 0.85rem; color: var(--ink-light); margin-top: 0.8rem; line-height: 1.5; }
     .hint kbd { font-family:'Courier New',monospace; background: var(--cream-dark); border:1px solid var(--border); border-radius:4px; padding:0.05rem 0.35rem; }
@@ -241,11 +251,11 @@
 // letters IN SPELLING ORDER. Edges wrap around (no wall deaths).
 // The snake grows with every letter, so longer words get tricky.
 // ============================================================
-const LEVELS = {                               // stepMs = ms per move (start → fast); higher = slower
-  easy:     { stepMs:[520,420], decoys:4 },  // grades 1–3 • super slow
-  medium:   { stepMs:[430,340], decoys:6 },  // grades 4–7 • steady
-  hard:     { stepMs:[360,280], decoys:8 },  // high school+ • quicker
-  einstein: { stepMs:[310,240], decoys:9 }   // spelling-bee • fast
+const LEVELS = {                               // stepMs = ms per move (CONSTANT all game); higher = slower
+  easy:     { stepMs:470, decoys:4 },  // grades 1–3 • super slow
+  medium:   { stepMs:400, decoys:6 },  // grades 4–7 • steady
+  hard:     { stepMs:330, decoys:8 },  // high school+ • quicker
+  einstein: { stepMs:290, decoys:9 }   // spelling-bee • fast
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
@@ -342,7 +352,7 @@ let state='menu';
 let level='easy', cfg=LEVELS.easy;
 let word='', clueStr='', typed=0, lettersEaten=0, wordsDone=0, mistakes=0;
 const START_LEN=3;
-let snake=[], lastSnake=[], dir={dc:1,dr:0}, queued=null, pellets=[];
+let snake=[], lastSnake=[], dir={dc:1,dr:0}, dirQueue=[], pellets=[];
 let stepAcc=0, curInterval=0.3, lastTs=0, rafId=null, flashT=0, shakeT=0, lifeT=0, nextId=1;
 
 const rail = HSGStreak.init({ gameId:'letter-snake', gameName:'Letter Snake', minStreak:6,
@@ -363,7 +373,7 @@ function resetSnake(){
   const cr=Math.floor(ROWS/2), cc=Math.floor(COLS/2);
   snake=[{c:cc,r:cr},{c:cc-1,r:cr},{c:cc-2,r:cr}];
   lastSnake=snake.map(s=>({c:s.c,r:s.r}));   // no slide on a fresh snake
-  dir={dc:1,dr:0}; queued=null;
+  dir={dc:1,dr:0}; dirQueue.length=0;
 }
 
 // ---- new word: pause (snake keeps its size & spot), show clue, wait for a key ----
@@ -511,8 +521,9 @@ function updateHud(){
 
 // ---- step ----
 function step(){
-  if (queued && !(queued.dc===-dir.dc && queued.dr===-dir.dr)) dir=queued;
-  queued=null;
+  // pull the next buffered turn; each was already validated as non-reversing
+  // against the move ahead of it, so consecutive quick presses all land
+  if (dirQueue.length) dir=dirQueue.shift();
   lastSnake=snake.map(s=>({c:s.c,r:s.r}));   // snapshot for smooth interpolation
   // wrap around the edges to the opposite side at the same coordinate
   let nc=snake[0].c+dir.dc, nr=snake[0].r+dir.dr;
@@ -543,7 +554,7 @@ function loop(ts){
   if(!lastTs) lastTs=ts;
   let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.1) dt=0.1;
   if (state==='playing'){
-    curInterval = lerp(cfg.stepMs[0], cfg.stepMs[1], clamp(lettersEaten/20,0,1))/1000;
+    curInterval = cfg.stepMs/1000;   // constant speed the whole game — difficulty comes from the growing snake
     stepAcc+=dt;
     while (state==='playing' && stepAcc>=curInterval){ stepAcc-=curInterval; step(); }
   }
@@ -646,7 +657,16 @@ function drawHead(p,hurt){
 }
 
 // ---- input ----
-function setDir(dc,dr){ if(state==='playing') queued={dc,dr}; }
+// Buffer up to 2 turns. Each is validated against the LAST intended heading
+// (the tail of the queue, or the live dir) — so a quick →,↑ both stick and you
+// can whip around a corner without the second press eating the first.
+function setDir(dc,dr){
+  if(state!=='playing') return;
+  const ref = dirQueue.length ? dirQueue[dirQueue.length-1] : dir;
+  if(dc===-ref.dc && dr===-ref.dr) return;   // no 180° reversal
+  if(dc===ref.dc && dr===ref.dr) return;     // same heading — nothing to queue
+  if(dirQueue.length<2) dirQueue.push({dc,dr});
+}
 function dirFromKey(k){
   if (k==='arrowleft'||k==='a') return {dc:-1,dr:0};
   if (k==='arrowright'||k==='d') return {dc:1,dr:0};
@@ -662,7 +682,7 @@ document.addEventListener('keydown', e=>{
   const d=dirFromKey(k);
   if (state==='ready'){
     beginPlay();
-    if (d) queued=d;       // first key also sets the heading
+    if (d) setDir(d.dc,d.dr);   // first key also sets the heading (now that state is 'playing')
     e.preventDefault(); return;
   }
   if (d){ setDir(d.dc,d.dr); e.preventDefault(); }

@@ -284,9 +284,8 @@
             <div class="scr-row"><span class="k">CASH TENDERED</span><span class="v" id="dispPaid">$0.00</span></div>
             <div class="scr-div dbl"></div>
             <div class="scr-row scr-change"><span class="k">CHANGE DUE</span><span class="v" id="dispChange">$0.00</span></div>
-            <div class="scr-row scr-counted"><span class="k">COUNTED OUT</span><span class="v under" id="dispCounted">$0.00</span></div>
-            <div class="scr-msg" id="dispMsg">MAKE THE CHANGE</div>
-            <div class="scr-pat" id="patience"><i id="patBar"></i></div>
+            <div class="scr-row scr-counted"><span class="k">PIECES IN TRAY</span><span class="v under" id="dispCounted">0</span></div>
+            <div class="scr-msg" id="dispMsg">COUNT OUT THE CHANGE</div>
           </div>
         </div>
       </div>
@@ -311,8 +310,9 @@
       <div class="ov-card">
         <div class="ov-lab">How to play</div>
         <h2>Register</h2>
-        <p>Ring up each customer, then tap coins and bills into the tray to hand back their
-          <b>exact change</b> before they run out of patience. Fill the till and clear the day's rent to win.</p>
+        <p>Ring up each customer, then hand back their <b>exact change</b> using the
+          <b>fewest coins &amp; bills</b>. No clock — take your time and get it right, but every
+          extra coin costs a fee. Fill the till and clear the day's rent to win.</p>
         <button type="button" class="btn btn-gold" id="startBtn">Play →</button>
       </div>
       <div id="startBoard"></div>
@@ -353,6 +353,7 @@
   var pick = function (a) { return a[rand(0, a.length - 1)]; };
   var money = function (c) { return '$' + (c / 100).toFixed(2); };
   var CUSTOMERS_PER_DAY = 10;
+  var FEE_PER_PIECE = 15;   // cents charged per coin/bill beyond the fewest possible
 
   var DEN = {
     1:{k:'coin penny',   num:'1',  suf:'cent'}, 5:{k:'coin nickel', num:'5',  suf:'cent'},
@@ -397,9 +398,9 @@
 
   // ---- state ----
   var tier = TIERS.tax, day = [], custIdx = 0;   // always the hardest tier
-  var till = 0, tipsTotal = 0, servedOK = 0, perfectCount = 0, lostCount = 0;
+  var till = 0, salesTotal = 0, tipsTotal = 0, feesTotal = 0, servedOK = 0, perfectCount = 0;
   var combo = 0, bestCombo = 0, prevMult = 1, goalCents = 0, goalHit = false, hintedDay = false;
-  var cur = null, tray = [], patRaf = 0, patStart = 0, patDur = 0, active = false, resolved = false;
+  var cur = null, tray = [], resolved = false;
   var wrongThisCust = 0, tillRaf = 0;
 
   // ---- math helpers ----
@@ -494,26 +495,21 @@
     updateStatus();
   }
 
+  // no live "to go" feedback — the player commits blind; only the piece count shows
   function updateStatus() {
-    var given = tray.reduce(function (s,v){return s+v;}, 0);
-    var g = $('dispCounted');
-    g.textContent = money(given);
-    g.className = 'v ' + (given===cur.change ? 'ok' : given>cur.change ? 'over' : 'under');
-    var m = $('dispMsg'), diff = cur.change - given;
-    if (given === cur.change) { m.textContent = cur.exact ? 'NO CHANGE — PRESS GIVE' : 'CHANGE CORRECT ✓'; m.className = 'scr-msg ok'; }
-    else if (diff > 0) { m.textContent = money(diff).toUpperCase() + ' TO GO'; m.className = 'scr-msg'; }
-    else { m.textContent = money(-diff).toUpperCase() + ' OVER'; m.className = 'scr-msg over'; }
-    $('giveBtn').classList.toggle('ready', given === cur.change);
+    if (resolved) return;   // keep the result message on screen after Give change
+    $('dispCounted').textContent = String(tray.length);
+    $('dispCounted').className = 'v under';
+    var m = $('dispMsg');
+    if (cur && cur.exact) { m.textContent = 'NO CHANGE — PRESS GIVE'; }
+    else { m.textContent = tray.length ? 'PRESS GIVE WHEN READY' : 'COUNT OUT THE CHANGE'; }
+    m.className = 'scr-msg';
+    $('giveBtn').classList.remove('ready');
   }
 
   function renderStreak() {
     var m = mult();
     $('dispStreak').textContent = m > 1 ? 'STREAK ×' + m : '';
-  }
-
-  function setRing(frac) {
-    $('patBar').style.transform = 'scaleX(' + frac + ')';
-    $('patience').className = 'scr-pat' + (frac < 0.18 ? ' danger' : frac < 0.4 ? ' warn' : '');
   }
 
   // ---- present a customer ----
@@ -549,8 +545,7 @@
     $('hintBtn').disabled = cur.exact;
     $('giveBtn').disabled = false;
 
-    renderTray(false); renderDrawer(); renderStreak(); setRing(1);
-    startPatience();
+    renderTray(false); renderDrawer(); renderStreak();
   }
 
   // ---- tray actions ----
@@ -574,17 +569,6 @@
     setTimeout(function () { clone.remove(); }, 360);
   }
 
-  // ---- patience ----
-  function startPatience() { patDur = cur.patDur; patStart = performance.now(); active = true; cancelAnimationFrame(patRaf); tickPatience(); }
-  function tickPatience() {
-    if (!active) return;
-    var frac = 1 - (performance.now() - patStart) / patDur; if (frac < 0) frac = 0;
-    setRing(frac);
-    if (frac <= 0) { failSale(); return; }
-    patRaf = requestAnimationFrame(tickPatience);
-  }
-  function stopPatience() { active = false; cancelAnimationFrame(patRaf); }
-
   // ---- resolve ----
   function giveChange() {
     if (resolved) return;
@@ -598,44 +582,41 @@
     var scr = $('screen'); scr.classList.remove('bad'); void scr.offsetWidth; scr.classList.add('bad');
     var trayEl = $('tray'); trayEl.classList.remove('shake'); void trayEl.offsetWidth; trayEl.classList.add('shake');
     if (window.HSGSound) HSGSound.wrong();
-    patStart -= 2500;
   }
 
   function succeed() {
-    resolved = true; stopPatience();
-    var fracLeft = 1 - (performance.now() - patStart) / patDur; if (fracLeft < 0) fracLeft = 0;
-    var clean = wrongThisCust === 0 && fracLeft > 0.25;
+    resolved = true;
+    // fewest-pieces is the goal — every piece beyond optimal is charged a fee
+    var extra = cur.exact ? 0 : Math.max(0, tray.length - cur.optimal);
+    var clean = wrongThisCust === 0 && extra === 0;
     if (clean) { combo++; if (combo > bestCombo) bestCombo = combo; }
+    else { combo = 0; prevMult = 1; }
     var m = mult();
 
-    var speed = fracLeft > 0.66 ? 30 : fracLeft > 0.33 ? 15 : 5;
-    var neat = (tray.length === cur.optimal) ? 20 : 0;
+    var fee = extra * FEE_PER_PIECE;
+    var base = cur.exact ? 20 : 15;
+    var neat = extra === 0 ? 25 : 0;
     var acc = wrongThisCust === 0 ? 10 : 0;
-    var tip = Math.round((speed + neat + acc) * cur.type.tip * m);
-    var gain = cur.total + tip;
+    var tip = Math.round((base + neat + acc) * cur.type.tip * m);
+    var gain = cur.total + tip - fee;
 
-    till += gain; tipsTotal += tip; servedOK++; if (neat) perfectCount++;
+    till += gain; salesTotal += cur.total; tipsTotal += tip; feesTotal += fee; servedOK++;
+    if (extra === 0 && !cur.exact) perfectCount++;
 
-    var scr = $('screen'); scr.classList.remove('ok'); void scr.offsetWidth; scr.classList.add('ok');
-    var msg = $('dispMsg'); msg.textContent = (neat && !cur.exact ? 'FEWEST PIECES!  ' : 'THANK YOU!  ') + '+' + money(tip); msg.className = 'scr-msg ok';
-    if (window.HSGSound) { HSGSound.correct(); if (clean && m > 1) HSGSound.powerup(); }
+    $('dispCounted').textContent = String(tray.length);
+    var scr = $('screen'); scr.classList.remove('ok','bad'); void scr.offsetWidth; scr.classList.add(fee ? 'bad' : 'ok');
+    var msg = $('dispMsg');
+    if (fee) { msg.textContent = extra + (extra===1 ? ' EXTRA COIN — ' : ' EXTRA COINS — ') + money(fee) + ' FEE'; msg.className = 'scr-msg over'; }
+    else { msg.textContent = (cur.exact ? 'EXACT — THANK YOU!  ' : 'FEWEST PIECES!  ') + '+' + money(tip); msg.className = 'scr-msg ok'; }
+    if (window.HSGSound) { if (fee) HSGSound.wrong(); else { HSGSound.correct(); if (clean && m > 1) HSGSound.powerup(); } }
     var trayEl = $('tray'); trayEl.style.transition = 'opacity .2s'; trayEl.style.opacity = '.35';
 
-    floatFrom($('tillAmt'), '+' + money(gain) + (m > 1 ? '  ×' + m : ''));
+    floatFrom($('tillAmt'), (gain >= 0 ? '+' : '') + money(gain) + (!fee && m > 1 ? '  ×' + m : ''));
     animateTill(till - gain, till); updateGoal();
-    if (m > prevMult && m > 1 && m >= 3) confetti();
+    if (!fee && m > prevMult && m > 1 && m >= 3) confetti();
     prevMult = m; renderStreak();
 
-    setTimeout(function () { trayEl.style.opacity = '1'; advance(); }, 1000);
-  }
-
-  function failSale() {
-    if (resolved) return;
-    resolved = true; stopPatience(); combo = 0; prevMult = 1; lostCount++;
-    var msg = $('dispMsg'); msg.textContent = 'CUSTOMER LEFT — LOST SALE'; msg.className = 'scr-msg over';
-    renderStreak();
-    if (window.HSGSound) HSGSound.wrong();
-    setTimeout(advance, 1150);
+    setTimeout(function () { trayEl.style.opacity = '1'; advance(); }, 1150);
   }
 
   function advance() {
@@ -683,7 +664,7 @@
   // ---- day flow ----
   function startDay() {
     day = []; for (var i=0;i<CUSTOMERS_PER_DAY;i++) day.push(genCustomer());
-    custIdx = 0; till = 0; tipsTotal = 0; servedOK = 0; perfectCount = 0; lostCount = 0;
+    custIdx = 0; till = 0; salesTotal = 0; tipsTotal = 0; feesTotal = 0; servedOK = 0; perfectCount = 0;
     combo = 0; bestCombo = 0; prevMult = 1; goalHit = false; hintedDay = false; goalCents = tier.goal;
     $('startOverlay').classList.add('hidden'); $('endScreen').classList.add('hidden');
     $('goal').classList.remove('done'); $('goalAmt').textContent = money(goalCents); $('goalBar').style.width = '0%';
@@ -692,17 +673,15 @@
   }
 
   function endDay() {
-    stopPatience();
     $('endScreen').classList.remove('hidden');
     $('endLevel').textContent = 'End of day';
     $('endTill').textContent = money(till);
-    var baseSales = till - tipsTotal; if (baseSales < 0) baseSales = 0;
     $('endLines').innerHTML =
-      '<div class="row"><span>Sales ('+servedOK+' served)</span><span>'+money(baseSales)+'</span></div>' +
-      '<div class="row"><span>Tips earned</span><span>'+money(tipsTotal)+'</span></div>' +
-      '<div class="row"><span>Perfect change</span><span>'+perfectCount+' / '+servedOK+'</span></div>' +
+      '<div class="row"><span>Sales ('+servedOK+' served)</span><span>'+money(salesTotal)+'</span></div>' +
+      '<div class="row"><span>Tips earned</span><span>+'+money(tipsTotal)+'</span></div>' +
+      (feesTotal ? '<div class="row"><span>Coin fees</span><span>-'+money(feesTotal)+'</span></div>' : '') +
+      '<div class="row"><span>Fewest-piece sales</span><span>'+perfectCount+' / '+servedOK+'</span></div>' +
       '<div class="row"><span>Best streak</span><span>×'+Math.min(5,1+Math.floor(bestCombo/2))+' ('+bestCombo+')</span></div>' +
-      (lostCount ? '<div class="row"><span>Lost sales</span><span>'+lostCount+'</span></div>' : '') +
       '<div class="row"><span><b>Day\'s takings</b></span><span><b>'+money(till)+'</b></span></div>';
     var stamp = $('endStamp');
     if (till >= goalCents) { stamp.className = 'e-stamp pass'; stamp.textContent = '✓ RENT PAID — ' + money(till - goalCents) + ' PROFIT'; }
@@ -743,7 +722,6 @@
   }
   // the start card floats over the register; show a filled cash drawer behind it
   function showStart() {
-    stopPatience();
     $('endScreen').classList.add('hidden'); $('startOverlay').classList.remove('hidden');
     renderDrawer(); renderStartBoard();
   }

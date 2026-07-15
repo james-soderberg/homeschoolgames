@@ -52,7 +52,7 @@
       position: relative;
       width: 100%;
       height: min(72vh, 680px);
-      min-height: 460px;
+      min-height: 380px;
       border-radius: 16px;
       overflow: hidden;
       border: 2.5px solid #2a2036;
@@ -123,9 +123,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: safe center;
+      overflow-y: auto;
       text-align: center;
-      padding: 1.5rem;
+      padding: 1.5rem 1.25rem;
       background: rgba(20,15,26,0.86);
       backdrop-filter: blur(2px);
       color: #fdf7ec;
@@ -167,6 +168,17 @@
     }
     .play-btn.secondary:hover { background: rgba(253,247,236,0.12); }
     .overlay-actions { display: flex; flex-direction: column; gap: 0.7rem; align-items: center; }
+    /* short windows: compress the menu so every difficulty fits without a scroll */
+    @media (max-height: 680px) {
+      .bf-overlay { padding-top: 0.7rem; padding-bottom: 0.7rem; }
+      .bf-overlay .crest { font-size: 1.8rem; margin-bottom: 0.15rem; }
+      .bf-overlay h2 { font-size: 1.5rem; margin-bottom: 0.15rem; }
+      .bf-overlay p { font-size: 0.85rem; margin-bottom: 0.55rem; line-height: 1.4; }
+      .realm-row { gap: 0.4rem; }
+      .realm-btn { padding: 0.5rem 0.9rem; }
+      .realm-btn .r-icon { font-size: 1.3rem; }
+      .realm-btn .r-name { font-size: 1.02rem; }
+    }
 
     .final-stats { display: flex; gap: 1.5rem; margin-bottom: 1.25rem; }
     .final-stats .fs { display: flex; flex-direction: column; align-items: center; }
@@ -2547,6 +2559,7 @@ function finishDefeat(){
 // LIFECYCLE
 // ===================================================================
 function startGame(key){
+  if (rafId) cancelAnimationFrame(rafId);   // never leave a prior loop running (e.g. arcade entry mid-pause)
   realmKey=key; realm=REALMS[key];
   WORDS.scriptureMed.__cur = 0; WORDS.scriptureHard.__cur = 0;   // verses start from the beginning each game
   clearField();

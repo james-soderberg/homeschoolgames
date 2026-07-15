@@ -169,12 +169,14 @@
     .auto-toggle[aria-checked="true"] .dot { background: var(--gold); }
 
     /* On phones/short screens, stop fitting to the viewport — stack and allow scroll. */
-    @media (max-width: 760px) {
+    /* narrow OR short windows: stop fitting to the viewport — scroll instead, and
+       give the scene a real height so the start menu never gets crushed */
+    @media (max-width: 760px), (max-height: 640px) {
       html, body { height: auto; }
       body { display: block; overflow: auto; }
       .voy-page { display: block; padding-bottom: 2rem; }
       .stage { flex-direction: column; }
-      .scene-wrap { height: 52vh; min-height: 320px; }
+      .scene-wrap { height: 52vh; min-height: 340px; }
       .map-panel { flex: none; width: auto; }
       .map-wrap { height: 150px; }
       .qpanel { margin-top: 0.7rem; }
@@ -1337,6 +1339,7 @@ function fillLandingCard(stop) {
   answersEl.innerHTML = '';
   answersEl.style.gridTemplateColumns = '1fr';
   if (stop.final) {
+    document.body.style.overflowY = 'auto';   // the tall Rome card (stats + board + buttons) can exceed a short viewport
     const stats = document.createElement('div');
     stats.className = 'land-stats';
     stats.innerHTML = '<div class="fs"><b>' + correctCount + '</b><span>Correct</span></div>' +
@@ -1377,6 +1380,7 @@ function continueVoyage() {
 }
 
 function startGame(key) {
+  document.body.style.overflowY = '';   // back to fit-to-viewport for gameplay
   level = LEVELS[key] || LEVELS.easy;
   state = 'sail';
   storm = START_STORM; stormShown = START_STORM;

@@ -17,7 +17,7 @@
   .stat-badge.streak { background:#F3E7C6; border-color:var(--gold); color:#7A5C00; }
 
   /* the stage: a slice of space, fits the viewport */
-  .sl-stage { position:relative; width:100%; height:min(66vh,620px); min-height:400px;
+  .sl-stage { position:relative; width:100%; height:min(66vh,620px); min-height:360px;
     border-radius:16px; overflow:hidden; border:2.5px solid #232a44;
     box-shadow:0 12px 34px rgba(8,10,25,.5); background:#070a17; touch-action:none; user-select:none; }
   #scene { position:absolute; inset:0; width:100%; height:100%; display:block; }
@@ -68,13 +68,22 @@
   .god-grid button.slow:hover { background:#5e4315; }
 
   /* overlays */
-  .ov { position:absolute; inset:0; z-index:12; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  .ov { position:absolute; inset:0; z-index:12; display:flex; flex-direction:column; align-items:center; justify-content:safe center;
     text-align:center; padding:1.4rem 1.25rem; background:rgba(9,12,26,.86); backdrop-filter:blur(3px); color:#eaf0ff; overflow-y:auto; }
   .ov.hidden { display:none; }
   .ov .crest { font-size:3rem; line-height:1; margin-bottom:.25rem; animation:bob 2.6s ease-in-out infinite; }
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   .ov h2 { font-family:var(--font-serif); font-size:1.95rem; margin:0 0 .4rem; color:#fff; }
   .ov p { color:#b9c6ee; margin:0 0 1.1rem; max-width:42ch; line-height:1.5; }
+  /* short windows: compress the intro so the Launch button stays on screen */
+  @media (max-height: 680px) {
+    .ov .crest { font-size:2rem; margin-bottom:.1rem; }
+    .ov h2 { font-size:1.5rem; margin-bottom:.3rem; }
+    .ctl-guide { gap:.25rem; margin-bottom:.4rem; }
+    .ctl-row { font-size:.85rem; }
+    .learn-note { display:none; }
+    .go-btn { margin-top:.3rem; }
+  }
   /* start-screen controls overview */
   .ctl-guide { display:flex; flex-direction:column; gap:.5rem; margin:.3rem auto .9rem; text-align:left; width:max-content; max-width:100%; color:#d3ddf6; font-size:.98rem; }
   .ctl-row { display:flex; align-items:center; gap:.7rem; }
@@ -596,8 +605,10 @@ const VY_GROUPS = [
 function renderVoyage() {
   const el = document.getElementById('voyage'); if (!el) return;
   const started = phase !== 'menu' && phase !== 'demo';
-  // locate which group the run is in, and the position within it
-  let g = 0, idx = Math.max(0, level - 1);
+  // locate which group the run is in, and the position within it.
+  // levels cycle through the 25 baked worlds, so wrap the counter to match.
+  const VY_TOTAL = VY_GROUPS.reduce((s, grp) => s + grp.items.length, 0);
+  let g = 0, idx = ((level - 1) % VY_TOTAL + VY_TOTAL) % VY_TOTAL;
   while (g < VY_GROUPS.length - 1 && idx >= VY_GROUPS[g].items.length) { idx -= VY_GROUPS[g].items.length; g++; }
   const grp = VY_GROUPS[g];
   const LO = 11, HI = 97;   // percent range the bodies span across the track
@@ -650,7 +661,12 @@ function startGame(key, startLevel) {
   const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
   setupCanvas(); genLevel(level); phase = 'aim'; updateHud();
 }
-function retryLevel() { if (phase === 'aim') { recomputePredict(); } }
+function retryLevel() {
+  if (phase !== 'aim') return;
+  aim.angle = Math.atan2(target.y - pad.y, target.x - pad.x);   // actually reset the aim, not just re-predict
+  aim.power = 0.6; aim.dragging = false;
+  recomputePredict();
+}
 function toMenu() {
   phase = 'menu'; probe = null; predicted = null; level = 1;
   overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');

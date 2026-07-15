@@ -33,7 +33,7 @@
     /* ============ Battlefield (the sky over D.C.) ============ */
     .ti-sky {
       position: relative; width: 100%;
-      height: min(86vh, 940px); min-height: 480px;
+      height: min(86vh, 940px); min-height: 400px;
       border-radius: 16px; overflow: hidden;
       border: 2.5px solid #10131f;
       box-shadow: 0 12px 40px rgba(8,10,20,0.5);
@@ -101,8 +101,8 @@
     /* ============ Overlays ============ */
     .bf-overlay {
       position: absolute; inset: 0; z-index: 12;
-      display: flex; flex-direction: column; align-items: center; justify-content: center;
-      text-align: center; padding: 1.5rem; overflow: auto;
+      display: flex; flex-direction: column; align-items: center; justify-content: safe center;
+      text-align: center; padding: 1.4rem 1.25rem; overflow: auto;
       background: rgba(6,9,20,0.9); backdrop-filter: blur(2px); color: #eaf1ff;
     }
     .bf-overlay.hidden { display: none; }
@@ -739,8 +739,8 @@ function maybeAdvanceWave(){
 function updateSpawns(dt){
   spawnTimer -= dt;
   if (spawnTimer <= 0 && toSpawn > 0){
-    if (isBossWave && toSpawn===1 && aliens.length<=1){
-      // last "spawn" of a boss wave = the mothership
+    if (isBossWave && toSpawn===1){
+      // last "spawn" of a boss wave = the mothership (escorts may still be alive)
       spawnBoss(); toSpawn = 0;
     } else {
       spawnAlien({ bomber: !isBossWave && Math.random() < bomberChanceNow() });
@@ -1313,7 +1313,7 @@ function explosion(x,y,big,hue){
   rings.push({ x,y,r: big?10:6, sp: big?440:320, w: big?4:3, color:'rgba(255,170,70,0.85)', life: big?0.5:0.38, life0: big?0.5:0.38 });
   flashWhite = Math.max(flashWhite, big?0.5:0.22);
   shake = Math.max(shake, big?14:7);
-  if (window.HSGSound) HSGSound.boom(big);
+  if (window.HSGSound) (HSGSound.fireburst || HSGSound.boom)(big);   // fiery whoosh, not a bang
 }
 function floatText(x,y,text,color){ floaters.push({ x,y,text,color:color||'#ffd23f',life:0.9}); }
 function flashWave(title, sub){
@@ -1493,7 +1493,7 @@ function gameOver(){
   explosion(whX(), whTopY()+20, true, 20);          // the House goes up
   flashWave('👽 CONQUERED 👽', 'The invaders have taken the capital…');
   if (window.HSGSound) HSGSound.finish(false);
-  lastTs = 0; requestAnimationFrame(idle);           // hold on the burning house + dancing aliens
+  startIdle();           // hold on the burning house + dancing aliens
   // …then bring up the results after a few seconds
   setTimeout(revealEndScreen, 3200);
 }
@@ -1568,8 +1568,10 @@ function arcadeFire(){
   if (window.HSGSound && Math.random()<0.45) HSGSound.laser();
 }
 // idle scene — behind the start menu and during the defeat "conquered" hold
+let idleId = null;
+function startIdle(){ if (idleId) cancelAnimationFrame(idleId); lastTs = 0; idleId = requestAnimationFrame(idle); }
 function idle(ts){
-  if (running) return;
+  if (running){ idleId = null; return; }
   if (!lastTs) lastTs = ts; const dt = Math.min((ts-lastTs)/1000,0.05); lastTs = ts;
   sceneTime += dt;
   shake = Math.max(0, shake - dt*40);
@@ -1578,7 +1580,7 @@ function idle(ts){
   updateParticles(dt);
   if (gameLost) updateBullets(dt);     // let the last shots finish landing
   draw(sceneTime);
-  requestAnimationFrame(idle);
+  idleId = requestAnimationFrame(idle);
 }
 
 // ===================================================================
@@ -1632,7 +1634,7 @@ function quitToMenu(){
   overOverlay.classList.add('hidden');
   pauseOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
-  lastTs = 0; requestAnimationFrame(idle);
+  startIdle();
 }
 function togglePause(force){
   if (!running || gameLost) return;
@@ -1675,7 +1677,7 @@ pauseBtn.addEventListener('click', ()=>togglePause());
 // ---------- boot ----------
 setupCanvas();
 buildStars();
-requestAnimationFrame(idle);
+startIdle();
 
 
 // Screenshot mode: open this page with ?shot to hide the page chrome, fill the
