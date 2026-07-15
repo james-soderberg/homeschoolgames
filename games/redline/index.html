@@ -134,6 +134,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 (function () {
   'use strict';
@@ -572,6 +573,7 @@
   }
 
   function crash(c) {
+    if (window.HSGGod && HSGGod.on) return;   // god mode: invincible — phase through, keep driving
     state = 'over'; shake = 24; flash = 0.75;
     var pr = project(PLAYER_D), scale = pr.s;
     var px = cx + player.off * roadHalfBot * scale, py = pr.y;
@@ -686,6 +688,11 @@
 
   // ================= boot =================
   if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', unit: 'distance', minStreak: 1 });
+  // god mode — type "godmode": invincible, crashes can't end the run
+  if (window.HSGGod) HSGGod.watch(function () {
+    HSGGod.enable();
+    HSGGod.picker({ label: 'Drive', note: 'Invincible! Crashes can’t stop you — just keep driving.' });
+  });
   resize();
   // seed a little idle traffic behind the menu
   for (var i = 0; i < 5; i++) spawnCar();

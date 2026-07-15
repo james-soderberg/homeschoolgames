@@ -294,6 +294,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // BIBLE TRIVIA — CHARIOT CHASE (Exodus)
@@ -1544,7 +1545,7 @@ function loop(ts) {
     else { drawJerichoFall(dt); if (finaleT >= 4.0) { ctx.restore(); finaleDone(); return; } }
   } else if (state === 'play') {
     const L = LEVELS[levelIdx];
-    if (L.chase && !answered) {
+    if (L.chase && !answered && !(window.HSGGod && HSGGod.on)) {
       gap -= CHASE.drain * dt;
       if (gap <= 0) { gap = 0; ctx.restore(); caught(); return; }
     }
@@ -1633,7 +1634,7 @@ function answer(idx) {
     if (window.HSGfx) HSGfx.flash('rgba(150,40,40,0.28)');
     if (L.chase) {
       gap = Math.max(0, gap - CHASE.loss); stumbleT = 0.5; shake = 7;
-      if (gap <= 0) { revealT = 0.4; setTimeout(() => { if (state === 'play') caught(); }, 650); return; }
+      if (gap <= 0 && !(window.HSGGod && HSGGod.on)) { revealT = 0.4; setTimeout(() => { if (state === 'play') caught(); }, 650); return; }
     } else { shake = 5; }
     revealT = 1.5;   // linger on a miss so the right answer can be read
   }
@@ -1791,6 +1792,19 @@ function toMenu() {
   document.getElementById('lvlProgress').textContent = '';
   answersEl.innerHTML = '';
 }
+
+// God mode: jump to any stage via the game's own intro→Begin path.
+function jumpToStage(n) {
+  const idx = Math.max(0, Math.min(LEVELS.length - 1, n - 1));
+  if (!queue.length) queue = shuffle(DECK[difficulty] || DECK.medium);
+  startOverlay.classList.add('hidden');
+  levelIdx = idx;
+  showLevelIntro();
+}
+HSGGod.watch(() => {
+  HSGGod.enable();
+  HSGGod.picker({ levels: LEVELS.length, label: 'Stage', onJump: n => jumpToStage(n) });
+});
 
 // ---------------- Wiring ----------------
 document.querySelectorAll('.pace-btn').forEach(b => {

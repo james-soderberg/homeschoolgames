@@ -185,6 +185,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // TIGHTROPE — place a value on a number line labeled only at its
@@ -631,7 +632,7 @@ function commit(){
       : 'Wobbly — but held on!';
     feedbackEl.innerHTML = '<span style="color:var(--green)">'+msg+'</span><span class="sub">'+revealText()+'</span>';
   } else {
-    streak=0; lives--; rail.broke();
+    streak=0; if(!(window.HSGGod && HSGGod.on)) lives--; rail.broke();
     // how badly you missed shapes the fall: a hair past the line → teeter then slump;
     // way off → almost no wobble, an immediate fast plummet.
     fallSev = clamp((e - T.save) / 0.17, 0, 1);
@@ -688,6 +689,7 @@ function quitToMenu(){
 function updateHud(){
   tierBadge.textContent = tier.icon+' '+tier.label;
   streakBadge.textContent = '🔥 '+streak;
+  if(window.HSGGod && HSGGod.on){ heartsBadge.innerHTML = '∞'; return; }
   let h=''; for(let i=0;i<START_LIVES;i++) h += i<lives? '❤️' : '<span class="spent">🤍</span>';
   heartsBadge.innerHTML = h;
 }
@@ -740,6 +742,17 @@ TIER_ORDER.forEach(k=>{
   b.innerHTML='<span class="t-icon">'+t.icon+'</span><span><span class="t-name">'+t.label+'</span><br><span class="t-desc">'+t.desc+'</span></span>';
   b.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(k); });
   tierRow.appendChild(b);
+});
+
+// god mode — type "godmode": unlimited hearts + jump to any difficulty
+HSGGod.watch(() => {
+  HSGGod.enable();
+  if(state!=='menu') updateHud();
+  HSGGod.picker({
+    label:'Difficulty',
+    tiers: TIER_ORDER.map(k=>({ v:k, label:TIERS[k].icon+' '+TIERS[k].label })),
+    onJump: k => startGame(k)
+  });
 });
 
 // small canvas helper

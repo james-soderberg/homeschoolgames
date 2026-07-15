@@ -68,6 +68,9 @@
     .word-bubble.bolt { border-color: #ff5bb0; box-shadow: 0 0 0 1px rgba(255,91,176,0.5), 0 2px 10px rgba(0,0,0,0.6); }
     .word-bubble.bolt .rest { color: #ffb3df; }
     .word-bubble.power { border-color: #ffd23f; color: #fff3c4; background: rgba(46,36,6,0.9); }
+    .word-bubble.heli { border-color: #5fd07a; color: #d8ffe0; background: rgba(10,40,20,0.92);
+      box-shadow: 0 0 0 1px rgba(95,208,122,0.5), 0 0 12px rgba(60,220,120,0.35), 0 2px 10px rgba(0,0,0,0.6); }
+    .word-bubble.heli .rest { color: #a8e6b8; }
     .word-bubble.boss { font-size: 1.12rem; padding: 2px 9px; border-color: #ff6a3d; }
     .word-bubble.miss { animation: bubbleMiss 0.3s ease; }
     @keyframes bubbleMiss {
@@ -235,7 +238,8 @@
 
   <p class="hint">
     Start typing a saucer's word to lock on. Every letter fires a laser, and finishing the word destroys it.
-    Pink <strong>plasma bolts</strong> and gold <strong>power-ups</strong> have words too. <kbd>Esc</kbd> to pause.
+    Pink <strong>plasma bolts</strong> and gold <strong>power-ups</strong> have words too. Type a green
+    <strong>🚁 chopper's</strong> word to call in air support. <kbd>Esc</kbd> to pause.
   </p>
   <div class="control-row">
     <button class="reset-link" onclick="quitToMenu()">Retreat &amp; Choose Difficulty</button>
@@ -253,6 +257,7 @@
 <script src="../../assets/js/sfx.js?v=6-whoomph"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // TYPE INVADERS — an arcade typing-defense game.
@@ -382,12 +387,13 @@ let shake = 0, flashRed = 0, flashWhite = 0;
 let shieldT = 0;                 // active shield (power-up) seconds remaining
 let slowT = 0;                   // freeze/slow power-up seconds remaining
 
-let aliens = [], bolts = [], bullets = [], particles = [], floaters = [], powerups = [], rings = [], walkers = [], tanks = [];
+let aliens = [], bolts = [], bullets = [], particles = [], floaters = [], powerups = [], rings = [], walkers = [], tanks = [], helis = [], paras = [];
 let roofAliens = [];     // the celebrating aliens shown on the roof after a defeat
 let active = null;
 
 // wave bookkeeping
 let toSpawn = 0, spawnTimer = 0, gap = 2, isBossWave = false, boss = null;
+let heliTimer = 0;               // countdown to the next chopper drop-in
 let secretBuf = '';
 // secret arcade mode: no typing — aim with the arrows, the cannon auto-fires
 let arcade = false, arcadeFireT = 0, aimKeys = { left:false, right:false, up:false, down:false };
@@ -616,6 +622,7 @@ function usedLetters(){
   for (const b of bolts)  if (b.typed===0 && b.word) set.add(b.word[0]);
   for (const p of powerups) if (p.typed===0 && p.word) set.add(p.word[0]);
   if (boss && boss.typed===0 && boss.word) set.add(boss.word[0]);
+  for (const h of helis) if (!h.active && h.typed===0 && h.word) set.add(h.word[0]);
   return set;
 }
 function pickWord(pool, avoid){
@@ -767,6 +774,12 @@ function updateAliens(dt, t){
     }
     const bx = a.x + Math.sin(a.wob)*a.wobAmp;
     positionBubble(a, bx, a.y - a.r - 16);
+    // a descending saucer downs a chopper only once its luck has run out (it's
+    // diving into the swarm) — until then the pilot weaves clear of the traffic
+    if (!a.doomed){
+      for (const h of helis){ if (h.active && h.seeking && !h.dead){ const dx=bx-h.x, dy=a.y-h.y;
+        if (dx*dx+dy*dy < (h.r+a.r)*(h.r+a.r)){ shootDownHeli(h); break; } } }
+    }
     // shootable all the way down — crash the House if over it, else land on the grass
     const land = overHouse(bx) ? whTopY() : landY();
     if (!a.doomed && a.y >= land){
@@ -799,6 +812,11 @@ function updateBolts(dt){
     b.y += b.speed*sp*dt; b.wob += dt*5; b.x += b.drift*sp*dt*0.3; b.spin += dt*4;   // doomed bolts keep falling too
     const bx = b.x + Math.sin(b.wob)*3;
     positionBubble(b, bx, b.y - b.r - 12);
+    // a falling bolt can knock a chopper down, but only once it's diving into the
+    // swarm (fuse spent) — while patrolling it juggles clear of incoming fire
+    for (const h of helis){ if (h.active && h.seeking && !h.dead){ const dx=bx-h.x, dy=b.y-h.y;
+      if (dx*dx+dy*dy < (h.r+b.r)*(h.r+b.r)){ b.dead=true; shootDownHeli(h); break; } } }
+    if (b.dead) continue;
     const land = overHouse(bx) ? whTopY() : landY();
     if (!b.doomed && b.y >= land){
       b.dead = true;
@@ -883,6 +901,167 @@ function spawnTanks(){
     tanks.push({ x: lerp(eR+gap, W-r-10, f), y: landY()+2, dead:false, r, boom:0 });
   }
 }
+// ===================================================================
+//  AIR SUPPORT — a call-in helicopter + paratrooper-manned tanks
+// ===================================================================
+// A patriotic chopper flies across sometimes; type its word to deploy it and it
+// roams the sky picking off one saucer roughly every 10s. It dodges the swarm for
+// a while, but ~30s in a saucer catches it — the pilot bails, a trooper parachutes
+// down and mans a ground tank, which then lobs an anti-air shell every ~10s too.
+const HELI_WORDS = ['eagle','liberty','freedom','chopper','patriot','rescue','valor','skyhawk','justice','defend'];
+
+// fire a homing tracer from an arbitrary point (heli / tank) at a target
+function fireFrom(sx, sy, target, color, onKill){
+  const ang = Math.atan2(target.y - sy, target.x - sx), spd = 1400;
+  bullets.push({ x:sx, y:sy, px:sx, py:sy, vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd,
+    spd, target, onKill: onKill||null, life:1.6, color: color||'#fff2a0' });
+}
+// nearest saucer that no one is already dealing with (free to be auto-killed)
+function nearestFreeAlien(x, y){
+  let best=null, bd=Infinity;
+  for (const a of aliens){
+    if (a.dead || a.doomed || a===active || a.typed>0) continue;
+    const dx=a.x-x, dy=a.y-y, d=dx*dx+dy*dy;
+    if (d<bd){ bd=d; best=a; }
+  }
+  return best;
+}
+
+function spawnHeli(){
+  const fromLeft = Math.random() < 0.5;
+  const h = {
+    kind:'heli', x: fromLeft ? -60 : W+60, y: rand(H*0.20, H*0.34),
+    dir: fromLeft ? 1 : -1, vx: (fromLeft?1:-1)*rand(72,92),
+    word: pickWord(HELI_WORDS, usedLetters()), typed:0,
+    active:false, rtb:false, dead:false,
+    bob: rand(0,6.28), rotor: rand(0,6.28), r:26, muzzle:0, ammo:0, fireT:0, vy:0,
+  };
+  makeBubble(h, 'heli');
+  helis.push(h);
+}
+function activateHeli(h){
+  h.active = true; h.typed = 0; removeBubble(h); if (active===h) active=null;
+  h.age = 0; h.doomT = rand(26, 34); h.seeking = false;   // ~30s of patrol before a saucer gets it
+  h.fireT = rand(2.5, 4.5);                                // first shot a few seconds in, then every ~10s
+  h.vx = (h.dir||1) * rand(60, 85); h.vy = rand(-25, 25);
+  h.wanderT = 0; h.tvy = 0;
+  floatText(h.x, h.y-30, '🚁 AIR SUPPORT!', '#9be7ff');
+  emit(h.x, h.y, 'spark', 12, '#9be7ff');
+  if (window.HSGSound) HSGSound.powerup();
+}
+function heliShoot(h){
+  const a = nearestFreeAlien(h.x, h.y);
+  if (!a) return false;
+  a.doomed = true; removeBubble(a); if (active===a) active=null;
+  fireFrom(h.x, h.y+4, a, '#fff2a0', ()=>resolveKill(a, true));
+  h.muzzle = 0.09;
+  if (window.HSGSound && Math.random()<0.6) HSGSound.laser();
+  return true;
+}
+function shootDownHeli(h){
+  if (h.dead) return;
+  h.dead = true; removeBubble(h); if (active===h) active=null;
+  explosion(h.x, h.y, false, 30);
+  floatText(h.x, h.y-20, 'CHOPPER HIT — BAIL OUT!', '#ffb84d');
+  spawnPara(h.x, h.y);
+}
+function spawnPara(x, y){
+  // steer toward the nearest still-crewless tank
+  let tk=null, bd=Infinity;
+  for (const t of tanks){ if (t.dead || t.manned) continue; const d=Math.abs(t.x-x); if (d<bd){ bd=d; tk=t; } }
+  paras.push({ kind:'para', x, y: y+8, vy: 58, sway: rand(0,6.28), targetTank: tk, r:11, dead:false });
+}
+
+function updateHeliSpawns(dt){
+  if (arcade) return;                       // arcade has no typing, so nothing to deploy
+  heliTimer -= dt;
+  if (heliTimer > 0) return;
+  if (helis.length===0 && aliens.length >= 2 && lives > 0){
+    spawnHeli(); heliTimer = rand(24, 40);
+  } else {
+    heliTimer = 4;                          // not the right moment — check again shortly
+  }
+}
+function updateHelis(dt, t){
+  const bounds = 80, yMin = H*0.14, yMax = H*0.46;
+  for (const h of helis){
+    h.bob += dt*3; h.rotor += dt*38; if (h.muzzle>0) h.muzzle -= dt;
+    if (h.active){
+      h.age += dt;
+      if (!h.seeking && h.age >= h.doomT) h.seeking = true;   // its luck runs out
+      // nearest saucer — to dodge while patrolling, or to fly into once time's up
+      let na=null, nd=Infinity;
+      for (const a of aliens){ if (a.dead||a.doomed) continue; const dx=a.x-h.x, dy=a.y-h.y, d=dx*dx+dy*dy; if (d<nd){ nd=d; na=a; } }
+      if (h.seeking && na){
+        const ang = Math.atan2(na.y-h.y, na.x-h.x), sp=150;    // ram it → the alien-collision check downs the heli
+        h.vx = lerp(h.vx, Math.cos(ang)*sp, dt*3);
+        h.vy = lerp(h.vy, Math.sin(ang)*sp, dt*3);
+      } else {
+        h.wanderT -= dt;                                       // lazy roaming
+        if (h.wanderT<=0){ h.tvy = rand(-45,45); h.wanderT = rand(1.5,3.2); }
+        h.vy = lerp(h.vy, h.tvy, dt*1.5);
+        if (na && nd < 100*100){ const ang=Math.atan2(na.y-h.y, na.x-h.x); h.vx -= Math.cos(ang)*60*dt; h.vy -= Math.sin(ang)*60*dt; }  // veer clear
+      }
+      h.x += h.vx*dt; h.y += h.vy*dt;
+      if (h.x < 70){ h.x=70; h.vx=Math.abs(h.vx); }
+      if (h.x > W-70){ h.x=W-70; h.vx=-Math.abs(h.vx); }
+      if (h.y < yMin){ h.y=yMin; h.vy=Math.abs(h.vy); }
+      if (h.y > yMax){ h.y=yMax; h.vy=-Math.abs(h.vy); }
+      h.dir = h.vx>=0 ? 1 : -1;
+      h.fireT -= dt;                                           // one anti-air shot ~every 10s
+      if (h.fireT <= 0){ if (heliShoot(h)) h.fireT = rand(9.5,10.5); else h.fireT = 0.6; }
+    } else {
+      // drifting across, waiting to be deployed
+      h.x += h.vx*dt;
+      positionBubble(h, h.x, h.y - h.r - 20);
+      if (h.x < -bounds || h.x > W+bounds){ h.dead = true; }
+    }
+  }
+  helis = helis.filter(h=>{ if (h.dead){ removeBubble(h); if (active===h) active=null; return false; } return true; });
+}
+function updateParas(dt){
+  const ground = landY() - 4;
+  for (const p of paras){
+    p.sway += dt*2.2;
+    if (p.targetTank && !p.targetTank.dead) p.x = lerp(p.x, p.targetTank.x, Math.min(1, dt*0.9));
+    p.x += Math.sin(p.sway)*10*dt;
+    p.y += p.vy*dt;
+    if (p.y >= ground){
+      p.dead = true;
+      const tk = p.targetTank;
+      if (tk && !tk.dead && !tk.manned){
+        tk.manned = true; tk.fireT = 3; tk.recoil = 0; tk.aimAng = null;
+        floatText(tk.x, tk.y - tk.r*2.2, 'TANK MANNED!', '#cdd6c0');
+        emit(tk.x, tk.y - tk.r*0.5, 'spark', 10, '#e8e6d2');
+        if (window.HSGSound) HSGSound.powerup();
+      } else {
+        emit(p.x, ground, 'debris', 5, '#cdd6c0');
+      }
+    }
+  }
+  paras = paras.filter(p=>!p.dead);
+}
+function updateTanks(dt){
+  for (const tk of tanks){
+    if (tk.dead || !tk.manned) continue;
+    if (tk.recoil>0) tk.recoil = Math.max(0, tk.recoil - dt*3);
+    tk.fireT -= dt;
+    if (tk.fireT <= 0){
+      const a = nearestFreeAlien(tk.x, tk.y - tk.r);
+      if (a){
+        a.doomed = true; removeBubble(a); if (active===a) active=null;
+        tk.aimAng = Math.atan2(a.y - (tk.y - tk.r), a.x - tk.x);
+        tk.recoil = 1;
+        fireFrom(tk.x, tk.y - tk.r, a, '#ffd27a', ()=>resolveKill(a, true));
+        if (window.HSGSound) HSGSound.laser();
+        tk.fireT = 10;                       // one anti-air shell every ~10s
+      } else {
+        tk.fireT = 0.5;                      // nothing to shoot yet — recheck soon
+      }
+    }
+  }
+}
+
 function updatePowerups(dt){
   for (const p of powerups){
     p.y += p.speed*dt; p.wob += dt*3; p.x += p.drift*dt*0.4;
@@ -975,6 +1154,8 @@ function draw(t){
   for (const a of aliens) drawAlien(a, t);
   if (boss) drawBoss(boss, t);
   for (const b of bolts) drawMissile(b, t);
+  for (const h of helis) drawHeli(h, t);
+  for (const p of paras) drawPara(p, t);
   for (const b of bullets) drawBullet(b);
   drawParticles();
 
@@ -1215,11 +1396,90 @@ function drawTank(tk, t){
   ctx.fillStyle='#54623a';
   ctx.beginPath(); ctx.ellipse(0,-r*0.5,r*0.42,r*0.32,0,Math.PI,0); ctx.fill();
   ctx.fillRect(-r*0.42,-r*0.5,r*0.84,r*0.05);
-  // barrel (up at the sky)
-  ctx.save(); ctx.rotate(-0.5); ctx.fillStyle='#3a4226'; ctx.fillRect(-r*0.09,-r*1.25,r*0.18,r*0.9); ctx.restore();
-  // white star
-  ctx.fillStyle='#e8e6d2'; ctx.font='700 '+Math.round(r*0.6)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('★', 0, -r*0.5);
+  // barrel (up at the sky; a manned tank tracks its target and recoils when it fires)
+  let bAng = -0.5;
+  if (tk.manned && tk.aimAng!=null) bAng = clamp(tk.aimAng + Math.PI/2, -1.15, 1.15);
+  const rec = (tk.recoil||0)*4;
+  ctx.save(); ctx.rotate(bAng);
+  ctx.fillStyle='#3a4226'; ctx.fillRect(-r*0.09,-r*1.25+rec,r*0.18,r*0.9);
+  if ((tk.recoil||0)>0.35){ ctx.fillStyle='rgba(255,220,120,0.9)'; ctx.beginPath(); ctx.arc(0,-r*1.25+rec,r*0.26,0,6.2832); ctx.fill(); }
+  ctx.restore();
+  // a manned tank shows the trooper who parachuted in; otherwise the white star
+  if (tk.manned){
+    ctx.fillStyle='#c8b68a'; ctx.beginPath(); ctx.arc(0,-r*0.72,r*0.22,0,6.2832); ctx.fill();       // head
+    ctx.fillStyle='#3a4626'; ctx.beginPath(); ctx.arc(0,-r*0.78,r*0.24,Math.PI,0); ctx.fill();       // helmet
+  } else {
+    ctx.fillStyle='#e8e6d2'; ctx.font='700 '+Math.round(r*0.6)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('★', 0, -r*0.5);
+  }
+  ctx.restore();
+}
+// a called-in US military helicopter — strafes saucers once deployed
+function drawHeli(h, t){
+  const bob = Math.sin(h.bob)*3, dir = h.dir||1, r = h.r;
+  ctx.save(); ctx.translate(h.x, h.y + bob); ctx.scale(dir, 1);
+  // tail boom
+  ctx.fillStyle = '#3f4a2c';
+  ctx.beginPath(); ctx.moveTo(-r*0.3,-r*0.12); ctx.lineTo(-r*1.7,-r*0.02); ctx.lineTo(-r*1.7,r*0.14); ctx.lineTo(-r*0.3,r*0.22); ctx.closePath(); ctx.fill();
+  // tail fin
+  ctx.fillStyle = '#333d22'; ctx.beginPath(); ctx.moveTo(-r*1.55,-r*0.05); ctx.lineTo(-r*1.8,-r*0.5); ctx.lineTo(-r*1.5,r*0.05); ctx.closePath(); ctx.fill();
+  // tail rotor (spinning)
+  ctx.strokeStyle='rgba(220,230,200,0.7)'; ctx.lineWidth=2;
+  const tr = Math.cos(h.rotor*1.8)*r*0.42;
+  ctx.beginPath(); ctx.moveTo(-r*1.7,-r*0.22-tr*0.4); ctx.lineTo(-r*1.7,-r*0.22+tr); ctx.stroke();
+  // body
+  const g=ctx.createLinearGradient(0,-r*0.5,0,r*0.5);
+  g.addColorStop(0,'#5e6b3f'); g.addColorStop(1,'#3c4628');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.ellipse(0,0,r*0.98,r*0.56,0,0,6.2832); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=1.5; ctx.stroke();
+  // cockpit glass (front)
+  ctx.fillStyle='rgba(150,210,255,0.9)';
+  ctx.beginPath(); ctx.ellipse(r*0.52,-r*0.04,r*0.34,r*0.34,0,0,6.2832); ctx.fill();
+  ctx.strokeStyle='rgba(0,0,0,0.2)'; ctx.lineWidth=1; ctx.stroke();
+  // white star roundel
+  ctx.fillStyle='#e8e6d2'; ctx.font='700 '+Math.round(r*0.5)+'px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText('★', -r*0.2, 0);
+  // skids
+  ctx.strokeStyle='#2c331d'; ctx.lineWidth=2.5; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-r*0.55,r*0.62); ctx.lineTo(r*0.6,r*0.62); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-r*0.3,r*0.48); ctx.lineTo(-r*0.36,r*0.62);
+  ctx.moveTo(r*0.32,r*0.48); ctx.lineTo(r*0.38,r*0.62); ctx.stroke();
+  // rotor mast + spinning blades (blurred)
+  ctx.fillStyle='#2c331d'; ctx.fillRect(-2,-r*0.72,4,r*0.24);
+  ctx.save(); ctx.translate(0,-r*0.72);
+  const blade=r*1.55, cx=Math.cos(h.rotor)*blade;
+  ctx.globalAlpha=0.35+0.5*Math.abs(Math.cos(h.rotor)); ctx.strokeStyle='rgba(210,220,190,0.9)'; ctx.lineWidth=3; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-cx,0); ctx.lineTo(cx,0); ctx.stroke();
+  ctx.globalAlpha=1;
+  ctx.fillStyle='#1c2213'; ctx.beginPath(); ctx.arc(0,0,3,0,6.2832); ctx.fill();
+  ctx.restore();
+  // muzzle flash under the nose when firing
+  if (h.muzzle>0){ ctx.fillStyle='rgba(255,220,120,0.9)'; ctx.beginPath(); ctx.arc(r*0.3,r*0.4,r*0.24,0,6.2832); ctx.fill(); }
+  ctx.restore();
+}
+// a trooper drifting down under a star-spangled canopy to man a tank
+function drawPara(p, t){
+  const x = p.x + Math.sin(p.sway)*7, y = p.y, r = p.r;
+  ctx.save(); ctx.translate(x, y);
+  // strings
+  ctx.strokeStyle='rgba(240,240,225,0.85)'; ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(-r*1.3,-r*0.2); ctx.lineTo(-r*0.18,r*0.9);
+  ctx.moveTo(r*1.3,-r*0.2);  ctx.lineTo(r*0.18,r*0.9);
+  ctx.moveTo(0,-r*0.4);      ctx.lineTo(0,r*0.8);
+  ctx.stroke();
+  // canopy (red / white / blue)
+  const canopy = () => { ctx.beginPath(); ctx.moveTo(-r*1.4,-r*0.2); ctx.quadraticCurveTo(0,-r*2.3,r*1.4,-r*0.2); ctx.closePath(); };
+  canopy(); ctx.fillStyle='#b22234'; ctx.fill();
+  ctx.save(); canopy(); ctx.clip();
+  ctx.fillStyle='#f4f4ee'; ctx.fillRect(-r*0.47,-r*2.3,r*0.5,r*2.3);
+  ctx.fillStyle='#2a3a8a'; ctx.fillRect(r*0.5,-r*2.3,r*0.6,r*2.3);
+  ctx.restore();
+  canopy(); ctx.strokeStyle='rgba(0,0,0,0.22)'; ctx.lineWidth=1; ctx.stroke();
+  // trooper
+  ctx.fillStyle='#4a5a34'; ctx.beginPath(); ctx.ellipse(0,r*1.15,r*0.36,r*0.5,0,0,6.2832); ctx.fill();  // body
+  ctx.fillStyle='#c8b68a'; ctx.beginPath(); ctx.arc(0,r*0.72,r*0.26,0,6.2832); ctx.fill();               // head
+  ctx.fillStyle='#3a4626'; ctx.beginPath(); ctx.arc(0,r*0.66,r*0.28,Math.PI,0); ctx.fill();              // helmet
   ctx.restore();
 }
 // the invaders dancing on the roof once the House has fallen
@@ -1347,6 +1607,7 @@ function allTargets(){
   for (const b of bolts) list.push(b);
   for (const p of powerups) list.push(p);
   for (const a of aliens) list.push(a);
+  for (const h of helis) if (!h.active) list.push(h);
   if (boss) list.push(boss);
   return list;
 }
@@ -1360,10 +1621,11 @@ function clearActive(){ if (active && active.bubble) active.bubble.classList.rem
 function acquire(ch){
   let best=null, bestKey=Infinity;
   for (const o of allTargets()){
-    if (o.typed>0 || !o.word || o.word[0]!==ch) continue;
+    if (o.doomed || o.typed>0 || !o.word || o.word[0]!==ch) continue;
     // urgency: closest threat to the House wins; walkers/missiles are most pressing
     let key = -o.y;
-    if (o.kind==='boss') key += 200;                          // boss is least urgent (slow, big)
+    if (o.kind==='heli') key += 500;                          // friendly chopper — deploy at leisure
+    else if (o.kind==='boss') key += 200;                     // boss is least urgent (slow, big)
     else if (o.kind==='walker') key -= 2200 - Math.abs(o.x-whX());  // about to reach the House
     else if (bolts.indexOf(o)>=0) key -= 1200;               // incoming missiles
     else if (o.kind==='bomber') key -= 200;
@@ -1380,8 +1642,9 @@ function handleChar(chRaw){
   if (tgt && ch === tgt.word[tgt.typed]){
     tgt.typed++;
     const done = tgt.typed >= tgt.word.length;
-    if (!done){ fireLaser(tgt, null); renderBubble(tgt); return; }   // in-between shot
+    if (!done){ if (tgt.kind!=='heli') fireLaser(tgt, null); renderBubble(tgt); return; }   // in-between shot
     // WORD DONE — fire the killing shot; the target dies when the bullet reaches it
+    if (tgt.kind==='heli'){ activateHeli(tgt); return; }             // deploy air support
     if (powerups.indexOf(tgt)>=0){ fireLaser(tgt, null); grabPowerup(tgt); return; }
     const victim = tgt;
     if (victim.kind==='boss'){
@@ -1401,7 +1664,7 @@ function handleChar(chRaw){
   }
 }
 // the killing shot has arrived — blow the target up with fire
-function resolveKill(o){
+function resolveKill(o, noStreak){
   if (o.dead) return;
   if (o.kind==='boss'){
     o.flinch = 0.5; o.locked = false; explosion(o.x, o.y, false, 300); shake=Math.max(shake,8);
@@ -1411,12 +1674,17 @@ function resolveKill(o){
   }
   o.dead = true; if (active===o) active=null;
   explosion(o.x, o.y, false, o.hue||20);   // fireball, not a silent disappear
-  registerKill(o);
+  registerKill(o, noStreak);
 }
-function registerKill(o){
-  kills++; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
-  if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
-  floatText(o.x, o.y-20, '+'+rail.value, '#46d17a');
+function registerKill(o, noStreak){
+  kills++;
+  if (noStreak){
+    floatText(o.x, o.y-20, '+1', '#8fd3ff');           // an ally's kill — counts, but not your streak
+  } else {
+    rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+    if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
+    floatText(o.x, o.y-20, '+'+rail.value, '#46d17a');
+  }
   document.getElementById('killBadge').textContent = '💥 ' + kills;
 }
 function destroyBoss(o){
@@ -1472,6 +1740,7 @@ function houseHit(x){
     floatText(whX(), whTopY()-10, 'SHIELD HELD!', '#9be7ff');
     return;
   }
+  if (window.HSGGod && HSGGod.on) return;   // god mode: the White House is invincible
   explosion(hx, whTopY()+12, false, 18);
   lives--; updateHearts();
   rail.broke();                       // a breach snuffs the live streak (keeps best, no modal)
@@ -1480,6 +1749,7 @@ function houseHit(x){
 }
 function updateHearts(){
   let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives ? '🏛️' : '<span class="spent">🏛️</span>';
+  if (window.HSGGod && HSGGod.on) h += ' ∞';
   document.getElementById('heartsBadge').innerHTML = h;
 }
 function gameOver(){
@@ -1487,7 +1757,8 @@ function gameOver(){
   clearActive();
   // wipe remaining enemies; the White House is left ablaze with the invaders on top
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; walkers=[]; tanks=[]; powerups=[]; bullets=[]; boss=null;
+  for (const h of helis) removeBubble(h);
+  aliens=[]; bolts=[]; walkers=[]; tanks=[]; powerups=[]; bullets=[]; helis=[]; paras=[]; boss=null;
   spawnRoofAliens();
   shake = 22; flashRed = 0.9;
   explosion(whX(), whTopY()+20, true, 20);          // the House goes up
@@ -1533,10 +1804,14 @@ function tick(ts){
   if (slowT>0) slowT -= dt;
 
   if (arcade) updateArcade(dt);
+  updateHeliSpawns(dt);
   updateSpawns(dt);
   updateAliens(dt, sceneTime);
   updateBolts(dt);
   updateWalkers(dt);
+  updateTanks(dt);
+  updateHelis(dt, sceneTime);
+  updateParas(dt);
   updatePowerups(dt);
   updateBullets(dt);
   updateParticles(dt);
@@ -1598,8 +1873,10 @@ function startGame(key, isArcade){
   lives = START_LIVES; kills = 0; bestStreak = 0; gameLost = false; paused = false; constIdx = 0;
   shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0; cannonAng=-Math.PI/2; arcadeFireT=0;
   aimKeys.left=aimKeys.right=aimKeys.up=aimKeys.down=false;
+  heliTimer = rand(10, 18);
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; roofAliens=[]; boss=null; active=null;
+  for (const h of helis) removeBubble(h);
+  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; helis=[]; paras=[]; roofAliens=[]; boss=null; active=null;
   rail.setLevel(key, REALM_LABELS[key] || key);     // per-difficulty leaderboard; resets streak
   document.body.classList.add('ti-active');
   bubbleLayer.style.display = arcade ? 'none' : '';
@@ -1628,7 +1905,8 @@ function quitToMenu(){
   running = false; paused = false; gameLost = false; arcade = false; if (rafId) cancelAnimationFrame(rafId);
   bubbleLayer.style.display = '';
   for (const o of allTargets()) removeBubble(o);
-  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; roofAliens=[]; boss=null; active=null;
+  for (const h of helis) removeBubble(h);
+  aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; helis=[]; paras=[]; roofAliens=[]; boss=null; active=null;
   document.body.classList.remove('ti-active');
   pauseBtn.classList.add('hidden');
   overOverlay.classList.add('hidden');
@@ -1669,6 +1947,13 @@ document.addEventListener('keydown', e=>{
 document.addEventListener('keyup', e=>{ if (AIM[e.key]) aimKeys[AIM[e.key]] = false; });
 sky.addEventListener('pointerdown', ()=>{ if (running && !paused && !arcade) focusCatcher(); });
 document.querySelectorAll('.realm-btn').forEach(b=> b.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(b.dataset.realm); }));
+HSGGod.watch(() => {
+  HSGGod.enable(); updateHearts();
+  HSGGod.picker({
+    levels: 20, label: 'Wave',
+    onJump: n => { if (!running) startGame(realmKey); startWave(n); }
+  });
+});
 document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startGame(realmKey); });
 document.getElementById('changeRealmBtn').addEventListener('click', quitToMenu);
 document.getElementById('resumeBtn').addEventListener('click', ()=>togglePause(false));

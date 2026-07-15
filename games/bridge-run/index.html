@@ -41,6 +41,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/bridge.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ---- Math question banks by grade-band difficulty (scales a bit with level) ----
 function ri(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
@@ -103,7 +104,7 @@ const rail = HSGStreak.init({
   mount: document.getElementById('streakRail')
 });
 
-HSGBridge.init({
+const bridge = HSGBridge.init({
   mount: document.getElementById('bridgeMount'),
   rail,
   tiers: [
@@ -114,6 +115,10 @@ HSGBridge.init({
   ],
   makeQuestion,
 });
+
+// God mode: type "godmode" to enable unlimited lives (the runner can never fall
+// into the chasm — see bridge.js) and jump to any of the 8 themed levels.
+HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({ levels: 8, label: 'Level', onJump: n => bridge.jumpTo(n) }); });
 </script>
 
 </body>

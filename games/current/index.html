@@ -115,6 +115,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/circuit-solver.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // CURRENT — a real DC-circuit sandbox. The physics is the lesson:
@@ -722,6 +723,10 @@ resize();
 buildBin();
 loadLevel(0);
 requestAnimationFrame(frame);
+
+// God mode: type "godmode" to enable the badge + jump to any circuit level.
+// (No life system here, so god mode is just the badge + level picker.)
+HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({ levels: LEVELS.length, label:'Level', onJump: n => loadLevel(n-1) }); });
 </script>
 </body>
 </html>

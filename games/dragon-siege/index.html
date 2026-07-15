@@ -332,6 +332,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/canvas-fit.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // DRAGON SIEGE — an animated medieval typing-defense game.
@@ -2004,7 +2005,7 @@ function impactCatapult(th, i){
 
 function damageCastle(x, y, size){
   if (defeat) return;            // already falling — ignore further hits
-  lives--;
+  if (!(window.HSGGod && HSGGod.on)) lives--;   // god mode: castle never falls
   if (window.HSGSound) HSGSound.wrong();
   rail.broke(); // breaking the line snuffs the live streak (keeps the session best, no modal)
   decals.push({ x:clamp(x,8,castleW()), y:clamp(y,wallTopY()-20,groundY()), r: size==='small'?16:28 });
@@ -2442,6 +2443,7 @@ function updateHud(){
   if (levelBadge) levelBadge.textContent='🏰 Lv '+level;
   slainBadge.textContent='⚔️ '+slain;
   let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives?'❤️':'<span class="spent">🤍</span>';
+  if (window.HSGGod && HSGGod.on) h += ' ∞';
   heartsBadge.innerHTML=h;
 }
 function flashWave(title, sub){
@@ -2638,6 +2640,14 @@ document.addEventListener('visibilitychange', ()=>{ if (document.hidden){ lastTs
 
 document.querySelectorAll('.realm-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); arcade=false; startGame(btn.dataset.realm); });
+});
+HSGGod.watch(() => {
+  HSGGod.enable(); updateHud();
+  HSGGod.picker({
+    label: 'Realm',
+    tiers: Object.keys(REALMS).map(k => ({ v:k, label: REALM_LABELS[k] || k })),
+    onJump: v => { arcade=false; startGame(v); }
+  });
 });
 pauseBtn.addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); togglePause(); });
 document.getElementById('resumeBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); togglePause(false); });

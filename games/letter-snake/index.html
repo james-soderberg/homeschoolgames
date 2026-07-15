@@ -245,6 +245,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/spelling-words.js"></script>
 <script src="../../assets/js/canvas-fit.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // LETTER SNAKE — read the clue, steer the snake to gobble the
@@ -507,7 +508,8 @@ function wordComplete(){
 }
 // wrong letter -> lose a heart (snake keeps its size); no reset
 function loseLife(){
-  mistakes++; HSGSound.wrong(); HSGfx.shake();
+  if (!(window.HSGGod && HSGGod.on)) mistakes++;   // god mode: unlimited hearts
+  HSGSound.wrong(); HSGfx.shake();
   shakeT=0.35; lifeT=0.55; updateHud();
   if (mistakes>=MAX_MISTAKES) gameOver('hearts');
 }
@@ -515,6 +517,7 @@ function updateHud(){
   scoreBadge.textContent='🐍 Length '+snake.length;
   rail.set(snake.length);   // live length feeds the rail counter + session best
 
+  if(window.HSGGod && HSGGod.on){ heartsBadge.innerHTML='∞'; return; }
   let h=''; for(let i=0;i<MAX_MISTAKES;i++) h+= i<(MAX_MISTAKES-mistakes)?'❤️':'<span class="spent">🤍</span>';
   heartsBadge.innerHTML=h;
 }
@@ -531,7 +534,8 @@ function step(){
   if (nr<0) nr=ROWS-1; else if (nr>=ROWS) nr=0;
   const head={c:nc,r:nr};
   // self collision -> instant game over (the bigger you grow, the riskier)
-  for (let i=0;i<snake.length-1;i++){ if(snake[i].c===head.c&&snake[i].r===head.r){ gameOver('self'); return; } }
+  if (!(window.HSGGod && HSGGod.on))
+    for (let i=0;i<snake.length-1;i++){ if(snake[i].c===head.c&&snake[i].r===head.r){ gameOver('self'); return; } }
   snake.unshift(head);
   const pi=pellets.findIndex(p=>p.c===head.c&&p.r===head.r);
   let grew=false;
@@ -706,6 +710,14 @@ pauseBtn.addEventListener('click', (e)=>{ e.stopPropagation(); togglePause(); })
 // handler (which would skip the read-the-clue pause and launch immediately).
 document.getElementById('endPlayAgain').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(level); });
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', (e)=>{ e.stopPropagation(); startGame(b.dataset.level); }));
+
+// god mode — type "godmode": unlimited lives (no wall/self death) + jump to any level
+const GOD_TIERS = [['easy','🐤 Easy'],['medium','🦊 Medium'],['hard','🦉 Hard'],['einstein','🧠 Einstein']];
+HSGGod.watch(() => {
+  HSGGod.enable();
+  if(state!=='menu') updateHud();
+  HSGGod.picker({ label:'Level', tiers: GOD_TIERS.map(t=>({v:t[0],label:t[1]})), onJump: lv => startGame(lv) });
+});
 document.getElementById('hearBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(word) HSGSpellWords.say(word, true); });
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && state==='playing') lastTs=0; });
 

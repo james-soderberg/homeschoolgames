@@ -190,6 +190,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 (function () {
   'use strict';
@@ -390,6 +391,19 @@
     if (window.confirm('Abandon this descent and start over from the first chamber?')) { clearSave(); begin(true); }
   });
   $('chInput').addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+
+  // God mode: type "godmode" to enable the badge + jump to any chamber.
+  // (No life system — wrong guesses only cost score, so god is badge + jump.)
+  if (window.HSGGod) HSGGod.watch(function () {
+    HSGGod.enable();
+    HSGGod.picker({ levels: PUZZLES.length, label: 'Chamber', onJump: function (n) {
+      idx = Math.max(0, Math.min(PUZZLES.length - 1, n - 1));
+      done = false;
+      if (!startTs) startTs = Date.now();
+      writeSave();
+      begin(false);   // hides overlays, renders the chosen chamber, resumes the timer
+    } });
+  });
 
   // ---- boot: resume an unfinished descent, else show the gate ----
   (function boot() {

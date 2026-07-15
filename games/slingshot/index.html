@@ -75,14 +75,15 @@
   @keyframes bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-7px)} }
   .ov h2 { font-family:var(--font-serif); font-size:1.95rem; margin:0 0 .4rem; color:#fff; }
   .ov p { color:#b9c6ee; margin:0 0 1.1rem; max-width:42ch; line-height:1.5; }
-  /* short windows: compress the intro so the Launch button stays on screen */
+  /* short windows: compress the intro + shrink the stage so the Launch button stays on screen */
   @media (max-height: 680px) {
-    .ov .crest { font-size:2rem; margin-bottom:.1rem; }
-    .ov h2 { font-size:1.5rem; margin-bottom:.3rem; }
-    .ctl-guide { gap:.25rem; margin-bottom:.4rem; }
-    .ctl-row { font-size:.85rem; }
+    .sl-stage { height:48vh; min-height:250px; }
+    .ov .crest { font-size:1.9rem; margin-bottom:.1rem; }
+    .ov h2 { font-size:1.45rem; margin-bottom:.25rem; }
+    .ctl-guide { gap:.2rem; margin-bottom:.35rem; }
+    .ctl-row { font-size:.83rem; }
     .learn-note { display:none; }
-    .go-btn { margin-top:.3rem; }
+    .go-btn { margin-top:.25rem; }
   }
   /* start-screen controls overview */
   .ctl-guide { display:flex; flex-direction:column; gap:.5rem; margin:.3rem auto .9rem; text-align:left; width:max-content; max-width:100%; color:#d3ddf6; font-size:.98rem; }
@@ -248,6 +249,7 @@
   <div class="control-row">
     <button class="reset-link" onclick="retryLevel()">Reset aim</button>
     <button class="launch-btn" id="launchBtn">🚀 Launch</button>
+    <button class="reset-link" id="solveBtn" style="display:none">💡 Show solution</button>
     <button class="reset-link" onclick="toMenu()">Quit to base</button>
   </div>
 </div>
@@ -256,6 +258,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // SLINGSHOT — fling a probe and let planetary gravity curve it
@@ -371,6 +374,7 @@ let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, 
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
 let levelVmax = 1;   // per-level max launch velocity (1 = full; <1 caps thrust so gravity dominates)
 let probe = null, trail = [], particles = [], predicted = null;
+let solutionPath = null, godUnlocked = false;   // god-mode "show solution" route overlay
 let aim = { angle: 0, power: 0.5, dragging: false };
 let sceneTime = 0, shake = 0, flashR = 0, flashG = 0, flightT = 0, flightAcc = 0, bonusMsg = '', bonusT = 0;
 let pendingScore = null;
@@ -466,7 +470,7 @@ function genLevel(n) {
 
   aim.angle = Math.atan2(target.y - pad.y, target.x - pad.x);
   aim.power = 0.6; aim.dragging = false;
-  probe = null; trail = []; predicted = null; attempts = 0;
+  probe = null; trail = []; predicted = null; solutionPath = null; attempts = 0;
   refreshBodyPositions(); recomputePredict();
 }
 function refreshBodyPositions() { for (const b of bodies) b._p = bodyPos(b); if (target) target._p = bodyPos(target); }
@@ -485,13 +489,80 @@ function recomputePredict() {
   predicted = simulate(pad.x, pad.y, v.vx, v.vy, diff.predict, allBodies());
 }
 
+// ---------- god-mode solver: brute-force a launch (angle + power) that reaches
+// the target. Uses the SAME integrator as the flight, so a found route replays
+// exactly. A coarse full-circle sweep seeds a set of near-miss candidates, then
+// each is refined with a shrinking local grid to thread even the tiniest window.
+function solveLevel() {
+  refreshBodyPositions();
+  const list = allBodies();
+  const STEPS = Math.ceil(MAX_FLIGHT / FIXED_H) + 2;   // match the in-flight time limit
+  const cappedMax = lerp(SPEED_MIN, SPEED_MAX, levelVmax);
+  const tp = target._p, h = FIXED_H, bnd = DW * 0.28;
+  // simulate one shot; return whether it hit and its closest approach to the target
+  function trial(angle, power) {
+    const spd = lerp(SPEED_MIN, cappedMax, clamp01(power));
+    let px = pad.x, py = pad.y, pvx = Math.cos(angle) * spd, pvy = Math.sin(angle) * spd, dmin = Infinity;
+    for (let i = 0; i < STEPS; i++) {
+      const [ax, ay] = accel(px, py, list);
+      pvx += ax * h; pvy += ay * h; px += pvx * h; py += pvy * h;
+      const dx = px - tp.x, dy = py - tp.y, d = Math.sqrt(dx * dx + dy * dy);
+      if (d < dmin) dmin = d;
+      for (const b of list) {
+        const p = b._p, rr = b.r + PROBE_R, thr = b.role === 'target' ? rr + 5 : rr;
+        if (dist2(px, py, p.x, p.y) < thr * thr) return { hit: b.role === 'target', dmin: b.role === 'target' ? 0 : dmin };
+      }
+      if (px < -bnd || px > DW + bnd || py < -bnd || py > DH + bnd) return { hit: false, dmin };
+    }
+    return { hit: false, dmin };
+  }
+  // 1) coarse full-circle sweep — bail the moment we land a hit
+  const seeds = [];
+  for (let ad = 0; ad < 360; ad++) {
+    const a = ad * Math.PI / 180;
+    for (let p = 0.04; p <= 1.0001; p += 0.02) {
+      const r = trial(a, p);
+      if (r.hit) return { angle: a, power: p };
+      seeds.push({ angle: a, power: p, d: r.dmin });
+    }
+  }
+  // 2) refine around the closest near-misses with a progressively finer grid
+  seeds.sort((x, y) => x.d - y.d);
+  for (const seed of seeds.slice(0, 16)) {
+    let ca = seed.angle, cp = seed.power, da = Math.PI / 180, dp = 0.02;
+    for (let iter = 0; iter < 8; iter++) {
+      let bd = Infinity, ba = ca, bp = cp;
+      for (let ai = -5; ai <= 5; ai++) {
+        for (let pi = -5; pi <= 5; pi++) {
+          const a = ca + ai * da, p = clamp01(cp + pi * dp), r = trial(a, p);
+          if (r.hit) return { angle: a, power: p };
+          if (r.d < bd) { bd = r.d; ba = a; bp = p; }
+        }
+      }
+      ca = ba; cp = bp; da *= 0.5; dp *= 0.5;
+    }
+  }
+  return null;
+}
+function showSolution() {
+  if (phase !== 'aim') return;
+  const sol = solveLevel();
+  if (!sol) { toast('No solution found 🤔'); solutionPath = null; return; }
+  aim.angle = sol.angle; aim.power = sol.power;
+  refreshBodyPositions();
+  const v = aimVelocity();
+  solutionPath = simulate(pad.x, pad.y, v.vx, v.vy, Math.ceil(MAX_FLIGHT / FIXED_H) + 2, allBodies()).pts;
+  recomputePredict();   // refresh the short preview + aim vector to match
+  toast('Route shown — press Launch to fly it 🚀');
+}
+
 // ---------- launch / flight ----------
 function launch() {
   if (phase !== 'aim') return;
   const v = aimVelocity();
   probe = { x: pad.x, y: pad.y, vx: v.vx, vy: v.vy, ang: aim.angle, bent: 0 };
   trail = [{ x: pad.x, y: pad.y }];
-  predicted = null; phase = 'flight'; flightT = 0; flightAcc = 0; attempts++;
+  predicted = null; solutionPath = null; phase = 'flight'; flightT = 0; flightAcc = 0; attempts++;
   shake = 5; flashG = 0.12; if (window.HSGSound) HSGSound.laser();
 }
 // ONE fixed physics step — identical to the preview, so a green preview always hits
@@ -536,7 +607,8 @@ function win() {
   showFact(gain, firstTry);
 }
 function crash(msg) {
-  probes--; streak = 0;
+  if (!(window.HSGGod && HSGGod.on)) probes--;   // god mode: never lose a probe
+  streak = 0;
   for (let i = 0; i < 22; i++) spawnParticle(probe.x, probe.y, rand(-210, 210), rand(-210, 210), rand(.35, .8), i % 2 ? '#ff9a5a' : '#ffd27a', rand(2, 4.5));
   flashR = 0.45; shake = 11; probe = null; predicted = null;
   if (window.HSGSound) HSGSound.boom();
@@ -641,7 +713,7 @@ function renderVoyage() {
 function updateHud() {
   renderVoyage();
   scoreBadge.textContent = score.toLocaleString() + ' pts';
-  probesBadge.innerHTML = '🚀 <b>' + Math.max(0, probes) + '</b>';
+  probesBadge.innerHTML = '🚀 <b>' + ((window.HSGGod && HSGGod.on) ? '∞' : Math.max(0, probes)) + '</b>';
   streakBadge.classList.toggle('hidden', streak < 2);
   streakBadge.textContent = '🔥 ' + streak;
 }
@@ -832,9 +904,23 @@ function drawScene() {
   for (const b of bodies) drawPlanet(b);
   if (target) drawTarget(sceneTime);
   if (pad) drawPad();
-  if (phase === 'aim') drawPredict();
+  if (phase === 'aim') { drawSolution(); drawPredict(); }
   drawProbe();
   drawParticles();
+}
+// god-mode: the full winning route, drawn as a flowing dashed line to the target
+function drawSolution() {
+  if (!solutionPath || solutionPath.length < 2) return;
+  ctx.save();
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(126,240,182,0.9)';
+  ctx.shadowColor = 'rgba(126,240,182,0.9)'; ctx.shadowBlur = 9;
+  ctx.lineWidth = 3; ctx.setLineDash([10, 8]); ctx.lineDashOffset = -((sceneTime * 46) % 18);
+  ctx.beginPath();
+  ctx.moveTo(solutionPath[0].x, solutionPath[0].y);
+  for (let i = 1; i < solutionPath.length; i++) ctx.lineTo(solutionPath[i].x, solutionPath[i].y);
+  ctx.stroke();
+  ctx.restore();
 }
 function render() {
   drawBackground(sceneTime);                 // screen space, full bleed
@@ -888,6 +974,7 @@ function setAimFromPoint(pt) {
   const dx = pt.x - pad.x, dy = pt.y - pad.y;
   aim.angle = Math.atan2(dy, dx);
   aim.power = clamp01(Math.hypot(dx, dy) / (DW * 0.24));
+  solutionPath = null;   // manual re-aim clears the shown route
 }
 function onDown(e) {
   if (phase !== 'aim') return;
@@ -904,6 +991,7 @@ document.addEventListener('keydown', e => {
   if (phase === 'fact' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onward(); return; }
   if (phase !== 'aim') return;
   const k = e.key;
+  if (/^Arrow/.test(k)) solutionPath = null;   // manual re-aim clears the shown route
   // flipped: left/right control power, up/down control the arc (launch angle)
   if (k === 'ArrowRight')      { aim.power = clamp01(aim.power + 0.03); recomputePredict(); e.preventDefault(); }
   else if (k === 'ArrowLeft')  { aim.power = clamp01(aim.power - 0.03); recomputePredict(); e.preventDefault(); }
@@ -944,9 +1032,15 @@ document.getElementById('nameInput').addEventListener('keydown', e => { if (e.ke
     if (e.key && e.key.length === 1) buf = (buf + e.key.toLowerCase()).slice(-7);
     if (buf.endsWith('godmode')) {
       buf = '';
+      if (window.HSGGod) HSGGod.enable();                   // unlimited probes
+      godUnlocked = true;                                   // unlock the "Show solution" cheat
+      const sb = document.getElementById('solveBtn'); if (sb) sb.style.display = '';
       startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
       god.classList.remove('hidden');
     }
+  });
+  document.getElementById('solveBtn').addEventListener('click', (e) => {
+    e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); showSolution();
   });
 })();
 

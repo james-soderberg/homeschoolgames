@@ -172,6 +172,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/spelling-words.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // LETTER CATCH — read the clue, then catch the falling letters
@@ -371,7 +372,7 @@ function wordComplete(){
   newWord();
 }
 function mistakeMade(){
-  mistakes++;
+  if (!(window.HSGGod && HSGGod.on)) mistakes++;   // god mode: unlimited hearts
   rail.broke();   // snap the streak but keep the session-best for the leaderboard
   HSGSound.wrong();
   HSGfx.shake(); shakeT=0.35;
@@ -380,6 +381,7 @@ function mistakeMade(){
 }
 function updateHud(){
   scoreBadge.textContent='⭐ '+score;
+  if(window.HSGGod && HSGGod.on){ heartsBadge.innerHTML='∞'; return; }
   let h=''; for(let i=0;i<MAX_MISTAKES;i++) h += i<(MAX_MISTAKES-mistakes)?'❤️':'<span class="spent">🤍</span>';
   heartsBadge.innerHTML=h;
 }
@@ -530,6 +532,14 @@ document.addEventListener('keydown', e=>{
 });
 document.getElementById('hearBtn').addEventListener('click', ()=>{ if(word) speak(word, true); });
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', ()=>startGame(b.dataset.level)));
+
+// god mode — type "godmode": unlimited hearts + jump to any level
+const GOD_TIERS = [['easy','🐤 Easy'],['medium','🦊 Medium'],['hard','🦉 Hard'],['einstein','🧠 Einstein']];
+HSGGod.watch(() => {
+  HSGGod.enable();
+  if(running) updateHud();
+  HSGGod.picker({ label:'Level', tiers: GOD_TIERS.map(t=>({v:t[0],label:t[1]})), onJump: lv => startGame(lv) });
+});
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && running) lastTs=0; });
 
 setupCanvas();

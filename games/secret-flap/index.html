@@ -116,6 +116,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/canvas-fit.js"></script>
+<script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
 // FLAPPY DRAGONLING — a hidden game. A little dragon flaps
@@ -210,6 +211,7 @@ function startGame() {
 }
 
 function die() {
+  if (window.HSGGod && HSGGod.on) return;   // god mode: invincible — collisions can't kill you
   if (state !== 'play') return;
   state = 'dead';
   shake = 12;
@@ -452,6 +454,12 @@ document.addEventListener('keydown', (e) => {
 });
 document.getElementById('startBtn').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
 againBtn.addEventListener('click', (e) => { e.stopPropagation(); if (restartReady) startGame(); });
+
+// god mode — type "godmode": invincible, pipes/ground can't end the run
+if (window.HSGGod) HSGGod.watch(() => {
+  HSGGod.enable();
+  HSGGod.picker({ label: 'Flight', note: 'Invincible! Towers and the ground can’t stop you.' });
+});
 
 setupCanvas();
 reset();

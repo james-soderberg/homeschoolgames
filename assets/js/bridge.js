@@ -500,7 +500,12 @@
       if (runnerX >= finishX()) return clearLevel();
       const lead = builtFrontX() - runnerX;
       const onStart = runnerX <= START_PLAT;
-      if (!onStart && lead <= 0) return fall();
+      if (!onStart && lead <= 0) {
+        // God mode: never fall — hold the runner at the edge of the laid path
+        // until the next correct answer extends it. (Unlimited lives.)
+        if (window.HSGGod && HSGGod.on) { runnerX = builtFrontX() - 1; setWorld(); }
+        else return fall();
+      }
 
       const leadFrac = Math.max(0, Math.min(1, lead / (W * (HEAD_START + 1))));
       leadFill.style.width = (leadFrac * 100) + '%';
@@ -629,6 +634,14 @@
 
     showStart();
     return {
+      // God-mode jump: start a fresh run at level n with the current tier.
+      jumpTo: (n) => {
+        level = Math.max(1, n | 0);
+        totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0;
+        rail.setLevel(tiers[tierIdx].key, tiers[tierIdx].label);
+        startEl.style.display = 'none';
+        startLevel();
+      },
       _debug: () => ({ level, target, builtBlocks, runnerX: Math.round(runnerX), running, over, coasting, speed,
         totalCorrect, totalQ, streak, bestStreak, answer: q && q.answer, tier: tiers[tierIdx] && tiers[tierIdx].key }),
       _tick: (ms) => loop((lastTs || 0) + ms),

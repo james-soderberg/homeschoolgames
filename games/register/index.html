@@ -223,6 +223,38 @@
     .end-receipt .e-stamp.pass { color:var(--till-green); } .end-receipt .e-stamp.miss { color:var(--red); }
     #regBoard { max-width:420px; margin:1rem auto 0; }
 
+    /* ================= teach overlay (mistake → learn) ================= */
+    .teach-card { max-width:520px; }
+    .teach-card .ov-lab { color:var(--gold); }
+    .teach-card h2 { margin-bottom:.35rem; }
+    .teach-card #teachSub { font-size:.95rem; max-width:40ch; margin:0 auto 1.2rem; }
+    .teach-cols { display:flex; align-items:stretch; gap:.7rem; margin:0 0 1.3rem; text-align:center; }
+    .teach-col { flex:1 1 0; min-width:0; border:1.5px solid var(--border); border-radius:14px; padding:.75rem .6rem; background:#fbfaf6; }
+    .teach-col.you.bad { border-color:var(--red); background:#fdf1ef; }
+    .teach-col.best { border-color:var(--till-green); background:#f1f7f2; }
+    .teach-arrow { align-self:center; font-size:1.5rem; color:var(--ink-light); font-weight:800; flex:0 0 auto; }
+    .tc-head { font-size:.64rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-light); margin-bottom:.55rem; }
+    .teach-col.best .tc-head { color:var(--till-green); }
+    .teach-col.you.bad .tc-head { color:var(--red); }
+    .tc-pieces { display:flex; flex-wrap:wrap; gap:.4rem; justify-content:center; align-content:flex-start; min-height:50px; }
+    .tc-foot { margin-top:.65rem; padding-top:.5rem; border-top:1px dashed var(--border); }
+    .tc-foot b { display:block; font-size:1.35rem; font-variant-numeric:tabular-nums; line-height:1.1; }
+    .tc-foot span { font-size:.7rem; color:var(--ink-light); font-weight:700; }
+    .tc-pieces .money { cursor:default; animation:teachIn .32s ease both; }
+    .tc-pieces .money:hover { transform:none; }
+    .tc-pieces .coin { width:38px; height:38px; font-size:.74rem; }
+    .tc-pieces .coin.quarter { width:44px; height:44px; }
+    .tc-pieces .coin.dime { width:33px; height:33px; }
+    .tc-pieces .coin.nickel { width:41px; height:41px; }
+    .tc-pieces .bill { width:52px; height:33px; font-size:.84rem; }
+    .tc-pieces .bill .c { display:none; }
+    .tc-empty { color:var(--ink-light); font-size:.82rem; align-self:center; margin:auto; opacity:.7; }
+    @keyframes teachIn { from{ opacity:0; transform:translateY(-12px) scale(.55); } to{ opacity:1; transform:none; } }
+    @media (max-width:520px) {
+      .teach-cols { flex-direction:column; }
+      .teach-arrow { transform:rotate(90deg); }
+    }
+
     @media (max-width:680px) {
       .pos { flex-direction:column; }
       .receipt { flex:1 1 auto; width:100%; order:2; }
@@ -308,9 +340,9 @@
   <div class="reg-ov" id="startOverlay">
     <div class="ov-inner">
       <div class="ov-card">
-        <div class="ov-lab">How to play</div>
-        <h2>Register</h2>
-        <p>Ring up each customer, then hand back their <b>exact change</b> using the
+        <div class="ov-lab" id="ovLab">How to play</div>
+        <h2 id="ovTitle">Register</h2>
+        <p id="ovDesc">Ring up each customer, then hand back their <b>exact change</b> using the
           <b>fewest coins &amp; bills</b>. No clock — take your time and get it right, but every
           extra coin costs a fee. Fill the till and clear the day's rent to win.</p>
         <button type="button" class="btn btn-gold" id="startBtn">Play →</button>
@@ -330,8 +362,34 @@
         <div class="e-stamp" id="endStamp"></div>
       </div>
       <div id="regBoard"></div>
-      <div style="margin-top:1.1rem;">
-        <button type="button" class="btn btn-gold" id="againBtn">New day →</button>
+      <div class="reg-endbtns" style="margin-top:1.1rem; display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap;">
+        <button type="button" class="btn btn-gold" id="expertBtn">Unlock Expert →</button>
+        <button type="button" class="btn btn-outline" id="againBtn">New day</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TEACH overlay (mistake → learn) ============ -->
+  <div class="reg-ov hidden" id="teachOverlay">
+    <div class="ov-inner">
+      <div class="ov-card teach-card">
+        <div class="ov-lab" id="teachLab">Let's learn</div>
+        <h2 id="teachTitle">Too many coins</h2>
+        <p id="teachSub"></p>
+        <div class="teach-cols">
+          <div class="teach-col you" id="teachYouCol">
+            <div class="tc-head">You gave</div>
+            <div class="tc-pieces" id="teachYou"></div>
+            <div class="tc-foot"><b id="teachYouAmt">$0.00</b><span id="teachYouN">0 pieces</span></div>
+          </div>
+          <div class="teach-arrow">→</div>
+          <div class="teach-col best">
+            <div class="tc-head" id="teachBestHead">Fewest way</div>
+            <div class="tc-pieces" id="teachBest"></div>
+            <div class="tc-foot"><b id="teachBestAmt">$0.00</b><span id="teachBestN">0 pieces</span></div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-gold" id="teachBtn">Got it →</button>
       </div>
     </div>
   </div>
@@ -370,17 +428,20 @@
     fewest: { key:'fewest', name:'Fewest Pieces', tag:'Grades 4–5', desc:'Make change with the fewest coins & bills.',
               drawer:[100,25,10,5,1], pay:[100,500], patBase:12000, goal:2600, exactPct:0.08, optimal:true },
     tax:    { key:'tax',    name:'Sales Tax',    tag:'Grades 5–6', desc:'Add the % tax, then make change.',
-              drawer:[1000,500,100,25,10,5,1], pay:[500,1000,2000], patBase:13000, goal:7500, exactPct:0.12, tax:true }
+              drawer:[1000,500,100,25,10,5,1], pay:[500,1000,2000], patBase:13000, goal:7500, exactPct:0.12, tax:true },
+    expert: { key:'expert', name:'Expert',      tag:'Master class', desc:'Odd tenders and hidden change — you do the math.',
+              drawer:[2000,1000,500,100,25,10,5,1], pay:[500,1000,2000], patBase:13000, goal:9500, exactPct:0.05,
+              tax:true, expert:true, hideChange:true }
   };
-  var TIER_ORDER = ['easy','bills','fewest','tax'];
+  var TIER_ORDER = ['easy','bills','fewest','tax','expert'];
 
   // personalities affect patience / tips / a text tag (no avatars)
   var TYPES = [
     { key:'kid',    tag:'just a treat', pat:1.4,  size:-1, tip:1.0,  tiers:['easy','bills','fewest','tax'] },
-    { key:'reg',    tag:'',             pat:1.0,  size:0,  tip:1.0,  tiers:['easy','bills','fewest','tax'] },
-    { key:'rush',   tag:'in a hurry',   pat:0.6,  size:0,  tip:1.7,  tiers:['bills','fewest','tax'] },
-    { key:'senior', tag:'no rush',      pat:1.7,  size:0,  tip:1.15, tiers:['easy','bills','fewest','tax'] },
-    { key:'big',    tag:'big order',    pat:1.15, size:1,  tip:1.35, tiers:['bills','tax'] }
+    { key:'reg',    tag:'',             pat:1.0,  size:0,  tip:1.0,  tiers:['easy','bills','fewest','tax','expert'] },
+    { key:'rush',   tag:'in a hurry',   pat:0.6,  size:0,  tip:1.7,  tiers:['bills','fewest','tax','expert'] },
+    { key:'senior', tag:'no rush',      pat:1.7,  size:0,  tip:1.15, tiers:['easy','bills','fewest','tax','expert'] },
+    { key:'big',    tag:'big order',    pat:1.15, size:1,  tip:1.35, tiers:['bills','tax','expert'] }
   ];
 
   var ITEMS = [
@@ -397,11 +458,10 @@
   var NAMES = ['Mia','Leo','Ava','Sam','Zoe','Max','Ivy','Ben','Nora','Eli','Ruby','Kai','Lily','Finn','Cleo','Jude','Rosa','Theo'];
 
   // ---- state ----
-  var tier = TIERS.tax, day = [], custIdx = 0;   // always the hardest tier
-  var till = 0, salesTotal = 0, tipsTotal = 0, feesTotal = 0, servedOK = 0, perfectCount = 0;
+  var tier = TIERS.tax, day = [], custIdx = 0;   // starts on Sales Tax; Expert unlocks after a day
+  var till = 0, salesTotal = 0, tipsTotal = 0, feesTotal = 0, servedOK = 0, perfectCount = 0, lostCount = 0;
   var combo = 0, bestCombo = 0, prevMult = 1, goalCents = 0, goalHit = false, hintedDay = false;
-  var cur = null, tray = [], resolved = false;
-  var wrongThisCust = 0, tillRaf = 0;
+  var cur = null, tray = [], resolved = false, tillRaf = 0;
 
   // ---- math helpers ----
   function optimalPieces(amount, dens) {
@@ -409,10 +469,23 @@
     for (var i=0;i<d.length;i++){ n+=Math.floor(r/d[i]); r%=d[i]; }
     return { n:n, r:r };
   }
+  // the actual fewest-pieces breakdown, largest first: e.g. 65 -> [25,25,10,5]
+  function optimalSet(amount, dens) {
+    var d = dens.slice().sort(function (a,b){return b-a;}), out = [], r = amount;
+    for (var i=0;i<d.length;i++){ while (r >= d[i]) { out.push(d[i]); r -= d[i]; } }
+    return out;
+  }
   function smallestPayOver(amount, bills) {
     var s = bills.slice().sort(function (a,b){return a-b;});
     for (var i=0;i<s.length;i++) if (s[i] > amount) return s[i];
     var big = s[s.length-1]; return (Math.floor(amount/big)+1)*big;
+  }
+  // human-readable tender: "$5 + 25¢" (bills, then the loose cents)
+  function tenderStr(amt) {
+    var cents = amt % 100, dollars = amt - cents, parts = [];
+    [2000,1000,500,100].forEach(function (b){ while (dollars >= b) { parts.push('$' + (b/100)); dollars -= b; } });
+    if (cents) parts.push(cents + '¢');
+    return parts.join(' + ');
   }
   function pickItems(pool, n) {
     var c = pool.slice(), out = [];
@@ -423,38 +496,66 @@
 
   function genCustomer() {
     var eligible = TYPES.filter(function (t){ return t.tiers.indexOf(tier.key) >= 0; });
-    for (var attempt=0; attempt<80; attempt++) {
+    for (var attempt=0; attempt<140; attempt++) {
       var type = pick(eligible);
-      var items, subtotal=0, taxRate=0, taxCents=0, total, pay, change, exact=false;
-      if (type.key === 'kid') items = pickItems(tier.key==='easy'?EASY_ITEMS:CANDY, Math.random()<0.7?1:2);
-      else if (tier.key === 'easy') items = pickItems(EASY_ITEMS, Math.random()<0.55?1:2);
-      else { var base = tier.key==='fewest' ? rand(1,2) : rand(1,3); items = pickItems(ITEMS, Math.max(1,Math.min(4,base+type.size))); }
-      items.forEach(function (it){ subtotal += it[1]; });
+      var items, subtotal=0, taxRate=0, taxCents=0, total, pay, change, exact=false, scen='plain', payNote='', note='';
 
-      if (tier.key==='easy'   && (subtotal<15 || subtotal>95)) continue;
-      if (tier.key==='bills'  && (subtotal<40 || subtotal>1800)) continue;
-      if (tier.key==='fewest' && (subtotal<30 || subtotal>480)) continue;
-      if (tier.key==='tax'    && (subtotal<120 || subtotal>1200)) continue;
+      // ---------- EXPERT: odd tenders + hidden change ----------
+      if (tier.expert) {
+        scen = pick(['coinup','coinup','coinup','coinup','bigbill','awkward','awkward']);
+        items = pickItems(ITEMS, Math.max(1, Math.min(4, rand(1,3) + type.size)));
+        items.forEach(function (it){ subtotal += it[1]; });
+        if (subtotal < 150 || subtotal > 1600) continue;
+        taxRate = [5,6,7,8][rand(0,3)]; taxCents = Math.round(subtotal*taxRate/100); total = subtotal + taxCents;
+        var cents = total % 100;
 
-      total = subtotal;
-      if (tier.tax) { taxRate = [5,6,7,8][rand(0,3)]; taxCents = Math.round(subtotal*taxRate/100); total = subtotal+taxCents; }
-
-      if (Math.random() < tier.exactPct && (type.key==='reg'||type.key==='senior')) { pay = total; change = 0; exact = true; }
-      else {
-        pay = smallestPayOver(total, tier.pay); change = pay - total;
-        if (change <= 0) continue; if (change > 999) continue;
-        if (optimalPieces(change, tier.drawer).n > 12) continue;
+        if (scen === 'coinup') {
+          // only when the loose cents are a small, natural handful of coins (like a quarter)
+          if (!cents || cents % 5 !== 0 || optimalPieces(cents, [25,10,5]).n > 3) continue;
+          change = pick([100,100,100,100,200]);                  // clean whole-dollar change, mostly $1
+          pay = total + change;                                  // e.g. $4.25 + a quarter tender = $1.00 back
+          note = 'wants bills back';
+        } else if (scen === 'bigbill') {
+          pay = total < 500 ? 1000 : 2000;                       // hands over a big bill -> lots of change
+          if (pay <= total) continue;
+          change = pay - total;
+          note = 'only had a big bill';
+        } else {                                                 // awkward: arbitrary, coin-heavy change
+          pay = smallestPayOver(total, tier.pay); change = pay - total;
+        }
+        if (change <= 0 || change > 1999) continue;
+        if (optimalPieces(change, tier.drawer).n > 16) continue;
+        if (pay % 100) payNote = tenderStr(pay);                 // show "$5 + 25¢" when coins are involved
       }
+
+      // ---------- STANDARD: sales tax ----------
+      else {
+        if (type.key === 'kid') items = pickItems(CANDY, Math.random()<0.7?1:2);
+        else items = pickItems(ITEMS, Math.max(1, Math.min(4, rand(1,3) + type.size)));
+        items.forEach(function (it){ subtotal += it[1]; });
+        if (subtotal < 120 || subtotal > 1300) continue;
+        taxRate = [5,6,7,8][rand(0,3)]; taxCents = Math.round(subtotal*taxRate/100); total = subtotal + taxCents;
+
+        if (Math.random() < tier.exactPct && (type.key==='reg'||type.key==='senior')) { pay = total; change = 0; exact = true; }
+        else {
+          pay = smallestPayOver(total, tier.pay);
+          // oddity: sometimes they hand a bigger bill, so there's more change to count out
+          if (Math.random() < 0.35) { var bigger = smallestPayOver(pay, tier.pay); if (bigger > pay) pay = bigger; }
+          change = pay - total;
+          if (change <= 0 || change > 1499) continue;
+          if (optimalPieces(change, tier.drawer).n > 14) continue;
+        }
+      }
+
       var optN = exact ? 0 : optimalPieces(change, tier.drawer).n;
       return {
         type:type, items:items, subtotal:subtotal, taxRate:taxRate, taxCents:taxCents,
-        total:total, pay:pay, change:change, exact:exact, optimal:optN,
-        name:pick(NAMES), patDur:Math.round((tier.patBase + optN*350) * type.pat),
-        bar:rand(1000,9999) + ' ' + rand(1000,9999)
+        total:total, pay:pay, change:change, exact:exact, optimal:optN, scen:scen, payNote:payNote, note:note,
+        name:pick(NAMES), bar:rand(1000,9999) + ' ' + rand(1000,9999)
       };
     }
     return { type:TYPES[1], items:[['Apple',60]], subtotal:60, taxRate:0, taxCents:0, total:60, pay:100,
-             change:40, exact:false, optimal:optimalPieces(40,tier.drawer).n, name:'Sam', patDur:11000, bar:'0000 0000' };
+             change:40, exact:false, optimal:optimalPieces(40,tier.drawer).n, scen:'plain', payNote:'', note:'', name:'Sam', bar:'0000 0000' };
   }
 
   // ---- money chips ----
@@ -502,7 +603,8 @@
     $('dispCounted').className = 'v under';
     var m = $('dispMsg');
     if (cur && cur.exact) { m.textContent = 'NO CHANGE — PRESS GIVE'; }
-    else { m.textContent = tray.length ? 'PRESS GIVE WHEN READY' : 'COUNT OUT THE CHANGE'; }
+    else if (tray.length) { m.textContent = 'PRESS GIVE WHEN READY'; }
+    else { m.textContent = tier.hideChange ? 'WORK OUT THE CHANGE' : 'COUNT OUT THE CHANGE'; }
     m.className = 'scr-msg';
     $('giveBtn').classList.remove('ready');
   }
@@ -515,10 +617,14 @@
   // ---- present a customer ----
   function presentCustomer() {
     cur = day[custIdx];
-    tray = []; resolved = false; wrongThisCust = 0;
+    tray = []; resolved = false;
     $('dispLevel').textContent = tier.name.toUpperCase();
     $('progress').textContent = (custIdx+1) + ' / ' + CUSTOMERS_PER_DAY;
-    $('dispCust').textContent = 'CUSTOMER: ' + cur.name.toUpperCase() + (cur.type.tag ? ' · ' + cur.type.tag.toUpperCase() : '');
+    var custLine = 'CUSTOMER: ' + cur.name.toUpperCase();
+    var tag = cur.note || cur.type.tag;
+    if (tag) custLine += ' · ' + tag.toUpperCase();
+    if (cur.payNote) custLine += ' · PAYS ' + cur.payNote;
+    $('dispCust').textContent = custLine;
 
     // printed receipt (the order)
     $('recMeta').textContent = 'Order #' + (custIdx+1);
@@ -541,7 +647,7 @@
     // register display
     $('dispTotal').textContent = money(cur.total);
     $('dispPaid').textContent = money(cur.pay);
-    $('dispChange').textContent = money(cur.change);
+    $('dispChange').textContent = (tier.hideChange && !cur.exact) ? '– – –' : money(cur.change);
     $('hintBtn').disabled = cur.exact;
     $('giveBtn').disabled = false;
 
@@ -573,50 +679,110 @@
   function giveChange() {
     if (resolved) return;
     var given = tray.reduce(function (s,v){return s+v;}, 0);
-    if (given === cur.change) { succeed(); return; }
-    wrongThisCust++;
-    var diff = Math.abs(given - cur.change), over = given > cur.change;
-    var m = $('dispMsg');
-    m.textContent = over ? money(diff).toUpperCase() + ' TOO MUCH' : money(diff).toUpperCase() + ' SHORT';
-    m.className = 'scr-msg over';
-    var scr = $('screen'); scr.classList.remove('bad'); void scr.offsetWidth; scr.classList.add('bad');
-    var trayEl = $('tray'); trayEl.classList.remove('shake'); void trayEl.offsetWidth; trayEl.classList.add('shake');
-    if (window.HSGSound) HSGSound.wrong();
+    if (given === cur.change) {
+      var extra = cur.exact ? 0 : Math.max(0, tray.length - cur.optimal);
+      if (extra > 0) { showTeach('extra', given); return; }   // right amount, too many pieces → learn
+      succeed(given);                                          // perfect / exact
+      return;
+    }
+    showTeach('wrong', given);                                 // wrong amount → learn
   }
 
-  function succeed() {
+  function succeed(given) {
     resolved = true;
-    // fewest-pieces is the goal — every piece beyond optimal is charged a fee
-    var extra = cur.exact ? 0 : Math.max(0, tray.length - cur.optimal);
-    var clean = wrongThisCust === 0 && extra === 0;
-    if (clean) { combo++; if (combo > bestCombo) bestCombo = combo; }
-    else { combo = 0; prevMult = 1; }
+    combo++; if (combo > bestCombo) bestCombo = combo;
     var m = mult();
+    var base = cur.exact ? 25 : 20;
+    var tip = Math.round((base + 25) * cur.type.tip * m);
+    var gain = cur.total + tip;
 
-    var fee = extra * FEE_PER_PIECE;
-    var base = cur.exact ? 20 : 15;
-    var neat = extra === 0 ? 25 : 0;
-    var acc = wrongThisCust === 0 ? 10 : 0;
-    var tip = Math.round((base + neat + acc) * cur.type.tip * m);
-    var gain = cur.total + tip - fee;
-
-    till += gain; salesTotal += cur.total; tipsTotal += tip; feesTotal += fee; servedOK++;
-    if (extra === 0 && !cur.exact) perfectCount++;
+    till += gain; salesTotal += cur.total; tipsTotal += tip; servedOK++;
+    if (!cur.exact) perfectCount++;
 
     $('dispCounted').textContent = String(tray.length);
-    var scr = $('screen'); scr.classList.remove('ok','bad'); void scr.offsetWidth; scr.classList.add(fee ? 'bad' : 'ok');
-    var msg = $('dispMsg');
-    if (fee) { msg.textContent = extra + (extra===1 ? ' EXTRA COIN — ' : ' EXTRA COINS — ') + money(fee) + ' FEE'; msg.className = 'scr-msg over'; }
-    else { msg.textContent = (cur.exact ? 'EXACT — THANK YOU!  ' : 'FEWEST PIECES!  ') + '+' + money(tip); msg.className = 'scr-msg ok'; }
-    if (window.HSGSound) { if (fee) HSGSound.wrong(); else { HSGSound.correct(); if (clean && m > 1) HSGSound.powerup(); } }
+    if (tier.hideChange) $('dispChange').textContent = money(cur.change);   // reveal
+    var scr = $('screen'); scr.classList.remove('ok','bad'); void scr.offsetWidth; scr.classList.add('ok');
+    var msg = $('dispMsg'); msg.textContent = (cur.exact ? 'EXACT — THANK YOU!  ' : 'FEWEST PIECES!  ') + '+' + money(tip); msg.className = 'scr-msg ok';
+    if (window.HSGSound) { HSGSound.correct(); if (m > 1) HSGSound.powerup(); }
     var trayEl = $('tray'); trayEl.style.transition = 'opacity .2s'; trayEl.style.opacity = '.35';
 
-    floatFrom($('tillAmt'), (gain >= 0 ? '+' : '') + money(gain) + (!fee && m > 1 ? '  ×' + m : ''));
+    floatFrom($('tillAmt'), '+' + money(gain) + (m > 1 ? '  ×' + m : ''));
     animateTill(till - gain, till); updateGoal();
-    if (!fee && m > prevMult && m > 1 && m >= 3) confetti();
+    if (m > prevMult && m > 1 && m >= 3) confetti();
     prevMult = m; renderStreak();
 
     setTimeout(function () { trayEl.style.opacity = '1'; advance(); }, 1150);
+  }
+
+  // ---- teach overlay: pause, compare what you gave vs the best way, then proceed ----
+  var teachKind = null, teachGiven = 0;
+  function renderPieceRow(el, pieces) {
+    el.innerHTML = '';
+    if (!pieces.length) { el.innerHTML = '<span class="tc-empty">No change</span>'; return; }
+    pieces.slice().sort(function (a,b){ return b - a; }).forEach(function (v, i) {
+      var chip = moneyChip(v);
+      chip.style.animationDelay = (i * 0.06) + 's';
+      el.appendChild(chip);
+    });
+  }
+  function showTeach(kind, given) {
+    resolved = true; teachKind = kind; teachGiven = given;
+    var yours = tray.slice();
+    var best = cur.exact ? [] : optimalSet(cur.change, tier.drawer);
+    var youCol = $('teachYouCol');
+
+    if (kind === 'extra') {
+      var extra = tray.length - cur.optimal, fee = extra * FEE_PER_PIECE;
+      $('teachLab').textContent = 'Fewest pieces';
+      $('teachTitle').textContent = 'Too many coins';
+      $('teachSub').textContent = 'Right amount — but ' + extra + (extra===1?' piece':' pieces') +
+        ' more than needed. Each extra piece costs a ' + money(FEE_PER_PIECE) + ' fee, so aim for the fewest.';
+      $('teachBestHead').textContent = 'Fewest way';
+      youCol.className = 'teach-col you';
+    } else {
+      var diff = given - cur.change;
+      $('teachLab').textContent = 'Let\'s check';
+      $('teachTitle').textContent = 'Not the right change';
+      $('teachSub').textContent = 'You handed back ' + money(given) + ' — that\'s ' +
+        money(Math.abs(diff)) + (diff > 0 ? ' too much' : ' too little') + '. The change due was ' + money(cur.change) + '.';
+      $('teachBestHead').textContent = 'Correct change · fewest';
+      youCol.className = 'teach-col you bad';
+    }
+
+    renderPieceRow($('teachYou'), yours);
+    renderPieceRow($('teachBest'), best);
+    $('teachYouAmt').textContent = money(given);
+    $('teachYouAmt').style.color = (kind === 'wrong') ? 'var(--red)' : '';
+    $('teachYouN').textContent = yours.length + (yours.length===1?' piece':' pieces');
+    $('teachBestAmt').textContent = money(cur.change);
+    $('teachBestN').textContent = best.length + (best.length===1?' piece':' pieces');
+
+    $('teachOverlay').classList.remove('hidden');
+    if (window.HSGSound) HSGSound.tick();
+  }
+  function teachProceed() {
+    $('teachOverlay').classList.add('hidden');
+    if (teachKind === 'extra') resolveExtra();
+    else resolveWrong();
+    teachKind = null;
+  }
+  function resolveExtra() {
+    var extra = Math.max(0, tray.length - cur.optimal), fee = extra * FEE_PER_PIECE;
+    combo = 0; prevMult = 1;
+    var gain = cur.total - fee;                 // sale completes, minus the coin fee; no tip
+    till += gain; salesTotal += cur.total; feesTotal += fee; servedOK++;
+    if (tier.hideChange) $('dispChange').textContent = money(cur.change);
+    var msg = $('dispMsg'); msg.textContent = extra + (extra===1?' EXTRA COIN — ':' EXTRA COINS — ') + money(fee) + ' FEE'; msg.className = 'scr-msg over';
+    floatFrom($('tillAmt'), (gain>=0?'+':'') + money(gain));
+    animateTill(till - gain, till); updateGoal(); renderStreak();
+    setTimeout(advance, 750);
+  }
+  function resolveWrong() {
+    combo = 0; prevMult = 1; lostCount++;
+    if (tier.hideChange) $('dispChange').textContent = money(cur.change);
+    var msg = $('dispMsg'); msg.textContent = 'WRONG CHANGE — LOST SALE'; msg.className = 'scr-msg over';
+    renderStreak();
+    setTimeout(advance, 750);
   }
 
   function advance() {
@@ -664,7 +830,7 @@
   // ---- day flow ----
   function startDay() {
     day = []; for (var i=0;i<CUSTOMERS_PER_DAY;i++) day.push(genCustomer());
-    custIdx = 0; till = 0; salesTotal = 0; tipsTotal = 0; feesTotal = 0; servedOK = 0; perfectCount = 0;
+    custIdx = 0; till = 0; salesTotal = 0; tipsTotal = 0; feesTotal = 0; servedOK = 0; perfectCount = 0; lostCount = 0;
     combo = 0; bestCombo = 0; prevMult = 1; goalHit = false; hintedDay = false; goalCents = tier.goal;
     $('startOverlay').classList.add('hidden'); $('endScreen').classList.add('hidden');
     $('goal').classList.remove('done'); $('goalAmt').textContent = money(goalCents); $('goalBar').style.width = '0%';
@@ -681,11 +847,21 @@
       '<div class="row"><span>Tips earned</span><span>+'+money(tipsTotal)+'</span></div>' +
       (feesTotal ? '<div class="row"><span>Coin fees</span><span>-'+money(feesTotal)+'</span></div>' : '') +
       '<div class="row"><span>Fewest-piece sales</span><span>'+perfectCount+' / '+servedOK+'</span></div>' +
+      (lostCount ? '<div class="row"><span>Lost sales</span><span>'+lostCount+'</span></div>' : '') +
       '<div class="row"><span>Best streak</span><span>×'+Math.min(5,1+Math.floor(bestCombo/2))+' ('+bestCombo+')</span></div>' +
       '<div class="row"><span><b>Day\'s takings</b></span><span><b>'+money(till)+'</b></span></div>';
     var stamp = $('endStamp');
     if (till >= goalCents) { stamp.className = 'e-stamp pass'; stamp.textContent = '✓ RENT PAID — ' + money(till - goalCents) + ' PROFIT'; }
     else { stamp.className = 'e-stamp miss'; stamp.textContent = '✗ ' + money(goalCents - till) + ' SHORT OF RENT'; }
+
+    var eb = $('expertBtn'), ab = $('againBtn');
+    if (tier.expert) {
+      eb.textContent = '← Back to Sales Tax'; eb.className = 'btn btn-outline';
+      ab.textContent = 'New Expert day'; ab.className = 'btn btn-gold';
+    } else {
+      eb.textContent = 'Unlock Expert →'; eb.className = 'btn btn-gold';
+      ab.textContent = 'New day'; ab.className = 'btn btn-outline';
+    }
 
     if (window.HSGSound) HSGSound.finish(till >= goalCents);
     if (till >= goalCents) confetti();
@@ -720,21 +896,48 @@
   function renderStartBoard() {
     if (window.HSGStreak) HSGStreak.renderBoardInto('#startBoard', { gameId:'register', level:tier.key, unit:'takings', minStreak:1 });
   }
+  function setTier(key) { tier = TIERS[key]; goalCents = tier.goal; }
+
   // the start card floats over the register; show a filled cash drawer behind it
   function showStart() {
     $('endScreen').classList.add('hidden'); $('startOverlay').classList.remove('hidden');
+    if (tier.expert) {
+      $('ovLab').textContent = 'Expert level';
+      $('ovTitle').textContent = 'Expert Register';
+      $('ovDesc').innerHTML = 'The <b>change due is hidden</b> — work it out from the total and what they hand you. ' +
+        'Watch for shoppers who <b>add a coin so you can give a clean bill back</b>, big-bill overpays, and coin-heavy change. ' +
+        'Fewest pieces still wins; extra coins still cost a fee.';
+      $('startBtn').textContent = 'Start Expert →';
+    } else {
+      $('ovLab').textContent = 'How to play';
+      $('ovTitle').textContent = 'Register';
+      $('ovDesc').innerHTML = 'Ring up each customer, then hand back their <b>exact change</b> using the ' +
+        '<b>fewest coins &amp; bills</b>. No clock — take your time and get it right, but every extra coin costs a fee. ' +
+        'Fill the till and clear the day\'s rent to win.';
+      $('startBtn').textContent = 'Play →';
+    }
     renderDrawer(); renderStartBoard();
   }
-  function overlayUp() { return !$('startOverlay').classList.contains('hidden') || !$('endScreen').classList.contains('hidden'); }
+  function overlayUp() {
+    return !$('startOverlay').classList.contains('hidden') ||
+           !$('endScreen').classList.contains('hidden') ||
+           !$('teachOverlay').classList.contains('hidden');
+  }
 
   // ---- wire up ----
   $('startBtn').addEventListener('click', startDay);
   $('againBtn').addEventListener('click', startDay);
+  $('expertBtn').addEventListener('click', function () { setTier(tier.expert ? 'tax' : 'expert'); showStart(); });
   $('giveBtn').addEventListener('click', giveChange);
   $('clearBtn').addEventListener('click', clearTray);
   $('hintBtn').addEventListener('click', useHint);
+  $('teachBtn').addEventListener('click', teachProceed);
   $('quitBtn').addEventListener('click', function () { if (window.confirm('End the day now and bank what\'s in the till?')) endDay(); });
   document.addEventListener('keydown', function (e) {
+    if (!$('teachOverlay').classList.contains('hidden')) {
+      if (e.key === 'Enter') { e.preventDefault(); teachProceed(); }
+      return;
+    }
     if (overlayUp()) return;
     if (e.key === 'Enter') { e.preventDefault(); giveChange(); }
     else if (e.key === 'Backspace') { e.preventDefault(); if (tray.length) removePiece(tray.length-1); }
