@@ -38,6 +38,7 @@
     .frac { display: inline-flex; flex-direction: column; align-items: center; line-height: 0.92; vertical-align: middle; font-size: 0.62em; }
     .frac .num { padding: 0 0.15em; }
     .frac .den { padding: 0 0.15em; border-top: 0.11em solid currentColor; }
+    .frac .stack { display: inline-flex; flex-direction: column; align-items: center; }
     .frac.neg { flex-direction: row; align-items: center; }
     .frac.neg .sign { font-size: 1.5em; margin-right: 0.06em; }
     .tr-value .mixnum { vertical-align: middle; margin-right: 0.14em; }
@@ -698,8 +699,9 @@ function renderValueCard(label){
     valueCard.innerHTML = '<span class="mixnum">'+(mm[1]?'–':'')+mm[2]+'</span>'
       + '<span class="frac"><span class="num">'+mm[3]+'</span><span class="den">'+mm[4]+'</span></span>';
   } else if(fm){
-    valueCard.innerHTML = (fm[1]?'<span class="frac neg"><span class="sign">–</span>':'<span class="frac">')
-      + '<span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span>';
+    valueCard.innerHTML = fm[1]
+      ? '<span class="frac neg"><span class="sign">–</span><span class="stack"><span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span></span>'
+      : '<span class="frac"><span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span>';
   } else {
     valueCard.textContent = label;
   }
