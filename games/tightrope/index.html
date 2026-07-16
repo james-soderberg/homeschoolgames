@@ -683,6 +683,7 @@ function quitToMenu(){
   running=false; state='menu'; if(rafId) cancelAnimationFrame(rafId);
   balanceBtn.classList.add('hidden'); overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
   ctx.clearRect(0,0,W,H); drawSky();
+  startIdle();   // re-animate the menu backdrop
 }
 
 // ---------- HUD + value card ----------
@@ -732,7 +733,7 @@ document.addEventListener('keydown', e=>{
 balanceBtn.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); commit(); });
 document.getElementById('quitBtn').addEventListener('click', quitToMenu);
 document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(tierKey); });
-document.getElementById('changeTierBtn').addEventListener('click', ()=>{ overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden'); });
+document.getElementById('changeTierBtn').addEventListener('click', ()=>{ overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden'); startIdle(); });
 
 // tier buttons
 const tierRow=document.getElementById('tierRow');
@@ -763,11 +764,17 @@ if (location.search.indexOf('shot') >= 0) { setTimeout(()=>startGame('medium'), 
 
 // idle backdrop behind the start overlay
 setupCanvas(); updateHud();
-(function idle(){ if(!running){ ctx.clearRect(0,0,W,H); drawSky(); drawCanyon(); drawPosts();
-  // a still rope with a resting walker
+// idle menu backdrop — single-owner loop so it restarts when we return to the menu
+let idleId = null;
+function idle(){
+  if(running){ idleId = null; return; }
+  ctx.clearRect(0,0,W,H); drawSky(); drawCanyon(); drawPosts();
   ctx.strokeStyle='#e9d9a8'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(ropeLeftX(),ropeBaseY());
   for(let x=ropeLeftX();x<=ropeRightX();x+=8) ctx.lineTo(x,ropeYAt(x)); ctx.stroke();
-  sceneT+=0.016; requestAnimationFrame(idle); } })();
+  sceneT+=0.016; idleId = requestAnimationFrame(idle);
+}
+function startIdle(){ if(idleId) cancelAnimationFrame(idleId); idleId = requestAnimationFrame(idle); }
+startIdle();
 </script>
 </body>
 </html>

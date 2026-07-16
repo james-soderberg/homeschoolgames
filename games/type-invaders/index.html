@@ -730,6 +730,7 @@ function bomberChanceNow(){ return Math.min(0.65, realm.bomberChance + (wave-1)*
 function maybeAdvanceWave(){
   // the wave isn't clear until the sky AND the ground are empty
   if (walkers.length>0) return;
+  if (bolts.length>0) return;   // let any in-flight plasma resolve before the next wave (no stray hit during the intro)
   if (isBossWave){
     if (toSpawn<=0 && aliens.length===0 && (!boss || boss.dead)) {
       if (boss && boss.dead) { boss = null; }

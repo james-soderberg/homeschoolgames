@@ -386,7 +386,7 @@ const DECK = [
 // ---------------- The route (Jules Verne's itinerary) ----------------
 // pct = position along the 0..100 circuit; glyph = a landmark for the port.
 const ROUTE = [
-  { name:"London",        pct:0,   glyph:"🇬🇧" },
+  { name:"London",        pct:0,   glyph:"🎩" },
   { name:"Suez",          pct:12,  glyph:"🏜️" },
   { name:"Bombay",        pct:25,  glyph:"🛕" },
   { name:"Calcutta",      pct:38,  glyph:"🐅" },
@@ -795,7 +795,7 @@ function answer(idx) {
   const isCorrect = (btn.dataset.val === current.country);
 
   document.getElementById('revealName').textContent =
-    current.flag + ' ' + current.country + ' · ' + current.continent;
+    current.country + ' · ' + current.continent;   // SVG flag is the hero; emoji flag rendered as letters on Windows
   // once answered, show the clue as a takeaway fact (and retire the hint button)
   document.getElementById('flagBlurb').hidden = false;
   document.getElementById('hintBtn').hidden = true;

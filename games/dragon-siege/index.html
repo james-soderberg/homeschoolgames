@@ -2593,6 +2593,7 @@ function quitToMenu(){
   pauseOverlay.classList.add('hidden');
   pauseBtn.classList.add('hidden');
   startOverlay.classList.remove('hidden');
+  startIdle();   // re-animate the menu backdrop
 }
 function endRun(showModal){
   // Defeat shows the inline placement + name entry on the defeat screen; a quiet
@@ -2655,6 +2656,7 @@ document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.H
 document.getElementById('changeRealmBtn').addEventListener('click', ()=>{
   arcade=false; pauseBtn.classList.add('hidden');
   overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
+  startIdle();   // re-animate the menu backdrop
 });
 
 // ---------- small canvas helpers ----------
@@ -2674,10 +2676,16 @@ fit = HSGFit.attach(canvas, bf, {
   }
 });
 updateHud();
-// idle backdrop behind the start overlay so it isn't a blank box
-(function idle(){
-  if (!running){ ctx.clearRect(0,0,W,H); drawBackground(sceneTime); drawCastle(sceneTime); drawTrebuchet(sceneTime); sceneTime+=0.016; requestAnimationFrame(idle); }
-})();
+// idle backdrop behind the start overlay so it isn't a blank box (single-owner
+// loop so it can be restarted whenever we return to the menu)
+let idleId = null;
+function idle(){
+  if (running){ idleId = null; return; }
+  ctx.clearRect(0,0,W,H); drawBackground(sceneTime); drawCastle(sceneTime); drawTrebuchet(sceneTime); sceneTime+=0.016;
+  idleId = requestAnimationFrame(idle);
+}
+function startIdle(){ if (idleId) cancelAnimationFrame(idleId); idleId = requestAnimationFrame(idle); }
+startIdle();
 </script>
 
 </body>
