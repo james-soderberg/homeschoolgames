@@ -135,6 +135,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
+<script src="../../assets/js/hunt.js"></script>
 <script>
 (function () {
   'use strict';
@@ -530,6 +531,7 @@
 
     roadDist += v * dt * DUNIT;
     distance += v * dt * 3.0;   // feet
+    if (window.HSGHunt) HSGHunt.reach('redline', distance);   // hunt: clear the "redline" trial at 3,000 ft
 
     // steering — glide toward the target lane
     var target = laneOff(player.lane);
