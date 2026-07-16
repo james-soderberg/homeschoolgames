@@ -6,7 +6,7 @@
 <title>Slingshot · HomeschoolGames</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
 <style>
-  .sl-page { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
+  .sl-page { max-width: min(1720px, 98vw); margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
   .sl-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:.6rem; }
   .sl-top h1 { margin:0; font-size:1.7rem; }
   .sl-top h1 .sub { display:block; font-family:var(--font-sans); font-size:.68rem; font-weight:700;
@@ -17,9 +17,19 @@
   .stat-badge.streak { background:#F3E7C6; border-color:var(--gold); color:#7A5C00; }
 
   /* the stage: a slice of space, fits the viewport */
-  .sl-stage { position:relative; width:100%; height:min(66vh,620px); min-height:360px;
+  .sl-stage { position:relative; width:100%; height:min(80vh,1040px); min-height:420px;
     border-radius:16px; overflow:hidden; border:2.5px solid #232a44;
     box-shadow:0 12px 34px rgba(8,10,25,.5); background:#070a17; touch-action:none; user-select:none; }
+
+  /* tutorial (auto-played demo of a level) — caption + close button over the stage */
+  .tut-cap { position:absolute; top:.7rem; left:50%; transform:translateX(-50%); z-index:11;
+    max-width:min(92%,620px); text-align:center; padding:.55rem 1rem; border-radius:12px;
+    background:rgba(9,12,26,.82); border:1.5px solid #33406e; color:#eaf0ff; backdrop-filter:blur(3px);
+    font-family:var(--font-sans); font-size:.95rem; font-weight:700; line-height:1.35; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+  .tut-close { position:absolute; top:.7rem; right:.7rem; z-index:11; cursor:pointer;
+    background:rgba(9,12,26,.82); color:#eaf0ff; border:1.5px solid #33406e; border-radius:99px;
+    padding:.4rem .85rem; font-family:var(--font-sans); font-weight:800; font-size:.82rem; }
+  .tut-close:hover { border-color:var(--gold); }
   #scene { position:absolute; inset:0; width:100%; height:100%; display:block; }
 
   /* voyage map (solar system progress) above the stage */
@@ -181,6 +191,8 @@
 
   <div class="sl-stage" id="stage">
     <canvas id="scene"></canvas>
+    <div class="tut-cap" id="tutCap" style="display:none"></div>
+    <button class="tut-close" id="tutClose" type="button" style="display:none">Close ✕</button>
 
     <!-- Start -->
     <div class="ov" id="startOverlay">
@@ -193,7 +205,10 @@
         <div class="ctl-row"><span class="ctl-keys">drag</span><span>Or drag from the pad to aim &amp; power</span></div>
       </div>
       <p class="learn-note">🌍 Every shot shows how gravity curves a moving object's path, the same slingshot trick real spacecraft use to cross the solar system.</p>
-      <button class="go-btn" id="beginBtn">Launch mission →</button>
+      <div class="overlay-actions">
+        <button class="go-btn" id="beginBtn">Launch mission →</button>
+        <button class="go-btn secondary" id="tutorialBtn">▶ Watch tutorial</button>
+      </div>
     </div>
 
     <!-- God mode: hidden level picker (type "godmode" to open) -->
@@ -283,6 +298,11 @@ const FLIGHT_RATE = 0.55; // play the flight back slower than real time (same pa
 // Everything plays inside a fixed design space; the canvas just scales it to fit,
 // so every baked level behaves identically on any screen.
 const DW = 960, DH = 600;
+// The level box (960x600) always fits, but we CAP the zoom so worlds keep a
+// constant on-screen size instead of ballooning on big monitors. The leftover
+// stage area then shows the surrounding space, so you can watch a probe swing
+// far out and loop back. On small screens the cap never binds — it fits as before.
+const SCALE_CAP = 1.05;
 
 const DIFF = {
   cadet:     { label:'Cadet',     predict:360, probes:20, scoreMult:1 },
@@ -368,7 +388,8 @@ const streakBadge = document.getElementById('streakBadge');
 
 // ---------- state ----------
 let W = DW, H = DH, dpr = 1, view = { scale: 1, ox: 0, oy: 0 };
-let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo
+let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo | tutorial
+let tutT = 0, tutAcc = 0, tutLaunched = false, tutDone = false, tutReplay = null;   // auto-played tutorial
 let diffKey = 'commander', diff = DIFF.commander;   // single fixed difficulty
 let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = 'None';
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
@@ -397,9 +418,22 @@ function setupCanvas() {
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const scale = Math.min(W / DW, H / DH);
-  view = { scale, ox: (W - DW * scale) / 2, oy: (H - DH * scale) / 2 };
+  const scale = Math.min(W / DW, H / DH, SCALE_CAP);   // cap so worlds don't grow on big screens
+  view = { scale, ox: (W - DW * scale) / 2, oy: (H - DH * scale) / 2 };   // level box centred; margin = extra space
   buildStars();
+}
+// The world region currently visible on screen, in design-space units, padded a
+// little. A probe is only "lost in space" once it leaves THIS — so on a big
+// screen it can roam as far as the screen shows before dying. Never smaller than
+// the original ±0.28·DW envelope, so smaller screens play exactly as before.
+function flightBounds() {
+  const slack = 40, m = DW * 0.28;
+  return {
+    minX: Math.min(-m, -view.ox / view.scale - slack),
+    maxX: Math.max(DW + m, (W - view.ox) / view.scale + slack),
+    minY: Math.min(-m, -view.oy / view.scale - slack),
+    maxY: Math.max(DH + m, (H - view.oy) / view.scale + slack),
+  };
 }
 window.addEventListener('resize', () => { setupCanvas(); renderVoyage(); if (phase === 'menu' || phase === 'over') render(); });
 window.addEventListener('load', setupCanvas);
@@ -426,7 +460,7 @@ function accel(x, y, list) {
 function simulate(x, y, vx, vy, steps, list) {
   const h = FIXED_H, pts = [];
   let px = x, py = y, pvx = vx, pvy = vy;
-  const bnd = DW * 0.28;
+  const b0 = flightBounds();
   for (let i = 0; i < steps; i++) {
     const [axx, ayy] = accel(px, py, list);
     pvx += axx * h; pvy += ayy * h; px += pvx * h; py += pvy * h;
@@ -438,7 +472,7 @@ function simulate(x, y, vx, vy, steps, list) {
         return { pts, outcome: b.role === 'target' ? 'hit' : 'crash', end: { x: px, y: py } };
       }
     }
-    if (px < -bnd || px > DW + bnd || py < -bnd || py > DH + bnd) { pts.push({ x: px, y: py }); return { pts, outcome: 'escape', end: { x: px, y: py } }; }
+    if (px < b0.minX || px > b0.maxX || py < b0.minY || py > b0.maxY) { pts.push({ x: px, y: py }); return { pts, outcome: 'escape', end: { x: px, y: py } }; }
   }
   return { pts, outcome: 'open', end: { x: px, y: py } };
 }
@@ -498,7 +532,7 @@ function solveLevel() {
   const list = allBodies();
   const STEPS = Math.ceil(MAX_FLIGHT / FIXED_H) + 2;   // match the in-flight time limit
   const cappedMax = lerp(SPEED_MIN, SPEED_MAX, levelVmax);
-  const tp = target._p, h = FIXED_H, bnd = DW * 0.28;
+  const tp = target._p, h = FIXED_H, b0 = flightBounds();
   // simulate one shot; return whether it hit and its closest approach to the target
   function trial(angle, power) {
     const spd = lerp(SPEED_MIN, cappedMax, clamp01(power));
@@ -512,7 +546,7 @@ function solveLevel() {
         const p = b._p, rr = b.r + PROBE_R, thr = b.role === 'target' ? rr + 5 : rr;
         if (dist2(px, py, p.x, p.y) < thr * thr) return { hit: b.role === 'target', dmin: b.role === 'target' ? 0 : dmin };
       }
-      if (px < -bnd || px > DW + bnd || py < -bnd || py > DH + bnd) return { hit: false, dmin };
+      if (px < b0.minX || px > b0.maxX || py < b0.minY || py > b0.maxY) return { hit: false, dmin };
     }
     return { hit: false, dmin };
   }
@@ -556,6 +590,75 @@ function showSolution() {
   toast('Route shown — press Launch to fly it 🚀');
 }
 
+// ---------- tutorial: auto-play a real solved run of level 15 as an animation ----------
+const TUT_LEVEL = 15;
+function setTutCap(msg) { const el = document.getElementById('tutCap'); el.textContent = msg; el.style.display = ''; }
+function playTutorial() {
+  if (tutReplay) { clearTimeout(tutReplay); tutReplay = null; }
+  startOverlay.classList.add('hidden');
+  const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
+  setupCanvas();
+  level = TUT_LEVEL; genLevel(TUT_LEVEL);
+  const sol = solveLevel();
+  if (!sol) { toMenu(); return; }               // shouldn't happen — every level is solvable
+  aim.angle = sol.angle; aim.power = sol.power;
+  refreshBodyPositions();
+  const v = aimVelocity();
+  solutionPath = simulate(pad.x, pad.y, v.vx, v.vy, Math.ceil(MAX_FLIGHT / FIXED_H) + 2, allBodies()).pts;
+  probe = { x: pad.x, y: pad.y, vx: v.vx, vy: v.vy, ang: aim.angle, bent: 0 };
+  trail = [{ x: pad.x, y: pad.y }];
+  tutT = 0; tutAcc = 0; tutLaunched = false; tutDone = false;
+  phase = 'tutorial';
+  objBadge.textContent = 'Tutorial · reach ' + targetInfo.name;
+  setTutCap('Level ' + TUT_LEVEL + ' — reach ' + targetInfo.name + '. The dotted line is the planned route; gravity will curve the probe along it.');
+  document.getElementById('tutClose').style.display = '';
+  if (!rafId) rafId = requestAnimationFrame(loop);
+}
+function tutArrive(missed) {
+  tutDone = true;
+  if (!missed) {
+    flashG = 0.4; shake = 6;
+    for (let i = 0; i < 26; i++) spawnParticle(target._p.x, target._p.y, rand(-160, 160), rand(-160, 160), rand(.4, .9), i % 2 ? target.c1 : '#ffe6a0', rand(2, 4));
+    if (window.HSGSound) HSGSound.correct();
+    if (window.HSGfx) HSGfx.confetti({ count: 28 });
+    setTutCap('🎉 Arrived at ' + targetInfo.name + '! Gravity did the steering — that\'s a slingshot. Replaying…');
+  }
+  tutReplay = setTimeout(() => { if (phase === 'tutorial') playTutorial(); }, 2600);
+}
+function stepTutorial(dt) {
+  tutT += dt;
+  if (!tutLaunched) {                            // sit on the pad a beat so the route is readable
+    if (tutT >= 1.5) { tutLaunched = true; if (window.HSGSound) HSGSound.laser(); shake = 5; flashG = 0.12;
+      setTutCap('Watch the path bend as it swings past each planet — every curve is a gravity assist.'); }
+    return;
+  }
+  if (tutDone) return;
+  tutAcc += dt * FLIGHT_RATE;
+  const list = allBodies(), b0 = flightBounds();
+  let n = 0;
+  while (tutAcc >= FIXED_H && !tutDone && n < 600) {
+    tutAcc -= FIXED_H; n++;
+    refreshBodyPositions();
+    const [ax, ay] = accel(probe.x, probe.y, list);
+    probe.vx += ax * FIXED_H; probe.vy += ay * FIXED_H;
+    probe.x += probe.vx * FIXED_H; probe.y += probe.vy * FIXED_H;
+    probe.ang = Math.atan2(probe.vy, probe.vx);
+    const tp = target._p, rr = target.r + PROBE_R + 5;
+    if (dist2(probe.x, probe.y, tp.x, tp.y) < rr * rr) { tutArrive(false); break; }
+    if (probe.x < b0.minX || probe.x > b0.maxX || probe.y < b0.minY || probe.y > b0.maxY) { tutArrive(true); break; }
+  }
+  if (!tutDone) { trail.push({ x: probe.x, y: probe.y }); if (trail.length > TRAIL_MAX) trail.shift(); }
+}
+function closeTutorial() {
+  if (tutReplay) { clearTimeout(tutReplay); tutReplay = null; }
+  phase = 'menu';
+  document.getElementById('tutCap').style.display = 'none';
+  document.getElementById('tutClose').style.display = 'none';
+  solutionPath = null; probe = null; trail = [];
+  startOverlay.classList.remove('hidden');
+  render();
+}
+
 // ---------- launch / flight ----------
 function launch() {
   if (phase !== 'aim') return;
@@ -582,8 +685,8 @@ function stepFlight(h) {
       return;
     }
   }
-  const bnd = DW * 0.28;
-  if (probe.x < -bnd || probe.x > DW + bnd || probe.y < -bnd || probe.y > DH + bnd) { crash('Lost in space!'); return; }
+  const b0 = flightBounds();
+  if (probe.x < b0.minX || probe.x > b0.maxX || probe.y < b0.minY || probe.y > b0.maxY) { crash('Lost in space!'); return; }
   flightT += h;
   if (flightT > MAX_FLIGHT) { crash('Ran low on time!'); return; }
 }
@@ -725,10 +828,17 @@ function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch
 function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
 
 // ---------- lifecycle ----------
+function endTutorialUI() {   // tear down any active/pending tutorial before another mode starts
+  if (tutReplay) { clearTimeout(tutReplay); tutReplay = null; }
+  tutDone = true;
+  document.getElementById('tutCap').style.display = 'none';
+  document.getElementById('tutClose').style.display = 'none';
+}
 function startGame(key, startLevel) {
+  endTutorialUI();
   diffKey = key; diff = DIFF[key] || DIFF.pilot;
   level = startLevel || 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = 'None';
-  particles = []; pendingScore = null;
+  particles = []; pendingScore = null; solutionPath = null;
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
   setupCanvas(); genLevel(level); phase = 'aim'; updateHud();
@@ -740,7 +850,8 @@ function retryLevel() {
   recomputePredict();
 }
 function toMenu() {
-  phase = 'menu'; probe = null; predicted = null; level = 1;
+  endTutorialUI();
+  phase = 'menu'; probe = null; predicted = null; solutionPath = null; level = 1;
   overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
   renderVoyage();
@@ -904,7 +1015,8 @@ function drawScene() {
   for (const b of bodies) drawPlanet(b);
   if (target) drawTarget(sceneTime);
   if (pad) drawPad();
-  if (phase === 'aim') { drawSolution(); drawPredict(); }
+  if (phase === 'aim' || phase === 'tutorial') drawSolution();
+  if (phase === 'aim') drawPredict();
   drawProbe();
   drawParticles();
 }
@@ -957,6 +1069,7 @@ function loop(ts) {
     }
   }
   if (phase === 'demo') stepDemo(dt);
+  if (phase === 'tutorial') stepTutorial(dt);
   render();
 }
 
@@ -1002,6 +1115,8 @@ document.addEventListener('keydown', e => {
 
 // ---------- wiring ----------
 document.getElementById('beginBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame('commander'); });
+document.getElementById('tutorialBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); playTutorial(); });
+document.getElementById('tutClose').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); closeTutorial(); });
 document.getElementById('launchBtn').addEventListener('click', (e) => { e.stopPropagation(); launch(); });
 document.getElementById('onwardBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); onward(); });
 document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(diffKey); });
