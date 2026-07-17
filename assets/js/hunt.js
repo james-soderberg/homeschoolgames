@@ -28,20 +28,20 @@
   // goal    → value that must be reached inside the game
   // trial   → plain-English goal shown in the journal (must NOT reveal `word`)
   var STEPS = [
-    { word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 15,
+    { token: 'v7k2m9', word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 15,
       accept: ['secret', 'secrets'],
       riddle: 'This one magic whisper we kept.',
       hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Hard or Solomon level difficulty).",
       trial: 'Slip past a score of 15 without falling.' },
 
-    { word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 15,
+    { token: 'q4x8pt', word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 15,
       accept: ['independence'], mono: true,
       riddle: 'F I R N E D E E D P O E M N R D I E N N G C S E',
       hint: 'No hint here — but one is hidden. Slither to a length of 35 or better in Letter Snake (any level), and its game-over screen will reveal the trick.',
       trial: 'Then hold the capital to Wave 15 in the arcade.' },
 
     // PLACEHOLDER — revealed when the arcade trial is cleared; real clue lands soon.
-    { placeholder: true, word: '__soon__', open: 'index.html', game: 'todo', goal: 1,
+    { token: 'z3n6wd', placeholder: true, word: '__soon__', open: 'index.html', game: 'todo', goal: 1,
       accept: ['__soon__'],
       riddle: 'The capital holds and the saucers scatter — but the next stretch of the trail is still being carved…',
       hint: 'This clue is a placeholder. The real one arrives soon, hunter.',
@@ -123,11 +123,17 @@
     for (var i = 0; i < STEPS.length; i++) if (STEPS[i].game === game) return i + 1;
     return 0;
   }
+  // Clue URLs use an opaque per-clue token (?c=<token>) so nobody can guess/skip
+  // ahead by incrementing a number. Unknown/absent token → the first clue.
+  function tokenFor(i)        { return (STEPS[i] && STEPS[i].token) || ''; }
+  function indexForToken(tok) { for (var i = 0; i < STEPS.length; i++) if (STEPS[i].token === tok) return i; return -1; }
+  function nextTokenAfter(game) { return tokenFor(nextIndexAfter(game)); }
 
   window.HSGHunt = {
     STEPS: STEPS, TREASURE: TREASURE,
     step: step, done: done, current: current, reach: reach,
     setStep: function (n) { setStep(n); }, nextIndexAfter: nextIndexAfter,
+    tokenFor: tokenFor, indexForToken: indexForToken, nextTokenAfter: nextTokenAfter,
     reset: function () { setStep(0); },
     // word -> url map for the home-page code listener
     codes: STEPS.map(function (s) { return { code: s.word, url: s.open }; })

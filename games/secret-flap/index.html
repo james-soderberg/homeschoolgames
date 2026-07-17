@@ -274,8 +274,8 @@ function triggerWin() {
 function finishWin() {
   if (finishedWin) return; finishedWin = true;
   if (rafId) cancelAnimationFrame(rafId);
-  // hand off straight to the next clue's URL (the hunt is URL-driven, not saved)
-  var c = (window.HSGHunt && HSGHunt.nextIndexAfter) ? HSGHunt.nextIndexAfter('flappy') : 1;
+  // hand off straight to the next clue's opaque-token URL (URL-driven, not saved)
+  var c = (window.HSGHunt && HSGHunt.nextTokenAfter) ? HSGHunt.nextTokenAfter('flappy') : '';
   location.href = '../treasure-hunt/index.html?c=' + c;
 }
 
