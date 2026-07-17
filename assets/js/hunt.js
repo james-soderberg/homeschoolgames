@@ -31,7 +31,7 @@
     { word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 25,
       accept: ['secret', 'secrets'],
       riddle: 'This one magic whisper we kept.',
-      hint: 'Ignore the words, notice the letters.',
+      hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Solomon level difficulty).",
       trial: 'Slip past a score of 25 without falling.' },
 
     { word: 'redline', open: 'games/redline/index.html', game: 'redline', goal: 3000,
