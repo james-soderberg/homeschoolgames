@@ -27,6 +27,10 @@
     .riddle { font-family:var(--font-serif); font-style:italic; font-size:clamp(1.7rem,5.5vw,2.5rem); line-height:1.4;
       color:#f0e6cf; margin:0 auto 2.2rem; max-width:22ch; }
     .riddle .q { color:var(--gold); font-style:normal; }
+    /* cipher clues: keep the runes on a single line, shrunk (via JS) to fit the screen */
+    .riddle.mono { display:inline-block; font-family:"SFMono-Regular",ui-monospace,Menlo,Consolas,monospace;
+      font-style:normal; white-space:nowrap; max-width:100%; overflow:hidden; color:var(--gold-lt);
+      font-size:1.4rem; letter-spacing:.02em; text-shadow:0 0 18px rgba(231,201,121,.25); }
 
     /* answer box */
     .answer { display:flex; gap:.5rem; max-width:400px; margin:0 auto; }
@@ -88,6 +92,9 @@
   var $ = function (id) { return document.getElementById(id); };
   var H = window.HSGHunt;
   var N = H.STEPS.length;
+  // dev shortcut: ?step=N jumps the journal straight to a given clue (0-based)
+  try { var _s = new URLSearchParams(location.search).get('step');
+    if (_s !== null) localStorage.setItem('hsg_hunt_step', String(parseInt(_s, 10) || 0)); } catch (e) {}
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
@@ -116,7 +123,9 @@
     }
     $('content').innerHTML =
       '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
-      '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>' +
+      (s.mono
+        ? '<p class="riddle mono">' + esc(s.riddle) + '</p>'
+        : '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>') +
       '<form class="answer" id="ansForm" autocomplete="off">' +
         '<input id="ansInput" type="text" placeholder="the hidden word…" autocorrect="off" spellcheck="false" aria-label="Your answer">' +
         '<button type="submit">Speak it</button>' +
@@ -144,7 +153,18 @@
       this.textContent = $('hintText').classList.contains('show') ? 'Hide hint' : 'Stuck? Reveal a hint';
     });
     setTimeout(function () { try { input.focus(); } catch (e) {} }, 40);
+    if (s.mono) fitMono();
   }
+
+  // shrink a one-line cipher clue until every rune fits the viewport width
+  function fitMono() {
+    var m = document.querySelector('.riddle.mono'); if (!m) return;
+    var vw = document.documentElement.clientWidth || window.innerWidth || 360;
+    var avail = Math.min(vw - 28, 520);
+    var size = 26; m.style.fontSize = size + 'px';
+    while (m.scrollWidth > avail && size > 7) { size -= 1; m.style.fontSize = size + 'px'; }
+  }
+  window.addEventListener('resize', function () { if (document.querySelector('.riddle.mono')) fitMono(); });
 
   function renderTreasure() {
     $('content').innerHTML =

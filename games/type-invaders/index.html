@@ -196,6 +196,14 @@
     /* reduced motion: calm the zooming wave banner (shake/flash handled in JS) */
     body.reduce-motion .wave-flash.show { animation: waveFlashRM 1.4s ease forwards; }
     @keyframes waveFlashRM { 0%{opacity:0} 15%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
+
+    /* treasure-hunt victory veil — fades in as the stage erupts, then we cut to the clue */
+    .hunt-win-veil { position:absolute; inset:0; z-index:60; pointer-events:none; display:flex;
+      align-items:center; justify-content:center; opacity:0; transition:opacity .8s ease;
+      background:radial-gradient(circle at 50% 45%, rgba(70,50,16,0), rgba(6,5,3,0));
+      font-family:"Cormorant Garamond",Georgia,serif; color:#e7c979; font-weight:700; font-style:italic;
+      font-size:clamp(20px,5vw,34px); text-shadow:0 3px 22px rgba(0,0,0,.85); }
+    .hunt-win-veil.show { opacity:1; background:radial-gradient(circle at 50% 45%, rgba(70,50,16,.5), rgba(6,5,3,.97)); }
   </style>
 </head>
 <body>
@@ -271,6 +279,9 @@
         <button class="play-btn secondary" id="changeRealmBtn">Change Difficulty</button>
       </div>
     </div>
+
+    <!-- treasure-hunt victory veil: fades over the erupting stage, then we sail to the clue -->
+    <div class="hunt-win-veil" id="huntWinVeil"><span>A clue surfaces…</span></div>
 
     <input class="type-catcher" id="catcher" type="text" autocomplete="off"
            autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="latin" aria-hidden="true">
@@ -432,6 +443,7 @@ const overOverlay = document.getElementById('overOverlay');
 const pauseOverlay= document.getElementById('pauseOverlay');
 const pauseBtn    = document.getElementById('pauseBtn');
 const waveFlash   = document.getElementById('waveFlash');
+const huntWinVeil = document.getElementById('huntWinVeil');
 
 let W = 800, H = 600, dpr = 1, canvasReady = false;
 function setupCanvas() {
@@ -507,6 +519,7 @@ let arcade = false, arcadeFireT = 0, aimKeys = { left:false, right:false, up:fal
 const HUNT_ARCADE_REALM = 'easy';   // arcade already amplifies difficulty; easy realm keeps it doable
 const HUNT_GOAL_WAVE = 8;           // hard-but-doable — tune here
 let huntMode = false, huntCluePopped = false;
+let huntWinning = false, huntWinT = 0, huntBoomT = 0;   // the wave-8 eruption → clue-page sequence
 
 // ---------- Geometry: the White House sits centred at the base ----------
 function whW(){ return clamp(W * 0.26, 150, 280); }
@@ -820,7 +833,7 @@ function startWave(n){
   isBossWave = (n % BOSS_EVERY === 0);
   boss = null;
   document.getElementById('waveBadge').textContent = '🛸 Wave ' + n;
-  if (huntMode && n >= HUNT_GOAL_WAVE && !huntCluePopped) revealHuntClue();   // trial cleared
+  if (huntMode && n >= HUNT_GOAL_WAVE && !huntCluePopped){ revealHuntClue(); return; }   // trial cleared — erupt instead of starting the wave
 
   if (isBossWave){
     toSpawn = Math.min(3, 1 + Math.floor(n/BOSS_EVERY));   // a couple of escorts, then the boss
@@ -1936,6 +1949,17 @@ function tick(ts){
   if (shieldT>0) shieldT -= dt;
   if (slowT>0) slowT -= dt;
 
+  if (huntWinning){                          // wave-8 eruption → clue page
+    huntWinT += dt; huntBoomT -= dt;
+    if (huntBoomT <= 0 && huntWinT < 1.5){ huntBoomT = 0.08; explosion(rand(0,W), rand(0, H*0.82), Math.random()<0.5, rand(0,60)); }
+    updateParticles(dt);
+    draw(sceneTime);
+    if (huntWinT > 1.15 && huntWinVeil) huntWinVeil.classList.add('show');
+    if (huntWinT >= 2.2) finishHuntWin();
+    rafId = requestAnimationFrame(tick);
+    return;
+  }
+
   if (arcade) updateArcade(dt);
   updateHeliSpawns(dt);
   updateSpawns(dt);
@@ -2045,14 +2069,30 @@ function startHuntArcade(){
   flashWave('🗝 REACH WAVE ' + HUNT_GOAL_WAVE, 'Aim with ← → — the cannon fires itself!');
   if (window.HSGSound) HSGSound.powerup();
 }
-// reached the goal wave — advance the site-wide hunt and pop the clue window
+// reached the goal wave — the capital erupts, then we sail to the clue page
 function revealHuntClue(){
   huntCluePopped = true;
-  flashWave('🗝 CLUE UNLOCKED', 'Wave ' + HUNT_GOAL_WAVE + ' held — the next clue appears!');
-  var popped = null;
-  try { if (window.HSGHunt) popped = HSGHunt.reach('typeinvaders', wave); } catch(e){}
+  huntWinning = true; huntWinT = 0; huntBoomT = 0;
+  flashWave('🗝 CLUE UNLOCKED', 'Wave ' + HUNT_GOAL_WAVE + ' held — the capital is saved!');
+  // blow every invader on screen sky-high
+  for (const o of allTargets()) explosion(o.x, o.y, true, rand(0, 60));
+  for (const w of walkers) explosion(w.x, w.y, false, rand(0, 60));
+  explosion(W * 0.5, H * 0.5, true, 45);
+  flashWhite = 1; shake = Math.max(shake, 22);
   if (window.HSGSound && HSGSound.powerup) HSGSound.powerup();
-  if (window.HSGfx && HSGfx.flash) HSGfx.flash('rgba(255,231,150,0.6)');
+  if (window.HSGfx && HSGfx.flash) HSGfx.flash('rgba(255,231,150,0.7)');
+}
+function finishHuntWin(){
+  if (!huntWinning) return;
+  huntWinning = false; running = false; if (rafId) cancelAnimationFrame(rafId);
+  // mark the arcade trial cleared no matter how the player arrived, then open the clue page
+  try {
+    if (window.HSGHunt){
+      const idx = HSGHunt.STEPS.findIndex(s => s.game === 'typeinvaders');
+      if (idx >= 0) HSGHunt.setStep(Math.max(HSGHunt.step(), idx + 1));
+    }
+  } catch(e){}
+  location.href = '../treasure-hunt/index.html';
 }
 function quitToMenu(){
   if (running && !gameLost && !arcade) endRun(false);   // bank the run (arcade never scores)

@@ -35,8 +35,8 @@
       trial: 'Slip past a score of 15 without falling.' },
 
     { word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 8,
-      accept: ['independence'],
-      riddle: 'A line of runes is carved into the monument: F I R N E D E E D P O E M N R D I E N N G C S E',
+      accept: ['independence'], mono: true,
+      riddle: 'F I R N E D E E D P O E M N R D I E N N G C S E',
       hint: 'Keep only the letters on the even beat — the 2nd, the 4th, the 6th, and so on — and discard the rest. What remains is a young nation’s founding cry. Speak it.',
       trial: 'Then hold the capital to Wave 8 in the arcade.' },
 
@@ -120,6 +120,7 @@
   window.HSGHunt = {
     STEPS: STEPS, TREASURE: TREASURE,
     step: step, done: done, current: current, reach: reach,
+    setStep: function (n) { setStep(n); },
     reset: function () { setStep(0); },
     // word -> url map for the home-page code listener
     codes: STEPS.map(function (s) { return { code: s.word, url: s.open }; })
