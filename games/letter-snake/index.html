@@ -130,6 +130,21 @@
       backdrop-filter: blur(2px); color: #fdf7ec;
     }
     .bf-overlay.hidden { display: none; }
+    /* treasure-hunt easter-egg clue on the game-over card (revealed at length 35+) */
+    .ls-hunt-clue { width: 100%; max-width: 430px; margin: 0.6rem auto 1.1rem; padding: 1.15rem 1.3rem;
+      text-align: center; background: rgba(255,209,102,0.18); border: 3px solid #e7c979; border-radius: 16px;
+      box-shadow: 0 0 22px 3px rgba(231,201,121,0.4), 0 8px 26px rgba(0,0,0,0.4);
+      animation: lsHuntPulse 1.7s ease-in-out infinite; }
+    .ls-hunt-clue.hidden { display: none; }
+    .ls-hunt-clue .lshc-tag { font-size: 0.9rem; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase;
+      color: #ffe08a; margin-bottom: 0.55rem; }
+    .ls-hunt-clue .lshc-body { font-family: var(--font-serif), Georgia, serif; font-style: italic; font-weight: 600;
+      font-size: 1.42rem; color: #fff3d6; line-height: 1.45; }
+    @keyframes lsHuntPulse {
+      0%,100% { box-shadow: 0 0 10px 1px rgba(231,201,121,0.25), 0 8px 26px rgba(0,0,0,0.4); border-color: #cfae5e; }
+      50%     { box-shadow: 0 0 28px 7px rgba(231,201,121,0.65), 0 8px 26px rgba(0,0,0,0.4); border-color: #ffe89f; }
+    }
+    @media (prefers-reduced-motion: reduce) { .ls-hunt-clue { animation: none; } }
     .bf-overlay h2 { font-family: var(--font-serif); color:#fff; font-size: 2rem; margin: 0 0 0.3rem; }
     .bf-overlay p { color:#e7ddcf; margin: 0 0 1.2rem; max-width: 34ch; line-height: 1.5; }
     .bf-overlay .crest { font-size: 2.8rem; margin-bottom: 0.35rem; }
@@ -200,6 +215,10 @@
       <h2 id="endTitle">Game Over</h2>
       <div class="end-size" id="endSize">3</div>
       <div class="end-size-label">Final snake length</div>
+      <div class="ls-hunt-clue hidden" id="lsHuntClue">
+        <div class="lshc-tag">🗝 Treasure Hunt Clue</div>
+        <div class="lshc-body">For the treasure hunter: only every other letter matters. Ignore the first one.</div>
+      </div>
       <div class="end-word">
         <span class="end-word-label">The word was</span>
         <span class="end-word-text" id="endWord">—</span>
@@ -208,10 +227,6 @@
       <div class="end-row">
         <div class="es"><b id="endWords">0</b><span>Words</span></div>
         <div class="es"><b id="endBest">0</b><span>Longest ever</span></div>
-      </div>
-      <div class="hidden" id="lsHuntClue" style="width:100%;max-width:320px;margin:0 auto 0.85rem;padding:0.7rem 0.9rem;text-align:center;background:rgba(255,217,138,0.08);border:1.5px solid rgba(255,217,138,0.5);border-radius:12px;">
-        <div style="font-size:0.62rem;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#e7c979;margin-bottom:0.32rem;">🗝 Treasure Hunt</div>
-        <div style="font-family:var(--font-serif,Georgia),serif;font-style:italic;font-size:1.02rem;color:#ffe9b8;line-height:1.4;">For the treasure hunter: only every other letter matters. Ignore the first one.</div>
       </div>
       <div class="hsg-board" id="lsBoard" style="text-align:left;margin:0 auto 0.85rem;max-width:320px;background:rgba(255,253,244,0.96);border-radius:12px;padding:0.5rem 0.7rem"></div>
       <div class="end-actions">
