@@ -1,4 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<rect width="64" height="64" rx="14" fill="#C4A040"/>
-<text x="32" y="43" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="30" fill="#F7F3EC" text-anchor="middle">HG</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="HomeschoolGames">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#D8B863"/>
+      <stop offset="1" stop-color="#B58C2C"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#tile)"/>
+  <rect x="1.5" y="1.5" width="61" height="61" rx="12.5" fill="none" stroke="#ffffff" stroke-opacity="0.18" stroke-width="1.5"/>
+  <!-- game controller: instantly says "games", reads at 16px -->
+  <rect x="9" y="21" width="46" height="26" rx="13" fill="#F7F3EC"/>
+  <rect x="9" y="21" width="46" height="10" rx="10" fill="#ffffff" opacity="0.45"/>
+  <!-- D-pad -->
+  <g fill="#1A1714">
+    <rect x="18" y="27" width="6" height="14" rx="1.6"/>
+    <rect x="14" y="31" width="14" height="6" rx="1.6"/>
+  </g>
+  <!-- action buttons (A/B in the brand's red + green) -->
+  <circle cx="44" cy="30" r="4" fill="#8B2020"/>
+  <circle cx="49.5" cy="37.5" r="4" fill="#2A5C3F"/>
 </svg>
