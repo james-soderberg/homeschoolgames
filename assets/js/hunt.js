@@ -31,7 +31,7 @@
     { word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 25,
       accept: ['secret', 'secrets'],
       riddle: 'This one magic whisper we kept.',
-      hint: 'It hides in plain sight — read the last letter of every word.',
+      hint: 'Ignore the words, notice the letters.',
       trial: 'Slip past a score of 25 without falling.' },
 
     { word: 'redline', open: 'games/redline/index.html', game: 'redline', goal: 3000,
