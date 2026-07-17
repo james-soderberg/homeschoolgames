@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="canonical" href="https://homeschoolgames.org/games/word-racer/">
   <meta property="og:url" content="https://homeschoolgames.org/games/word-racer/">
-  <meta name="description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers — sharpen keyboarding skills in your browser.">
+  <meta name="description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#C4A040">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -16,16 +16,16 @@
   <meta property="og:site_name" content="HomeschoolGames">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Word Racer">
-  <meta property="og:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers — sharpen keyboarding skills in your browser.">
+  <meta property="og:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.">
   <meta property="og:image" content="https://homeschoolgames.org/assets/img/og/word-racer.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Word Racer — free typing game">
+  <meta property="og:image:alt" content="Word Racer - free typing game">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Word Racer">
-  <meta name="twitter:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers — sharpen keyboarding skills in your browser.">
+  <meta name="twitter:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.">
   <meta name="twitter:image" content="https://homeschoolgames.org/assets/img/og/word-racer.jpg">
-  <title>Word Racer — Free Typing Speed Game | HomeschoolGames</title>
+  <title>Word Racer - Free Typing Speed Game | HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -208,7 +208,7 @@
         "@type": "VideoGame",
         "name": "Word Racer",
         "url": "https://homeschoolgames.org/games/word-racer/",
-        "description": "Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers — sharpen keyboarding skills in your browser.",
+        "description": "Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.",
         "image": "https://homeschoolgames.org/assets/img/og/word-racer.jpg",
         "genre": "Typing",
         "gamePlatform": "Web browser",
@@ -316,7 +316,7 @@
 
 <div class="measure" id="measure"></div>
 
-<footer class="site-footer"><a href="../../index.html">homeschoolgames.app</a></footer>
+<footer class="site-footer"><a href="../../index.html">homeschoolgames.org</a></footer>
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
@@ -831,7 +831,7 @@ function tsFeed(ch){
 // Lift a clone of the player's car (same size and look) out of the clipped arena
 // so it can travel across the whole page.
 function tsSetup(){
-  // NOTE: the race keeps running — the rivals go on lapping in their normal
+  // NOTE: the race keeps running - the rivals go on lapping in their normal
   // pattern while your car peels off onto the secret road.
   tsActive = true;
   const r = pcar.getBoundingClientRect();
@@ -867,7 +867,7 @@ function tsBoom(){
   const s = tsEl(), car = document.getElementById('tsCar');
   if (car) car.style.left = '48%';        // slam into the gate
   setTimeout(() => { s.classList.add('boom'); if (window.HSGSound && HSGSound.boom) HSGSound.boom(); }, 280);
-  setTimeout(() => { location.href = '../redline/index.html'; }, 1500);   // enter the desmond game
+  setTimeout(() => { location.href = '../redline/index.html?hunt'; }, 1500);   // enter the desmond game in treasure-hunt mode
 }
 window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
 document.addEventListener('keydown', onKeyDown);

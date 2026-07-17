@@ -2,7 +2,7 @@
 User-agent: *
 Allow: /
 
-# Secret / work-in-progress pages — keep out of the index
+# Secret / work-in-progress pages - keep out of the index
 Disallow: /games/redline/
 Disallow: /games/secret-flap/
 Disallow: /games/treasure-hunt/

@@ -34,10 +34,10 @@
     .rl-header .site-logo { color:#e7ecff; } .rl-header .site-logo span { color:#35e0ff; }
     .rl-header .site-nav a { color:#8fa0d8; } .rl-header .site-nav a:hover { color:#fff; }
 
-    .rl-wrap { max-width: 920px; margin: 0 auto; padding: 1rem 0.9rem 2.4rem; }
+    .rl-wrap { max-width: 1240px; margin: 0 auto; padding: 1rem 0.9rem 2.4rem; }
     .rl-stage {
-      position: relative; width: 100%; max-width: 900px; margin: 0 auto;
-      height: min(80vh, 660px); min-height: 380px;
+      position: relative; width: 100%; max-width: 1220px; margin: 0 auto;
+      height: min(84vh, 780px); min-height: 380px;
       border-radius: 16px; overflow: hidden; user-select: none; touch-action: none;
       border: 2px solid #23294d; box-shadow: 0 0 0 1px #0a0c18, 0 18px 50px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.5);
       background:#05060d; cursor: pointer;
@@ -120,7 +120,7 @@
 
     <div class="hud" id="hud">
       <div class="box hud-l"><div class="spd"><span id="spd">0</span></div><div class="unit">MPH</div></div>
-      <div class="box hud-r"><div class="dist"><span id="dist">0</span> ft</div><div class="best" id="hudBest"></div></div>
+      <div class="box hud-r"><div class="dist"><span id="dist">0.00 mi</span></div><div class="best" id="hudBest"></div></div>
       <div class="combo" id="combo"></div>
     </div>
 
@@ -143,7 +143,7 @@
       <div class="over-title" id="overTitle">WRECKED</div>
       <div class="over-sub" id="overSub"></div>
       <div class="over-stats">
-        <div class="st hl"><b id="overDist">0</b><span>Feet</span></div>
+        <div class="st hl"><b id="overDist">0</b><span>Miles</span></div>
         <div class="st"><b id="overSpeed">0</b><span>Top mph</span></div>
         <div class="st"><b id="overMiss">0</b><span>Near misses</span></div>
       </div>
@@ -174,7 +174,7 @@
 
   // ---- road / world constants ----
   var NLANES = 6;                 // 0..2 oncoming (left), 3..5 same-direction (right)
-  var CAM = 3.0, HORIZ = 0.34, ROADW = 0.46, PLAYER_D = 0.42, DUNIT = 0.5;
+  var CAM = 3.0, HORIZ = 0.32, ROADW = 0.5, PLAYER_D = 0.42, DUNIT = 0.5;
   var cx = 0, horizonY = 0, roadHalfBot = 0;
   function laneOff(i) { return -1 + (i + 0.5) * (2 / NLANES); }
   function project(d) { var p = d / (d + CAM); return { y: H - (H - horizonY) * p, s: 1 - p }; }
@@ -187,6 +187,12 @@
     post: '#35e0ff', edge: 'rgba(53,224,255,0.8)'
   };
   var TRAFFIC = ['#3a7bd5', '#e0b33a', '#43c06a', '#c94fd0', '#e06a3a', '#d0d6e2', '#5a5fe0', '#e0507a'];
+
+  // ---- treasure-hunt mode (opened from Word Racer's secret "treasure" road) ----
+  var HUNT_MODE = /[?&]hunt\b/.test(location.search);   // ?hunt -> checkpoint run
+  var GOAL_FEET = 10 * 5280;                            // the checkpoint: ten miles
+  var checkpointDone = false;
+  function milesStr(feet) { return (feet / 5280).toFixed(2); }
 
   // ---- state ----
   var state = 'title';
@@ -527,8 +533,8 @@
   function reset() {
     v = 46; roadDist = 0; distance = 0; topV = 46; cars = []; particles = [];
     player.lane = 4; player.off = laneOff(4);
-    combo = 0; comboTimer = 0; nearMisses = 0; spawnT = 0.7; shake = 0; milestoneAt = 2500;
-    crashFx = null; flash = 0;
+    combo = 0; comboTimer = 0; nearMisses = 0; spawnT = 0.7; shake = 0; milestoneAt = 5280;
+    crashFx = null; flash = 0; checkpointDone = false;
     updateHUD();
   }
 
@@ -552,8 +558,9 @@
     if (v > topV) topV = v;
 
     roadDist += v * dt * DUNIT;
-    distance += v * dt * 3.0;   // feet
-    if (window.HSGHunt) HSGHunt.reach('redline', distance);   // hunt: clear the "redline" trial at 3,000 ft
+    distance += v * dt * 3.0;   // feet (shown as miles)
+    // treasure-hunt checkpoint: reach ten miles, bank the run, reveal the next clue
+    if (HUNT_MODE && !checkpointDone && distance >= GOAL_FEET) { reachCheckpoint(); return; }
 
     // steering - glide toward the target lane
     var target = laneOff(player.lane);
@@ -580,8 +587,8 @@
     // combo decay
     if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; $('combo').classList.remove('on'); } }
 
-    // milestones
-    if (distance >= milestoneAt) { floatFx(Math.round(milestoneAt).toLocaleString() + ' ft!', cx, H * 0.4, '#35e0ff'); if (window.HSGSound) HSGSound.powerup(); milestoneAt += 2500; }
+    // milestones - one per mile
+    if (distance >= milestoneAt) { floatFx((milestoneAt / 5280) + ' mi!', cx, H * 0.4, '#35e0ff'); if (window.HSGSound) HSGSound.powerup(); milestoneAt += 5280; }
 
     updateEngine();
     updateHUD();
@@ -589,10 +596,10 @@
 
   function nearMiss(c) {
     combo++; comboTimer = 2.4; nearMisses++;
-    var bonus = 80 + combo * 50; distance += bonus;
+    var bonus = 200 + combo * 120; distance += bonus;   // feet, added to the odometer
     var cb = $('combo'); cb.classList.add('on');
-    cb.innerHTML = 'NEAR MISS' + (combo > 1 ? ' ×' + combo : '') + '<small>+' + bonus + ' ft</small>';
-    var pr = project(PLAYER_D); floatFx('+' + bonus, cx + c.off * roadHalfBot * pr.s, pr.y - 30, '#ffd23f');
+    cb.innerHTML = 'NEAR MISS' + (combo > 1 ? ' ×' + combo : '') + '<small>+' + (bonus / 5280).toFixed(2) + ' mi</small>';
+    var pr = project(PLAYER_D); floatFx('+' + (bonus / 5280).toFixed(2), cx + c.off * roadHalfBot * pr.s, pr.y - 30, '#ffd23f');
     if (window.HSGSound) HSGSound.whoosh();
   }
 
@@ -637,8 +644,8 @@
   // ================= HUD / overlays =================
   function updateHUD() {
     $('spd').textContent = Math.round(v * 1.5);
-    $('dist').textContent = Math.round(distance).toLocaleString();
-    $('hudBest').textContent = best ? 'BEST ' + best.toLocaleString() + ' ft' : '';
+    $('dist').textContent = HUNT_MODE ? (milesStr(distance) + ' / 10 mi') : (milesStr(distance) + ' mi');
+    $('hudBest').textContent = best ? 'BEST ' + milesStr(best) + ' mi' : '';
   }
   function floatFx(txt, x, y, color) {
     var el = document.createElement('div'); el.className = 'fx-float'; el.textContent = txt;
@@ -652,15 +659,56 @@
     if (window.HSGSound) HSGSound.tick();
   }
   function showOver(finalM) {
-    $('overDist').textContent = finalM.toLocaleString();
+    $('overTitle').textContent = 'WRECKED';
+    $('overDist').textContent = milesStr(finalM);
     $('overSpeed').textContent = Math.round(topV * 1.5);
     $('overMiss').textContent = nearMisses;
-    $('overSub').textContent = finalM >= best ? 'New personal best!' : 'You drove ' + finalM.toLocaleString() + ' feet.';
+    $('overSub').textContent = finalM >= best ? 'New personal best!' : 'You drove ' + milesStr(finalM) + ' miles.';
     $('overOv').classList.remove('hidden');
     if (window.HSGStreak) HSGStreak.endPanel('#rlBoard', {
       gameId: 'redline', gameName: 'Redline',
-      unit: 'distance', score: finalM, minStreak: 1
+      unit: 'miles', score: finalM, minStreak: 1
     });
+  }
+
+  // Treasure-hunt checkpoint: the player has driven ten miles. Bank the run to the
+  // leaderboard (same board, so it counts) and surface the next clue.
+  function reachCheckpoint() {
+    checkpointDone = true;
+    state = 'over'; flash = 0.6;
+    stopEngine();
+    if (window.HSGSound) { if (HSGSound.powerup) HSGSound.powerup(); if (HSGSound.finish) HSGSound.finish(true); }
+    var finalM = Math.round(distance);
+    if (finalM > best) { best = finalM; saveBest(); }
+    $('overTitle').textContent = 'CHECKPOINT REACHED';
+    $('overSub').textContent = 'Ten miles down. Your next clue awaits, treasure hunter.';
+    $('overDist').textContent = milesStr(finalM);
+    $('overSpeed').textContent = Math.round(topV * 1.5);
+    $('overMiss').textContent = nearMisses;
+    $('overOv').classList.remove('hidden');
+    if (window.HSGStreak) HSGStreak.endPanel('#rlBoard', {
+      gameId: 'redline', gameName: 'Redline',
+      unit: 'miles', score: finalM, minStreak: 1
+    });
+    revealClue4();
+  }
+
+  // Clue #4 - a placeholder banner for now (styled to match the hunt's clue cards).
+  function revealClue4() {
+    var b = document.createElement('div');
+    b.style.cssText = 'position:fixed;top:0;left:50%;transform:translate(-50%,-140%);z-index:99999;' +
+      'width:min(94vw,470px);background:linear-gradient(#20180d,#150e06);color:#f0e6cf;' +
+      'border:1px solid #c8a24a;border-top:none;border-radius:0 0 16px 16px;box-shadow:0 16px 44px rgba(0,0,0,.55);' +
+      'padding:1rem 2.2rem 1.05rem 1.2rem;font-family:Inter,system-ui,sans-serif;transition:transform .45s cubic-bezier(.2,.9,.3,1.15);';
+    b.innerHTML = '<div style="font-weight:800;font-size:.78rem;letter-spacing:.03em;color:#e7c979;margin-bottom:.35rem;">🗝 Checkpoint cleared &middot; Clue #4</div>' +
+      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.18rem;line-height:1.4;font-style:italic;">"The fourth stretch of the trail is still being carved. Check back soon, hunter."</div>' +
+      '<div style="font-size:.72rem;color:#b6a985;margin-top:.55rem;line-height:1.5;">A placeholder for now. Type <b style="color:#e7c979">treasure</b> on the home page to track the hunt.</div>' +
+      '<button aria-label="Dismiss" style="position:absolute;top:.35rem;right:.5rem;width:1.5rem;height:1.5rem;background:none;border:none;color:#8a7a55;font-size:1.2rem;cursor:pointer;line-height:1;">×</button>';
+    document.body.appendChild(b);
+    requestAnimationFrame(function () { b.style.transform = 'translate(-50%,0)'; });
+    var close = function () { b.style.transform = 'translate(-50%,-140%)'; setTimeout(function () { if (b.parentNode) b.remove(); }, 450); };
+    b.querySelector('button').addEventListener('click', close);
+    setTimeout(close, 16000);
   }
 
   // ================= engine sound (Web Audio) =================
@@ -711,7 +759,20 @@
   $('againBtn').addEventListener('click', startGame);
 
   // ================= boot =================
-  if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', unit: 'distance', minStreak: 1 });
+  if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', unit: 'miles', minStreak: 1 });
+  // Treasure-hunt arrival: rewrite the title card into a checkpoint briefing.
+  if (HUNT_MODE) {
+    var tov = $('titleOv');
+    var q = function (sel) { return tov.querySelector(sel); };
+    if (q('.rl-tag')) q('.rl-tag').textContent = 'Treasure Checkpoint';
+    if (q('.rl-racer')) q('.rl-racer').innerHTML = 'Welcome, <b>treasure hunter</b>.';
+    if (q('.rl-deskonly')) q('.rl-deskonly').innerHTML = "You've come a long way. To reach your next checkpoint you need to go <b>ten miles</b> in this game. Good luck." +
+      '<br><span class="keys"><span class="key">←</span><span class="key">→</span></span> steer &nbsp;·&nbsp; ' +
+      '<span class="keys"><span class="key">↑</span><span class="key">↓</span></span> throttle / brake';
+    if (q('.rl-mobile')) q('.rl-mobile').innerHTML = "You've come a long way. Drive <b>ten miles</b> to reach your next checkpoint. Tap left / right to steer. Good luck!";
+    if (q('#startBtn')) $('startBtn').textContent = 'BEGIN THE RUN ▸';
+    if (q('.rl-secret')) q('.rl-secret').textContent = 'checkpoint · ten miles';
+  }
   // god mode - type "godmode": invincible, crashes can't end the run
   if (window.HSGGod) HSGGod.watch(function () {
     HSGGod.enable();

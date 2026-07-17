@@ -1,6 +1,6 @@
 Flag SVGs in this folder are from the flag-icons project by Panayiotis Lipiridis.
 Source: https://github.com/lipis/flag-icons  (4x3 set)
-License: MIT — https://github.com/lipis/flag-icons/blob/main/LICENSE
+License: MIT - https://github.com/lipis/flag-icons/blob/main/LICENSE
 
 National flags are factual symbols; these vector files are vendored locally so the
 game renders crisp flags at any size while staying fully offline (no CDN at runtime).
