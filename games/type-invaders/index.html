@@ -11,9 +11,9 @@
     html, body { height: 100%; }
     body.ti-active { overflow: hidden; }
 
-    .game-layout-wide { max-width: min(1700px, 97vw); gap: 1rem; justify-content: center; }
-    .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
-    @media (max-width: 1080px) { .game-layout-wide::before { display: none; } }
+    .game-layout-wide { max-width: min(1400px, 97vw); gap: 1rem; justify-content: center; }
+    .game-layout-wide::before { display: none; }   /* no left spacer — let the stage fill the width */
+    .hsg-rail { display: none; }                    /* the side streak rail; the leaderboard still shows on the game-over card */
     .ti-page { margin: 0 auto; padding: 0.6rem 1rem 0.5rem; width: 100%; }
 
     .ti-top {
