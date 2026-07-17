@@ -259,7 +259,7 @@
     <div class="bf-overlay hidden" id="huntStartOverlay">
       <div class="crest">🗝️</div>
       <h2>Arcade Assault</h2>
-      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong> — the cannon fires on its own; sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Wave 8</strong> and the next clue is yours. Good luck!</p>
+      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong> — the cannon fires on its own; sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Wave 15</strong> and the next clue is yours. Good luck!</p>
       <button class="play-btn" id="huntStartBtn">Launch 🚀</button>
     </div>
 
@@ -517,7 +517,7 @@ let secretBuf = '';
 let arcade = false, arcadeFireT = 0, aimKeys = { left:false, right:false, up:false, down:false };
 // treasure-hunt arcade trial: arrive via ?arcade, hold to HUNT_GOAL_WAVE to reveal the next clue
 const HUNT_ARCADE_REALM = 'easy';   // arcade already amplifies difficulty; easy realm keeps it doable
-const HUNT_GOAL_WAVE = 8;           // hard-but-doable — tune here
+const HUNT_GOAL_WAVE = 15;          // hard-but-doable — tune here
 let huntMode = false, huntCluePopped = false;
 let huntWinning = false, huntWinT = 0, huntBoomT = 0;   // the wave-8 eruption → clue-page sequence
 
