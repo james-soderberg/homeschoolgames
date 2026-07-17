@@ -125,6 +125,9 @@
   .fact-card .maneuver { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
     color:#8fe3c0; margin-bottom:.7rem; }
   .fact-card .fact { color:#cdd8f5; font-size:.98rem; line-height:1.5; margin-bottom:1.1rem; }
+  .fact-card .brief-dist { font-family:var(--font-sans); font-size:.82rem; font-weight:700; color:#ffd98a; margin:.1rem 0 .7rem; }
+  #briefOrder { color:#8fbcff; }
+  #briefOverlay .fact-card { max-width:400px; }
 
   /* leaderboard */
   .board { width:100%; max-width:340px; margin:.2rem auto 1.1rem; }
@@ -148,6 +151,12 @@
   .control-row { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:.5rem; }
   .reset-link { background:none; border:none; color:var(--ink-light); font-size:.85rem; cursor:pointer; font-family:var(--font-sans); text-decoration:underline; padding:.3rem .5rem; }
   .reset-link:hover { color:var(--ink); }
+  /* End-voyage: a clear, distinct pill (blue, not the gold Launch) so players
+     know THIS is how a score reaches the leaderboard. */
+  .endvoyage-btn { font-family:var(--font-sans); font-weight:800; font-size:.9rem; color:#eaf0ff; cursor:pointer; white-space:nowrap;
+    background:linear-gradient(#3a63b8,#274a92); border:none; border-radius:99px; padding:.5rem 1.2rem; box-shadow:0 4px 0 #17305e; }
+  .endvoyage-btn:hover { filter:brightness(1.08); }
+  .endvoyage-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #17305e; }
   .launch-btn { font-family:var(--font-sans); font-weight:800; font-size:.95rem; color:var(--ink); cursor:pointer;
     background:var(--gold); border:none; border-radius:99px; padding:.5rem 1.4rem; box-shadow:0 4px 0 #a07f2c; }
   .launch-btn:hover { filter:brightness(1.05); }
@@ -236,6 +245,18 @@
       </div>
     </div>
 
+    <!-- Planet briefing (shown before the level for each of the nine planets) -->
+    <div class="ov hidden" id="briefOverlay">
+      <div class="crest" id="briefCrest">🪐</div>
+      <div class="fact-card">
+        <div class="maneuver" id="briefOrder">4th planet from the Sun</div>
+        <div class="planet-name" id="briefName">Mars</div>
+        <div class="brief-dist" id="briefDist"></div>
+        <div class="fact" id="briefText"></div>
+        <button class="go-btn" id="briefBtn">Begin approach →</button>
+      </div>
+    </div>
+
     <!-- Game over -->
     <div class="ov hidden" id="overOverlay">
       <div class="crest">💥</div>
@@ -271,7 +292,7 @@
     <button class="launch-btn" id="launchBtn">🚀 Launch</button>
     <button class="cancel-btn" id="cancelBtn" type="button" style="display:none">✕ Cancel shot</button>
     <button class="reset-link" id="solveBtn" style="display:none">💡 Show solution</button>
-    <button class="reset-link" onclick="endVoyage()">End voyage</button>
+    <button class="endvoyage-btn" onclick="endVoyage()">🏁 End Voyage &amp; Save Score</button>
   </div>
 </div>
 
@@ -317,25 +338,31 @@ const DIFF = {
 };
 const PAL = [['#8fb0e6','#2a4a86'],['#e0b98f','#8a5a2a'],['#b79ae0','#5a3a8a'],['#8fd6c0','#2f6a58'],['#e79ab0','#8a3a56']];
 
-// worlds, outward from the Sun — one per level (cycles after 25)
+// Worlds visited in order, one per level (cycles after 25). This order MUST
+// match the voyage map (VY_GROUPS) exactly — same bodies, same sequence — so the
+// map's highlighted world is always the one you're actually flying to: the nine
+// planets first (levels 1-9), then moons & dwarf worlds, then deep space.
 const TARGETS = [
-  { name:'the Moon',        crest:'🌙', c1:'#e8ecf3', c2:'#9aa2b0', fact:"Earth's only natural satellite, and the only other world humans have walked on. It drifts about 4 cm farther away every year." },
+  // --- the nine planets, outward from the Sun (levels 1-9) ---
   { name:'Mercury',         crest:'☿️', c1:'#cdbfa8', c2:'#7a6a52', fact:"The smallest planet and the closest to the Sun. Strangely, a single day on Mercury lasts longer than its whole year." },
   { name:'Venus',           crest:'♀️', c1:'#f6e3a1', c2:'#c99a45', fact:"The hottest planet, hot enough to melt lead, wrapped in thick clouds of carbon dioxide that trap the Sun's heat." },
+  { name:'Earth',           crest:'🌍', c1:'#6ab0f0', c2:'#245e46', fact:"Our home, and the only world we know that brims with life. Oceans of liquid water cover most of it, and its distance from the Sun is the very ruler — one 'astronomical unit' — we measure the whole solar system by." },
   { name:'Mars',            crest:'🔴', c1:'#e57a45', c2:'#8f3a1e', fact:"The Red Planet, colored by rusty dust. It has Olympus Mons, the tallest volcano in the solar system, three times the height of Everest." },
-  { name:'Ceres',           crest:'🪨', c1:'#d8cdb8', c2:'#8a7c63', fact:"The largest object in the asteroid belt, round enough to count as a dwarf planet. It may hide a layer of salty water under its crust." },
   { name:'Jupiter',         crest:'🟠', c1:'#e8cba0', c2:'#a8703a', ring:false, fact:"The largest planet. Over 1,300 Earths would fit inside, and its Great Red Spot is a storm wider than our whole planet." },
-  { name:'Europa',          crest:'🧊', c1:'#dfe6ef', c2:'#9bb0c6', fact:"An icy moon of Jupiter. Beneath its frozen shell lies a saltwater ocean that may hold more water than all of Earth's seas." },
-  { name:'Io',              crest:'🌋', c1:'#f3e08a', c2:'#b6862f', fact:"The most volcanic world we know of. Jupiter's gravity squeezes it so hard that hundreds of volcanoes erupt across its surface." },
   { name:'Saturn',          crest:'🪐', c1:'#f0dcae', c2:'#b99a5a', ring:true,  fact:"Famous for its dazzling rings of ice and rock. Saturn is so light that it would float in a big enough tub of water." },
-  { name:'Titan',           crest:'🟠', c1:'#d9a55a', c2:'#8a5e2a', fact:"Saturn's largest moon and the only moon with a thick atmosphere. It rains liquid methane there, filling rivers, lakes and seas." },
-  { name:'Enceladus',       crest:'❄️', c1:'#eaf3fb', c2:'#a9c3d6', fact:"A small, bright moon of Saturn that shoots geysers of water into space through cracks near its south pole." },
   { name:'Uranus',          crest:'🩵', c1:'#bdeef0', c2:'#5aa6ad', ring:true,  fact:"An ice giant that rolls on its side, so each pole spends 42 years in sunlight and then 42 years in darkness." },
   { name:'Neptune',         crest:'🔵', c1:'#7aa7f0', c2:'#2a4a9a', fact:"The windiest world, with gales faster than the speed of sound. It was found by math before anyone ever saw it." },
-  { name:'Triton',          crest:'🌑', c1:'#cfe0e6', c2:'#7f97a3', fact:"Neptune's biggest moon, and it orbits backward. It is one of the coldest places known, with geysers of icy nitrogen." },
   { name:'Pluto',           crest:'🤍', c1:'#e6d8c4', c2:'#9a8a76', fact:"A dwarf planet in the icy Kuiper Belt. Since it was found in 1930, it still hasn't finished a single trip around the Sun." },
+  // --- moons & dwarf worlds (levels 10-17) ---
+  { name:'the Moon',        crest:'🌙', c1:'#e8ecf3', c2:'#9aa2b0', fact:"Earth's only natural satellite, and the only other world humans have walked on. It drifts about 4 cm farther away every year." },
+  { name:'Ceres',           crest:'🪨', c1:'#d8cdb8', c2:'#8a7c63', fact:"The largest object in the asteroid belt, round enough to count as a dwarf planet. It may hide a layer of salty water under its crust." },
+  { name:'Io',              crest:'🌋', c1:'#f3e08a', c2:'#b6862f', fact:"The most volcanic world we know of. Jupiter's gravity squeezes it so hard that hundreds of volcanoes erupt across its surface." },
+  { name:'Europa',          crest:'🧊', c1:'#dfe6ef', c2:'#9bb0c6', fact:"An icy moon of Jupiter. Beneath its frozen shell lies a saltwater ocean that may hold more water than all of Earth's seas." },
+  { name:'Titan',           crest:'🟠', c1:'#d9a55a', c2:'#8a5e2a', fact:"Saturn's largest moon and the only moon with a thick atmosphere. It rains liquid methane there, filling rivers, lakes and seas." },
+  { name:'Enceladus',       crest:'❄️', c1:'#eaf3fb', c2:'#a9c3d6', fact:"A small, bright moon of Saturn that shoots geysers of water into space through cracks near its south pole." },
+  { name:'Triton',          crest:'🌑', c1:'#cfe0e6', c2:'#7f97a3', fact:"Neptune's biggest moon, and it orbits backward. It is one of the coldest places known, with geysers of icy nitrogen." },
   { name:'Eris',            crest:'⚪', c1:'#dfe1e6', c2:'#9a9ba3', fact:"A distant dwarf planet even heavier than Pluto. Finding it is what led astronomers to rethink what counts as a planet." },
-  { name:"Halley's Comet",  crest:'☄️', c1:'#cfeaff', c2:'#6fa8d8', comet:true, fact:"A comet that loops past Earth about every 76 years, growing a glowing tail as the Sun boils off its ice. Next visit: 2061." },
+  // --- into deep space (levels 18-25) ---
   { name:'the Oort Cloud',  crest:'🌐', c1:'#cdd8f0', c2:'#6675a8', fact:"A vast shell of icy bodies wrapped around the solar system, so far out that sunlight takes many months to reach it." },
   { name:'Voyager 1',       crest:'🛰️', c1:'#d7dde8', c2:'#8891a3', fact:"Launched in 1977, it is the farthest human-made object, now drifting in interstellar space and still whispering back to Earth." },
   { name:'Proxima Centauri b', crest:'🪐', c1:'#f0a17a', c2:'#a5502f', fact:"The closest exoplanet to Earth, circling the nearest star. Even so, a probe at today's speeds would need thousands of years to arrive." },
@@ -345,6 +372,31 @@ const TARGETS = [
   { name:'the Crab Nebula', crest:'🌌', c1:'#f0a9d0', c2:'#6a3a8a', fact:"The glowing wreckage of a star that exploded in the year 1054, so bright that people recorded seeing it in daylight." },
   { name:'Sagittarius A*',  crest:'🕳️', c1:'#ffce87', c2:'#3a2a10', fact:"The supermassive black hole at the center of our galaxy, about four million times the mass of the Sun. Everything here orbits it." },
 ];
+
+// A short briefing shown BEFORE the level for each of the nine classic planets
+// (Earth is home base, so it isn't a destination). Written plainly, the way a
+// person would tell you about a place — order out from the Sun, how far, and
+// the one or two things worth remembering. Nothing after Pluto gets a briefing.
+const PLANET_BRIEF = {
+  'Mercury': { order: '1st planet from the Sun', dist: '0.39 AU — about 36 million miles out',
+    text: "Closest to the Sun and barely bigger than our own Moon. With almost no air to hold heat, noon bakes at around 800°F while the night side plunges past −290°F. The strangest part: one full day on Mercury, sunrise to sunrise, lasts longer than its entire year." },
+  'Venus':   { order: '2nd planet from the Sun', dist: '0.72 AU — about 67 million miles out',
+    text: "Nearly Earth's twin in size, but a furnace next door. A thick blanket of carbon dioxide traps so much heat that the ground stays hot enough to melt lead, all under clouds of sulfuric acid. It even spins backwards, so there the Sun comes up in the west." },
+  'Earth':   { order: '3rd planet from the Sun', dist: '1 AU — 93 million miles (this is home)',
+    text: "Home — the one world we know that's packed with life, from deep oceans to mountaintops. Its distance from the Sun even gives us our ruler for space: that gap is one 'astronomical unit,' and everything else out here gets measured against it." },
+  'Mars':    { order: '4th planet from the Sun', dist: '1.52 AU — about 142 million miles out',
+    text: "The rusty red world, its color coming from iron dust — basically rust. It's frozen and dry today, but dried-up riverbeds say water once ran across it. It also has Olympus Mons, a volcano three times taller than Mount Everest." },
+  'Jupiter': { order: '5th planet from the Sun', dist: '5.2 AU — about 484 million miles out',
+    text: "The giant of the family; you could pour more than 1,300 Earths inside it. It's a ball of gas with no solid ground to stand on, wrapped in bands of storm. Its Great Red Spot has been spinning for centuries and is wider than our whole planet." },
+  'Saturn':  { order: '6th planet from the Sun', dist: '9.6 AU — about 886 million miles out',
+    text: "The one everyone recognizes, circled by thousands of rings of ice and rock — some chunks as small as sand, others as big as a house. For all its bulk, Saturn is so light for its size that it would float if you had a big enough tub of water." },
+  'Uranus':  { order: '7th planet from the Sun', dist: '19.2 AU — about 1.8 billion miles out',
+    text: "A pale blue-green ice giant that got knocked over long ago and now rolls around the Sun on its side. Because of that tilt, each pole gets 42 straight years of daylight, then 42 years of night." },
+  'Neptune': { order: '8th planet from the Sun', dist: '30 AU — about 2.8 billion miles out',
+    text: "The last of the big planets, a deep blue giant so far out that sunlight takes over four hours to get there. It's the windiest place we know, with storms howling faster than the speed of sound — and it was found by math before anyone ever saw it." },
+  'Pluto':   { order: 'The 9th world out — a dwarf planet', dist: '39.5 AU — about 3.7 billion miles out',
+    text: "Out in the frozen Kuiper Belt, smaller than our Moon and no longer counted as a full planet. It's so far away that one lap around the Sun takes 248 years — it hasn't finished a single one since it was discovered in 1930. It even wears a big heart-shaped plain of frozen nitrogen." },
+};
 
 // 25 curated levels (design space 960x600); r -> gm = r²·GM_K. kind = gravity swings required.
 const SL_LEVELS = [
@@ -384,6 +436,7 @@ const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const startOverlay = document.getElementById('startOverlay');
 const factOverlay = document.getElementById('factOverlay');
+const briefOverlay = document.getElementById('briefOverlay');
 const overOverlay = document.getElementById('overOverlay');
 const scoreBadge = document.getElementById('scoreBadge');
 const probesBadge = document.getElementById('probesBadge');
@@ -758,9 +811,30 @@ function showFact(gain, firstTry) {
   factOverlay.classList.remove('hidden');
 }
 function titleName(n) { return n.replace(/^the /, 'The '); }
+
+// If this level's destination is one of the nine planets, pause on a briefing
+// card the player must dismiss before aiming. Returns true if a briefing showed.
+function maybeBrief() {
+  const b = targetInfo && PLANET_BRIEF[targetInfo.name];
+  if (!b) return false;
+  document.getElementById('briefCrest').textContent = targetInfo.crest;
+  document.getElementById('briefOrder').textContent = b.order;
+  document.getElementById('briefName').textContent = titleName(targetInfo.name);
+  document.getElementById('briefDist').textContent = '📏 ' + b.dist;
+  document.getElementById('briefText').textContent = b.text;
+  briefOverlay.classList.remove('hidden');
+  phase = 'brief';
+  return true;
+}
+function beginApproach() {
+  briefOverlay.classList.add('hidden');
+  phase = 'aim';
+  refreshBodyPositions(); recomputePredict();
+}
 function onward() {
   factOverlay.classList.add('hidden');
   level++; genLevel(level); phase = 'aim'; updateHud();
+  maybeBrief();
 }
 
 // ---------- particles / fx ----------
@@ -869,6 +943,7 @@ function startGame(key, startLevel) {
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
   setupCanvas(); genLevel(level); phase = 'aim'; updateHud();
+  maybeBrief();
 }
 function retryLevel() {
   if (phase !== 'aim') return;
@@ -1157,6 +1232,7 @@ stage.addEventListener('mousedown', onDown); window.addEventListener('mousemove'
 stage.addEventListener('touchstart', onDown, { passive: false }); stage.addEventListener('touchmove', onMove, { passive: false }); stage.addEventListener('touchend', onUp, { passive: false });
 
 document.addEventListener('keydown', e => {
+  if (phase === 'brief' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); if (window.HSGSound) HSGSound.tick(); beginApproach(); return; }
   if (phase === 'fact' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onward(); return; }
   if (phase === 'flight' && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); cancelShot(); return; }
   if (phase !== 'aim') return;
@@ -1177,6 +1253,7 @@ document.getElementById('tutClose').addEventListener('click', (e) => { e.stopPro
 document.getElementById('launchBtn').addEventListener('click', (e) => { e.stopPropagation(); launch(); });
 document.getElementById('cancelBtn').addEventListener('click', (e) => { e.stopPropagation(); cancelShot(); });
 document.getElementById('onwardBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); onward(); });
+document.getElementById('briefBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); beginApproach(); });
 document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(diffKey); });
 document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopPropagation(); toMenu(); });
 document.getElementById('saveNameBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); saveName(); });
@@ -1232,7 +1309,7 @@ function bootDemo() {
   diffKey = 'pilot'; diff = DIFF.pilot; level = 9; score = 4820; probes = 5; streak = 6;
   const cx = DW * 0.5, cy = DH * 0.5;
   bodies = [{ x: cx, y: cy, r: 62, role: 'grav', gm: 62 * 62 * GM_K, c1: '#e8cba0', c2: '#a8703a', ring: true }];
-  target = { x: DW * 0.84, y: DH * 0.26, r: 26, role: 'target', gm: 26 * 26 * GM_K, info: TARGETS[8], c1: '#7aa7f0', c2: '#2a4a9a' };
+  target = { x: DW * 0.84, y: DH * 0.26, r: 26, role: 'target', gm: 26 * 26 * GM_K, info: TARGETS.find(t => t.name === 'Neptune'), c1: '#7aa7f0', c2: '#2a4a9a' };
   pad = { x: DW * 0.11, y: DH * 0.74 };
   refreshBodyPositions();
   demo = { cx, cy, rx: DW * 0.30, ry: DH * 0.30, th: -0.7, tr: 0 };
