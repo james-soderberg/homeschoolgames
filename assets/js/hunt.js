@@ -34,11 +34,11 @@
       hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Hard or Solomon level difficulty).",
       trial: 'Slip past a score of 15 without falling.' },
 
-    { word: 'redline', open: 'games/redline/index.html', game: 'redline', goal: 3000,
-      accept: ['redline'],
-      riddle: 'On the dashboard dial sits a crimson mark, where the engine screams its very limit. Race the neon night, and name that mark.',
-      hint: 'It’s the red line on an engine’s rev counter — floor it.',
-      trial: 'Put 3,000 feet of highway behind you.' }
+    { word: 'pit', open: 'games/redline/index.html', game: 'redline', goal: 3000,
+      accept: ['pit'],
+      riddle: 'The old signpost is worn down to a single word — P · O · I · N · T — yet a true traveler reads it only by halves.',
+      hint: 'Keep every other letter — the 1st, the 3rd, the 5th. Three remain: the lane where a racer ducks in to mend. Speak that word.',
+      trial: 'Then burn 3,000 feet of neon highway.' }
   ];
 
   var TREASURE = {

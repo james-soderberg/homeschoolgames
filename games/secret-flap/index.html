@@ -70,12 +70,6 @@
     .flap-hint, .secret-note { color: #8a7a55; }
     .site-footer { border-top-color: #241d12; }
     .site-footer a { color: #9a8a63; }
-    /* treasure-hunt clue revealed on the game-over screen */
-    .hunt-clue { width: 100%; max-width: 340px; margin: 0 auto 1rem; padding: 0.85rem 1rem; text-align: center;
-      background: rgba(255,217,138,0.08); border: 1.5px solid rgba(255,217,138,0.5); border-radius: 12px; }
-    .hunt-clue.hidden { display: none; }
-    .hunt-clue .hc-tag { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #e7c979; margin-bottom: 0.35rem; }
-    .hunt-clue .hc-body { font-family: var(--font-serif); font-style: italic; font-size: 1.05rem; color: #ffe9b8; line-height: 1.4; }
   </style>
 </head>
 <body>
@@ -115,10 +109,6 @@
         <div class="final-stats">
           <div class="fs"><b id="fsScore">0</b><span>Towers</span></div>
           <div class="fs"><b id="fsBest">0</b><span>Best</span></div>
-        </div>
-        <div class="hunt-clue hidden" id="huntClue">
-          <div class="hc-tag">🗝 Treasure Hunt · Next Clue</div>
-          <div class="hc-body" id="huntClueBody"></div>
         </div>
         <div class="hsg-board" id="flapBoard"></div>
         <button class="play-btn" id="againBtn">Fly Again 🐲</button>
@@ -169,9 +159,12 @@ const SPACING = 230;          // horizontal distance between tower pairs
 const BIRD_R = 16;
 
 let W = 440, H = 680, dpr = 1;
-let state = 'ready';          // ready | play | dead
+let state = 'ready';          // ready | play | win | dead
 let bird, pipes, spawnX, score, scroll, groundScroll, sceneTime, shake;
 let lastTs = 0, rafId = null;
+// treasure-hunt trial: clear this score and the game erupts, opening the next clue
+const WIN_SCORE = (window.HSGHunt && HSGHunt.STEPS[0] && HSGHunt.STEPS[0].goal) || 15;
+let winT = 0, boom = [], finishedWin = false;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
@@ -242,11 +235,6 @@ function die() {
   if (score > getBest()) setBest(score);
   document.getElementById('fsScore').textContent = score;
   document.getElementById('fsBest').textContent = getBest();
-  var hc = document.getElementById('huntClue');
-  if (score >= 15) {   // cleared the treasure-hunt trial — reveal the next clue (placeholder for now)
-    document.getElementById('huntClueBody').innerHTML = 'The next riddle is being carved…<br>check back tomorrow, treasure hunter.';
-    hc.classList.remove('hidden');
-  } else { hc.classList.add('hidden'); }
   overOverlay.classList.remove('hidden');
   updateBadges();
   if (window.HSGSound) HSGSound.finish(false);
@@ -255,6 +243,39 @@ function die() {
   // lock restart for 2s so a flap-mash at the moment of death can't skip the end screen
   restartReady = false; againBtn.disabled = true;
   setTimeout(() => { restartReady = true; againBtn.disabled = false; }, 2000);
+}
+
+// Trial cleared: the whole scene erupts — fireball, shockwave, shattering towers —
+// then we fade to gold and sail off to the treasure-hunt clue page.
+function triggerWin() {
+  if (state === 'win') return;
+  state = 'win'; winT = 0; boom = []; shake = 30;
+  if (score > getBest()) setBest(score);
+  updateBadges();
+  const bx = birdX(), by = bird.y;
+  // embers + golden treasure-sparks bursting from the dragon
+  for (let i = 0; i < 96; i++) {
+    const a = Math.random() * Math.PI * 2, sp = rand(70, 480);
+    boom.push({ x: bx, y: by, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - rand(0, 140),
+      r: rand(2, 6), life: rand(0.7, 1.7), t: 0, gold: Math.random() < 0.45 });
+  }
+  // the castle towers shatter into tumbling stone shards
+  for (const p of pipes) {
+    for (let k = 0; k < 9; k++) {
+      boom.push({ x: p.x + Math.random() * PIPE_W, y: rand(0, groundY()),
+        vx: (p.x < bx ? -1 : 1) * rand(40, 280) + rand(-70, 70), vy: rand(-300, 40),
+        r: rand(4, 10), life: rand(0.9, 1.8), t: 0, shard: true, rot: Math.random() * 6, vr: rand(-9, 9) });
+    }
+  }
+  if (window.HSGSound && HSGSound.finish) HSGSound.finish(true);
+  if (window.HSGfx && HSGfx.flash) HSGfx.flash('rgba(255,240,205,0.85)');
+}
+
+function finishWin() {
+  if (finishedWin) return; finishedWin = true;
+  if (rafId) cancelAnimationFrame(rafId);
+  try { if (window.HSGHunt) HSGHunt.reach('flappy', score); } catch (e) {}   // advance the hunt
+  location.href = '../treasure-hunt/index.html';   // open the clue page, like the first clue
 }
 
 // ---- leaderboard (local Top-10 via streak-rail, built into the game-over screen) ----
@@ -299,6 +320,7 @@ function update(dt) {
       p.x -= sp * dt;
       if (!p.passed && p.x + PIPE_W < bx) {
         p.passed = true; score++; updateBadges();
+        if (score >= WIN_SCORE) { triggerWin(); break; }   // trial cleared — erupt & fly to the clue
         if (window.HSGSound) HSGSound.correct();   // just a soft point chime — no streak banners
       }
       // collision (circle vs the two tower rects)
@@ -311,6 +333,16 @@ function update(dt) {
     while (pipes.length && pipes[0].x + PIPE_W < -10) pipes.shift();
     const last = pipes[pipes.length - 1];
     if (!last || last.x < W - SPACING) spawnPipe((last ? last.x : W) + SPACING);
+  } else if (state === 'win') {
+    winT += dt;
+    for (let i = boom.length - 1; i >= 0; i--) {
+      const b = boom[i]; b.t += dt;
+      b.vy += (b.shard ? 720 : 240) * dt;
+      b.x += b.vx * dt; b.y += b.vy * dt;
+      if (b.vr != null) b.rot += b.vr * dt;
+      if (b.t >= b.life) boom.splice(i, 1);
+    }
+    if (winT >= 2.0) finishWin();
   } else {
     // idle bob on the ready/dead screens
     groundScroll += 60 * dt;
@@ -437,11 +469,59 @@ function drawDragon() {
 function render() {
   ctx.save();
   if (shake > 0) ctx.translate(rand(-shake, shake) * 0.4, rand(-shake, shake) * 0.4);
+  if (state === 'win') { renderWin(); ctx.restore(); return; }
   drawBackground();
   for (const p of pipes) drawTower(p);
   drawGround();
   drawDragon();
   ctx.restore();
+}
+
+// the eruption: scene still visible, torn apart by a shockwave + fireball + debris,
+// then a dark-gold veil closes in for a seamless cut to the clue page
+function renderWin() {
+  drawBackground();
+  for (const p of pipes) drawTower(p);
+  drawGround();
+  const cx = birdX(), cy = bird.y;
+  // expanding shockwave rings
+  const rr = winT * 640;
+  ctx.lineWidth = 12; ctx.strokeStyle = 'rgba(255,236,182,' + Math.max(0, 0.85 - winT * 0.55).toFixed(3) + ')';
+  ctx.beginPath(); ctx.arc(cx, cy, rr, 0, Math.PI * 2); ctx.stroke();
+  ctx.lineWidth = 22; ctx.strokeStyle = 'rgba(255,120,40,' + Math.max(0, 0.6 - winT * 0.45).toFixed(3) + ')';
+  ctx.beginPath(); ctx.arc(cx, cy, rr * 0.66, 0, Math.PI * 2); ctx.stroke();
+  // central fireball core (brief)
+  const coreR = Math.max(0, (0.4 - winT) * 460);
+  if (coreR > 0) {
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, coreR);
+    g.addColorStop(0, '#ffffff'); g.addColorStop(0.5, '#ffd36a'); g.addColorStop(1, 'rgba(255,120,40,0)');
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, coreR, 0, Math.PI * 2); ctx.fill();
+  }
+  // debris + sparks
+  for (const b of boom) {
+    const k = Math.max(0, 1 - b.t / b.life);
+    ctx.globalAlpha = k;
+    if (b.shard) {
+      ctx.save(); ctx.translate(b.x, b.y); ctx.rotate(b.rot || 0);
+      ctx.fillStyle = '#8f8a7e'; ctx.fillRect(-b.r / 2, -b.r / 2, b.r, b.r);
+      ctx.fillStyle = 'rgba(0,0,0,0.18)'; ctx.fillRect(b.r / 2 - 2, -b.r / 2, 2, b.r);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = b.gold ? '#ffdf7a' : (k > 0.5 ? '#ffb038' : '#e0491b');
+      ctx.beginPath(); ctx.arc(b.x, b.y, b.r * (0.5 + k), 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  ctx.globalAlpha = 1;
+  // closing veil → matches the clue page's dark background, with a gold whisper
+  const veil = Math.max(0, (winT - 1.15) / 0.85);
+  if (veil > 0) {
+    ctx.fillStyle = 'rgba(12,10,7,' + Math.min(1, veil).toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+    ctx.globalAlpha = Math.min(1, veil);
+    ctx.fillStyle = '#e7c979'; ctx.textAlign = 'center';
+    ctx.font = '700 ' + Math.round(Math.min(30, W / 13)) + 'px "Cormorant Garamond", Georgia, serif';
+    ctx.fillText('A clue surfaces…', W / 2, H * 0.5);
+    ctx.globalAlpha = 1;
+  }
 }
 
 // ============================================================
