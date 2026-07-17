@@ -222,6 +222,7 @@ const M = {
   tele:'far', bio:'life', geo:'earth', micro:'tiny', auto:'self', photo:'light',
   thermo:'heat', chrono:'time', astro:'star', psycho:'mind', electro:'electricity',
   cardio:'heart', therm:'heat', demo:'people', eco:'house',
+  hydro:'water', philo:'love', anthropo:'human', theo:'god', dem:'people',
   // number forms
   uni:'one', mono:'one', bi:'two', tri:'three', octo:'eight', omni:'all',
   // prefixes
@@ -239,8 +240,9 @@ const M = {
   scope:'seeing tool', logy:'study of', graphy:'writing about', phone:'sound',
   meter:'measure', naut:'sailor', mobile:'moving', gram:'record', ion:'process',
   al:'relating to', ics:'science of', ism:'condition', able:'able to', ible:'able to be',
-  ation:'action', logue:'speech', cycle:'wheel', nomy:'study of', cracy:'rule',
+  ation:'action', logue:'speech', cycle:'wheel', nomy:'law/order', cracy:'rule',
   vore:'eater', ator:'one who', ist:'one who', log:'study', scop:'see', ic:'like',
+  sophy:'wisdom', pathy:'feeling', metry:'measuring', onym:'name',
 };
 
 const WORDS = [
@@ -339,20 +341,77 @@ const WORDS = [
   {w:'biodegradable',     p:['bio','de','grad','able'],  d:'Able to be broken down by living things', t:4},
   {w:'microorganism',     p:['micro','organ','ism'],     d:'A tiny living thing', t:4},
   {w:'microbiologist',    p:['micro','bio','log','ist'], d:'A scientist who studies tiny life', t:4},
+
+  // ---- audited batch: more words + tougher, closely-related roots ----
+  {w:'thermal',      p:['therm','al'],       d:'Relating to heat', t:1},
+  {w:'vision',       p:['vis','ion'],        d:'The act or power of seeing', t:2},
+  {w:'periscope',    p:['peri','scope'],     d:'A tube for seeing around or over things', t:2},
+  {w:'perimeter',    p:['peri','meter'],     d:'The measured distance around a shape', t:2},
+  {w:'synonym',      p:['syn','onym'],       d:'A word with the same meaning as another', t:2},
+  {w:'telepathy',    p:['tele','pathy'],     d:"Sensing another's thoughts from far away", t:2},
+  {w:'empathy',      p:['em','pathy'],       d:'Feeling what another person feels', t:2},
+  {w:'sympathy',     p:['sym','pathy'],      d:"Sharing in another's feelings", t:2},
+  {w:'apathy',       p:['a','pathy'],        d:'A lack of feeling or interest', t:2},
+  {w:'dictation',    p:['dict','ation'],     d:'Speaking words aloud for someone to write', t:2},
+  {w:'chronology',   p:['chrono','logy'],    d:'The arrangement of events in time order', t:2},
+  {w:'geometry',     p:['geo','metry'],      d:'The math of shapes, sizes and space', t:2},
+  {w:'hydrology',    p:['hydro','logy'],     d:'The study of water on Earth', t:2},
+  {w:'philosophy',   p:['philo','sophy'],    d:'The love and study of wisdom', t:2},
+  {w:'theology',     p:['theo','logy'],      d:'The study of God and religion', t:2},
+  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer — one who uses the voice', t:3},
+  {w:'projection',   p:['pro','ject','ion'], d:'The act of throwing an image forward', t:3},
+  {w:'inspection',   p:['in','spect','ion'], d:'A close looking-into of something', t:3},
+  {w:'anthropology', p:['anthropo','logy'],  d:'The study of humans and their cultures', t:3},
+  {w:'pandemic',     p:['pan','dem','ic'],   d:'A disease spreading among all the people', t:3},
+  {w:'epidemic',     p:['epi','dem','ic'],   d:'A disease spreading upon a whole community', t:3},
 ];
 
 // difficulty presets
 const DIFF = {
-  easy:   { key:'easy',   label:'Easy',   icon:'🌱', desc:'Two-part words, glosses shown', tiers:[1],       distract:2, decodeEvery:0, hint:true,  perLevel:5 },
-  medium: { key:'medium', label:'Medium', icon:'🌳', desc:'Prefixes & three-part words',   tiers:[1,2,3],   distract:3, decodeEvery:5, hint:true,  perLevel:5 },
-  hard:   { key:'hard',   label:'Hard',   icon:'🔥', desc:'All tiers, monster words',      tiers:[1,2,3,4], distract:4, decodeEvery:3, hint:false, perLevel:4 },
+  easy:   { key:'easy',   label:'Easy',   icon:'🌱', desc:'Two-part words, glosses shown', tiers:[1],       distract:3, decodeEvery:0, hint:true,  perLevel:5 },
+  medium: { key:'medium', label:'Medium', icon:'🌳', desc:'Prefixes & three-part words',   tiers:[1,2,3],   distract:5, decodeEvery:5, hint:true,  perLevel:5 },
+  hard:   { key:'hard',   label:'Hard',   icon:'🔥', desc:'All tiers, monster words',      tiers:[1,2,3,4], distract:6, decodeEvery:3, hint:false, perLevel:4 },
 };
 
 // ---- helpers ----
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 const gloss = id => M[id] || '';
 const $ = id => document.getElementById(id);
-const ALL_PARTS = [...new Set(WORDS.flatMap(w => w.p))];   // plausible distractor pool
+const ALL_PARTS = [...new Set(WORDS.flatMap(w => w.p))];   // parts that actually appear in answers
+const POOL = Object.keys(M);                               // every real root — the full decoy pool
+
+// Confusable clusters: roots that live in the same meaning-family, so a decoy is
+// tempting (you must know the EXACT piece, not just "a study-ending"). A morpheme
+// may sit in several clusters; a needed part pulls decoys from all clusters it's in.
+const CLUSTERS = [
+  ['uni','mono','bi','tri','octo','omni'],                                             // number
+  ['logy','nomy','graphy','cracy','ics','logue','sophy','pathy','metry','log'],        // field / -study endings
+  ['scope','meter','phone','gram','graph','metry','scop'],                             // instruments / measuring
+  ['ist','ator','naut','vore'],                                                        // agent — "one who"
+  ['able','ible','al','ic','ion','ation','ism'],                                       // adjective / noun endings
+  ['vis','spect','scop','scope'],                                                      // see / look
+  ['dict','voc','graph','script','scribe','onym','logue','phone','gram'],              // say / write / name
+  ['port','fer','mit','tract','ject','duct','duce','grad'],                            // carry / move
+  ['trans','sub','inter','pre','re','ex','e','im','in','de','dis','contra','syn','sym','con','pro','intro','dia','epi','peri','em','a','pan'], // prefixes
+  ['bio','cardio','organ','psycho','pod','pus','manu','carni','herbi','anthropo','theo','dem','demo'], // body / being
+  ['geo','astro','thermo','therm','photo','chrono','electro','hydro','micro','tele','auto','eco'],      // science front-forms
+];
+function confusablesFor(need){
+  const needSet = new Set(need);
+  // one shuffled confusable list per needed part…
+  const perPart = need.map(id => {
+    const s = new Set();
+    for(const cl of CLUSTERS) if(cl.includes(id)) for(const x of cl) if(!needSet.has(x) && M[x] !== undefined) s.add(x);
+    return shuffle([...s]);
+  });
+  // …then round-robin them so EVERY part contributes tempting look-alikes
+  const out = [], seen = new Set();
+  for(let i = 0, live = true; live; i++){
+    live = false;
+    for(const list of perPart){ if(i < list.length){ live = true; const x = list[i]; if(!seen.has(x)){ seen.add(x); out.push(x); } } }
+  }
+  return out;
+}
 
 // codex (lifetime roots discovered) persists locally
 const CODEX_KEY = 'hsg_roots_codex';
@@ -393,8 +452,11 @@ function pickWord(){
 
 function buildBank(word){
   const need = word.p.slice();
-  const pool = ALL_PARTS.filter(id => !need.includes(id));
-  const distract = shuffle(pool).slice(0, cfg.distract);
+  const needSet = new Set(need);
+  // Prefer confusable decoys (same meaning-family, one per needed part); top up with other real roots.
+  const conf = confusablesFor(need);
+  const rest = shuffle(POOL.filter(id => !needSet.has(id) && !conf.includes(id)));
+  const distract = conf.concat(rest).slice(0, cfg.distract);
   return shuffle(need.concat(distract));
 }
 
@@ -494,6 +556,19 @@ function checkBuild(){
   setTimeout(()=>{ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .slot')].forEach(s=>s.classList.add('wrongpick')); finishRound(false); }, 900);
 }
 
+// Tougher decode options: prefer definitions of words that SHARE a root with the
+// target (tempting near-misses), then same-tier words, then anything — 3 in all.
+function decodeDistractors(){
+  const seen = new Set([cur.d]), picks = [];
+  const related = shuffle(WORDS.filter(x => x.w !== cur.w && x.p.some(id => cur.p.includes(id))));
+  const sameTier = shuffle(WORDS.filter(x => x.w !== cur.w && x.t === cur.t));
+  const rest = shuffle(WORDS.filter(x => x.w !== cur.w));
+  for(const src of [related, sameTier, rest]){
+    for(const x of src){ if(picks.length >= 3) break; if(!seen.has(x.d)){ seen.add(x.d); picks.push(x.d); } }
+  }
+  return picks.slice(0,3);
+}
+
 // ---------- DECODE ----------
 function renderDecode(){
   $('modeTag').textContent = 'Decode the word'; $('modeTag').className='mode-tag';
@@ -506,7 +581,7 @@ function renderDecode(){
     c.innerHTML = '<span class="p">'+id+'</span><span class="g">'+gloss(id)+'</span>';
     parts.appendChild(c);
   });
-  const wrong = shuffle(WORDS.filter(x => x.w !== cur.w)).slice(0,3).map(x => x.d);
+  const wrong = decodeDistractors();
   const grid = $('decodeOptions'); grid.innerHTML = '';
   shuffle([cur.d, ...wrong]).forEach(text => {
     const b=document.createElement('button'); b.className='opt'; b.textContent=text;
