@@ -401,6 +401,7 @@ let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, 
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
 let levelVmax = 1;   // per-level max launch velocity (1 = full; <1 caps thrust so gravity dominates)
 let probe = null, trail = [], particles = [], predicted = null;
+let flightPath = [];   // full path the probe has travelled this shot (uncapped); cleared on crash/cancel
 let solutionPath = null, godUnlocked = false;   // god-mode "show solution" route overlay
 let aim = { angle: 0, power: 0.5, dragging: false };
 let sceneTime = 0, shake = 0, flashR = 0, flashG = 0, flightT = 0, flightAcc = 0, bonusMsg = '', bonusT = 0;
@@ -510,7 +511,7 @@ function genLevel(n) {
 
   aim.angle = Math.atan2(target.y - pad.y, target.x - pad.x);
   aim.power = 0.6; aim.dragging = false;
-  probe = null; trail = []; predicted = null; solutionPath = null; attempts = 0;
+  probe = null; trail = []; flightPath = []; predicted = null; solutionPath = null; attempts = 0;
   refreshBodyPositions(); recomputePredict();
 }
 function refreshBodyPositions() { for (const b of bodies) b._p = bodyPos(b); if (target) target._p = bodyPos(target); }
@@ -612,7 +613,7 @@ function playTutorial() {
   const v = aimVelocity();
   solutionPath = simulate(pad.x, pad.y, v.vx, v.vy, Math.ceil(MAX_FLIGHT / FIXED_H) + 2, allBodies()).pts;
   probe = { x: pad.x, y: pad.y, vx: v.vx, vy: v.vy, ang: aim.angle, bent: 0 };
-  trail = [{ x: pad.x, y: pad.y }];
+  trail = [{ x: pad.x, y: pad.y }]; flightPath = [];
   tutT = 0; tutAcc = 0; tutLaunched = false; tutDone = false;
   phase = 'tutorial';
   objBadge.textContent = 'Tutorial · reach ' + targetInfo.name;
@@ -660,7 +661,7 @@ function closeTutorial() {
   phase = 'menu';
   document.getElementById('tutCap').style.display = 'none';
   document.getElementById('tutClose').style.display = 'none';
-  solutionPath = null; probe = null; trail = [];
+  solutionPath = null; probe = null; trail = []; flightPath = [];
   startOverlay.classList.remove('hidden');
   render();
 }
@@ -671,6 +672,7 @@ function launch() {
   const v = aimVelocity();
   probe = { x: pad.x, y: pad.y, vx: v.vx, vy: v.vy, ang: aim.angle, bent: 0 };
   trail = [{ x: pad.x, y: pad.y }];
+  flightPath = [{ x: pad.x, y: pad.y }];   // start recording the full route
   predicted = null; solutionPath = null; phase = 'flight'; flightT = 0; flightAcc = 0; attempts++;
   shake = 5; flashG = 0.12; if (window.HSGSound) HSGSound.laser();
 }
@@ -719,7 +721,7 @@ function crash(msg) {
   if (!(window.HSGGod && HSGGod.on)) probes--;   // god mode: never lose a probe
   streak = 0;
   for (let i = 0; i < 22; i++) spawnParticle(probe.x, probe.y, rand(-210, 210), rand(-210, 210), rand(.35, .8), i % 2 ? '#ff9a5a' : '#ffd27a', rand(2, 4.5));
-  flashR = 0.45; shake = 11; probe = null; predicted = null;
+  flashR = 0.45; shake = 11; probe = null; predicted = null; flightPath = [];   // the path vanishes with the probe
   if (window.HSGSound) HSGSound.boom();
   if (window.HSGfx) HSGfx.flash('rgba(150,40,40,.25)');
   updateHud();
@@ -737,7 +739,7 @@ function cancelShot() {
   if (!(window.HSGGod && HSGGod.on)) probes--;   // god mode: never lose a probe
   streak = 0;
   for (let i = 0; i < 12; i++) spawnParticle(probe.x, probe.y, rand(-120, 120), rand(-120, 120), rand(.3, .6), i % 2 ? '#9fb0dd' : '#c9d3f0', rand(1.5, 3));
-  probe = null; predicted = null;
+  probe = null; predicted = null; flightPath = [];   // the path vanishes with the cancelled shot
   if (window.HSGSound) HSGSound.tick();
   updateHud();
   toast('Shot cancelled');
@@ -860,7 +862,7 @@ function startGame(key, startLevel) {
   endTutorialUI();
   diffKey = key; diff = DIFF[key] || DIFF.pilot;
   level = startLevel || 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = 'None';
-  particles = []; pendingScore = null; solutionPath = null;
+  particles = []; pendingScore = null; solutionPath = null; flightPath = [];
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
   setupCanvas(); genLevel(level); phase = 'aim'; updateHud();
@@ -873,7 +875,7 @@ function retryLevel() {
 }
 function toMenu() {
   endTutorialUI();
-  phase = 'menu'; probe = null; predicted = null; solutionPath = null; level = 1;
+  phase = 'menu'; probe = null; predicted = null; solutionPath = null; flightPath = []; level = 1;
   overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
   renderVoyage();
@@ -1039,8 +1041,23 @@ function drawScene() {
   if (pad) drawPad();
   if (phase === 'aim' || phase === 'tutorial') drawSolution();
   if (phase === 'aim') drawPredict();
+  drawFlightPath();
   drawProbe();
   drawParticles();
+}
+// the full route the probe has flown this shot — a steady line under the bright
+// comet tail. Cleared on crash/cancel, so it only lingers on a live or won shot.
+function drawFlightPath() {
+  if (flightPath.length < 2) return;
+  ctx.save();
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(150,205,255,0.5)'; ctx.lineWidth = 2;
+  ctx.shadowColor = 'rgba(120,190,255,0.55)'; ctx.shadowBlur = 5;
+  ctx.beginPath();
+  ctx.moveTo(flightPath[0].x, flightPath[0].y);
+  for (let i = 1; i < flightPath.length; i++) ctx.lineTo(flightPath[i].x, flightPath[i].y);
+  ctx.stroke();
+  ctx.restore();
 }
 // god-mode: the full winning route, drawn as a flowing dashed line to the target
 function drawSolution() {
@@ -1089,6 +1106,8 @@ function loop(ts) {
     while (flightAcc >= FIXED_H && phase === 'flight' && n < 600) { stepFlight(FIXED_H); flightAcc -= FIXED_H; n++; }
     if (probe && phase === 'flight') {
       trail.push({ x: probe.x, y: probe.y }); if (trail.length > TRAIL_MAX) trail.shift();
+      const lp = flightPath[flightPath.length - 1];   // record the full route (thinned: skip near-duplicate points)
+      if (!lp || dist2(lp.x, lp.y, probe.x, probe.y) > 9) flightPath.push({ x: probe.x, y: probe.y });
       if (Math.random() < 0.6) spawnParticle(probe.x, probe.y, -probe.vx * 0.05, -probe.vy * 0.05, rand(.25, .5), '#8fd0ff', rand(1.4, 3));
     }
   }
