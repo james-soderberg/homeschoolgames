@@ -34,11 +34,18 @@
       hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Hard or Solomon level difficulty).",
       trial: 'Slip past a score of 15 without falling.' },
 
-    { word: 'pit', open: 'games/redline/index.html', game: 'redline', goal: 3000,
-      accept: ['pit'],
-      riddle: 'The old signpost is worn down to a single word — P · O · I · N · T — yet a true traveler reads it only by halves.',
-      hint: 'Keep every other letter — the 1st, the 3rd, the 5th. Three remain: the lane where a racer ducks in to mend. Speak that word.',
-      trial: 'Then burn 3,000 feet of neon highway.' }
+    { word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 8,
+      accept: ['independence'],
+      riddle: 'A line of runes is carved into the monument: F I R N E D E E D P O E M N R D I E N N G C S E',
+      hint: 'Keep only the letters on the even beat — the 2nd, the 4th, the 6th, and so on — and discard the rest. What remains is a young nation’s founding cry. Speak it.',
+      trial: 'Then hold the capital to Wave 8 in the arcade.' },
+
+    // PLACEHOLDER — revealed when the arcade trial is cleared; real clue lands soon.
+    { placeholder: true, word: '__soon__', open: 'index.html', game: 'todo', goal: 1,
+      accept: ['__soon__'],
+      riddle: 'The capital holds and the saucers scatter — but the next stretch of the trail is still being carved…',
+      hint: 'This clue is a placeholder. The real one arrives soon, hunter.',
+      trial: 'Coming soon.' }
   ];
 
   var TREASURE = {
@@ -95,7 +102,9 @@
     b.innerHTML = (next
       ? '<div class="hh-tag">🗝 Trial cleared — a new clue surfaces!</div>' +
         '<div class="hh-riddle">“' + esc(next.riddle) + '”</div>' +
-        '<div class="hh-hint">Solve it to one word, then type it on the home page. Track the hunt: type <b>treasure</b>.</div>'
+        '<div class="hh-hint">' + (next.placeholder
+          ? 'More of the trail is still being carved — check back soon, hunter.'
+          : 'Solve it to one word, then type it on the home page. Track the hunt: type <b>treasure</b>.') + '</div>'
       : '<div class="hh-tag">🏆 You found the treasure!</div>' +
         '<div class="hh-riddle">' + esc(TREASURE.text) + '</div>' +
         '<div class="hh-hint">Type <b>treasure</b> on the home page to open your journal.</div>'

@@ -42,9 +42,9 @@
   .foot a{color:#6c5836;}
 
   /* a clue pressed into the corkboard — Morse for the buried game */
-  .morse{display:flex;flex-direction:column;align-items:center;gap:.55rem;margin-top:1.6rem;}
-  .morse .mrow{display:flex;align-items:center;gap:16px;}
-  .morse .mlet{display:flex;align-items:center;gap:6px;}
+  .morse{display:flex;flex-direction:column;align-items:center;gap:.8rem;margin-top:1.6rem;}
+  .morse .mrow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:30px;}  /* wide letter spacing so each letter reads separately */
+  .morse .mlet{display:flex;align-items:center;gap:6px;}                                          /* tight within a letter */
   .morse .dot{width:8px;height:8px;border-radius:50%;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
   .morse .dash{width:22px;height:8px;border-radius:4px;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
 
@@ -75,15 +75,18 @@
     board.appendChild(a);
   });
 
-  // A clue pressed into the corkboard: "TREASURE" in Morse (crack it to find the buried game).
+  // A clue pressed into the corkboard: "TYPE TREASURE" in Morse (crack it to find the buried game).
+  // Each word gets its own row, so the space between words reads as a line break.
   (function(){
-    const M={T:'-',R:'.-.',E:'.',A:'.-',S:'...',U:'..-'};
+    const M={T:'-',Y:'-.--',P:'.--.',E:'.',R:'.-.',A:'.-',S:'...',U:'..-'};
     const wrap=document.getElementById('morse'); if(!wrap) return;
-    const row=document.createElement('div'); row.className='mrow';
-    'TREASURE'.split('').forEach(ch=>{ const l=document.createElement('div'); l.className='mlet';
-      M[ch].split('').forEach(s=>{ const d=document.createElement('span'); d.className=s==='-'?'dash':'dot'; l.appendChild(d); });
-      row.appendChild(l); });
-    wrap.appendChild(row);   // no legend — let them work out short vs long
+    ['TYPE','TREASURE'].forEach(word=>{
+      const row=document.createElement('div'); row.className='mrow';
+      word.split('').forEach(ch=>{ const l=document.createElement('div'); l.className='mlet';
+        M[ch].split('').forEach(s=>{ const d=document.createElement('span'); d.className=s==='-'?'dash':'dot'; l.appendChild(d); });
+        row.appendChild(l); });
+      wrap.appendChild(row);
+    });   // no legend — let them work out short vs long
   })();
 
   // Secret games: type a code word anywhere on the home page to unlock one.

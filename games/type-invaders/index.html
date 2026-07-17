@@ -247,6 +247,14 @@
       </div>
     </div>
 
+    <!-- Treasure-hunt arcade intro (shown when arrived via ?arcade) -->
+    <div class="bf-overlay hidden" id="huntStartOverlay">
+      <div class="crest">🗝️</div>
+      <h2>Arcade Assault</h2>
+      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong> — the cannon fires on its own; sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Wave 8</strong> and the next clue is yours. Good luck!</p>
+      <button class="play-btn" id="huntStartBtn">Launch 🚀</button>
+    </div>
+
     <!-- Game over overlay -->
     <div class="bf-overlay hidden" id="overOverlay">
       <div class="crest" id="overCrest">🏛️</div>
@@ -297,6 +305,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
+<script src="../../assets/js/hunt.js"></script>
 <script>
 // ============================================================
 // TYPE INVADERS — an arcade typing-defense game.
@@ -494,6 +503,10 @@ let heliTimer = 0;               // countdown to the next chopper drop-in
 let secretBuf = '';
 // secret arcade mode: no typing — aim with the arrows, the cannon auto-fires
 let arcade = false, arcadeFireT = 0, aimKeys = { left:false, right:false, up:false, down:false };
+// treasure-hunt arcade trial: arrive via ?arcade, hold to HUNT_GOAL_WAVE to reveal the next clue
+const HUNT_ARCADE_REALM = 'easy';   // arcade already amplifies difficulty; easy realm keeps it doable
+const HUNT_GOAL_WAVE = 8;           // hard-but-doable — tune here
+let huntMode = false, huntCluePopped = false;
 
 // ---------- Geometry: the White House sits centred at the base ----------
 function whW(){ return clamp(W * 0.26, 150, 280); }
@@ -807,6 +820,8 @@ function startWave(n){
   isBossWave = (n % BOSS_EVERY === 0);
   boss = null;
   document.getElementById('waveBadge').textContent = '🛸 Wave ' + n;
+  if (huntMode && n >= HUNT_GOAL_WAVE && !huntCluePopped) revealHuntClue();   // trial cleared
+
   if (isBossWave){
     toSpawn = Math.min(3, 1 + Math.floor(n/BOSS_EVERY));   // a couple of escorts, then the boss
     spawnTimer = 0.8; gap = 1.4;
@@ -2022,6 +2037,23 @@ function enterArcade(){
   flashWave('🕹 ARCADE MODE', 'Aim with ← → arrows — the cannon fires itself!');
   if (window.HSGSound) HSGSound.powerup();
 }
+// treasure-hunt entry (via ?arcade): straight into arcade with a clue goal
+function startHuntArcade(){
+  document.getElementById('huntStartOverlay').classList.add('hidden');
+  huntCluePopped = false;
+  startGame(HUNT_ARCADE_REALM, true);
+  flashWave('🗝 REACH WAVE ' + HUNT_GOAL_WAVE, 'Aim with ← → — the cannon fires itself!');
+  if (window.HSGSound) HSGSound.powerup();
+}
+// reached the goal wave — advance the site-wide hunt and pop the clue window
+function revealHuntClue(){
+  huntCluePopped = true;
+  flashWave('🗝 CLUE UNLOCKED', 'Wave ' + HUNT_GOAL_WAVE + ' held — the next clue appears!');
+  var popped = null;
+  try { if (window.HSGHunt) popped = HSGHunt.reach('typeinvaders', wave); } catch(e){}
+  if (window.HSGSound && HSGSound.powerup) HSGSound.powerup();
+  if (window.HSGfx && HSGfx.flash) HSGfx.flash('rgba(255,231,150,0.6)');
+}
 function quitToMenu(){
   if (running && !gameLost && !arcade) endRun(false);   // bank the run (arcade never scores)
   running = false; paused = false; gameLost = false; arcade = false; if (rafId) cancelAnimationFrame(rafId);
@@ -2123,6 +2155,14 @@ if (/[?&]shot\b/.test(location.search)) {
   fireLaser(active, null);
 }
 
+// Treasure-hunt arcade entry: open with ?arcade to skip the menu, show a clue
+// intro, then drop straight into auto-fire arcade mode with a wave goal.
+document.getElementById('huntStartBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startHuntArcade(); });
+if (/[?&]arcade\b/.test(location.search)) {
+  huntMode = true;
+  startOverlay.classList.add('hidden');
+  document.getElementById('huntStartOverlay').classList.remove('hidden');
+}
 
 </script>
 

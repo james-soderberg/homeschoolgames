@@ -107,6 +107,13 @@
 
   function renderClue() {
     var s = H.current(), n = H.step() + 1;
+    if (s.placeholder) {   // trail not yet carved past here — show a gentle "coming soon"
+      $('content').innerHTML =
+        '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
+        '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>' +
+        '<div class="fb good" style="opacity:.85">The next clue is being forged… check back soon, hunter.</div>';
+      return;
+    }
     $('content').innerHTML =
       '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
       '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>' +
