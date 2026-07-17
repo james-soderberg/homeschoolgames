@@ -801,7 +801,10 @@
       </div>
     </div>
 
-    <!-- Feedback -->
+    <!-- Timeline (reveal) — sits in the middle, right after the showdown -->
+    <div class="timeline-wrap" id="timelineWrap"></div>
+
+    <!-- Which card was closest -->
     <div class="solo-instruction" id="soloInstruction">Pick the card from your hand that is closest in date.</div>
 
     <!-- Hand -->
@@ -810,9 +813,6 @@
 
     <!-- Action bar -->
     <div class="action-bar" id="soloActionBar"></div>
-
-    <!-- Timeline lives at the bottom so it never pushes the hand when it opens -->
-    <div class="timeline-wrap" id="timelineWrap"></div>
 
     </div><!-- /.game-main -->
     <aside class="hsg-rail" id="streakRail"></aside>
@@ -1456,7 +1456,7 @@ function soloPickCard(pickedIdx) {
       updateSoloStats();
       soloHand.splice(pickedIdx, 1); // played card leaves the hand
 
-      instruction.innerHTML = `<span style="color:var(--green);font-weight:700;">✓ Correct!</span> Your card was the closest.`;
+      instruction.innerHTML = `Your card was the closest.`;
 
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-gold btn-next';
@@ -1473,7 +1473,7 @@ function soloPickCard(pickedIdx) {
       if (window.HSGfx) { HSGfx.flash('red'); if (pickedDiff > 2000) HSGfx.shake(); } // shake on a wild miss
       updateSoloStats();
 
-      instruction.innerHTML = `<span style="color:var(--red);font-weight:700;">✗ Not the closest.</span> The closest was “${bestCard.title}.”`;
+      instruction.innerHTML = `The closest was “${bestCard.title}.”`;
 
       const nextBtn = document.createElement('button');
       nextBtn.className = 'btn btn-gold btn-next';

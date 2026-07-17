@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Slingshot · HomeschoolGames</title>
+<title>Gravity Slingshot · HomeschoolGames</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
 <style>
   .sl-page { max-width: min(1720px, 98vw); margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
@@ -177,10 +177,10 @@
 
 <div class="sl-page">
   <div class="sl-top">
-    <h1>Slingshot<span class="sub">Gravity &amp; Orbits · a voyage through the solar system</span></h1>
+    <h1>Gravity Slingshot<span class="sub">Gravity &amp; Orbits · a voyage through the solar system</span></h1>
     <div class="stat-group">
       <div class="stat-badge" id="scoreBadge">0 pts</div>
-      <div class="stat-badge probes-badge" id="probesBadge">🚀 <b>5</b></div>
+      <div class="stat-badge probes-badge" id="probesBadge">🚀 <b>∞</b></div>
       <div class="stat-badge obj-badge" id="objBadge">Reach the Moon</div>
       <div class="stat-badge kind-badge" id="kindBadge">Double slingshot</div>
       <div class="stat-badge thrust-badge" id="thrustBadge"></div>
@@ -202,7 +202,7 @@
     <!-- Start -->
     <div class="ov" id="startOverlay">
       <div class="crest">🪐</div>
-      <h2>Slingshot</h2>
+      <h2>Gravity Slingshot</h2>
       <div class="ctl-guide">
         <div class="ctl-row"><span class="ctl-keys"><kbd>←</kbd><kbd>→</kbd></span><span><b>Velocity:</b> how hard you launch</span></div>
         <div class="ctl-row"><span class="ctl-keys"><kbd>↑</kbd><kbd>↓</kbd></span><span><b>Aim:</b> the arc of your shot</span></div>
@@ -271,7 +271,7 @@
     <button class="launch-btn" id="launchBtn">🚀 Launch</button>
     <button class="cancel-btn" id="cancelBtn" type="button" style="display:none">✕ Cancel shot</button>
     <button class="reset-link" id="solveBtn" style="display:none">💡 Show solution</button>
-    <button class="reset-link" onclick="toMenu()">Quit to base</button>
+    <button class="reset-link" onclick="endVoyage()">End voyage</button>
   </div>
 </div>
 
@@ -397,6 +397,9 @@ let W = DW, H = DH, dpr = 1, view = { scale: 1, ox: 0, oy: 0 };
 let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo | tutorial
 let tutT = 0, tutAcc = 0, tutLaunched = false, tutDone = false, tutReplay = null;   // auto-played tutorial
 let diffKey = 'commander', diff = DIFF.commander;   // single fixed difficulty
+// Unlimited lives by default: probes never run out, so the voyage is an endless
+// practice / score-chase. End it any time with "End voyage" to log your score.
+const UNLIMITED_PROBES = true;
 let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = 'None';
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
 let levelVmax = 1;   // per-level max launch velocity (1 = full; <1 caps thrust so gravity dominates)
@@ -712,13 +715,13 @@ function win() {
   if (window.HSGSound) HSGSound.correct();
   if (window.HSGfx) HSGfx.confetti({ count: 28 });
   if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
-  if (level % 5 === 0) { probes++; toast('+1 probe!'); }   // every 5th world earns a spare probe
+  if (!UNLIMITED_PROBES && level % 5 === 0) { probes++; toast('+1 probe!'); }   // (limited mode) every 5th world earns a spare probe
   updateHud();
   phase = 'fact';
   showFact(gain, firstTry);
 }
 function crash(msg) {
-  if (!(window.HSGGod && HSGGod.on)) probes--;   // god mode: never lose a probe
+  if (!UNLIMITED_PROBES && !(window.HSGGod && HSGGod.on)) probes--;   // god mode / unlimited: never lose a probe
   streak = 0;
   for (let i = 0; i < 22; i++) spawnParticle(probe.x, probe.y, rand(-210, 210), rand(-210, 210), rand(.35, .8), i % 2 ? '#ff9a5a' : '#ffd27a', rand(2, 4.5));
   flashR = 0.45; shake = 11; probe = null; predicted = null; flightPath = [];   // the path vanishes with the probe
@@ -726,7 +729,7 @@ function crash(msg) {
   if (window.HSGfx) HSGfx.flash('rgba(150,40,40,.25)');
   updateHud();
   toast(msg);
-  if (probes <= 0) { setTimeout(gameOver, 700); phase = 'crashwait'; return; }
+  if (!UNLIMITED_PROBES && probes <= 0) { setTimeout(gameOver, 700); phase = 'crashwait'; return; }
   phase = 'crashwait';
   setTimeout(() => { if (phase === 'crashwait') { phase = 'aim'; refreshBodyPositions(); recomputePredict(); } }, 750);
 }
@@ -736,14 +739,14 @@ function crash(msg) {
 // but skips the wait and drops you straight back to aiming.
 function cancelShot() {
   if (phase !== 'flight' || !probe) return;
-  if (!(window.HSGGod && HSGGod.on)) probes--;   // god mode: never lose a probe
+  if (!UNLIMITED_PROBES && !(window.HSGGod && HSGGod.on)) probes--;   // god mode / unlimited: never lose a probe
   streak = 0;
   for (let i = 0; i < 12; i++) spawnParticle(probe.x, probe.y, rand(-120, 120), rand(-120, 120), rand(.3, .6), i % 2 ? '#9fb0dd' : '#c9d3f0', rand(1.5, 3));
   probe = null; predicted = null; flightPath = [];   // the path vanishes with the cancelled shot
   if (window.HSGSound) HSGSound.tick();
   updateHud();
   toast('Shot cancelled');
-  if (probes <= 0) { setTimeout(gameOver, 500); phase = 'crashwait'; return; }
+  if (!UNLIMITED_PROBES && probes <= 0) { setTimeout(gameOver, 500); phase = 'crashwait'; return; }
   phase = 'aim'; refreshBodyPositions(); recomputePredict();
 }
 
@@ -840,7 +843,7 @@ function renderVoyage() {
 function updateHud() {
   renderVoyage();
   scoreBadge.textContent = score.toLocaleString() + ' pts';
-  probesBadge.innerHTML = '🚀 <b>' + ((window.HSGGod && HSGGod.on) ? '∞' : Math.max(0, probes)) + '</b>';
+  probesBadge.innerHTML = '🚀 <b>' + ((UNLIMITED_PROBES || (window.HSGGod && HSGGod.on)) ? '∞' : Math.max(0, probes)) + '</b>';
   streakBadge.classList.toggle('hidden', streak < 2);
   streakBadge.textContent = '🔥 ' + streak;
 }
@@ -880,8 +883,18 @@ function toMenu() {
   startOverlay.classList.remove('hidden');
   renderVoyage();
 }
+// End the current voyage on purpose. With unlimited probes the run never ends
+// itself, so this is how a score reaches the leaderboard. A scoreless quit just
+// slips back to base without the end-of-voyage card.
+function endVoyage() {
+  const inPlay = phase !== 'menu' && phase !== 'demo' && phase !== 'over';
+  if (inPlay && score > 0) gameOver();
+  else toMenu();
+}
 function gameOver() {
   phase = 'over';
+  document.getElementById('overTitle').textContent = 'Voyage complete';
+  document.getElementById('overMsg').textContent = 'You reached ' + titleName(reachedName) + '. Log your score and chart a new course whenever you like.';
   document.getElementById('fsScore').textContent = score.toLocaleString();
   document.getElementById('fsReached').textContent = titleName(reachedName);
   document.getElementById('fsStreak').textContent = bestStreak;
