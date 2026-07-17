@@ -40,12 +40,11 @@
       hint: 'No hint here, but one is hidden. Slither to a length of 40 or better in Letter Snake, and its game-over screen will reveal the trick.',
       trial: 'Then hold the capital to Wave 15 in the arcade.' },
 
-    // PLACEHOLDER - revealed when the arcade trial is cleared; real clue lands soon.
-    { token: 'z3n6wd', placeholder: true, word: '__soon__', open: 'index.html', game: 'todo', goal: 1,
-      accept: ['__soon__'],
-      riddle: 'The capital holds and the saucers scatter - but the next stretch of the trail is still being carved…',
-      hint: 'This clue is a placeholder. The real one arrives soon, hunter.',
-      trial: 'Coming soon.' }
+    { token: 'z3n6wd', word: 'racer', open: 'games/word-racer/index.html', game: 'wordracer', goal: 1,
+      accept: ['racer', 'wordracer'],
+      riddle: 'Where letters turn to horsepower, a lone racer idles at the line. Take the wheel, then speak the hunt’s own name again and again, until the road ahead catches fire.',
+      hint: 'Go to Word Racer. As you drive, type the hunt’s word — TREASURE — over and over, and the secret road will open.',
+      trial: 'Open the treasure road in Word Racer.' }
   ];
 
   var TREASURE = {
