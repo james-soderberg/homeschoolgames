@@ -37,7 +37,7 @@
     { word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 15,
       accept: ['independence'], mono: true,
       riddle: 'F I R N E D E E D P O E M N R D I E N N G C S E',
-      hint: 'Keep only the letters on the even beat — the 2nd, the 4th, the 6th, and so on — and discard the rest. What remains is a young nation’s founding cry. Speak it.',
+      hint: 'No hint here — but one is hidden. Slither to a length of 35 or better in Letter Snake (any level), and its game-over screen will reveal the trick.',
       trial: 'Then hold the capital to Wave 15 in the arcade.' },
 
     // PLACEHOLDER — revealed when the arcade trial is cleared; real clue lands soon.

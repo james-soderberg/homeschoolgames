@@ -209,6 +209,10 @@
         <div class="es"><b id="endWords">0</b><span>Words</span></div>
         <div class="es"><b id="endBest">0</b><span>Longest ever</span></div>
       </div>
+      <div class="hidden" id="lsHuntClue" style="width:100%;max-width:320px;margin:0 auto 0.85rem;padding:0.7rem 0.9rem;text-align:center;background:rgba(255,217,138,0.08);border:1.5px solid rgba(255,217,138,0.5);border-radius:12px;">
+        <div style="font-size:0.62rem;font-weight:800;letter-spacing:0.16em;text-transform:uppercase;color:#e7c979;margin-bottom:0.32rem;">🗝 Treasure Hunt</div>
+        <div style="font-family:var(--font-serif,Georgia),serif;font-style:italic;font-size:1.02rem;color:#ffe9b8;line-height:1.4;">For the treasure hunter: only every other letter matters. Ignore the first one.</div>
+      </div>
       <div class="hsg-board" id="lsBoard" style="text-align:left;margin:0 auto 0.85rem;max-width:320px;background:rgba(255,253,244,0.96);border-radius:12px;padding:0.5rem 0.7rem"></div>
       <div class="end-actions">
         <button class="end-btn primary" id="endPlayAgain">Play again →</button>
@@ -493,6 +497,8 @@ function gameOver(reason){
   endWordClue.textContent = clueStr || '';
   endWords.textContent = wordsDone;
   endBest.textContent = best;
+  // treasure-hunt easter egg: a length of 35+ (any level) reveals a hidden clue
+  document.getElementById('lsHuntClue').classList.toggle('hidden', finalLen < 35);
   endOverlay.classList.remove('hidden');
   HSGSound.finish(false);
   // bank the snake's length + show placement/name entry inline on the end card
