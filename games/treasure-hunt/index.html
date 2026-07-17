@@ -134,6 +134,14 @@
         '<div class="fb good" style="opacity:.85">The next clue is being forged… check back soon, hunter.</div>';
       return;
     }
+    if (s.directive) {   // a plain instruction to follow — no word to guess, just go
+      $('content').innerHTML =
+        '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
+        '<p class="riddle" style="font-style:normal">' + esc(s.riddle) + '</p>' +
+        '<button id="goBtn" style="border:none;cursor:pointer;border-radius:10px;padding:.75rem 2rem;font-family:var(--font-sans);font-weight:800;font-size:1.05rem;color:#1a1207;background:linear-gradient(180deg,var(--gold-lt),var(--gold));box-shadow:0 5px 0 #7a5c1f;">' + esc(s.goText || 'Go →') + '</button>';
+      $('goBtn').addEventListener('click', function () { if (window.HSGSound) HSGSound.correct(); location.href = '../../' + s.open; });
+      return;
+    }
     $('content').innerHTML =
       '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
       (s.mono
