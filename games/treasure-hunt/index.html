@@ -92,14 +92,22 @@
   var $ = function (id) { return document.getElementById(id); };
   var H = window.HSGHunt;
   var N = H.STEPS.length;
-  // dev shortcut: ?step=N jumps the journal straight to a given clue (0-based)
+  // dev shortcut: ?step=N jumps the journal straight to a given clue (0-based).
+  // Works even when localStorage is blocked (e.g. Safari on file://) by overriding
+  // the displayed step in memory; also writes storage when it's available.
+  var forcedStep = null;
   try { var _s = new URLSearchParams(location.search).get('step');
-    if (_s !== null) localStorage.setItem('hsg_hunt_step', String(parseInt(_s, 10) || 0)); } catch (e) {}
+    if (_s !== null) { forcedStep = Math.max(0, parseInt(_s, 10) || 0);
+      try { localStorage.setItem('hsg_hunt_step', String(forcedStep)); } catch (e) {} }
+  } catch (e) {}
+  function effStep()    { return forcedStep !== null ? forcedStep : H.step(); }
+  function effDone()    { return effStep() >= N; }
+  function effCurrent() { return effDone() ? null : H.STEPS[effStep()]; }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
   function renderRail() {
-    var st = H.step(), done = H.done(), html = '';
+    var st = effStep(), done = effDone(), html = '';
     for (var i = 0; i < N; i++) html += '<span class="seal ' + (i < st ? 'done' : (i === st && !done ? 'cur' : '')) + '"></span>';
     html += '<span class="seal chest ' + (done ? 'done' : '') + '"></span>';
     $('rail').innerHTML = html;
@@ -113,7 +121,7 @@
   }
 
   function renderClue() {
-    var s = H.current(), n = H.step() + 1;
+    var s = effCurrent(), n = effStep() + 1;
     if (s.placeholder) {   // trail not yet carved past here — show a gentle "coming soon"
       $('content').innerHTML =
         '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
@@ -175,7 +183,7 @@
     if (window.HSGSound && HSGSound.finish) HSGSound.finish(true);
   }
 
-  function render() { renderRail(); if (H.done()) renderTreasure(); else renderClue(); }
+  function render() { renderRail(); if (effDone()) renderTreasure(); else renderClue(); }
 
   function confetti() {
     var wrap = document.createElement('div'); wrap.className = 'th-confetti';
