@@ -167,6 +167,20 @@
     body.ti-shot .game-layout, body.ti-shot .ti-page { margin: 0 !important; padding: 0 !important; max-width: none !important; width: 100% !important; }
     body.ti-shot .ti-sky { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; border: 0 !important; }
 
+    /* treasure-hunt context (arrived via ?arcade): dark page like the clue pages */
+    body.ti-hunt { background: #0c0a07; color: #e9e2d2; }
+    body.ti-hunt .game-layout-wide::before { display: none; }
+    body.ti-hunt .site-header { background: #0f0c08; border-bottom: 1px solid #241d12; }
+    body.ti-hunt .site-logo { color: #e9e2d2; } body.ti-hunt .site-logo span { color: #c8a24a; }
+    body.ti-hunt .site-nav a { color: #9a8a63; } body.ti-hunt .site-nav a:hover { color: #e7c979; }
+    body.ti-hunt .ti-top h1 { color: #e9e2d2; }
+    body.ti-hunt .stat-badge { background: #1a150d; border-color: #3a2f1b; color: #e9e2d2; }
+    body.ti-hunt .hint, body.ti-hunt .reset-link, body.ti-hunt #motionToggle { color: #8a7a55; }
+    body.ti-hunt .hint kbd { background: #1a150d; border-color: #3a2f1b; color: #e9e2d2; }
+    body.ti-hunt .site-footer { border-top-color: #241d12; }
+    body.ti-hunt .site-footer a { color: #9a8a63; }
+    body.ti-hunt .hsg-rail { display: none; }
+
     /* live typing-speed badge */
     #wpmBadge { font-variant-numeric: tabular-nums; }
 
@@ -2195,6 +2209,7 @@ if (/[?&]shot\b/.test(location.search)) {
 document.getElementById('huntStartBtn').addEventListener('click', ()=>{ if (window.HSGSound) HSGSound.tick(); startHuntArcade(); });
 if (/[?&]arcade\b/.test(location.search)) {
   huntMode = true;
+  document.body.classList.add('ti-hunt');   // dark page, matching the treasure-hunt clue pages
   startOverlay.classList.add('hidden');
   document.getElementById('huntStartOverlay').classList.remove('hidden');
 }
