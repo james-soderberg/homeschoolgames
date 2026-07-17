@@ -1,4 +1,4 @@
-// WHO SAID IT? — 218 historical people (pre-1990) with one famous, short quote each.
+// WHO SAID IT? — 225 historical people (pre-1990) with one famous, short quote each.
 // Fields: n=name, w=Wikipedia title (for the portrait; defaults to n), y=birth year
 // (negative = BC, used to pick same-era wrong answers), e=era label, q=quote,
 // b=one-line context. Portraits are freely-licensed images from Wikimedia Commons.
@@ -118,7 +118,7 @@ const WSI_PEOPLE = [
 {n:"Maria Montessori",g:"f",y:1870,e:"Turn of the Century",q:"The greatest sign of success is to say, 'The children are now working as if I did not exist.'",b:"Pioneering educator."},
 {n:"Marcel Proust",g:"m",y:1871,e:"Turn of the Century",q:"The real voyage of discovery consists in having new eyes.",b:"French novelist."},
 {n:"Orville Wright",g:"m",y:1871,e:"Age of Invention",q:"The airplane stays up because it doesn't have time to fall.",b:"Co-inventor of the first airplane."},
-{n:"Winston Churchill",g:"m",y:1874,e:"World Wars",q:"Never give in—never, never, never.",b:"Britain's wartime prime minister."},
+{n:"Winston Churchill",g:"m",y:1874,e:"World Wars",q:"Never give in, never, never, never.",b:"Britain's wartime prime minister."},
 {n:"Robert Frost",g:"m",y:1874,e:"20th Century",q:"The best way out is always through.",b:"Beloved American poet."},
 {n:"Carl Jung",g:"m",y:1875,e:"20th Century",q:"Who looks outside, dreams; who looks inside, awakes.",b:"Founder of analytical psychology."},
 {n:"Albert Schweitzer",g:"m",y:1875,e:"20th Century",q:"Example is not the main thing in influencing others. It is the only thing.",b:"Nobel Peace Prize doctor."},
@@ -162,9 +162,8 @@ const WSI_PEOPLE = [
 {n:"Rosa Parks",g:"f",y:1913,e:"Civil Rights",q:"You must never be fearful about what you are doing when it is right.",b:"Sparked the Montgomery bus boycott."},
 {n:"Jesse Owens",g:"m",y:1913,e:"20th Century",q:"The battles that count aren't the ones for gold medals.",b:"Four-time Olympic gold sprinter."},
 {n:"Jonas Salk",g:"m",y:1914,e:"20th Century",q:"Hope lies in dreams, in imagination, and in the courage of those who dare to make dreams reality.",b:"Developer of the polio vaccine."},
-{n:"Frank Sinatra",g:"m",y:1915,e:"20th Century",q:"The best revenge is massive success.",b:"Iconic American singer."},
 {n:"Roald Dahl",g:"m",y:1916,e:"20th Century",q:"Those who don't believe in magic will never find it.",b:"Author of Charlie and the Chocolate Factory."},
-{n:"John F. Kennedy",g:"m",y:1917,e:"Cold War",q:"Ask not what your country can do for you—ask what you can do for your country.",b:"35th U.S. president."},
+{n:"John F. Kennedy",g:"m",y:1917,e:"Cold War",q:"Ask not what your country can do for you; ask what you can do for your country.",b:"35th U.S. president."},
 {n:"Nelson Mandela",g:"m",y:1918,e:"20th Century",q:"It always seems impossible until it's done.",b:"Ended apartheid; first Black president of South Africa."},
 {n:"Richard Feynman",g:"m",y:1918,e:"20th Century",q:"I would rather have questions that can't be answered than answers that can't be questioned.",b:"Nobel-winning physicist and teacher."},
 {n:"Katherine Johnson",g:"f",y:1918,e:"Space Age",q:"Like what you do, and then you will do your best.",b:"NASA mathematician of the Moon missions."},
@@ -178,7 +177,6 @@ const WSI_PEOPLE = [
 {n:"Maya Angelou",g:"f",y:1928,e:"20th Century",q:"People will never forget how you made them feel.",b:"Poet and memoirist."},
 {n:"Martin Luther King Jr.",g:"m",y:1929,e:"Civil Rights",q:"I have a dream.",b:"Leader of the civil-rights movement."},
 {n:"Anne Frank",g:"f",y:1929,e:"World Wars",q:"How wonderful it is that nobody need wait a single moment before starting to improve the world.",b:"Diarist of the Holocaust."},
-{n:"Audrey Hepburn",g:"f",y:1929,e:"20th Century",q:"Nothing is impossible; the word itself says 'I'm possible!'",b:"Actress and humanitarian."},
 {n:"Neil Armstrong",g:"m",y:1930,e:"Space Age",q:"That's one small step for man, one giant leap for mankind.",b:"First person to walk on the Moon."},
 {n:"Mikhail Gorbachev",g:"m",y:1931,e:"Cold War",q:"If not me, who? And if not now, when?",b:"Last leader of the Soviet Union."},
 {n:"Desmond Tutu",g:"m",y:1931,e:"20th Century",q:"Do your little bit of good where you are; it's those little bits of good put together that overwhelm the world.",b:"Anti-apartheid archbishop."},
@@ -190,7 +188,7 @@ const WSI_PEOPLE = [
 {n:"Plutarch",g:"m",y:46,e:"Ancient Rome",q:"The mind is not a vessel to be filled, but a fire to be kindled.",b:"Greek-Roman biographer."},
 {n:"Rumi",g:"m",y:1207,e:"Medieval Persia",q:"Raise your words, not your voice.",b:"Persian poet and mystic."},
 {n:"Marco Polo",g:"m",y:1254,e:"Age of Exploration",q:"I have not told half of what I saw.",b:"Venetian traveler to the East."},
-{n:"Rembrandt",g:"m",w:"Rembrandt",y:1606,e:"Renaissance",q:"Choose only one master — nature.",b:"Dutch master painter."},
+{n:"Rembrandt",g:"m",w:"Rembrandt",y:1606,e:"Renaissance",q:"Choose only one master, nature.",b:"Dutch master painter."},
 {n:"John Milton",g:"m",y:1608,e:"Enlightenment",q:"The mind is its own place.",b:"Author of Paradise Lost."},
 {n:"Molière",g:"m",y:1622,e:"Enlightenment",q:"The greater the obstacle, the more glory in overcoming it.",b:"French master of comedy."},
 {n:"Johann Sebastian Bach",g:"m",y:1685,e:"Baroque Era",q:"Where there is devotional music, God is always at hand.",b:"Baroque composer."},
@@ -217,11 +215,10 @@ const WSI_PEOPLE = [
 {n:"Henry Ford",g:"m",y:1863,e:"Age of Invention",q:"Whether you think you can, or you think you can't, you're right.",b:"Maker of the affordable automobile."},
 {n:"George Santayana",g:"m",y:1863,e:"Turn of the Century",q:"Those who cannot remember the past are condemned to repeat it.",b:"Philosopher and writer."},
 {n:"Beatrix Potter",g:"f",y:1866,e:"Turn of the Century",q:"There is something delicious about writing the first words of a story.",b:"Creator of Peter Rabbit."},
-{n:"W. E. B. Du Bois",g:"m",w:"W. E. B. Du Bois",y:1868,e:"Turn of the Century",q:"Education must not simply teach work — it must teach life.",b:"Scholar and civil-rights pioneer."},
+{n:"W. E. B. Du Bois",g:"m",w:"W. E. B. Du Bois",y:1868,e:"Turn of the Century",q:"Education must not simply teach work; it must teach life.",b:"Scholar and civil-rights pioneer."},
 {n:"Henri Matisse",g:"m",y:1869,e:"20th Century",q:"Creativity takes courage.",b:"French painter and master of color."},
 {n:"Gertrude Stein",g:"f",y:1874,e:"20th Century",q:"A rose is a rose is a rose.",b:"Avant-garde American writer."},
 {n:"Harry Houdini",g:"m",y:1874,e:"Turn of the Century",q:"My brain is the key that sets me free.",b:"The world's greatest escape artist."},
-{n:"Coco Chanel",g:"f",w:"Coco Chanel",y:1883,e:"20th Century",q:"In order to be irreplaceable, one must always be different.",b:"Revolutionary fashion designer."},
 {n:"Franz Kafka",g:"m",y:1883,e:"20th Century",q:"A book must be the axe for the frozen sea within us.",b:"Author of The Metamorphosis."},
 {n:"Georgia O'Keeffe",g:"f",y:1887,e:"20th Century",q:"I found I could say things with color that I couldn't say any other way.",b:"Pioneer of American modern art."},
 {n:"Babe Ruth",g:"m",w:"Babe Ruth",y:1895,e:"20th Century",q:"Never let the fear of striking out keep you from playing the game.",b:"Baseball's home-run king."},
@@ -233,4 +230,16 @@ const WSI_PEOPLE = [
 {n:"Isaac Asimov",g:"m",y:1920,e:"Modern Era",q:"The true delight is in the finding out rather than in the knowing.",b:"Prolific science-fiction author."},
 {n:"Ray Bradbury",g:"m",y:1920,e:"Modern Era",q:"Jump, and you will find out how to unfold your wings as you fall.",b:"Author of Fahrenheit 451."},
 {n:"Shirley Chisholm",g:"f",y:1924,e:"Civil Rights",q:"If they don't give you a seat at the table, bring a folding chair.",b:"First Black woman elected to Congress."},
+
+// ---------- Added: vital voices from the history books ----------
+{n:"Queen Elizabeth I",g:"f",w:"Elizabeth I",y:1533,e:"Renaissance",q:"I have the heart and stomach of a king.",b:"Queen of England, rallying her troops against the Spanish Armada."},
+{n:"Abigail Adams",g:"f",y:1744,e:"Founding Era",q:"Remember the ladies.",b:"In a letter urging her husband John to include women in the new nation."},
+{n:"Nathan Hale",g:"m",y:1755,e:"Founding Era",q:"I only regret that I have but one life to lose for my country.",b:"American patriot, hanged by the British as a spy. His last words."},
+{n:"Sojourner Truth",g:"f",y:1797,e:"19th C. America",q:"Ain't I a woman?",b:"Abolitionist and women's-rights preacher, at an 1851 convention."},
+{n:"Chief Joseph",g:"m",y:1840,e:"19th C. America",q:"I will fight no more forever.",b:"Nez Perce chief, on surrendering to the US Army."},
+{n:"Emma Lazarus",g:"f",y:1849,e:"19th C. America",q:"Give me your tired, your poor, your huddled masses yearning to breathe free.",b:"Poet whose words are inscribed on the Statue of Liberty."},
+{n:"Woodrow Wilson",g:"m",y:1856,e:"World Wars",q:"The world must be made safe for democracy.",b:"US president, asking Congress to enter World War I."},
+{n:"Douglas MacArthur",g:"m",y:1880,e:"World Wars",q:"Old soldiers never die; they just fade away.",b:"US general, in his farewell address to Congress."},
+{n:"Charles de Gaulle",g:"m",y:1890,e:"World Wars",q:"France has lost a battle, but France has not lost the war.",b:"Free French leader, broadcasting from London in 1940."},
+{n:"Muhammad Ali",g:"m",y:1942,e:"Civil Rights",q:"Float like a butterfly, sting like a bee.",b:"Heavyweight boxing champion, describing his style."},
 ];

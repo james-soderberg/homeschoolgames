@@ -207,14 +207,19 @@ async function pickAnswer(){
   return PEOPLE.find(p=>!brokenImg.has(p.n)) || PEOPLE[0];
 }
 
-// 4 names: the speaker + 3 era-near distractors (closest by year), all the SAME
-// gender as the speaker (the portrait already shows whether it's a man or woman).
+// 4 names: the speaker + 3 plausible distractors — all the SAME gender as the
+// speaker (the portrait gives that away) and from the SAME period, so you can't
+// win by simple elimination. Ranking = year distance, with a big discount for
+// sharing the speaker's era label, so contemporaries surface first. We pick 3 of
+// the closest 8 (shuffled) so every wrong answer "could have said it" but the
+// set still varies run to run.
 function buildOptions(ans){
   const sameG = PEOPLE.filter(p=>p.n!==ans.n && p.g===ans.g);
-  const others = sameG.length>=3 ? sameG : PEOPLE.filter(p=>p.n!==ans.n);
-  const near = others.slice().sort((a,b)=>Math.abs(a.y-ans.y)-Math.abs(b.y-ans.y)).slice(0, 14);
+  const base = sameG.length>=6 ? sameG : PEOPLE.filter(p=>p.n!==ans.n);
+  const score = p => Math.abs(p.y-ans.y) - (p.e===ans.e ? 400 : 0);   // same era ⇒ treated as 400 yrs closer
+  const near = base.slice().sort((a,b)=>score(a)-score(b)).slice(0, 8);
   const pool = shuffle(near).slice(0,3).map(p=>p.n);
-  while(pool.length<3){ const r=others[Math.floor(Math.random()*others.length)].n; if(!pool.includes(r)) pool.push(r); }
+  while(pool.length<3){ const r=base[Math.floor(Math.random()*base.length)].n; if(!pool.includes(r)) pool.push(r); }
   return shuffle([ans.n, ...pool]);
 }
 
