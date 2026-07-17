@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
     /* Fill the viewport exactly: the page is a 100vh flex column, the question
-       panel sizes to its content, and the map canvas flexes to fill the rest —
+       panel sizes to its content, and the map canvas flexes to fill the rest -
        so a desktop window needs no scrolling. */
     html, body { height: 100%; }
     body { min-height: 100vh; display: flex; flex-direction: column; }
@@ -282,7 +282,7 @@
         <button class="reset-link" onclick="startGame()">Start over</button>
       </div>
 
-      <!-- Caught by Fix — covers the whole game column so it always fits -->
+      <!-- Caught by Fix - covers the whole game column so it always fits -->
       <div class="ov hidden" id="caughtOverlay">
         <div class="crest">🕵️</div>
         <h2>Detective Fix nabs you!</h2>
@@ -327,7 +327,7 @@
 // Identify each flag to advance Phileas Fogg along Jules Verne's
 // route. Detective Fix pursues; a wrong answer is a "mishap" that
 // costs days and lets Fix close in. Reach London before the
-// 80-day wager runs out — and before Fix catches you.
+// 80-day wager runs out - and before Fix catches you.
 // ============================================================
 
 // ---------------- Flag deck (the educational core) ----------------
@@ -425,7 +425,7 @@ const CONT_COLOR = { Africa:'#7A5C00', Americas:'#2A5C3F', Asia:'#8B2020', Europ
 // Tuning (lap 1): head start 25; a MISS advances Fix by creep+surge = 8.6, so two
 // early misses are survivable (25 → 16.4 → 7.8) and the THIRD just barely catches you
 // (7.8 → −0.8). A CORRECT answer moves you +step (7.7) but Fix +fixGain (4.85), so you
-// only net +2.85 of lead — about a third of a miss, i.e. it takes ~3 right answers to
+// only net +2.85 of lead - about a third of a miss, i.e. it takes ~3 right answers to
 // gain back the ground one mistake costs. Correct-gain and miss-cost are decoupled so
 // each can be tuned independently. Later laps start Fix closer / faster (the *For fns).
 const PACE = { step: 7.7, fixStart: -25, fixCreep: 2.6, fixSurge: 6, fixGain: 4.85 };
@@ -501,7 +501,7 @@ function screenX(p) { return W * 0.44 + (p - dispProgress) * pxPerPct(); }
 function routeY(p)  { return midY() + Math.sin(p * 0.14 + 0.6) * routeAmp(); }
 
 // ============================================================
-// Drawing — vintage map
+// Drawing - vintage map
 // ============================================================
 function drawBackground(t) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
@@ -736,7 +736,7 @@ function loop(ts) {
 // ============================================================
 // Flag question flow
 // ============================================================
-function activeDeck() { return DECK; }   // one default mode — the whole world is fair game
+function activeDeck() { return DECK; }   // one default mode - the whole world is fair game
 function drawCard() {
   if (!queue.length) queue = shuffle(activeDeck());
   return queue.pop();
@@ -810,7 +810,7 @@ function answer(idx) {
     if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
     checkArrivals();
     updateBadges();
-    if (progress >= 100) { startLap(); return; }    // circled the globe — celebrate, then keep going
+    if (progress >= 100) { startLap(); return; }    // circled the globe - celebrate, then keep going
   } else {
     streak = 0;
     btn.classList.add('wrong');
@@ -969,7 +969,7 @@ document.addEventListener('keydown', e => {
   if (btn && !btn.disabled) { e.preventDefault(); answer(i); }
 });
 
-// Straight into the first question — no menu.
+// Straight into the first question - no menu.
 renderRail();
 setupCanvas();
 startGame();

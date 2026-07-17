@@ -1,4 +1,4 @@
-// WHO SAID IT? — 225 historical people (pre-1990) with one famous, short quote each.
+// WHO SAID IT? - 225 historical people (pre-1990) with one famous, short quote each.
 // Fields: n=name, w=Wikipedia title (for the portrait; defaults to n), y=birth year
 // (negative = BC, used to pick same-era wrong answers), e=era label, q=quote,
 // b=one-line context. Portraits are freely-licensed images from Wikimedia Commons.

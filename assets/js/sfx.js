@@ -1,5 +1,5 @@
 // ============================================================
-// HSGSound — tiny synthesized sound effects (no audio files).
+// HSGSound - tiny synthesized sound effects (no audio files).
 // Web Audio API; lazily created on first sound (after a user gesture).
 // Auto-injects a mute toggle into the site nav. Mute persists.
 // API: HSGSound.correct() .wrong() .streak(level) .finish(win) .tick()
@@ -41,7 +41,7 @@
     freqs.forEach(f => tone(f, start, dur, opts));
   }
 
-  // A burst of filtered noise — the crack/blast of an explosion or fire.
+  // A burst of filtered noise - the crack/blast of an explosion or fire.
   function noiseBurst(start, dur, { gain = 0.2, freq = 1600, freqEnd = 160, type = 'lowpass' } = {}) {
     const c = ac(); if (!c) return;
     const t0 = c.currentTime + start;
@@ -107,13 +107,13 @@
     },
 
     // ---- space / arcade effects (Type Invaders) ----
-    // a quick "pew" — light enough to fire on every keystroke
+    // a quick "pew" - light enough to fire on every keystroke
     laser() {
       if (muted) return;
       tone(900, 0, 0.09, { type: 'square', gain: 0.045, glideTo: 200 });
       tone(1800, 0, 0.05, { type: 'sawtooth', gain: 0.025, glideTo: 700 });
     },
-    // an explosion — layered decaying broadband NOISE (no oscillator tone, so it
+    // an explosion - layered decaying broadband NOISE (no oscillator tone, so it
     // can never read as a beep/error): a bright crack transient, then a roaring
     // body that decays into a low rumble ~0.65s tail. The amplitude decay is
     // baked into each sample buffer for an instant, natural blast attack; the
@@ -145,7 +145,7 @@
       layer(0.95 * S + 0.20, 1200, 300,  0.30, 0.6, 1.5, false, 0.014); // mid rumble
       layer(1.05 * S + 0.25, 380,  110,  0.34, 0.7, 1.6, false, 0.014); // deep low boom (low Q → not buzzy)
     },
-    // A fiery explosion — a soft-swelling WHOOSH + flickering crackle rather than a
+    // A fiery explosion - a soft-swelling WHOOSH + flickering crackle rather than a
     // bang/gunshot. No sharp transient: everything ramps in and the noise sweeps
     // downward (fire spreading), with a bright sizzle on top (embers).
     fireburst(big) {
@@ -170,7 +170,7 @@
         f.Q.setValueAtTime(q, t0);
         const g = c.createGain();
         g.gain.setValueAtTime(0.0001, t0);
-        g.gain.linearRampToValueAtTime(gain, t0 + atk);          // soft swell — no gunshot snap
+        g.gain.linearRampToValueAtTime(gain, t0 + atk);          // soft swell - no gunshot snap
         g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
         src.connect(f).connect(g).connect(c.destination);
         src.start(t0); src.stop(t0 + dur + 0.02);
@@ -179,10 +179,10 @@
       layer(0.55 * S + 0.30, 'lowpass',  1000, 240, 0.4, 0.30, 0.045, false);
       // 2) bright fiery sizzle/crackle on top (flickering embers)
       layer(0.70 * S + 0.28, 'highpass', 1700, 3400, 0.5, 0.11, 0.030, true);
-      // 3) warm low swell for weight — soft, not a thump
+      // 3) warm low swell for weight - soft, not a thump
       layer(0.70 * S + 0.25, 'lowpass',  340,  90,  0.6, 0.22, 0.055, false);
     },
-    // the swish of an arrow/projectile loosed — broadband noise through a
+    // the swish of an arrow/projectile loosed - broadband noise through a
     // sweeping bandpass (a "whoosh", never a tone).
     whoosh() {
       if (muted) return;

@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames — Quest Rail engine
+   HomeschoolGames - Quest Rail engine
    ---------------------------------------------------------
    A reusable "build vs. threat" mechanic for the right rail.
 
@@ -268,19 +268,19 @@
   // with rain and drifting clouds; finishing pays off with a rainbow.
   function arkPartsSVG() {
     return [
-      // 0 — hull
+      // 0 - hull
       '<g class="ark-part" data-s="0">' +
         '<path d="M44 206 L276 206 L266 240 Q230 256 160 256 Q90 256 54 240 Z" fill="#6e4322"/>' +
         '<path d="M58 222 Q160 233 262 222" fill="none" stroke="#4e2f19" stroke-width="2"/>' +
         '<path d="M54 236 Q160 248 266 236" fill="none" stroke="#4e2f19" stroke-width="2"/>' +
         '<path d="M44 206 L276 206 L274 211 L46 211 Z" fill="#8a5a2e"/>' +
       '</g>',
-      // 1 — deck rail
+      // 1 - deck rail
       '<g class="ark-part" data-s="1">' +
         '<rect x="50" y="196" width="220" height="11" rx="3" fill="#8a5a2e"/>' +
         '<rect x="50" y="196" width="220" height="3.5" fill="#a9743b"/>' +
       '</g>',
-      // 2 — cabin lower wall
+      // 2 - cabin lower wall
       '<g class="ark-part" data-s="2">' +
         '<rect x="74" y="150" width="172" height="47" fill="#9c6a36"/>' +
         '<g stroke="#7c5026" stroke-width="1.5">' +
@@ -289,32 +289,32 @@
           '<line x1="204" y1="150" x2="204" y2="197"/><line x1="230" y1="150" x2="230" y2="197"/>' +
         '</g>' +
       '</g>',
-      // 3 — cabin upper + round windows
+      // 3 - cabin upper + round windows
       '<g class="ark-part" data-s="3">' +
         '<rect x="74" y="122" width="172" height="29" fill="#aa7740"/>' +
         '<circle cx="104" cy="137" r="8" fill="#bfe3f2" stroke="#6e4a26" stroke-width="2"/>' +
         '<circle cx="160" cy="137" r="8" fill="#bfe3f2" stroke="#6e4a26" stroke-width="2"/>' +
         '<circle cx="216" cy="137" r="8" fill="#bfe3f2" stroke="#6e4a26" stroke-width="2"/>' +
       '</g>',
-      // 4 — pitched roof
+      // 4 - pitched roof
       '<g class="ark-part" data-s="4">' +
         '<path d="M64 122 L256 122 L232 96 L88 96 Z" fill="#5a3115"/>' +
         '<g stroke="#43250f" stroke-width="1.5"><line x1="96" y1="105" x2="224" y2="105"/><line x1="88" y1="114" x2="232" y2="114"/></g>' +
         '<rect x="60" y="119" width="200" height="5" rx="2" fill="#6e4322"/>' +
       '</g>',
-      // 5 — arched door
+      // 5 - arched door
       '<g class="ark-part" data-s="5">' +
         '<path d="M142 197 L142 168 Q160 150 178 168 L178 197 Z" fill="#3f2410"/>' +
         '<line x1="160" y1="152" x2="160" y2="197" stroke="#2c1809" stroke-width="2"/>' +
         '<circle cx="171" cy="180" r="2.4" fill="#c9a24a"/>' +
       '</g>',
-      // 6 — gangplank + barrel
+      // 6 - gangplank + barrel
       '<g class="ark-part" data-s="6">' +
         '<path d="M178 195 L232 247 L246 247 L190 191 Z" fill="#7c5026"/>' +
         '<g stroke="#5a3416" stroke-width="1.5"><line x1="196" y1="205" x2="210" y2="221"/><line x1="208" y1="213" x2="222" y2="229"/></g>' +
         '<ellipse cx="252" cy="240" rx="10" ry="12" fill="#8a5a2e" stroke="#5a3416" stroke-width="1.5"/>' +
       '</g>',
-      // 7 — mast, flag, gold trim
+      // 7 - mast, flag, gold trim
       '<g class="ark-part" data-s="7">' +
         '<line x1="160" y1="96" x2="160" y2="74" stroke="#5a3416" stroke-width="3"/>' +
         '<path d="M160 75 L188 82 L160 90 Z" fill="#d62828"/>' +
@@ -420,7 +420,7 @@
       var status = host.querySelector('.quest-status');
       if (status && !host._banner) {
         status.className = 'quest-status';
-        if (st.threat >= st.threatMax - 2) { status.textContent = 'She\'s going under — answer fast!'; status.classList.add('bad'); }
+        if (st.threat >= st.threatMax - 2) { status.textContent = 'She\'s going under - answer fast!'; status.classList.add('bad'); }
         else { status.textContent = 'Keep the ark above water!'; }
       }
     },
@@ -430,7 +430,7 @@
       var svg = host.querySelector('.ark-svg'); if (svg) svg.classList.add('saved');
       var animals = host.querySelector('.ark-animals'); if (animals) animals.classList.add('aboard');
       var banner = host.querySelector('.ark-banner'); if (banner) { banner.textContent = '🌈 Ark afloat!'; banner.className = 'ark-banner win show'; }
-      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'The animals are safe — the rains stop!'; status.className = 'quest-status good'; }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'The animals are safe - the rains stop!'; status.className = 'quest-status good'; }
       setTimeout(function () {
         host._banner = false;
         if (banner) banner.className = 'ark-banner';
@@ -454,7 +454,7 @@
   // A big, animated vertical "time corridor": earliest era at the bottom, the
   // present (a glowing wormhole) at the top. A traveller pod rides the timeline.
   // Right answers warp it forward (up) an era; wrong answers knock it back (down)
-  // AND fill the PARADOX gauge — fill it completely and the timeline collapses
+  // AND fill the PARADOX gauge - fill it completely and the timeline collapses
   // (game over). Reaching the top = a completed trip. Data-driven from the game's
   // `stops` (each { label, year }), passed to HSGQuest.init.
   var TM_W = 360, TM_H = 432, TM_AX = 156, TM_TOP = 78, TM_BOT = 384;
@@ -491,7 +491,7 @@
       var n = stops.length || 1;
       var tmax = (st && st.threatMax) || this.threatMax;
 
-      // starfield — drifts down to sell the sense of travelling through time
+      // starfield - drifts down to sell the sense of travelling through time
       var stars = '';
       for (var s = 0; s < 54; s++) {
         var sx = ((s * 67) % (TM_W - 20)) + 10, sy = ((s * 113) % (TM_H - 20)) + 10;
@@ -635,7 +635,7 @@
       if (status && !host._banner) {
         status.className = 'quest-status';
         if (arrived) { status.textContent = 'You made it to the present!'; status.classList.add('good'); }
-        else if (frac >= 0.78) { status.textContent = '⚠ Timeline collapsing — answer right!'; status.classList.add('bad'); }
+        else if (frac >= 0.78) { status.textContent = '⚠ Timeline collapsing - answer right!'; status.classList.add('bad'); }
         else if (pos >= n - 1) { status.textContent = 'One more jump to the present!'; }
         else { status.textContent = 'Right = jump forward · Wrong = paradox!'; }
       }
@@ -655,7 +655,7 @@
 
     onBack: function (host) {
       host._banner = true;
-      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '⏪ Knocked back — paradox rising!'; banner.className = 'tm-banner fail show'; }
+      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '⏪ Knocked back - paradox rising!'; banner.className = 'tm-banner fail show'; }
       tmFlag(host, '.tm-svg', 'glitch', 480);
       var stage = host.querySelector('.tm-stage'); if (stage) { stage.classList.add('quest-shake'); setTimeout(function () { stage.classList.remove('quest-shake'); }, 420); }
       var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Swept back to an earlier era…'; status.className = 'quest-status bad'; }
@@ -667,7 +667,7 @@
       var svg = host.querySelector('.tm-svg'); if (svg) { svg.classList.remove('danger', 'unstable'); svg.classList.add('collapsing'); }
       var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '💥 Timeline Collapsed!'; banner.className = 'tm-banner doom show'; }
       var stage = host.querySelector('.tm-stage'); if (stage) { stage.classList.add('quest-shake'); setTimeout(function () { stage.classList.remove('quest-shake'); }, 600); }
-      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Too many paradoxes — history unravels…'; status.className = 'quest-status bad'; }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Too many paradoxes - history unravels…'; status.className = 'quest-status bad'; }
       setTimeout(function () {
         host._banner = false;
         if (banner) banner.className = 'tm-banner';

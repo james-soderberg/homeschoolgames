@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tightrope — HomeschoolGames</title>
+  <title>Tightrope - HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -149,7 +149,7 @@
     <div class="tr-overlay" id="startOverlay">
       <div class="tr-crest">🎪</div>
       <h2>Tightrope</h2>
-      <p>A value appears — slide the walker to where it sits on the line. Let go: close means they balance, off means they teeter. The line is only labeled at the ends, so you have to <em>feel</em> the size.</p>
+      <p>A value appears - slide the walker to where it sits on the line. Let go: close means they balance, off means they teeter. The line is only labeled at the ends, so you have to <em>feel</em> the size.</p>
       <div class="tier-row" id="tierRow"></div>
     </div>
 
@@ -188,7 +188,7 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// TIGHTROPE — place a value on a number line labeled only at its
+// TIGHTROPE - place a value on a number line labeled only at its
 // ends; a walker balances if you're close, teeters/falls if you're
 // off. Trains magnitude sense for fractions, decimals, %, negatives.
 // ============================================================
@@ -224,7 +224,7 @@ function genEasy(){
   return {lo:0,hi:1, ...o};
 }
 
-// -- MEDIUM: fractions, decimals & percents on 0–1 (the classic misconceptions) --
+// -- MEDIUM: fractions, decimals & percents on 0-1 (the classic misconceptions) --
 const FRACS = [[1,2],[1,3],[2,3],[1,4],[3,4],[1,5],[2,5],[3,5],[4,5],[1,8],[3,8],[5,8],[7,8],[1,10],[3,10],[7,10],[9,10],[1,6],[5,6]];
 const MIX_DECS = [0.1,0.2,0.25,0.3,0.35,0.4,0.45,0.5,0.6,0.65,0.7,0.75,0.8,0.9,0.05,0.15];
 const MIX_PCTS = [10,15,20,25,40,45,50,60,75,80,90,5,35,65,30];
@@ -286,7 +286,7 @@ function genEinstein(){
 
 const TIERS = {
   easy:     { label:'Easy',     icon:'🌱', desc:'Whole numbers & simple halves',              gen:genEasy,     balTol:0.056, saveTol:0.120 },
-  medium:   { label:'Medium',   icon:'✏️', desc:'Fractions, decimals & percents (0–1)',        gen:genMedium,   balTol:0.045, saveTol:0.095 },
+  medium:   { label:'Medium',   icon:'✏️', desc:'Fractions, decimals & percents (0-1)',        gen:genMedium,   balTol:0.045, saveTol:0.095 },
   hard:     { label:'Hard',     icon:'🔥', desc:'Improper fractions, mixed #s & shifting scales', gen:genHard,     balTol:0.031, saveTol:0.068 },
   einstein: { label:'Einstein', icon:'🧠', desc:'Irrationals & brutal off-kilter scales',         gen:genEinstein, balTol:0.020, saveTol:0.046 },
 };
@@ -296,7 +296,7 @@ const START_LIVES = 3;
 function currentGen(){ return TIERS[tierKey].gen; }
 function tolsFor(){
   const st = TIERS[tierKey];
-  const k = 1 - Math.min(0.25, streak*0.018);   // tightens with streak — mastery pressure, capped 25%
+  const k = 1 - Math.min(0.25, streak*0.018);   // tightens with streak - mastery pressure, capped 25%
   return { bal: st.balTol*k, save: st.saveTol*k };
 }
 
@@ -421,7 +421,7 @@ function drawRope(){
 }
 function endpointLabel(v){ return decStr(v); }
 function drawEndLabels(){
-  // endpoints are ALWAYS labeled — the scale is the whole point.
+  // endpoints are ALWAYS labeled - the scale is the whole point.
   ctx.font='800 20px Inter, system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
   for(const side of [0,1]){
     const x = side? ropeRightX() : ropeLeftX(); const y=ropeBaseY()-26;
@@ -465,12 +465,12 @@ function drawWalker(){
   if(state==='result'){
     if(outcome==='fall'){
       mood='scared';
-      if(resultT < struggleT){                       // teeter — a near-miss fights it; a far miss barely does
+      if(resultT < struggleT){                       // teeter - a near-miss fights it; a far miss barely does
         const sp = struggleT>0 ? resultT/struggleT : 1;
         const wob = 1 - fallSev;                      // far off → essentially no wobble
         const sway = Math.sin(resultT * lerp(4.4, 9, fallSev));
         tilt = tipDir*( sp*sp*(0.5+fallSev*0.35) + (0.2+sp*0.3)*sway*wob );
-      } else {                                        // over the edge — tip and drop (far = faster & tumbling)
+      } else {                                        // over the edge - tip and drop (far = faster & tumbling)
         const tp = resultT - struggleT;
         tilt = tipDir*Math.min(lerp(1.35,8,fallSev), (0.45+fallSev*0.35) + tp*lerp(1.8,7,fallSev));
         dy = fallY;
@@ -492,7 +492,7 @@ function drawWalker(){
   // body
   ctx.strokeStyle='#c0453a'; ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(0,-14); ctx.lineTo(0,-34); ctx.stroke();
 
-  // balance pole — counter-rotates against the lean (a real walker keeps it level)
+  // balance pole - counter-rotates against the lean (a real walker keeps it level)
   // with a lively micro-wobble while aiming; arms reach from the shoulders to it.
   const shoulderY = -28;
   const poleA = -(tilt+idleTilt)*0.62 + (idle?Math.sin(sceneT*3)*0.05:0);
@@ -551,7 +551,7 @@ function draw(){
   drawWalker();
 }
 // benchmark landmarks appear on reveal so kids see where the value sits relative
-// to friendly reference points — but stay hidden while aiming (no cheating).
+// to friendly reference points - but stay hidden while aiming (no cheating).
 function drawBenchmarks(){
   if(!revealed || !round) return;
   const lo=round.lo, hi=round.hi;
@@ -575,10 +575,10 @@ function tick(ts){
   if(state==='result'){
     resultT += dt;
     if(outcome==='fall'){
-      if(resultT > struggleT){                      // over the edge — now they drop
+      if(resultT > struggleT){                      // over the edge - now they drop
         if(!fellFx){ fellFx=true;
           if(window.HSGSound) HSGSound.wrong();
-          if(fallSev>0.45 && window.HSGfx && HSGfx.shake) HSGfx.shake();   // impact shake for hard falls only — no flash
+          if(fallSev>0.45 && window.HSGfx && HSGfx.shake) HSGfx.shake();   // impact shake for hard falls only - no flash
           feedbackEl.innerHTML = '<span style="color:var(--red)">'+(fallSev>0.6?'Off the rope!':'Toppled!')+'</span><span class="sub">'+missHint(errFracOf(walkerX))+'</span>';
         }
         const tp = resultT - struggleT;
@@ -588,7 +588,7 @@ function tick(ts){
       }
       if(resultT > struggleT+1.0 && !advanced) advance();
     }
-    else if(resultT>1.6 && !advanced) advance();   // teeter settles in place — no walking on
+    else if(resultT>1.6 && !advanced) advance();   // teeter settles in place - no walking on
   }
   draw();
   rafId=requestAnimationFrame(tick);
@@ -629,7 +629,7 @@ function commit(){
     if(window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
     const msg = outcome==='balance'
       ? (e<=0.02 ? 'Bullseye balance! 🎯' : 'Balanced! ✔')
-      : 'Wobbly — but held on!';
+      : 'Wobbly - but held on!';
     feedbackEl.innerHTML = '<span style="color:var(--green)">'+msg+'</span><span class="sub">'+revealText()+'</span>';
   } else {
     streak=0; if(!(window.HSGGod && HSGGod.on)) lives--; rail.broke();
@@ -644,7 +644,7 @@ function commit(){
 function missHint(e){
   const dirWord = walkerX>actualX ? 'too far right' : 'too far left';
   const rel = walkerX>actualX ? 'smaller' : 'bigger';
-  return revealText() + ' — you were ' + dirWord + '. It’s ' + rel + ' than you placed it.';
+  return revealText() + ' - you were ' + dirWord + '. It’s ' + rel + ' than you placed it.';
 }
 function advance(){
   advanced=true;
@@ -699,11 +699,11 @@ function renderValueCard(label){
   const mm = label.match(/^(-?)(\d+)\s+(\d+)\/(\d+)$/);   // mixed number "w n/d"
   const fm = label.match(/^(-?)(\d+)\/(\d+)$/);           // simple or improper fraction "n/d"
   if(mm){
-    valueCard.innerHTML = '<span class="mixnum">'+(mm[1]?'–':'')+mm[2]+'</span>'
+    valueCard.innerHTML = '<span class="mixnum">'+(mm[1]?'-':'')+mm[2]+'</span>'
       + '<span class="frac"><span class="num">'+mm[3]+'</span><span class="den">'+mm[4]+'</span></span>';
   } else if(fm){
     valueCard.innerHTML = fm[1]
-      ? '<span class="frac neg"><span class="sign">–</span><span class="stack"><span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span></span>'
+      ? '<span class="frac neg"><span class="sign">-</span><span class="stack"><span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span></span>'
       : '<span class="frac"><span class="num">'+fm[2]+'</span><span class="den">'+fm[3]+'</span></span>';
   } else {
     valueCard.textContent = label;
@@ -745,7 +745,7 @@ TIER_ORDER.forEach(k=>{
   tierRow.appendChild(b);
 });
 
-// god mode — type "godmode": unlimited hearts + jump to any difficulty
+// god mode - type "godmode": unlimited hearts + jump to any difficulty
 HSGGod.watch(() => {
   HSGGod.enable();
   if(state!=='menu') updateHud();
@@ -764,7 +764,7 @@ if (location.search.indexOf('shot') >= 0) { setTimeout(()=>startGame('medium'), 
 
 // idle backdrop behind the start overlay
 setupCanvas(); updateHud();
-// idle menu backdrop — single-owner loop so it restarts when we return to the menu
+// idle menu backdrop - single-owner loop so it restarts when we return to the menu
 let idleId = null;
 function idle(){
   if(running){ idleId = null; return; }

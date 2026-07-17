@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    /* Fit the whole game to the viewport — no page scroll on desktop. */
+    /* Fit the whole game to the viewport - no page scroll on desktop. */
     html, body { height: 100%; }
     body { display: flex; flex-direction: column; overflow: hidden; }
     .site-header, .site-footer { flex: 0 0 auto; }
@@ -168,8 +168,8 @@
     .auto-toggle[aria-checked="true"] { color: var(--ink); border-color: var(--gold); background: #fbf3df; }
     .auto-toggle[aria-checked="true"] .dot { background: var(--gold); }
 
-    /* On phones/short screens, stop fitting to the viewport — stack and allow scroll. */
-    /* narrow OR short windows: stop fitting to the viewport — scroll instead, and
+    /* On phones/short screens, stop fitting to the viewport - stack and allow scroll. */
+    /* narrow OR short windows: stop fitting to the viewport - scroll instead, and
        give the scene a real height so the start menu never gets crushed */
     @media (max-width: 760px), (max-height: 640px) {
       html, body { height: auto; }
@@ -259,7 +259,7 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// BIBLE QUIZ — PAUL'S VOYAGE (a leg-by-leg journey to Rome)
+// BIBLE QUIZ - PAUL'S VOYAGE (a leg-by-leg journey to Rome)
 // A verse appears; you name the book it comes from. Five verses
 // make one LEG of the voyage; finish a leg and the ship reaches the
 // next port, where a short animated vignette teaches what actually
@@ -424,7 +424,7 @@ const STORIES = [
    overview:"A prophet foretold the final ruin of Nineveh, the great city that had once repented but returned to its cruelty."},
 ];
 
-// Full canon — used to draw plausible wrong-answer options.
+// Full canon - used to draw plausible wrong-answer options.
 const CANON = [
   "Genesis","Exodus","Leviticus","Numbers","Deuteronomy","Joshua","Judges","Ruth",
   "1 Samuel","2 Samuel","1 Kings","2 Kings","1 Chronicles","2 Chronicles","Ezra",
@@ -460,14 +460,14 @@ const ITINERARY = [
 // ---------------- Difficulty levels ----------------
 // Each level picks a band of cards (by reading difficulty) AND how rough the seas run.
 const LEVELS = {
-  easy:     { key:'easy',     lvl:1, drain:0.8, loss:10, calm:18 },   // Grades 3–7
+  easy:     { key:'easy',     lvl:1, drain:0.8, loss:10, calm:18 },   // Grades 3-7
   medium:   { key:'medium',   lvl:2, drain:1.6, loss:14, calm:15 },   // High school
   hard:     { key:'hard',     lvl:3, drain:2.4, loss:18, calm:13 },   // Adult
   solomon:  { key:'solomon',  lvl:4, drain:3.2, loss:22, calm:11 },   // Expert
 };
 // Each story carries its own difficulty band (lvl 1-4), curated by familiarity.
 function cardLevel(card) { return card.lvl || 3; }
-// Well-known books — keeps Easy wrong-answers recognizable rather than obscure.
+// Well-known books - keeps Easy wrong-answers recognizable rather than obscure.
 const EASY_BOOKS = new Set(["Genesis","Exodus","Joshua","Judges","1 Samuel","Psalms","Proverbs","Jonah","Daniel","Matthew","Mark","Luke","John","Acts","Revelation"]);
 const BEST_KEY = 'bible_quiz_voyage_best';
 const START_STORM = 14;
@@ -750,13 +750,13 @@ function drawSailing(dt) {
 }
 
 // ============================================================
-// HUD — itinerary ribbon + storm meter + leg progress
+// HUD - itinerary ribbon + storm meter + leg progress
 // ============================================================
 function drawHUD(landing) {
   // The leg/route indicator now lives in the side map panel (drawMiniMap),
   // so the canvas just carries the two gameplay meters.
   if (!landing) {
-    // progress to the next port — fills 20% per correct verse, so you can see the dock coming
+    // progress to the next port - fills 20% per correct verse, so you can see the dock coming
     meter(14, 16, 168, '⚓ To ' + ITINERARY[legIndex].port, legCorrect / CORRECT_TO_LAND, '#3fae6a', '#1d6f43');
     meter(W - 182, 16, 168, '⛈ Storm', stormShown / 100, '#d77a3a', '#9a3a1a', true);
   }
@@ -786,7 +786,7 @@ function roundRect(x, y, w, h, r) {
 }
 
 // ============================================================
-// Side map — Paul's real route across the Mediterranean
+// Side map - Paul's real route across the Mediterranean
 // ============================================================
 const MAP_LON0 = 10.5, MAP_LON1 = 38.0, MAP_LAT0 = 31.0, MAP_LAT1 = 43.5;
 function mapProj(p) {
@@ -875,7 +875,7 @@ function updateMapCaption() {
 }
 
 // ============================================================
-// Landing vignettes — what happened at each port
+// Landing vignettes - what happened at each port
 // ============================================================
 function drawShoreBackdrop() {
   // warm sky
@@ -956,7 +956,7 @@ function drawLanding(dt) {
 }
 
 const VIGNETTES = {
-  // Cyprus — the sorcerer Elymas struck blind
+  // Cyprus - the sorcerer Elymas struck blind
   cyprus(vt) {
     const gy = H * 0.82, s = H / 300;
     const blind = clamp01((vt - 1.0) / 0.7);
@@ -969,13 +969,13 @@ const VIGNETTES = {
       for (let i = 0; i < 9; i++) { const a = i / 9 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(W * 0.62 + Math.cos(a) * 10, gy - 40 + Math.sin(a) * 10); ctx.lineTo(W * 0.62 + Math.cos(a) * (22 + blind * 8), gy - 40 + Math.sin(a) * (22 + blind * 8)); ctx.stroke(); }
       ctx.restore();
     }
-    // Elymas — groping, eyes X'd once blind
+    // Elymas - groping, eyes X'd once blind
     drawFigure(W * 0.62, gy, s, { robe: '#5a4a8a', wrap: '#3a3550', lean: -blind * 0.18, armsFace: blind > 0.4, eyesX: blind > 0.4 });
     // the governor, watching, then bowing
     drawFigure(W * 0.82, gy, s * 0.95, { robe: '#8a3a3a', wrap: '#caa24a', kneel: vt > 2.6, armRaise: vt > 2.6 ? null : 0.2 });
   },
 
-  // Philippi — earthquake throws the prison doors open
+  // Philippi - earthquake throws the prison doors open
   philippi(vt) {
     const gy = H * 0.82, s = H / 300;
     const quake = vt > 1.4 && vt < 2.4;
@@ -1008,7 +1008,7 @@ const VIGNETTES = {
     if (vt > 2.2) drawFigure(px - 90, gy, s * 0.95, { robe: '#6a6a4a', wrap: '#3a3a2a', kneel: true });
   },
 
-  // Athens — Paul preaching at Mars' Hill among the idols
+  // Athens - Paul preaching at Mars' Hill among the idols
   athens(vt) {
     const gy = H * 0.82, s = H / 300;
     // rocky platform
@@ -1031,7 +1031,7 @@ const VIGNETTES = {
     drawFigure(W * 0.72, gy, s * 0.85, { robe: '#6a5a4a' });
   },
 
-  // Ephesus — books of magic burned; a riot in the theater
+  // Ephesus - books of magic burned; a riot in the theater
   ephesus(vt) {
     const gy = H * 0.82, s = H / 300;
     // a faint great temple behind
@@ -1054,7 +1054,7 @@ const VIGNETTES = {
     }
   },
 
-  // Malta — shipwreck on the rocks; the viper shaken into the fire
+  // Malta - shipwreck on the rocks; the viper shaken into the fire
   malta(vt) {
     const gy = H * 0.82, s = H / 300;
     if (vt < 1.2) shake = Math.max(shake, 3 * (1 - vt / 1.2));
@@ -1089,7 +1089,7 @@ const VIGNETTES = {
     }
   },
 
-  // Rome — chained to a guard, writing the Prison Letters
+  // Rome - chained to a guard, writing the Prison Letters
   rome(vt) {
     const gy = H * 0.82, s = H / 300;
     if (!confettiFired) { confettiFired = true; if (window.HSGfx) HSGfx.confetti({ count: 90, big: true }); if (window.HSGSound) HSGSound.finish(true); }
@@ -1107,7 +1107,7 @@ const VIGNETTES = {
     // the chain to Paul
     ctx.strokeStyle = 'rgba(80,80,90,0.8)'; ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(W * 0.49, gy - 38); ctx.quadraticCurveTo(W * 0.55, gy - 20, W * 0.60, gy - 30); ctx.stroke();
-    // Paul, seated, writing — the quill bobs
+    // Paul, seated, writing - the quill bobs
     drawFigure(W * 0.64, gy, s, { robe: '#7a5a3a', wrap: '#d8d0c4', seated: true });
     ctx.fillStyle = '#f3ead0'; ctx.save(); ctx.translate(W * 0.64, gy - 18); ctx.rotate(-0.1); ctx.fillRect(-2, 0, 30, 18); ctx.restore();
     ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 1.5;
@@ -1204,7 +1204,7 @@ function buildOptions(card) {
   const answer = card.books[Math.floor(Math.random() * card.books.length)];
   let pool = CANON.filter(b => !card.books.includes(b));
   if (level.lvl === 1) {
-    // Easy: wrong answers from the OTHER testament and well-known — clearly different
+    // Easy: wrong answers from the OTHER testament and well-known - clearly different
     const opp = pool.filter(b => isNT(b) !== isNT(answer) && EASY_BOOKS.has(b));
     if (opp.length >= 3) pool = opp;
     else { const t = pool.filter(b => isNT(b) !== isNT(answer)); if (t.length >= 3) pool = t; }
@@ -1353,7 +1353,7 @@ function fillLandingCard(stop) {
     lb.className = 'hsg-board'; lb.id = 'bqBoard';
     lb.style.cssText = 'text-align:left;margin-top:1rem';
     answersEl.appendChild(lb);
-    bankVoyage(true);   // reached Rome — bank the longest streak + show standings
+    bankVoyage(true);   // reached Rome - bank the longest streak + show standings
     // stay in 'landing' so the Rome vignette keeps drawing; the buttons end the run.
   } else {
     const next = ITINERARY[legIndex + 1];

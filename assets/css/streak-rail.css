@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames — Fire Streak Rail
+   HomeschoolGames - Fire Streak Rail
    A live, animated streak counter ("on fire") + a Streak
    Leaderboard, pinned to the right of the game. Heats up by
    level: ember → orange → on fire → blazing → blue inferno.
@@ -33,7 +33,7 @@
   gap: 1rem;
 }
 
-/* wide variant: for map-style games — the main fills, rail sits to its right,
+/* wide variant: for map-style games - the main fills, rail sits to its right,
    no phantom spacer (the wide main doesn't need viewport-centering) */
 .game-layout-wide { max-width: 1300px; justify-content: flex-start; }
 .game-layout-wide::before { display: none; }

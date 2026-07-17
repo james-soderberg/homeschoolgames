@@ -192,7 +192,7 @@
 
   <div class="wr-top">
     <h1>Word Racer</h1>
-    <div class="best-badge" id="bestBadge">Best: — WPM</div>
+    <div class="best-badge" id="bestBadge">Best: - WPM</div>
   </div>
 
   <section id="raceScreen">
@@ -200,7 +200,7 @@
     <div class="race-stats">
       <div class="stat"><b id="wpmStat">0</b><span>WPM</span></div>
       <div class="stat"><b id="accStat">100%</b><span>Accuracy</span></div>
-      <div class="stat"><b id="placeStat">—</b><span>Place</span></div>
+      <div class="stat"><b id="placeStat">-</b><span>Place</span></div>
     </div>
     <div class="progress-wrap"><div class="progress-fill" id="progressFill"></div></div>
 
@@ -219,7 +219,7 @@
       <div class="type-prompt hidden" id="typePrompt"><span>⌨️ Start typing to begin…</span></div>
     </div>
 
-    <div class="race-hint">Type the top line — your car rides right where you are.</div>
+    <div class="race-hint">Type the top line - your car rides right where you are.</div>
   </section>
 
   <section class="hidden results" id="resultScreen">
@@ -245,7 +245,7 @@
 <script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
-// WORD RACER — the passage is a square track. You type the top line
+// WORD RACER - the passage is a square track. You type the top line
 // (your car rides exactly on your caret); finishing it rotates the
 // square back a quarter-turn so the next line comes to the top.
 // Rivals race the same loop by how far they've typed.
@@ -322,7 +322,7 @@ function layout() {
   S = arena.clientWidth || 440;
   FS = Math.round(Math.min(24, Math.max(16, S / 22)));
   LINEH = Math.round(FS * 1.62);
-  LANE_H = Math.max(26, Math.round(S / 22));   // lane pitch — must clear the (now larger) cars so they don't stack
+  LANE_H = Math.max(26, Math.round(S / 22));   // lane pitch - must clear the (now larger) cars so they don't stack
   CARMARGIN = 8;
   const gapToText = 6;
   const textTop = CARMARGIN + NLANES * LANE_H + gapToText;
@@ -360,7 +360,7 @@ const randRange = (lo, hi) => lo + Math.random() * (hi - lo);
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 function loadBest() { try { return parseInt(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { return 0; } }
 function saveBest() { try { localStorage.setItem(BEST_KEY, String(bestWpm)); } catch (e) {} }
-function showBest() { document.getElementById('bestBadge').textContent = bestWpm ? `Best: ${bestWpm} WPM` : 'Best: — WPM'; }
+function showBest() { document.getElementById('bestBadge').textContent = bestWpm ? `Best: ${bestWpm} WPM` : 'Best: - WPM'; }
 function recentWpm() { const now = performance.now(); while (keyTimes.length && now - keyTimes[0] > 2500) keyTimes.shift(); return keyTimes.length * (12 / 2.5); }
 function ordinal(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 // seconds gap: show tenths when it's close (< 10s), whole seconds otherwise
@@ -401,7 +401,7 @@ function balanceLastLine() {
     while (e > prev.start && passage[e - 1] === ' ') e--;    // step over the boundary space(s)
     let sp = -1;
     for (let i = e - 1; i > prev.start; i--) { if (passage[i] === ' ') { sp = i; break; } }
-    if (sp < 0) break;                                       // line above has one word — leave it
+    if (sp < 0) break;                                       // line above has one word - leave it
     const newStart = sp + 1;                                 // pull that word onto the last line
     if (measureWidth(passage.slice(newStart, last.end)) > maxW) break;   // would overflow the edge
     prev.end = newStart; last.start = newStart;
@@ -442,13 +442,13 @@ function renderEdges() {
 function positionCars() {
   const cx = S / 2, cy = S / 2, ln = lines[activeLine], left = cx - TRACK / 2;
   const onLast = (activeLine === lines.length - 1) && topSpans.length > 0;
-  // the finish line sits one space past the last letter — the exact x every car stops at.
+  // the finish line sits one space past the last letter - the exact x every car stops at.
   // off the last line there's no finish yet, so use the far corner (= a full-track lap).
   const finishX = onLast
     ? left + topSpans[topSpans.length - 1].offsetLeft + topSpans[topSpans.length - 1].offsetWidth + spaceW()
     : cx + TRACK / 2;
   // your car: innermost lane, right above your caret on the top edge
-  // (at the finish, sit on the very last span — past the trailing punctuation — so you land on the line)
+  // (at the finish, sit on the very last span - past the trailing punctuation - so you land on the line)
   const li = (index >= ln.end) ? topSpans.length - 1 : clamp(index - ln.start, 0, topSpans.length - 1);
   const span = topSpans[li];
   let px = left;
@@ -471,7 +471,7 @@ function positionCars() {
     c.el.style.display = show ? '' : 'none';
     if (show) { c.el.style.left = x + 'px'; c.el.style.top = y + 'px'; c.el.style.transform = 'translate(-50%,-50%) rotate(' + rot + 'deg)'; }
   });
-  // checkered finish line — one space past the last letter, only while on the last line
+  // checkered finish line - one space past the last letter, only while on the last line
   if (onLast) {
     finishFlag.style.display = '';
     finishFlag.style.left = finishX + 'px';
@@ -495,7 +495,7 @@ function buildOpponents() {
 function startRace() {
   if (window.HSGSound) HSGSound.tick();
   const sel = pickPassage();
-  // trim trailing punctuation/space so the race ends on the last letter — the final
+  // trim trailing punctuation/space so the race ends on the last letter - the final
   // period (or ! ? " …) isn't required; typing the last letter finishes the race.
   // The trimmed punctuation is kept as `tail` and shown (faint) after the last letter.
   passage = sel.text.replace(/[^\p{L}\p{N}]+$/u, ''); chars = passage.split(''); passageLen = chars.length;
@@ -514,7 +514,7 @@ function startRace() {
   ring.classList.remove('spin'); ring.style.transform = 'rotate(0deg)';
 
   layout(); measureLines(); buildOpponents(); renderEdges(); positionCars();
-  wpmStat.textContent = '0'; accStat.textContent = '100%'; placeStat.textContent = '—'; progressFill.style.width = '0%';
+  wpmStat.textContent = '0'; accStat.textContent = '100%'; placeStat.textContent = '-'; progressFill.style.width = '0%';
 
   // arm: the race begins the moment the player types their first character
   armed = true;
@@ -522,7 +522,7 @@ function startRace() {
   if (TOUCH) focusGrab();   // summon the mobile keyboard for this race
 }
 
-// called on the first real keystroke — starts the clock and the animation loop
+// called on the first real keystroke - starts the clock and the animation loop
 function beginRace() {
   armed = false;
   document.getElementById('typePrompt').classList.add('hidden');
@@ -564,7 +564,7 @@ function updateRace() {
     lastLeader = order[0].name;
     setCommentary(order[0].you ? "🏁 You're in the lead!" : `💨 ${order[0].name} grabs the lead!`, false);
   }
-  if (!said85 && index / passageLen >= 0.85) { said85 = true; setCommentary('⚡ Final stretch — floor it!', true); }
+  if (!said85 && index / passageLen >= 0.85) { said85 = true; setCommentary('⚡ Final stretch - floor it!', true); }
 }
 
 function setCommentary(msg, force) {
@@ -603,7 +603,7 @@ function rotateSquare() {
 // Feed one typed character into the race. Shared by the physical keyboard
 // (onKeyDown) and the mobile soft keyboard (hidden input's 'input' event).
 function feedChar(k) {
-  if (tsActive) return;      // secret road is running — no race input
+  if (tsActive) return;      // secret road is running - no race input
   if (!racing) {
     if (!armed) return;      // the first printable char kicks off the race
     beginRace();
@@ -793,7 +793,7 @@ function tsBoom(){
 window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
 document.addEventListener('keydown', onKeyDown);
 showBest();
-startRace();   // no intro screen — drop straight into the track, armed and waiting for the first keystroke
+startRace();   // no intro screen - drop straight into the track, armed and waiting for the first keystroke
 </script>
 
 <!-- secret: the "treasure" road that leads to REDLINE -->

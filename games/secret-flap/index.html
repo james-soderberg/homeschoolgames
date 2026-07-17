@@ -133,7 +133,7 @@
 <script src="../../assets/js/hunt.js"></script>
 <script>
 // ============================================================
-// FLAPPY DRAGONLING — a hidden game. A little dragon flaps
+// FLAPPY DRAGONLING - a hidden game. A little dragon flaps
 // between castle towers; gravity pulls it down, a flap lifts it.
 // ============================================================
 
@@ -228,7 +228,7 @@ function startGame() {
 }
 
 function die() {
-  if (window.HSGGod && HSGGod.on) return;   // god mode: invincible — collisions can't kill you
+  if (window.HSGGod && HSGGod.on) return;   // god mode: invincible - collisions can't kill you
   if (state !== 'play') return;
   state = 'dead';
   shake = 12;
@@ -245,7 +245,7 @@ function die() {
   setTimeout(() => { restartReady = true; againBtn.disabled = false; }, 2000);
 }
 
-// Trial cleared: the whole scene erupts — fireball, shockwave, shattering towers —
+// Trial cleared: the whole scene erupts - fireball, shockwave, shattering towers -
 // then we fade to gold and sail off to the treasure-hunt clue page.
 function triggerWin() {
   if (state === 'win') return;
@@ -321,8 +321,8 @@ function update(dt) {
       p.x -= sp * dt;
       if (!p.passed && p.x + PIPE_W < bx) {
         p.passed = true; score++; updateBadges();
-        if (score >= WIN_SCORE) { triggerWin(); break; }   // trial cleared — erupt & fly to the clue
-        if (window.HSGSound) HSGSound.correct();   // just a soft point chime — no streak banners
+        if (score >= WIN_SCORE) { triggerWin(); break; }   // trial cleared - erupt & fly to the clue
+        if (window.HSGSound) HSGSound.correct();   // just a soft point chime - no streak banners
       }
       // collision (circle vs the two tower rects)
       if (bx + BIRD_R > p.x && bx - BIRD_R < p.x + PIPE_W) {
@@ -395,7 +395,7 @@ function hills(baseY, factor, period, amp) {
   ctx.lineTo(W + period, H); ctx.closePath(); ctx.fill();
 }
 
-// a castle tower (the "pipe") — stone with crenellations at the gap end
+// a castle tower (the "pipe") - stone with crenellations at the gap end
 function drawTower(p) {
   const gy = groundY();
   const top = p.gapY - p.gap / 2, bot = p.gapY + p.gap / 2;
@@ -565,7 +565,7 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('startBtn').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
 againBtn.addEventListener('click', (e) => { e.stopPropagation(); if (restartReady) startGame(); });
 
-// god mode — type "godmode": invincible, pipes/ground can't end the run
+// god mode - type "godmode": invincible, pipes/ground can't end the run
 if (window.HSGGod) HSGGod.watch(() => {
   HSGGod.enable();
   HSGGod.picker({ label: 'Flight', note: 'Invincible! Towers and the ground can’t stop you.' });

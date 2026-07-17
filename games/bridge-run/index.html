@@ -68,12 +68,12 @@ function build(prompt, answer, opts) {
 
 function makeQuestion(level, tier) {
   if (tier === 'easy') {
-    // K–2: single-digit answers only (0–9), never negative, doesn't ramp with level
+    // K-2: single-digit answers only (0-9), never negative, doesn't ramp with level
     if (Math.random() < 0.5) { const ans = ri(0, 9), a = ri(0, ans), b = ans - a; return build(`${a} + ${b}`, ans, { min: 0, max: 9 }); }
     const a = ri(1, 9), b = ri(0, a); return build(`${a} − ${b}`, a - b, { min: 0, max: 9 });
   }
   if (tier === 'medium') {
-    // Grades 3–5: times tables, division, larger add/sub
+    // Grades 3-5: times tables, division, larger add/sub
     const op = pick(['×', '×', '÷', '+', '−']);
     if (op === '×') { const m = Math.min(6 + level, 12); const a = ri(2, m), b = ri(2, 12); return build(`${a} × ${b}`, a * b); }
     if (op === '÷') { const b = ri(2, Math.min(6 + level, 12)), q = ri(2, 12); return build(`${b * q} ÷ ${b}`, q); }
@@ -82,7 +82,7 @@ function makeQuestion(level, tier) {
     const a = ri(20, cap), b = ri(1, a); return build(`${a} − ${b}`, a - b);
   }
   if (tier === 'hard') {
-    // Grades 6–8: multi-digit ×/÷, bigger sums
+    // Grades 6-8: multi-digit ×/÷, bigger sums
     const op = pick(['×', '÷', '+', '−']);
     if (op === '×') { const a = ri(6, 19), b = ri(6, 19); return build(`${a} × ${b}`, a * b); }
     if (op === '÷') { const b = ri(3, 15), q = ri(4, 20); return build(`${b * q} ÷ ${b}`, q); }
@@ -90,7 +90,7 @@ function makeQuestion(level, tier) {
     if (op === '+') { const a = ri(50, cap), b = ri(50, cap); return build(`${a} + ${b}`, a + b); }
     const a = ri(100, cap), b = ri(20, a); return build(`${a} − ${b}`, a - b);
   }
-  // Einstein: order of operations & exponents (answers stay non-negative — the
+  // Einstein: order of operations & exponents (answers stay non-negative - the
   // mobile numeric keypad has no minus key, so negative answers are avoided)
   const kind = pick(['order', 'order', 'square', 'cube', 'mixed']);
   if (kind === 'order') { const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9); return build(`${a} + ${b} × ${c}`, a + b * c); }
@@ -108,16 +108,16 @@ const bridge = HSGBridge.init({
   mount: document.getElementById('bridgeMount'),
   rail,
   tiers: [
-    { key: 'easy',     label: 'Easy',     desc: 'Grades K–2 · add & subtract' },
-    { key: 'medium',   label: 'Medium',   desc: 'Grades 3–5 · ×, ÷ & bigger sums' },
-    { key: 'hard',     label: 'Hard',     desc: 'Grades 6–8 · multi-digit' },
+    { key: 'easy',     label: 'Easy',     desc: 'Grades K-2 · add & subtract' },
+    { key: 'medium',   label: 'Medium',   desc: 'Grades 3-5 · ×, ÷ & bigger sums' },
+    { key: 'hard',     label: 'Hard',     desc: 'Grades 6-8 · multi-digit' },
     { key: 'einstein', label: 'Einstein', desc: 'Order of ops, exponents & powers' },
   ],
   makeQuestion,
 });
 
 // God mode: type "godmode" to enable unlimited lives (the runner can never fall
-// into the chasm — see bridge.js) and jump to any of the 8 themed levels.
+// into the chasm - see bridge.js) and jump to any of the 8 themed levels.
 HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({ levels: 8, label: 'Level', onJump: n => bridge.jumpTo(n) }); });
 </script>
 

@@ -1,5 +1,5 @@
 // ============================================================
-// HSGfx — celebration effects + animated end-of-session summary.
+// HSGfx - celebration effects + animated end-of-session summary.
 // Self-contained: injects its own CSS. No external assets.
 // API:
 //   HSGfx.confetti({count, big})

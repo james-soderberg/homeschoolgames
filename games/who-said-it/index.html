@@ -159,7 +159,7 @@
 <script src="../../assets/js/whosaidit-bios.js"></script>
 <script>
 // ============================================================
-// WHO SAID IT? — read a famous quote, see the real person, and
+// WHO SAID IT? - read a famous quote, see the real person, and
 // pick who said it. Each correct guess fills a slot on the Wall
 // of Fame; fill the whole wall to win. Questions are drawn from
 // a 250-person bank, so no single game uses them all.
@@ -167,7 +167,7 @@
 const WALL_SIZE = 24;          // slots to fill to win (kept small, not all 250)
 const KEYS = ['A','B','C','D'];
 const DELAY_OK = 1700, DELAY_NO = 2600;   // win-screen pacing (auto path below)
-// Auto-advance pacing — long enough to read the speaker's bio before moving on.
+// Auto-advance pacing - long enough to read the speaker's bio before moving on.
 const AUTO_OK = 3500, AUTO_NO = 4500;
 let autoAdvance = false;
 try { autoAdvance = localStorage.getItem('wsi_autoadvance') === '1'; } catch(e){}
@@ -177,7 +177,7 @@ function imgFor(p){ return '../../assets/img/whosaidit/' + slug(p.n) + '.jpg'; }
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 
 const PEOPLE = WSI_PEOPLE.slice();
-const brokenImg = new Set();   // people whose portrait failed to load — never used as the answer
+const brokenImg = new Set();   // people whose portrait failed to load - never used as the answer
 let answerPool = shuffle(PEOPLE);   // order to draw answers from
 let collected = [];            // people filling the wall this game (in order)
 const collectedNames = new Set();
@@ -207,7 +207,7 @@ async function pickAnswer(){
   return PEOPLE.find(p=>!brokenImg.has(p.n)) || PEOPLE[0];
 }
 
-// 4 names: the speaker + 3 plausible distractors — all the SAME gender as the
+// 4 names: the speaker + 3 plausible distractors - all the SAME gender as the
 // speaker (the portrait gives that away) and from the SAME period, so you can't
 // win by simple elimination. Ranking = year distance, with a big discount for
 // sharing the speaker's era label, so contemporaries surface first. We pick 3 of

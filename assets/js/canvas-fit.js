@@ -1,5 +1,5 @@
 // ============================================================
-// HSGFit — keep a <canvas> sized to its container and, on resize,
+// HSGFit - keep a <canvas> sized to its container and, on resize,
 // hand the game the numbers it needs to REPOSITION its entities
 // instead of leaving them stranded in the old coordinate system.
 //
@@ -78,7 +78,7 @@
     window.addEventListener('orientationchange', schedule);
     window.addEventListener('pageshow', schedule);   // bfcache restore
 
-    run(true);   // initial sizing — first=true so the game skips entity rescale
+    run(true);   // initial sizing - first=true so the game skips entity rescale
 
     return {
       get W() { return curW; },

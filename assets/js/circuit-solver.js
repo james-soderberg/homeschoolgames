@@ -1,12 +1,12 @@
 // ============================================================
-// HSGCircuit — a tiny DC circuit solver for the "Current" game.
+// HSGCircuit - a tiny DC circuit solver for the "Current" game.
 //
 // It does real Modified Nodal Analysis (MNA): batteries are ideal voltage
 // sources with a small internal resistance; bulbs/resistors/closed switches/
 // intact fuses are resistors; wires are ideal (they just merge terminals into
 // one node). Solve G·v = i, read the current down each branch, and a bulb's
 // brightness is its real power P = I²R relative to what it would dissipate
-// alone on a fresh battery. Series bulbs dim, parallel bulbs stay bright —
+// alone on a fresh battery. Series bulbs dim, parallel bulbs stay bright -
 // because the math says so, not because we told it to.
 //
 // Pure + DOM-free so it runs in Node for the simulation tests too.
@@ -26,10 +26,10 @@
     FUSE_RATING: 3,    // default amps a fuse tolerates before it blows
     EPS_I: 1e-4,       // below this many amps we treat a branch as "off"
   };
-  // A bulb of resistance r, alone on a fresh cell, dissipates this — its "full brightness".
+  // A bulb of resistance r, alone on a fresh cell, dissipates this - its "full brightness".
   const ratedPower = (r, v) => { const i = v / (r + K.R_INT); return i * i * r; };
 
-  // ---- linear solve: Gauss–Jordan with partial pivoting (returns null if singular) ----
+  // ---- linear solve: Gauss-Jordan with partial pivoting (returns null if singular) ----
   function solveLinear(A, b) {
     const n = b.length;
     if (n === 0) return [];
@@ -87,7 +87,7 @@
     return { v, sourceCurrents };
   }
 
-  // ---- union–find over terminal ids ----
+  // ---- union-find over terminal ids ----
   function makeDSU() {
     const p = new Map();
     const find = x => { if (!p.has(x)) p.set(x, x); let r = x; while (p.get(r) !== r) r = p.get(r); while (p.get(x) !== r) { const nx = p.get(x); p.set(x, r); x = nx; } return r; };
@@ -99,7 +99,7 @@
   const TERMS = { battery: ['pos', 'neg'], bulb: ['a', 'b'], resistor: ['a', 'b'], switch: ['a', 'b'], fuse: ['a', 'b'] };
 
   // ============================================================
-  // simulate(components, wires) — the whole physics pass.
+  // simulate(components, wires) - the whole physics pass.
   //   components: [{ id, type, v?, r?, closed?, blown?, rating? }]
   //   wires:      [[terminalId, terminalId], ...]   (terminalId = "compId.name")
   // ============================================================

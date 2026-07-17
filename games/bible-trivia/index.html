@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    /* Fit the whole game in one viewport — the scene flexes to fill the space
+    /* Fit the whole game in one viewport - the scene flexes to fill the space
        left over so the question panel is always visible without scrolling. */
     html, body { height: 100%; }
     body { display: flex; flex-direction: column; min-height: 100dvh; margin: 0; }
@@ -208,7 +208,7 @@
       <h2>The Exodus Journey</h2>
       <p>Answer Bible questions to journey from Egypt to the Promised Land.</p>
       <div class="pace-row">
-        <button class="pace-btn" data-pace="easy">Easy<span class="p-sub">Grades 3–7</span></button>
+        <button class="pace-btn" data-pace="easy">Easy<span class="p-sub">Grades 3-7</span></button>
         <button class="pace-btn" data-pace="medium">Medium<span class="p-sub">High school</span></button>
         <button class="pace-btn" data-pace="hard">Hard<span class="p-sub">Adult</span></button>
         <button class="pace-btn" data-pace="solomon">Solomon<span class="p-sub">Expert</span></button>
@@ -298,12 +298,12 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// BIBLE TRIVIA — CHARIOT CHASE (Exodus)
+// BIBLE TRIVIA - CHARIOT CHASE (Exodus)
 // An animated canvas chase: you flee in a chariot while Pharaoh's
 // army pursues. Right answers surge you ahead and toward the Red
 // Sea; wrong answers (and dawdling) let the army gain. Reach the
 // sea and it parts for you, then closes over the pursuers. Get
-// caught and the chase simply ends — no violence.
+// caught and the chase simply ends - no violence.
 // ============================================================
 
 // ---------------- Question deck ----------------
@@ -724,22 +724,22 @@ const CAT_LABEL = { people:"People", events:"Events", numbers:"Numbers", places:
 const KEYS = ['A','B','C','D'];
 
 // ============================================================
-// THE EXODUS JOURNEY — six animated stages from slavery in Egypt
+// THE EXODUS JOURNEY - six animated stages from slavery in Egypt
 // to the Promised Land. Bible questions drive the story forward:
 // each correct answer advances the current stage and plays its
 // animation; reach a stage's goal to move on.
-//   1 Slavery in Egypt    — build the store-cities, brick by brick
-//   2 The Ten Plagues     — one plague per correct answer
-//   3 Race to the Red Sea — the chariot chase + the sea parts
-//   4 Wandering the Desert— manna, the pillar of cloud, toward Sinai
-//   5 Mount Sinai         — the Ten Commandments, one by one
-//   6 The Fall of Jericho — march seven times, the walls fall
+//   1 Slavery in Egypt    - build the store-cities, brick by brick
+//   2 The Ten Plagues     - one plague per correct answer
+//   3 Race to the Red Sea - the chariot chase + the sea parts
+//   4 Wandering the Desert- manna, the pillar of cloud, toward Sinai
+//   5 Mount Sinai         - the Ten Commandments, one by one
+//   6 The Fall of Jericho - march seven times, the walls fall
 // Nothing violent is shown; wrong answers simply don't advance.
 // ============================================================
 
 // ---------------- Difficulty ----------------
 const LEVEL_META = {
-  easy:     { label:'Easy',     sub:'Grades 3–7' },
+  easy:     { label:'Easy',     sub:'Grades 3-7' },
   medium:   { label:'Medium',   sub:'High school' },
   hard:     { label:'Hard',     sub:'Adult' },
   solomon: { label:'Solomon', sub:'Expert' },
@@ -781,13 +781,13 @@ const LEVELS = [
   {
     id:'slavery', emoji:'🧱', name:'Slavery in Egypt', ref:'Exodus 1', goal:5, pause:1.1,
     story:"Jacob's family grew into a great nation in Egypt. A new Pharaoh feared them and forced them into hard slavery, making bricks and building his store-cities. Israel cried out to God for help.",
-    teach:"Israel was enslaved in Egypt for over <b>400 years</b>. God heard their cry and raised up <b>Moses</b> to set His people free. <i>(Exodus 1–2)</i>",
+    teach:"Israel was enslaved in Egypt for over <b>400 years</b>. God heard their cry and raised up <b>Moses</b> to set His people free. <i>(Exodus 1-2)</i>",
     scene: drawSlavery,
   },
   {
-    id:'plagues', emoji:'🐸', name:'The Ten Plagues', ref:'Exodus 7–12', goal:10, pause:1.6,
+    id:'plagues', emoji:'🐸', name:'The Ten Plagues', ref:'Exodus 7-12', goal:10, pause:1.6,
     story:"Moses stood before Pharaoh and said, \"Let my people go!\" Pharaoh refused again and again, so God sent ten plagues on Egypt, each one a sign of His power.",
-    teach:"The <b>ten plagues</b> ended with the first <b>Passover</b>: Israel marked their doors with lamb's blood and were spared. At last Pharaoh let them go. <i>(Exodus 7–12)</i>",
+    teach:"The <b>ten plagues</b> ended with the first <b>Passover</b>: Israel marked their doors with lamb's blood and were spared. At last Pharaoh let them go. <i>(Exodus 7-12)</i>",
     scene: drawPlagues,
   },
   {
@@ -1088,7 +1088,7 @@ function meter(x, y, w, label, frac, c1, c2, right) {
 }
 
 // ============================================================
-// STAGE 1 — Slavery in Egypt
+// STAGE 1 - Slavery in Egypt
 // ============================================================
 function drawWorker(x, gy, t, robe, skin, phase) {
   const bob = Math.abs(Math.sin(t * 4 + phase)) * 2, s = H / 330;
@@ -1198,7 +1198,7 @@ function drawSlavery(dt) {
 }
 
 // ============================================================
-// STAGE 2 — The Ten Plagues
+// STAGE 2 - The Ten Plagues
 // ============================================================
 function drawPalace(x, gy) {
   const w = 150, h = 120;
@@ -1325,7 +1325,7 @@ function drawPlagues(dt) {
 }
 
 // ============================================================
-// STAGE 3 — Race to the Red Sea (the chariot chase)
+// STAGE 3 - Race to the Red Sea (the chariot chase)
 // ============================================================
 function drawArmy(t) { const ax = armyX(); for (let i = 3; i >= 0; i--) drawRig(ax - i * 46, t + i * 0.4, armyOpts()); }
 function armyOpts() {
@@ -1355,7 +1355,7 @@ function drawChase(dt) {
   }
   drawHUD();
 }
-// Red Sea finale — the sea parts, you cross, the waters close.
+// Red Sea finale - the sea parts, you cross, the waters close.
 function drawFinale(dt) {
   const gy = groundY(), t = finaleT;
   const part = clamp01(t / 1.4), cross = clamp01((t - 1.4) / 2.0);
@@ -1404,9 +1404,9 @@ function waterEdge(x, y, w, top) {
 }
 
 // ============================================================
-// STAGE 4 — Wandering the Desert
+// STAGE 4 - Wandering the Desert
 // ============================================================
-// the towering pillar of cloud by day, fire glowing at its core — rises the
+// the towering pillar of cloud by day, fire glowing at its core - rises the
 // full height of the scene and billows as it sways
 function drawPillar(x, gy) {
   const topY = H * 0.07, puffs = 12;
@@ -1473,7 +1473,7 @@ function drawDesert(dt) {
 }
 
 // ============================================================
-// STAGE 5 — Mount Sinai (the Ten Commandments)
+// STAGE 5 - Mount Sinai (the Ten Commandments)
 // ============================================================
 function lightning(x, y0, y1) {
   ctx.beginPath(); ctx.moveTo(x, y0);
@@ -1527,7 +1527,7 @@ function drawSinai(dt) {
     ctx.fillStyle = 'rgba(255,170,70,' + (0.8 * (1 - t)).toFixed(2) + ')';
     ctx.beginPath(); ctx.arc(mx + Math.sin(i * 2 + sceneTime * 3) * 16, sumY + 4 - t * 70, 2.2, 0, Math.PI * 2); ctx.fill();
   }
-  // lightning — flashes on each new commandment and ambiently through the storm
+  // lightning - flashes on each new commandment and ambiently through the storm
   if (fxT > L.pause - 0.3 || Math.random() < dt * 1.6) {
     ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 3;
     lightning(mx + rand(-90, 90), 0, sumY + rand(0, 30));
@@ -1548,7 +1548,7 @@ function drawSinai(dt) {
 }
 
 // ============================================================
-// STAGE 6 — The Fall of Jericho
+// STAGE 6 - The Fall of Jericho
 // ============================================================
 // A great fortress fills the scene; defenders hurl rocks from the battlements.
 let jerichoRocks = [], jerichoThrowT = 0, jerichoLastThrow = { x: -999, t: -9 };
@@ -1799,7 +1799,7 @@ function loop(ts) {
     }
     L.scene(dt);
   } else {
-    // menu / intro / clear / caught / win — keep the scene alive behind the overlay
+    // menu / intro / clear / caught / win - keep the scene alive behind the overlay
     LEVELS[levelIdx].scene(dt);
   }
   ctx.restore();
@@ -2020,7 +2020,7 @@ function winGame() {
   updateBadges();
   if (window.HSGSound) HSGSound.finish(true);
   if (window.HSGfx) HSGfx.confetti({ count: 120, big: true });
-  bankJourney(true);   // completed the journey — bank the longest streak + show standings
+  bankJourney(true);   // completed the journey - bank the longest streak + show standings
 }
 
 function toMenu() {

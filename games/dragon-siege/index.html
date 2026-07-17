@@ -91,7 +91,7 @@
     .word-bubble .done { color: #2A5C3F; }
     .word-bubble .next { color: var(--red); text-decoration: underline; }
     .word-bubble .rest { color: var(--ink-light); }
-    /* the word you're currently typing — obviously highlighted */
+    /* the word you're currently typing - obviously highlighted */
     .word-bubble.active {
       border-color: #b07d00;
       background: #ffe07a;
@@ -103,7 +103,7 @@
     .word-bubble .pip { color: var(--border); }
     .word-bubble .pip.done { color: var(--green); }
     .word-bubble .pip.cur { color: var(--gold); }
-    /* a wrong key flashes the bubble red — colour only, NEVER transform
+    /* a wrong key flashes the bubble red - colour only, NEVER transform
        (a transform here would wipe the bubble's positioning transform) */
     .word-bubble.miss { animation: bubbleMiss 0.3s ease; }
     @keyframes bubbleMiss {
@@ -331,7 +331,7 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// DRAGON SIEGE — an animated medieval typing-defense game.
+// DRAGON SIEGE - an animated medieval typing-defense game.
 // A canvas battlefield: marching army patches, flaming trebuchet
 // boulders, and swooping fire-breathing dragons all converge on
 // your keep. Type a foe's word to loose arrows; let one through
@@ -340,7 +340,7 @@
 
 // ---------- Word pools, graded by realm ----------
 const WORDS = {
-  // simple kid words for Easy — short, phonetic, sight-word friendly
+  // simple kid words for Easy - short, phonetic, sight-word friendly
   kids: [
     "cat","hat","dog","sun","run","red","big","bed","cup","top",
     "box","fox","pig","hen","bug","map","net","pen","jam","mud",
@@ -367,7 +367,7 @@ const WORDS = {
     "knighthood","sorcerer","enchanted","dragonfire","stronghold","vanquished","conquered","broadsword","guardian","cathedral",
     "excalibur","chivalry","drawbridge","besieged","alliance","rebellion","fellowship","sovereign","barbarian","apprentice"
   ],
-  // the hardest pool — long, tricky-to-spell warfare vocabulary for Impossible
+  // the hardest pool - long, tricky-to-spell warfare vocabulary for Impossible
   warlord: [
     "annihilation","catastrophe","indomitable","impregnable","fortification","insurmountable",
     "conflagration","reconnaissance","unconquerable","necromancer","pandemonium","juggernaut",
@@ -382,7 +382,7 @@ const WORDS = {
 // ----- Scripture pools (Medium & Hard) -----
 // Common KJV verses, broken into their plain words: lowercased, punctuation and
 // references stripped, single letters dropped. Words are kept in verse order so
-// foes tend to march out roughly in reading order — players catch the gist even
+// foes tend to march out roughly in reading order - players catch the gist even
 // as they type out of sequence. (Verse order is preserved; see pickWord.)
 const MEDIUM_VERSES = [
   "For God so loved the world that he gave his only begotten Son that whosoever believeth in him should not perish but have everlasting life",
@@ -408,7 +408,7 @@ const HARD_VERSES = [
   "Charity suffereth long and is kind charity envieth not charity vaunteth not itself",
   "Casting all your care upon him for he careth for you",
 ];
-// the longest, richest KJV verses — the Impossible pool
+// the longest, richest KJV verses - the Impossible pool
 const IMPOSSIBLE_VERSES = [
   "The LORD is my light and my salvation whom shall I fear the LORD is the strength of my life of whom shall I be afraid",
   "For the wages of sin is death but the gift of God is eternal life through Jesus Christ our Lord",
@@ -465,13 +465,13 @@ const GIANT_PHRASES = [
 // calibrated by  required_wpm ≈ marchSpeed × avgWordLength / 5.5.
 //
 // Difficulty climbs purely with level via marchSpeed = marchBase + (level-1)*marchStep,
-// tuned so LEVEL 1 sits at the BOTTOM of the band and LEVEL 5 reaches the TOP —
+// tuned so LEVEL 1 sits at the BOTTOM of the band and LEVEL 5 reaches the TOP -
 // then it keeps climbing past it. The `targetWpm` note on each realm is just
 // documentation of the intended band (L1 → L5):
 //   easy        10 → 20 wpm   (kids words,      avg ~3.6 chars)
 //   medium      20 → 40 wpm   (knight words,    avg ~6.6 chars)
 //   hard        40 → 60 wpm   (dragonlord words, avg ~9 chars)
-//   impossible  60+   wpm     (warlord words,   avg ~11 chars) — left as-is
+//   impossible  60+   wpm     (warlord words,   avg ~11 chars) - left as-is
 const EASY_BOSS_WORDS = ["dragon","castle","knight","wizard","monster","attack","sword","fire","wings","giant","flame","beast"];
 const REALMS = {
   // genuinely gentle: slow foes, sparse squads, no bosses until L6 (see buildLevelEasy)
@@ -497,7 +497,7 @@ const REALMS = {
     dragonBase:7, dragonStep:0.2, dragonMin:5.5,
     mountedFrom:1, siegeInterval:1.2
   },
-  // left exactly as the build you liked — now the words are the hardest KJV verses
+  // left exactly as the build you liked - now the words are the hardest KJV verses
   impossible: {
     pool:"scriptureImpossible", bossWords:BOSS_WORDS, targetWpm:"60+",
     marchBase:30, marchStep:0.8,
@@ -531,7 +531,7 @@ let fit = null;
 // When the battlefield resizes, move every live thing to its new spot so it keeps
 // its position relative to the walls and ground. x scales by the width ratio; y is
 // remapped RELATIVE TO THE GROUND LINE (groundY = H-64 is a fixed offset, not a
-// proportion) so ground foes stay on the ground and flyers keep their altitude —
+// proportion) so ground foes stay on the ground and flyers keep their altitude -
 // instead of ending up stranded below the shifted ground (unfair hits / stuck foes).
 function rescaleSiege(sx, prevH) {
   if (sx === 1 && prevH === H) return;
@@ -803,7 +803,7 @@ function drawTorchGlow(x,y,t){
 }
 
 // ===================================================================
-// THE ENEMY TREBUCHET (right side) — big, animated siege engine
+// THE ENEMY TREBUCHET (right side) - big, animated siege engine
 // ===================================================================
 function trebGeom(){
   const bx = W - 104, by = groundY();
@@ -922,7 +922,7 @@ function spawnTroop(offset, forceMounted){
   return th;
 }
 // Foes spawn off the right edge and SPRINT in to the front of the trebuchet
-// before settling into their normal march — so the field always has words to
+// before settling into their normal march - so the field always has words to
 // type instead of a slow, empty edge-in. The entry line spreads gently with the
 // squad offset so a group lines up across the right of the field.
 const SPRINT_SPEED = 160;
@@ -1090,10 +1090,10 @@ function updateThreats(dt, t){
     }
     if (th.state==='burning'){ // a wreck going up in flames for exactly 2s
       th.burnT += dt;
-      // a dragon's carcass is huge — its blaze covers a much wider area
+      // a dragon's carcass is huge - its blaze covers a much wider area
       const big = th.kind==='dragon';
       const w = big ? 80 : 22, killR = big ? 85 : 50, n = big ? 6 : 3;
-      // people caught in the blaze die a beat (~1s) after it ignites — looks cooler
+      // people caught in the blaze die a beat (~1s) after it ignites - looks cooler
       if (th.burnT>=1.0){
         for (let j=threats.length-1;j>=0;j--){
           const s=threats[j];
@@ -1106,14 +1106,14 @@ function updateThreats(dt, t){
       if (th.burnT>=2.0){ emit(th.x, th.y-10, 'debris', big?16:10); removeThreat(th,i); }
       continue;
     }
-    if (th.state==='retreat'){ // driven off by arrows — fast, panicked escape
+    if (th.state==='retreat'){ // driven off by arrows - fast, panicked escape
       th.retreatT += dt;
       th.x += 180*dt; th.y -= 90*dt; th.flap += dt*16;
       if (th.x>W+120 || th.y<-120){ removeThreat(th,i); }
       placeBubble(th);
       continue;
     }
-    if (th.state==='flee'){ // it burned the castle — leaves slowly, victorious
+    if (th.state==='flee'){ // it burned the castle - leaves slowly, victorious
       th.retreatT += dt;
       th.x += 42*dt; th.y -= 12*dt; th.flap += dt*5;
       th.y += Math.sin(th.retreatT*1.6)*0.6; // lazy gliding bob
@@ -1132,7 +1132,7 @@ function updateThreats(dt, t){
         // dense flame streaming from the maw toward the burning wall
         const mx=th.x-46, my=th.y+2, tx=castleW()*0.5, ty=wallTopY()+8;
         for (let k=0;k<4;k++){ const p=Math.random(); emit(lerp(mx,tx,p)+rand(-8,8), lerp(my,ty,p)+rand(-8,8), 'fire', 1, 1.5); }
-      } else { // giant — stands at the wall and pounds it
+      } else { // giant - stands at the wall and pounds it
         th.x = castleW()+34;
         th.y = groundY()-2;
         th.sx=th.x; th.sy=th.y-186;
@@ -1150,7 +1150,7 @@ function updateThreats(dt, t){
         th.x -= Math.max(SPRINT_SPEED, th.speed)*dt;       // rush onto the field
         if (th.x <= th.entryX) th.entering=false;
       } else {
-        if (th.pauseT>0){ th.pauseT -= dt; }               // staggered after a knockback — frozen ~1s
+        if (th.pauseT>0){ th.pauseT -= dt; }               // staggered after a knockback - frozen ~1s
         else { th.x -= th.speed*dt; }
         if (th.kb){ th.x += th.kb*dt; th.kb -= th.kb*Math.min(1,dt*6); if (Math.abs(th.kb)<8) th.kb=0; }  // skid back
       }
@@ -1162,7 +1162,7 @@ function updateThreats(dt, t){
     }
     else if (th.kind==='giant'){
       if (th.pauseT>0){
-        th.pauseT -= dt;                   // staggered by an arrow — frozen ~1s
+        th.pauseT -= dt;                   // staggered by an arrow - frozen ~1s
       } else if (th.entering){
         th.x -= Math.max(SPRINT_SPEED, th.speed)*dt;       // charges in…
         if (th.x <= th.entryX) th.entering=false;
@@ -1230,15 +1230,15 @@ function pruneCorpses(){
 // A boulder still in the air (falling) flattens any live foot/mounted soldier it
 // drops onto, and knocks one word off a giant it strikes (so a 5-word giant is
 // left with 4). Each rock can only strike a given giant once. Landed rocks
-// (state 'down') never crush — soldiers march past them.
+// (state 'down') never crush - soldiers march past them.
 function crushCheck(rock){
   if (!rock.hitIds) rock.hitIds = {};
   for (let j=threats.length-1;j>=0;j--){
     const s=threats[j];
     if (s===rock || s.state!=='live') continue;
     // A falling thing must come down essentially ON the target. These are small,
-    // fixed horizontal tolerances (just a touch of generosity) so a near miss —
-    // landing a bit in front of or behind a foe — does NOT count. It's meant to
+    // fixed horizontal tolerances (just a touch of generosity) so a near miss -
+    // landing a bit in front of or behind a foe - does NOT count. It's meant to
     // be a precise, satisfying drop, not a wide area-of-effect.
     if (s.kind==='troop'){
       if (Math.abs(s.x - rock.x) < 22 && rock.y > s.y-32){ crushFoe(s, j); }
@@ -1256,7 +1256,7 @@ function crushCheck(rock){
   }
 }
 function crushFoe(s, idx){
-  slain++;                                  // a kill, but not a typed one — no streak credit
+  slain++;                                  // a kill, but not a typed one - no streak credit
   if (active===s) clearActive();
   if (s.bubble){ s.bubble.remove(); s.bubble=null; }
   s.state='dying'; s.fallT=0;
@@ -1274,7 +1274,7 @@ function rockHitGiant(g){
     giantWordDown(g);                       // an arrow thunks home and it flinches
     if (active===g) clearActive();
   } else {
-    slay(g);                                // its final word — the boulder fells it
+    slay(g);                                // its final word - the boulder fells it
   }
 }
 
@@ -1282,7 +1282,7 @@ function placeBubble(th){
   if (!th.bubble) return;
   th._bx = th.sx;
   if (th.kind==='dragon' && th.state==='siege'){
-    // it's hovering at the very top — drop the word BELOW it so it stays on-screen
+    // it's hovering at the very top - drop the word BELOW it so it stays on-screen
     th._by = th.y + 80;
   } else {
     const off = th.kind==='dragon'?76 : th.kind==='rock'?34 : th.kind==='giant'?10 : 46;
@@ -1405,7 +1405,7 @@ function drawTroop(th,t){
   ctx.restore();
   ctx.globalAlpha=1;
 }
-// A knight on a galloping horse — every fifth foe, twice as fast.
+// A knight on a galloping horse - every fifth foe, twice as fast.
 function drawHorseman(th,t){
   const x=th.x, y=th.y;
   const fallen=(th.state==='dying'||th.state==='down');
@@ -1422,7 +1422,7 @@ function drawHorseman(th,t){
     // neck + head along the ground (left)
     ctx.beginPath(); ctx.moveTo(-18,-13); ctx.lineTo(-34,-5); ctx.lineTo(-34,-1); ctx.lineTo(-15,-6); ctx.closePath(); ctx.fill();
     ctx.beginPath(); ctx.ellipse(-34,-4,5,3.5,0.25,0,6.28); ctx.fill();
-    // four stiff legs sticking out sideways (slightly up — lying on its side)
+    // four stiff legs sticking out sideways (slightly up - lying on its side)
     ctx.strokeStyle=hideD; ctx.lineWidth=3.5; ctx.lineCap='round';
     for (const [bx,ex,ey] of [[-6,-12,-26],[-1,-4,-28],[8,12,-26],[13,20,-23]]){
       ctx.beginPath(); ctx.moveTo(bx,-14); ctx.lineTo(ex,ey); ctx.stroke();
@@ -1517,7 +1517,7 @@ function drawGiant(th,t){
   if (!fallen && th.hurtT>0){ skin='#f4d6b0'; skinL='#fbe7ca'; }   // brief flinch on a fresh hit
   const tunic='#5d5142', tunicD='#473d31';
 
-  // legs — animated stride
+  // legs - animated stride
   ctx.lineCap='round'; ctx.lineWidth=15; ctx.strokeStyle=skinD;
   const lf=-10+stride*8, rf=10-stride*8;
   ctx.beginPath(); ctx.moveTo(-9,-58+bob); ctx.lineTo(lf,0); ctx.moveTo(9,-58+bob); ctx.lineTo(rf,0); ctx.stroke();
@@ -1592,7 +1592,7 @@ function drawRock(th,t){
     g.addColorStop(0,'rgba(255,150,40,0.8)'); g.addColorStop(1,'rgba(255,80,20,0)');
     ctx.fillStyle=g; ctx.beginPath(); ctx.arc(0,0,th.r*2.2,0,6.28); ctx.fill();
   }
-  // jagged rock — cools to grey once it has come to rest
+  // jagged rock - cools to grey once it has come to rest
   ctx.fillStyle = landed ? '#5a554c' : '#3a3330';
   ctx.beginPath();
   for (let i=0;i<th.jag.length;i++){ const a=i/th.jag.length*6.28; const rr=th.r*th.jag[i];
@@ -1605,7 +1605,7 @@ function drawRock(th,t){
   ctx.restore();
   ctx.globalAlpha=1;
 }
-// A catapult — half the trebuchet's size — pushed by one soldier. It rolls
+// A catapult - half the trebuchet's size - pushed by one soldier. It rolls
 // forward lobbing small rocks; the arm whips over like the trebuchet's when it
 // fires. Each word sticks a flaming arrow in it; the third sets it ablaze.
 function drawCatapult(th,t){
@@ -1726,7 +1726,7 @@ function drawDragon(th,t){
   ctx.fillStyle='#ffd54a'; ctx.beginPath(); ctx.arc(-43,-7,2.2,0,6.28); ctx.fill();
   // near wing (over body)
   drawWing(ctx, flap+0.15, '#5a2a44');
-  // arrows piling up in it (arcade — one per hit, up to ten)
+  // arrows piling up in it (arcade - one per hit, up to ten)
   if (th.arrows){
     for (const a of th.arrows){
       ctx.save(); ctx.translate(a.lx, a.ly); ctx.rotate(a.ang);
@@ -1807,7 +1807,7 @@ function bodyY(th){
 }
 // Arcade shot: a single (slow) arrow flies from the top tower toward where you
 // clicked. It only kills if it actually strikes a foe along the way (handled in
-// updateProjectiles) — clicking near/behind a foe can connect, but a clean miss
+// updateProjectiles) - clicking near/behind a foe can connect, but a clean miss
 // just thuds into the ground. You have to lead moving foes.
 function arcadeShoot(cx, cy){
   const ox=castleW()*0.6, oy=towerTopY()+10;
@@ -1839,7 +1839,7 @@ function advance(th, ch){
     th.bubble.classList.remove('miss'); void th.bubble.offsetWidth; th.bubble.classList.add('miss');
   }
 }
-// One landed hit on a foe — finishing a typed word OR a click in arcade mode.
+// One landed hit on a foe - finishing a typed word OR a click in arcade mode.
 // Multi-word foes (giant 5, catapult 3, knight 2) take one hit each.
 function landHit(th){
   // arcade: a dragon soaks ten arrows before it goes down
@@ -1849,7 +1849,7 @@ function landHit(th){
     // tenth hit falls through to slay below
   }
   if (th.words && th.wordIdx < th.words.length-1){
-    // one of several words done — stagger the foe and move to the next
+    // one of several words done - stagger the foe and move to the next
     th.wordIdx++; th.typed=0; th.word=th.words[th.wordIdx];
     renderBubble(th);
     if (th.kind==='catapult') catapultWordDown(th); else giantWordDown(th);
@@ -1861,7 +1861,7 @@ function landHit(th){
     slay(th);
   }
 }
-// a normal arrow thunks into the flying dragon (one of ten) — damage, not a kill
+// a normal arrow thunks into the flying dragon (one of ten) - damage, not a kill
 function dragonHit(th){
   th.arrows.push({ lx:rand(-26,16), ly:rand(-12,12), ang:rand(-0.3,0.3) });
   emit(th.x, th.y, 'dust', 4); emit(th.x, th.y, 'spark', 4);
@@ -1883,7 +1883,7 @@ function woundKnight(th){
   // the knight only REACTS when the arrow actually lands: skid back, stagger, new word
   loose(ax, ay, th.sx, th.sy+28, 'arrow', ()=>{
     th.arrowStuck = true;
-    th.kb = 1020;                   // recoil/skid backward — a big 3× shove
+    th.kb = 1020;                   // recoil/skid backward - a big 3× shove
     th.pauseT = 1.0;                // then pause ~1s before it starts moving again
     th.word = pickWord(WORDS[realm.pool], usedLetters());   // a new word to finish the job
     th.typed = 0; renderBubble(th);
@@ -1898,7 +1898,7 @@ function catapultFire(th){
   // small, short-word shots (always the easy kids pool) so they're quick to catch
   spawnRockFrom(ox, oy, { r:[9,13], dur: rockDuration()*0.85, pool: WORDS.kids });
 }
-// each catapult word lands a flaming tower arrow that stays stuck in it — no
+// each catapult word lands a flaming tower arrow that stays stuck in it - no
 // obscuring smoke; the fire only takes over once it's hit the third time.
 function catapultWordDown(th){
   th.hurtT = 0.25;
@@ -1907,7 +1907,7 @@ function catapultWordDown(th){
   // no target → flies to this fixed front-body point (homing would drag it up to the word label)
   loose(ax, ay, th.x-18, th.y-18, 'firearrow', ()=>{ th.arrows.push(stick); });
 }
-// the catapult is set ablaze — it burns for exactly 2s then disperses
+// the catapult is set ablaze - it burns for exactly 2s then disperses
 function igniteCatapult(c){
   c.state='burning'; c.burnT=0;
   emit(c.x, c.y-30, 'fire', 26, 1.6); emit(c.x, c.y-30, 'smoke', 8);
@@ -1917,7 +1917,7 @@ function igniteCatapult(c){
 function smashCatapult(c){
   if (c.state!=='live') return;
   slain++; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
-  // no tone — the firearrow's whoosh (loose()) is the release sound
+  // no tone - the firearrow's whoosh (loose()) is the release sound
   if (active===c) clearActive();
   if (c.bubble){ c.bubble.remove(); c.bubble=null; }
   updateHud();
@@ -1932,7 +1932,7 @@ function slay(th){
   if (th.bubble){ th.bubble.remove(); th.bubble=null; }
   slain++;
   rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
-  // the arrow's whoosh (played in loose() below) is the release sound now — no tone
+  // the arrow's whoosh (played in loose() below) is the release sound now - no tone
   if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
   updateHud();
 
@@ -1946,7 +1946,7 @@ function slay(th){
       th.state='dying'; th.fallT=0; emit(th.x,th.y-10,'dust',8);
     }, th);
   } else if (th.kind==='rock'){
-    // a ballista bolt chases the still-arcing boulder and strikes it — but it
+    // a ballista bolt chases the still-arcing boulder and strikes it - but it
     // doesn't shatter. Knocked from the sky, it tumbles straight down and comes
     // to rest on the field for ~30s. While it's still falling it crushes any
     // soldier it drops onto, so time the shot to land it on the enemy. Once it
@@ -1979,7 +1979,7 @@ function slay(th){
       emit(th.x, th.y-60, 'dust', 14);
     }, th);
   } else if (th.kind==='catapult'){
-    // the third flaming arrow sets it ablaze — it burns up and the pusher dies
+    // the third flaming arrow sets it ablaze - it burns up and the pusher dies
     const ax=castleW()*0.6, ay=towerTopY()+10;
     loose(ax, ay, th.x-18, th.y-18, 'firearrow', ()=>{ igniteCatapult(th); });   // into the front face
   }
@@ -1997,12 +1997,12 @@ function impactRock(th, i){
   removeThreat(th, i);
 }
 function impactDragon(th, i){
-  // The boss reaches the keep and settles in to roast it. It does NOT leave —
+  // The boss reaches the keep and settles in to roast it. It does NOT leave -
   // it hovers and burns the castle for 1 life every second until you kill it.
   dragonInferno();                 // dramatic arrival blast (no life lost yet)
   th.state='siege';
   th.burnAcc=0; th.hoverT=0;
-  // keep whatever you'd already typed — don't reset progress
+  // keep whatever you'd already typed - don't reset progress
   if (th.bubble) renderBubble(th);
   flashWave('The Dragon Is Upon You!', '🔥 Slay it fast!');
 }
@@ -2016,7 +2016,7 @@ function impactGiant(th, i){
   flashWave('The Giant Breaches the Gate!', '🔥 Fell it fast!');
 }
 function impactCatapult(th, i){
-  // it rolled all the way to the wall — a heavy hit, and it's wrecked in the crash
+  // it rolled all the way to the wall - a heavy hit, and it's wrecked in the crash
   if (active===th) clearActive();
   if (th.bubble){ th.bubble.remove(); th.bubble=null; }
   damageCastle(castleW()-6, th.y-30, 'big');
@@ -2024,7 +2024,7 @@ function impactCatapult(th, i){
 }
 
 function damageCastle(x, y, size){
-  if (defeat) return;            // already falling — ignore further hits
+  if (defeat) return;            // already falling - ignore further hits
   if (!(window.HSGGod && HSGGod.on)) lives--;   // god mode: castle never falls
   if (window.HSGSound) HSGSound.wrong();
   rail.broke(); // breaking the line snuffs the live streak (keeps the session best, no modal)
@@ -2049,7 +2049,7 @@ function breatheFire(th){
   }
 }
 
-// A huge fireball erupting on the battlements — the dragon's siege blast.
+// A huge fireball erupting on the battlements - the dragon's siege blast.
 function dragonInferno(){
   const ox=castleW()*0.45, oy=wallTopY();
   for (let i=0;i<95;i++){
@@ -2075,7 +2075,7 @@ function loose(x,y,tx,ty,kind,onArrive,target){
   // resolve INSTANTLY (their effect fires now) so there's no extra flying arrow.
   if (instantShot){ if (onArrive) onArrive(); return; }
   if (window.HSGSound && HSGSound.whoosh) HSGSound.whoosh();   // the swish of an arrow loosed
-  // everything your castle looses flies slowly enough to watch land —
+  // everything your castle looses flies slowly enough to watch land -
   // arrows at the foot army and ballista bolts at rocks/dragons alike.
   // a `target` makes the shot home in on a foe that is still moving.
   // firearrow (big flaming tower-top shot) flies slowest; arcade arrows fly at
@@ -2096,7 +2096,7 @@ function updateProjectiles(dt){
     const p=clamp(pr.p,0,1);
     pr.x=lerp(pr.sx,pr.tx,p); pr.y=lerp(pr.sy,pr.ty,p);
     // arcade arrow: it only kills if it actually strikes a foe on its way to the
-    // click point — the first live foe within range gets hit, then the arrow's spent
+    // click point - the first live foe within range gets hit, then the arrow's spent
     if (pr.arcadeShot){
       let struck=null;
       for (const th of threats){
@@ -2162,7 +2162,7 @@ function drawProjectiles(){
       // fletching
       ctx.strokeStyle='#caa24a'; ctx.lineWidth=2.5;
       ctx.beginPath(); ctx.moveTo(-22,0); ctx.lineTo(-28,-5); ctx.moveTo(-22,0); ctx.lineTo(-28,5); ctx.stroke();
-    } else { // bolt — bigger, glowing
+    } else { // bolt - bigger, glowing
       ctx.shadowColor='rgba(255,180,60,0.9)'; ctx.shadowBlur=8;
       ctx.strokeStyle='#ffd27a'; ctx.lineWidth=3;
       ctx.beginPath(); ctx.moveTo(-12,0); ctx.lineTo(8,0); ctx.stroke();
@@ -2249,7 +2249,7 @@ function drawParticles(){
 
 // ---- foes arrive in SQUADS ----
 // A level is a list of squads; each squad is a little cluster released together
-// (with horizontal offsets so they pack up — a couple in front, a couple behind).
+// (with horizontal offsets so they pack up - a couple in front, a couple behind).
 // The next squad rolls in once the field has thinned out, so the wave reads as
 // distinct groups rather than an even drip. Levels 1-3 are hand-authored; level
 // 4 and up scale the level-3 template up.
@@ -2263,12 +2263,12 @@ function troopRow(n, start, step){
 //   medium → buildLevelMedium   (the build you tested as "easy")
 //   hard / impossible → buildLevelStandard (dense)
 function buildLevel(n){
-  // Easy, Medium AND Hard share the same gentle wave pattern — they differ only
+  // Easy, Medium AND Hard share the same gentle wave pattern - they differ only
   // in march speed + word pool. Only Impossible uses the dense standard layout.
   let squads = (realmKey==='easy')   ? buildLevelEasy(n)
              : (realmKey==='medium' || realmKey==='hard') ? buildLevelMedium(n)
              : buildLevelStandard(n);
-  // a dragon arrives every other level, starting at level 2 (2,4,6,…) —
+  // a dragon arrives every other level, starting at level 2 (2,4,6,…) -
   // append a finale dragon to any even level that doesn't already field one.
   // EASY is exempt: it stays gentle and schedules its own first dragon at L8.
   if (realmKey!=='easy' && n>=2 && n%2===0 && !squads.some(sq => sq.units.some(u => u.t==='dragon'))){
@@ -2300,7 +2300,7 @@ function buildLevelEasy(n){
   for (let d=0; d<dragons; d++) squads.push({ units: [ unit('dragon') ] });
   return squads;
 }
-// MEDIUM: the gentle layout you tested as "easy" — few foes per squad; first
+// MEDIUM: the gentle layout you tested as "easy" - few foes per squad; first
 // giant L5, first knights L6, first dragon L7.
 function buildLevelMedium(n){
   if (n===1) return [
@@ -2376,7 +2376,7 @@ function buildLevelStandard(n){
   ];
   return buildScaledLevel(n);
 }
-// Level 4+ : grow the level-3 shape — more troops/knights, more giants, more
+// Level 4+ : grow the level-3 shape - more troops/knights, more giants, more
 // rocks, and a rising number of dragons to close.
 function buildScaledLevel(n){
   const tier = n - 3;                       // 1,2,3…
@@ -2426,10 +2426,10 @@ function manageLevel(dt){
   if (squadQueue.length){
     squadGapT += dt;
     const lc = liveCount();
-    // never leave the field empty mid-wave — send the next squad in at once
+    // never leave the field empty mid-wave - send the next squad in at once
     if (lc===0){ releaseSquad(squadQueue.shift()); squadGapT=0; return; }
     // a 'solo' squad (e.g. a catapult) holds back until the field is clear, so it
-    // rolls in alone — nicer to watch — instead of mixed in with soldiers
+    // rolls in alone - nicer to watch - instead of mixed in with soldiers
     if (squadQueue[0].solo) return;
     // otherwise wait a beat, then reinforce once the field thins (or time's up)
     if (squadGapT >= SQUAD_MIN_GAP && (lc <= 1 || squadGapT >= SQUAD_MAX_GAP)){
@@ -2476,7 +2476,7 @@ function flashWave(title, sub){
 // ===================================================================
 function tick(ts){
   if (!running) return;
-  if (paused){ rafId=requestAnimationFrame(tick); return; }   // frozen — hold the last frame
+  if (paused){ rafId=requestAnimationFrame(tick); return; }   // frozen - hold the last frame
   if (!lastTs) lastTs=ts;
   let dt=(ts-lastTs)/1000; lastTs=ts;
   if (dt>0.05) dt=0.05;
@@ -2523,7 +2523,7 @@ function tick(ts){
 // the losing cinematic: escalating fire across the castle for ~5s
 function startDefeat(){
   defeat=true; defeatT=0; defeatBoomAcc=0; active=null;
-  // a soft initial flare (not the full jarring inferno) — the dread builds from here
+  // a soft initial flare (not the full jarring inferno) - the dread builds from here
   emit(castleW()*0.45, wallTopY(), 'fire', 22, 1.6);
   emit(castleW()*0.45, wallTopY(), 'smoke', 10);
   shake = Math.max(shake, 7); flashA = Math.max(flashA, 0.35); flashColor = '255,90,30';
@@ -2532,7 +2532,7 @@ function startDefeat(){
 const DEFEAT_LEN = 5.2;
 function runDefeatFx(dt){
   const p=Math.min(1, defeatT/DEFEAT_LEN);
-  // steady, intensifying fire on the keep — no violent booms, just a soft rumble
+  // steady, intensifying fire on the keep - no violent booms, just a soft rumble
   const n=2+Math.floor(p*6);
   for (let k=0;k<n;k++) emit(rand(2,castleW()), rand(wallTopY()-30, groundY()), 'fire', 1, 1+p*1.3);
   if (Math.random()<0.3+p*0.4) emit(rand(2,castleW()), rand(wallTopY()-24, groundY()-10), 'smoke', 1, 1+p);
@@ -2640,7 +2640,7 @@ document.addEventListener('keydown', e=>{
     }
     return;
   }
-  if (arcade) return;                                  // arcade is point-and-shoot — no typing
+  if (arcade) return;                                  // arcade is point-and-shoot - no typing
   if (e.key.length!==1) return;
   if (document.activeElement===catcher) return;
   if (/^[a-zA-Z' -]$/.test(e.key)){ e.preventDefault(); handleChar(e.key); }

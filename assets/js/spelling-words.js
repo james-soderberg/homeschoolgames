@@ -1,11 +1,11 @@
 // ============================================================
-// HSGSpellWords — shared, graded spelling word bank.
-// Lowercase, letters a–z only, so it drops straight into any
+// HSGSpellWords - shared, graded spelling word bank.
+// Lowercase, letters a-z only, so it drops straight into any
 // spelling game. Four difficulty bands, by real grade level:
-//   easy     — 1st–3rd grade  (short, decodable, common sight words)
-//   medium   — 4th–7th grade  (multi-syllable everyday vocabulary)
-//   hard     — high school +  (advanced & notoriously misspelled words)
-//   einstein — expert/bee     (long science & SAT-level brain-benders)
+//   easy     - 1st-3rd grade  (short, decodable, common sight words)
+//   medium   - 4th-7th grade  (multi-syllable everyday vocabulary)
+//   hard     - high school +  (advanced & notoriously misspelled words)
+//   einstein - expert/bee     (long science & SAT-level brain-benders)
 // API:  HSGSpellWords.pick(level)            -> a random word
 //       HSGSpellWords.pick(level, avoidSet)  -> avoids first letters in the Set
 //       HSGSpellWords.levels                 -> ['easy','medium','hard','einstein']
@@ -13,7 +13,7 @@
 // ============================================================
 (function () {
   const BANK = {
-    // ---------- 1st–3rd grade ----------
+    // ---------- 1st-3rd grade ----------
     easy: [
       "cat","dog","sun","hat","run","bug","cup","bed","pig","fox",
       "owl","web","fan","map","key","bus","pen","ant","fish","ball",
@@ -24,7 +24,7 @@
       "train","clock","grape","sheep","candy","puppy","bread","grass","cloud","plant",
       "friend","school"
     ],
-    // ---------- 4th–7th grade ----------
+    // ---------- 4th-7th grade ----------
     medium: [
       "river","garden","pencil","animal","orange","basket","castle","flower","jungle","spider",
       "turtle","window","pirate","knight","guitar","forest","island","picture","morning","thunder",
@@ -53,10 +53,10 @@
     ]
   };
 
-  // Kid-friendly clues — each one points at the word so the challenge is the
+  // Kid-friendly clues - each one points at the word so the challenge is the
   // SPELLING, not guessing the meaning. Emoji up front for instant recognition.
   const CLUES = {
-    // ---- easy: 1st–3rd grade ----
+    // ---- easy: 1st-3rd grade ----
     cat:"🐱 The furry pet that says \"meow\"", dog:"🐶 The pet that barks and wags its tail",
     sun:"☀️ The bright star that lights up the day", hat:"🎩 You wear this on your head",
     run:"🏃 To move fast on your feet", bug:"🐛 A tiny crawling insect",
@@ -94,7 +94,7 @@
     cloud:"☁️ The fluffy white thing in the sky", plant:"🌱 A green thing that grows from a seed",
     friend:"🤗 Someone you like to play and spend time with", school:"🏫 The place where kids go to learn",
 
-    // ---- medium: 4th–7th grade ----
+    // ---- medium: 4th-7th grade ----
     river:"🏞️ A long stream of water that flows to the sea", garden:"🌷 Where you grow flowers and veggies",
     pencil:"✏️ You write with this and erase mistakes", animal:"🐾 A living creature like a dog or lion",
     orange:"🍊 The round fruit that's also a color", basket:"🧺 A woven container with a handle",

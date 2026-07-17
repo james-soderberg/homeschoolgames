@@ -65,7 +65,7 @@
     @media (max-width: 600px) { .stage { height: 62vh; min-height: 340px; } }
     #snakeCanvas { display: block; width: 100%; height: 100%; }
 
-    /* between-words prompt — a pill under the clue; the board stays fully visible */
+    /* between-words prompt - a pill under the clue; the board stays fully visible */
     .ready-banner {
       font-family: var(--font-sans); font-weight: 800; font-size: 0.95rem;
       background: var(--gold); color: #2a1f08; border-radius: 99px; padding: 0.45rem 1.2rem;
@@ -101,7 +101,7 @@
     .end-size { font-family: var(--font-serif); font-size: 3.2rem; font-weight: 800; color: var(--gold-light, #e6c264); line-height: 1; margin: 0.1rem 0 0.1rem; }
     .end-size-label { font-family: var(--font-sans); font-size: 0.72rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color:#cfe6da; margin-bottom: 0.7rem; }
 
-    /* the word you were spelling when you died — shown so you can learn it */
+    /* the word you were spelling when you died - shown so you can learn it */
     .end-word {
       display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
       margin: 0 0 1rem; padding: 0.55rem 0.9rem; max-width: 34ch;
@@ -130,7 +130,7 @@
       backdrop-filter: blur(2px); color: #fdf7ec;
     }
     .bf-overlay.hidden { display: none; }
-    /* treasure-hunt easter-egg clue on the game-over card (revealed at length 35+) */
+    /* treasure-hunt easter-egg clue on the game-over card (revealed at length 40+) */
     .ls-hunt-clue { width: 100%; max-width: 430px; margin: 0.6rem auto 1.1rem; padding: 1.15rem 1.3rem;
       text-align: center; background: rgba(255,209,102,0.18); border: 3px solid #e7c979; border-radius: 16px;
       box-shadow: 0 0 22px 3px rgba(231,201,121,0.4), 0 8px 26px rgba(0,0,0,0.4);
@@ -217,11 +217,11 @@
       <div class="end-size-label">Final snake length</div>
       <div class="ls-hunt-clue hidden" id="lsHuntClue">
         <div class="lshc-tag">🗝 Treasure Hunt Clue</div>
-        <div class="lshc-body">For the treasure hunter: only every other letter matters — ignore the first one. Then flip what's left (read it backwards) to reveal the word.</div>
+        <div class="lshc-body">For the treasure hunter: only every other letter matters - ignore the first one. Then flip what's left (read it backwards) to reveal the word.</div>
       </div>
       <div class="end-word">
         <span class="end-word-label">The word was</span>
-        <span class="end-word-text" id="endWord">—</span>
+        <span class="end-word-text" id="endWord">-</span>
         <span class="end-word-clue" id="endWordClue"></span>
       </div>
       <div class="end-row">
@@ -240,8 +240,8 @@
       <h2>Letter Snake</h2>
       <p>Read the <strong>clue</strong>, then steer the snake to gobble the letters <strong>in spelling order</strong>. Edges wrap around, so you won't crash off them! Pick a level:</p>
       <div class="level-row">
-        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Easy</span><span class="l-desc">Grades 1–3</span></span></button>
-        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Medium</span><span class="l-desc">Grades 4–7</span></span></button>
+        <button class="level-btn" data-level="easy"><span class="l-icon">🐤</span><span><span class="l-name">Easy</span><span class="l-desc">Grades 1-3</span></span></button>
+        <button class="level-btn" data-level="medium"><span class="l-icon">🦊</span><span><span class="l-name">Medium</span><span class="l-desc">Grades 4-7</span></span></button>
         <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Hard</span><span class="l-desc">High school+</span></span></button>
         <button class="level-btn" data-level="einstein"><span class="l-icon">🧠</span><span><span class="l-name">Einstein</span><span class="l-desc">Spelling-bee level</span></span></button>
       </div>
@@ -267,20 +267,20 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// LETTER SNAKE — read the clue, steer the snake to gobble the
+// LETTER SNAKE - read the clue, steer the snake to gobble the
 // letters IN SPELLING ORDER. Edges wrap around (no wall deaths).
 // The snake grows with every letter, so longer words get tricky.
 // ============================================================
 const LEVELS = {                               // stepMs = ms per move (CONSTANT all game); higher = slower
-  easy:     { stepMs:470, decoys:4 },  // grades 1–3 • super slow
-  medium:   { stepMs:400, decoys:6 },  // grades 4–7 • steady
+  easy:     { stepMs:470, decoys:4 },  // grades 1-3 • super slow
+  medium:   { stepMs:400, decoys:6 },  // grades 4-7 • steady
   hard:     { stepMs:330, decoys:8 },  // high school+ • quicker
   einstein: { stepMs:290, decoys:9 }   // spelling-bee • fast
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
 
-// Look-alike / sound-alike letters — decoys lean on these so a stray 'a' can
+// Look-alike / sound-alike letters - decoys lean on these so a stray 'a' can
 // masquerade as the 'e' you're hunting for. Forces real spelling knowledge.
 const CONFUSE = {
   a:'eo', e:'ai', i:'eyl', o:'ua', u:'ov', y:'ie',
@@ -402,11 +402,11 @@ function newWord(){
   clueStr=HSGSpellWords.clue(word) || ('It has ' + word.length + ' letters');
   typed=0; renderSlots();
   clueText.textContent=clueStr;
-  buildPellets();                 // NOTE: snake is NOT reset — it keeps growing
-  // ready state — snake sits frozen in place until the player presses a key / taps
+  buildPellets();                 // NOTE: snake is NOT reset - it keeps growing
+  // ready state - snake sits frozen in place until the player presses a key / taps
   state='ready'; stepAcc=0; lastSnake=snake.map(s=>({c:s.c,r:s.r}));
   hidePauseUI();
-  showSecondClue();               // first & last letter + length — a permanent extra hint
+  showSecondClue();               // first & last letter + length - a permanent extra hint
   HSGSpellWords.say(word);        // announce the word aloud (the goal is the spelling)
   readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word! Press any key to continue ▶';
   readyBanner.classList.remove('hidden');
@@ -446,7 +446,7 @@ function hidePauseUI(){
 }
 
 // ---- pellet placement ----
-// Every empty cell (not under the snake, and — when relocating — not under another
+// Every empty cell (not under the snake, and - when relocating - not under another
 // pellet). Returns a fresh array each call.
 function freeCells(skip){
   const occ=new Set(snake.map(s=>s.r*COLS+s.c));
@@ -481,7 +481,7 @@ function startGame(lv){
   flashT=0; shakeT=0; lifeT=0; stepAcc=0;
   rail.setLevel(lv, lv.charAt(0).toUpperCase()+lv.slice(1));  // per-difficulty board
   setupCanvas();
-  resetSnake();        // the only place the snake is reset — it persists between words
+  resetSnake();        // the only place the snake is reset - it persists between words
   startOverlay.classList.add('hidden');
   endOverlay.classList.add('hidden');
   updateHud();
@@ -508,12 +508,12 @@ function gameOver(reason){
   const best=Math.max(finalLen, rail.bestToBeat());
   endTitle.textContent = reason==='self' ? 'You bit your own tail!' : 'Out of hearts!';
   endSize.textContent = finalLen;
-  endWord.textContent = (word||'').toUpperCase();      // the word you were spelling — learn it for next time
+  endWord.textContent = (word||'').toUpperCase();      // the word you were spelling - learn it for next time
   endWordClue.textContent = clueStr || '';
   endWords.textContent = wordsDone;
   endBest.textContent = best;
-  // treasure-hunt easter egg: a length of 35+ (any level) reveals a hidden clue
-  document.getElementById('lsHuntClue').classList.toggle('hidden', finalLen < 35);
+  // treasure-hunt easter egg: a length of 40+ (any level) reveals a hidden clue
+  document.getElementById('lsHuntClue').classList.toggle('hidden', finalLen < 40);
   endOverlay.classList.remove('hidden');
   HSGSound.finish(false);
   // bank the snake's length + show placement/name entry inline on the end card
@@ -579,7 +579,7 @@ function loop(ts){
   if(!lastTs) lastTs=ts;
   let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.1) dt=0.1;
   if (state==='playing'){
-    curInterval = cfg.stepMs/1000;   // constant speed the whole game — difficulty comes from the growing snake
+    curInterval = cfg.stepMs/1000;   // constant speed the whole game - difficulty comes from the growing snake
     stepAcc+=dt;
     while (state==='playing' && stepAcc>=curInterval){ stepAcc-=curInterval; step(); }
   }
@@ -595,7 +595,7 @@ function render(){
   ctx.save();
   if (shakeT>0) ctx.translate((Math.random()-0.5)*8,(Math.random()-0.5)*6);
   drawBoard();
-  // pellets — all look the same so the player must KNOW the spelling
+  // pellets - all look the same so the player must KNOW the spelling
   for (const p of pellets){
     const x=p.c*CELL+CELL/2, y=p.r*CELL+CELL/2, rad=CELL*0.4;
     ctx.beginPath(); ctx.arc(x,y+rad*0.18,rad,0,6.28); ctx.fillStyle='rgba(0,0,0,0.22)'; ctx.fill(); // drop shadow
@@ -683,13 +683,13 @@ function drawHead(p,hurt){
 
 // ---- input ----
 // Buffer up to 2 turns. Each is validated against the LAST intended heading
-// (the tail of the queue, or the live dir) — so a quick →,↑ both stick and you
+// (the tail of the queue, or the live dir) - so a quick →,↑ both stick and you
 // can whip around a corner without the second press eating the first.
 function setDir(dc,dr){
   if(state!=='playing') return;
   const ref = dirQueue.length ? dirQueue[dirQueue.length-1] : dir;
   if(dc===-ref.dc && dr===-ref.dr) return;   // no 180° reversal
-  if(dc===ref.dc && dr===ref.dr) return;     // same heading — nothing to queue
+  if(dc===ref.dc && dr===ref.dr) return;     // same heading - nothing to queue
   if(dirQueue.length<2) dirQueue.push({dc,dr});
 }
 function dirFromKey(k){
@@ -732,7 +732,7 @@ pauseBtn.addEventListener('click', (e)=>{ e.stopPropagation(); togglePause(); })
 document.getElementById('endPlayAgain').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(level); });
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', (e)=>{ e.stopPropagation(); startGame(b.dataset.level); }));
 
-// god mode — type "godmode": unlimited lives (no wall/self death) + jump to any level
+// god mode - type "godmode": unlimited lives (no wall/self death) + jump to any level
 const GOD_TIERS = [['easy','🐤 Easy'],['medium','🦊 Medium'],['hard','🦉 Hard'],['einstein','🧠 Einstein']];
 HSGGod.watch(() => {
   HSGGod.enable();

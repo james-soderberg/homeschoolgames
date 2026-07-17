@@ -1,4 +1,4 @@
-// WHO SAID IT? — one-sentence biographies, shown after you answer (right or
+// WHO SAID IT? - one-sentence biographies, shown after you answer (right or
 // wrong) so you learn who the speaker was. Keyed by the exact name in
 // whosaidit-people.js. This is the "about the person" line, distinct from the
 // short pre-answer hint (the `b` field).

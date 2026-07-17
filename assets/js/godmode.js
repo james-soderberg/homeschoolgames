@@ -1,5 +1,5 @@
 // ============================================================
-// HSGGod — shared "god mode" cheat.
+// HSGGod - shared "god mode" cheat.
 // Type "godmode" anywhere in a game to turn it on: it grants
 // unlimited lives (each game gates its own life-loss on HSGGod.on)
 // and can pop a picker to jump to any level / stage / difficulty.
@@ -111,7 +111,7 @@
         (function (n) { b.addEventListener('click', function () { jump(n); }); })(i);
         grid.appendChild(b);
       }
-      sub.textContent = 'Unlimited lives on. Jump to any ' + label.toLowerCase() + ' (1–' + opts.levels + ').';
+      sub.textContent = 'Unlimited lives on. Jump to any ' + label.toLowerCase() + ' (1-' + opts.levels + ').';
     } else {
       grid.className = 'hsg-god-grid'; grid.innerHTML = '';
       sub.textContent = opts.note || 'Unlimited lives on.';

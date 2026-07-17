@@ -50,7 +50,7 @@
       color: var(--ink);
     }
 
-    /* Country prompt — big */
+    /* Country prompt - big */
     .prompt-box {
       background: white;
       border: 2px solid var(--border);
@@ -136,7 +136,7 @@
       height: auto;
     }
 
-    /* Neighbouring filler land — fills gaps, not part of the quiz */
+    /* Neighbouring filler land - fills gaps, not part of the quiz */
     .country-bg {
       fill: #E2E0D2;
       stroke: #B8AE98;
@@ -158,7 +158,7 @@
     .country.wrong-flash { fill: #8B2020 !important; }
     .country.highlight-target { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
     .country.show-correct { fill: #5B8A6A; stroke: #2A5C3F; stroke-width: 1.5; }
-    /* Already found — painted a bright, per-country colour (set inline in JS);
+    /* Already found - painted a bright, per-country colour (set inline in JS);
        hovering brightens it and shows the country name in a tooltip. */
     .country.completed { fill: #6CA8C4; stroke: #3f6b7d; cursor: pointer; }
     .country.completed:hover { filter: brightness(1.12); }
@@ -264,7 +264,7 @@
 <script src="../../assets/js/map-data.js"></script>
 <script>
 // ============================================================
-// MAP DATA — country lists per region
+// MAP DATA - country lists per region
 // Each country has: id (matches SVG path id), name
 // ============================================================
 
@@ -343,7 +343,7 @@ const REGIONS = {
 };
 
 // ============================================================
-// SVG MAP DATA — real country outlines from Natural Earth (110m),
+// SVG MAP DATA - real country outlines from Natural Earth (110m),
 // projected with d3-geo. Data lives in ../../assets/js/map-data.js
 // (window.HSG_MAP_DATA), regenerated via scratchpad/gen.mjs.
 // ============================================================
@@ -398,8 +398,8 @@ function setTitle(el, name) {
   t.textContent = name;
 }
 
-// Found countries fill in with a colour drawn from their NATIONAL FLAG — the
-// single most identifying flag colour — so the map reads like a flag/political
+// Found countries fill in with a colour drawn from their NATIONAL FLAG - the
+// single most identifying flag colour - so the map reads like a flag/political
 // map instead of flat grey. Keyed by ISO-2 id.
 const FLAG_COLORS = {
   // Americas
@@ -601,13 +601,13 @@ function handleCountryClick(countryId) {
       wrongEl.classList.add('wrong-flash');
       setTimeout(() => wrongEl.classList.remove('wrong-flash'), 800);
     }
-    // Missed — put it back in the rotation so you get another shot at it.
+    // Missed - put it back in the rotation so you get another shot at it.
     const at = Math.floor(Math.random() * (queue.length + 1));
     queue.splice(at, 0, currentCountry);
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1800);
-    rail.broke();   // wrong click snaps the streak — keep going, no modal
+    rail.broke();   // wrong click snaps the streak - keep going, no modal
   }
 }
 

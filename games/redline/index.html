@@ -107,7 +107,7 @@
       <div class="rl-logo">REDLINE</div>
       <div class="rl-tag">Night Highway</div>
       <div class="rl-racer">How far can you <b>go</b>?</div>
-      <p class="rl-deskonly">Weave through traffic and go as far as you can — the faster you go, the more it pays.
+      <p class="rl-deskonly">Weave through traffic and go as far as you can - the faster you go, the more it pays.
         <br><span class="keys"><span class="key">←</span><span class="key">→</span></span> steer &nbsp;·&nbsp;
         <span class="keys"><span class="key">↑</span><span class="key">↓</span></span> throttle / brake &nbsp;·&nbsp; skim cars for <b style="color:#ffd23f">near-miss</b> bonuses.</p>
       <p class="rl-mobile">Weave through traffic and go as far as you can. Tap <b>left / right</b> to steer. Skim cars for near-miss bonuses!</p>
@@ -144,7 +144,7 @@
   var rnd = function (a, b) { return a + Math.random() * (b - a); };
   var ri = function (a, b) { return Math.floor(rnd(a, b + 1)); };
 
-  // (kept generic — anyone can play; no player is named)
+  // (kept generic - anyone can play; no player is named)
 
   // ---- canvas ----
   var stage = $('stage'), cv = $('cv'), ctx = cv.getContext('2d');
@@ -295,20 +295,20 @@
     // glass
     ctx.fillStyle = 'rgba(18,22,40,0.92)'; rr(x - w * 0.34, top + h * (kind === 'onc' ? 0.5 : 0.18), w * 0.68, h * 0.3, w * 0.1); ctx.fill();
     if (kind === 'onc') {
-      // headlights glare (front toward us) — bottom of sprite
+      // headlights glare (front toward us) - bottom of sprite
       light(x - w * 0.28, baseY - h * 0.12, w * 0.5, '#eaf4ff', 'rgba(180,220,255,0.95)');
       light(x + w * 0.28, baseY - h * 0.12, w * 0.5, '#eaf4ff', 'rgba(180,220,255,0.95)');
       // grille
       ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.fillRect(x - w * 0.22, baseY - h * 0.34, w * 0.44, h * 0.05);
     } else {
-      // taillights (rear) — top of sprite
+      // taillights (rear) - top of sprite
       light(x - w * 0.3, top + h * 0.1, w * 0.34, '#ff3b4d', 'rgba(255,60,80,0.9)');
       light(x + w * 0.3, top + h * 0.1, w * 0.34, '#ff3b4d', 'rgba(255,60,80,0.9)');
     }
     ctx.restore();
   }
 
-  // the player rides a sportbike, seen from behind — rider tucked forward,
+  // the player rides a sportbike, seen from behind - rider tucked forward,
   // banking hard into lane changes.
   function drawPlayer() {
     var pr = project(PLAYER_D), scale = pr.s;
@@ -356,7 +356,7 @@
     rr(x - w * 0.3, Y(0.5), w * 0.15, H * 0.15, w * 0.06); ctx.fill();
     rr(x + w * 0.15, Y(0.5), w * 0.15, H * 0.15, w * 0.06); ctx.fill();
 
-    // rider back (jacket) — hunched, shaded mass
+    // rider back (jacket) - hunched, shaded mass
     var jg = ctx.createLinearGradient(x - w * 0.26, 0, x + w * 0.26, 0);
     jg.addColorStop(0, '#0e0e15'); jg.addColorStop(0.5, '#31313f'); jg.addColorStop(1, '#0e0e15');
     ctx.fillStyle = jg;
@@ -533,7 +533,7 @@
     distance += v * dt * 3.0;   // feet
     if (window.HSGHunt) HSGHunt.reach('redline', distance);   // hunt: clear the "redline" trial at 3,000 ft
 
-    // steering — glide toward the target lane
+    // steering - glide toward the target lane
     var target = laneOff(player.lane);
     player.off += (target - player.off) * Math.min(1, dt * 11);
 
@@ -551,7 +551,7 @@
       if (c.d < -1.4) cars.splice(i, 1);
     }
 
-    // spawns — denser as you speed up
+    // spawns - denser as you speed up
     spawnT -= dt;
     if (spawnT <= 0) { spawnCar(); spawnT = clamp(1.25 - (v - 46) * 0.006, 0.4, 1.25) * rnd(0.75, 1.25); }
 
@@ -575,7 +575,7 @@
   }
 
   function crash(c) {
-    if (window.HSGGod && HSGGod.on) return;   // god mode: invincible — phase through, keep driving
+    if (window.HSGGod && HSGGod.on) return;   // god mode: invincible - phase through, keep driving
     state = 'over'; shake = 24; flash = 0.75;
     var pr = project(PLAYER_D), scale = pr.s;
     var px = cx + player.off * roadHalfBot * scale, py = pr.y;
@@ -607,7 +607,7 @@
       for (var i = cars.length - 1; i >= 0; i--) { cars[i].d -= 10 * dt * DUNIT; if (cars[i].d < -1.4) cars.splice(i, 1); }
       if (Math.random() < dt * 1.2) spawnCar();
     }
-    stepFx(dt);   // particles / shake / flash / crash tumble — runs in every state
+    stepFx(dt);   // particles / shake / flash / crash tumble - runs in every state
     draw();
     requestAnimationFrame(frame);
   }
@@ -690,10 +690,10 @@
 
   // ================= boot =================
   if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', unit: 'distance', minStreak: 1 });
-  // god mode — type "godmode": invincible, crashes can't end the run
+  // god mode - type "godmode": invincible, crashes can't end the run
   if (window.HSGGod) HSGGod.watch(function () {
     HSGGod.enable();
-    HSGGod.picker({ label: 'Drive', note: 'Invincible! Crashes can’t stop you — just keep driving.' });
+    HSGGod.picker({ label: 'Drive', note: 'Invincible! Crashes can’t stop you - just keep driving.' });
   });
   resize();
   // seed a little idle traffic behind the menu

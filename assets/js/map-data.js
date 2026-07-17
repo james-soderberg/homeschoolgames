@@ -1,4 +1,4 @@
-// AUTO-GENERATED — real country outlines from Natural Earth (world-atlas 110m),
+// AUTO-GENERATED - real country outlines from Natural Earth (world-atlas 110m),
 // projected with d3-geo (Mercator, fit per region). Do not hand-edit.
 // Regenerate via scratchpad/gen.mjs. Public-domain source data.
 // Structure: { region: { viewBox, paths:{ISO2->d}, bg:[d,...] } }

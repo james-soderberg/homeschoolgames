@@ -8,35 +8,35 @@ listing its games. An **All Games** page lists everything in one flat grid.
 ## Games by subject
 
 **History**
-- **Circa** — History card game. A center card is shown; play the card from your hand closest in date.
-- **Who Said It?** — Match a famous quote to the person who said it.
+- **Circa** - History card game. A center card is shown; play the card from your hand closest in date.
+- **Who Said It?** - Match a famous quote to the person who said it.
 
 **Math**
-- **Bridge Run** — Answer math questions to build the bridge and keep running.
+- **Bridge Run** - Answer math questions to build the bridge and keep running.
 
 **Science**
-- **Element Hunter** — Hunt down elements on the periodic table.
+- **Element Hunter** - Hunt down elements on the periodic table.
 
 **Geography**
-- **Map Quiz** — Click the country on the map. Americas, Europe, Asia, Africa.
-- **Flag Frenzy** — Identify the country from its flag.
+- **Map Quiz** - Click the country on the map. Americas, Europe, Asia, Africa.
+- **Flag Frenzy** - Identify the country from its flag.
 
 **Typing**
-- **Word Racer** — Type a classic Aesop's fable to drive your car past the rivals; faster, cleaner typing wins.
-- **Dragon Siege** — Typing defense. Type the word above each foe to strike it down before it reaches your keep. Three realms by word difficulty.
+- **Word Racer** - Type a classic Aesop's fable to drive your car past the rivals; faster, cleaner typing wins.
+- **Dragon Siege** - Typing defense. Type the word above each foe to strike it down before it reaches your keep. Three realms by word difficulty.
 
 **Spelling**
-- **Letter Catch** — Catch falling letters in order to spell each word.
-- **Letter Snake** — Steer a snake to eat letters in spelling order.
+- **Letter Catch** - Catch falling letters in order to spell each word.
+- **Letter Snake** - Steer a snake to eat letters in spelling order.
 
 **Bible**
-- **Bible Quiz** — Multiple-choice questions on Scripture, stories, and people.
-- **Bible Trivia** — A chariot chase across the desert. Answer questions on people, events, numbers, and places (OT & NT) to outrun Pharaoh's army and reach the Red Sea, which parts for you and closes behind you.
+- **Bible Quiz** - Multiple-choice questions on Scripture, stories, and people.
+- **Bible Trivia** - A chariot chase across the desert. Answer questions on people, events, numbers, and places (OT & NT) to outrun Pharaoh's army and reach the Red Sea, which parts for you and closes behind you.
 
 ## Structure
 
 ```
-index.html                  ← Home page — subject tiles
+index.html                  ← Home page - subject tiles
 all-games.html              ← Flat list of every game
 subjects/                   ← One page per subject
   history.html  math.html  science.html
@@ -62,7 +62,7 @@ scores are stored locally per device via `localStorage`.
 
 ## Deployment
 
-This is a static site — no build step needed.
+This is a static site - no build step needed.
 
 **Cloudflare Pages:**
 1. Push this repo to GitHub

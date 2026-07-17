@@ -1,5 +1,5 @@
 /* =========================================
-   HomeschoolGames.app — Shared Styles
+   HomeschoolGames.app - Shared Styles
    Palette: warm cream, ink, gold accent
    ========================================= */
 
@@ -215,7 +215,7 @@ a:hover { text-decoration: underline; }
   .game-grid .game-tile { width: 100%; max-width: 320px; }
 }
 
-/* floating, tap-me tiles — just an icon and a name */
+/* floating, tap-me tiles - just an icon and a name */
 .game-tile {
   position: relative;
   border-radius: 22px;

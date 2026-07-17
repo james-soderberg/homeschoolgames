@@ -167,7 +167,7 @@
 <script src="../../assets/js/element-data.js"></script>
 <script>
 // ============================================================
-// ELEMENT HUNTER — find the element on a real periodic table.
+// ELEMENT HUNTER - find the element on a real periodic table.
 // Click-the-board + fill-the-set, modeled on Map Quiz.
 // ============================================================
 
@@ -234,7 +234,7 @@ function buildTable() {
   const grid = document.getElementById('ptable');
   grid.innerHTML = '';
   // f-block placeholder markers at group 3, periods 6 & 7
-  [[3,6,'57–71'],[3,7,'89–103']].forEach(([x,y,txt]) => {
+  [[3,6,'57-71'],[3,7,'89-103']].forEach(([x,y,txt]) => {
     const m = document.createElement('div');
     m.className = 'fblock-marker';
     m.style.gridColumn = x; m.style.gridRow = y;
@@ -373,13 +373,13 @@ function handleClick(n) {
     if (targetCell) targetCell.classList.add('show-correct');
     const wrongCell = document.getElementById('el-' + n);
     if (wrongCell) { wrongCell.classList.add('wrong-flash'); setTimeout(() => wrongCell.classList.remove('wrong-flash'), 800); }
-    // missed — put it back in rotation for another shot
+    // missed - put it back in rotation for another shot
     const at = Math.floor(Math.random() * (queue.length + 1));
     queue.splice(at, 0, current);
     updateScore();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 2000);
-    rail.broke();   // wrong click snaps the streak — keep hunting, no modal
+    rail.broke();   // wrong click snaps the streak - keep hunting, no modal
   }
 }
 

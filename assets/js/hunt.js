@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames — The Hunt (site-wide scavenger hunt)
+   HomeschoolGames - The Hunt (site-wide scavenger hunt)
    ---------------------------------------------------------
    Each clue is a riddle whose answer is a secret WORD. Type the
    word on the home page to open a hidden GAME; reach that game's
@@ -36,21 +36,21 @@
 
     { token: 'q4x8pt', word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 15,
       accept: ['independence'], mono: true,
-      riddle: 'F E R C E N E E D D O N M E R P I E N D G N S I',
-      hint: 'No hint here, but one is hidden. Slither to a length of 35 or better in Letter Snake, and its game-over screen will reveal the trick.',
+      riddle: 'S E G C N N I E R D M N O E D P E E E D R N F I',
+      hint: 'No hint here, but one is hidden. Slither to a length of 40 or better in Letter Snake, and its game-over screen will reveal the trick.',
       trial: 'Then hold the capital to Wave 15 in the arcade.' },
 
-    // PLACEHOLDER — revealed when the arcade trial is cleared; real clue lands soon.
+    // PLACEHOLDER - revealed when the arcade trial is cleared; real clue lands soon.
     { token: 'z3n6wd', placeholder: true, word: '__soon__', open: 'index.html', game: 'todo', goal: 1,
       accept: ['__soon__'],
-      riddle: 'The capital holds and the saucers scatter — but the next stretch of the trail is still being carved…',
+      riddle: 'The capital holds and the saucers scatter - but the next stretch of the trail is still being carved…',
       hint: 'This clue is a placeholder. The real one arrives soon, hunter.',
       trial: 'Coming soon.' }
   ];
 
   var TREASURE = {
     title: 'The Cartographer’s Hoard',
-    text: 'Every trial passed, every buried game unearthed. The last clue dissolves and the map is finally yours — you are a true explorer.'
+    text: 'Every trial passed, every buried game unearthed. The last clue dissolves and the map is finally yours - you are a true explorer.'
   };
 
   // ---- state --------------------------------------------------------------
@@ -100,10 +100,10 @@
     var b = document.createElement('div');
     b.className = 'hsg-hunt-banner';
     b.innerHTML = (next
-      ? '<div class="hh-tag">🗝 Trial cleared — a new clue surfaces!</div>' +
+      ? '<div class="hh-tag">🗝 Trial cleared - a new clue surfaces!</div>' +
         '<div class="hh-riddle">“' + esc(next.riddle) + '”</div>' +
         '<div class="hh-hint">' + (next.placeholder
-          ? 'More of the trail is still being carved — check back soon, hunter.'
+          ? 'More of the trail is still being carved - check back soon, hunter.'
           : 'Solve it to one word, then type it on the home page. Track the hunt: type <b>treasure</b>.') + '</div>'
       : '<div class="hh-tag">🏆 You found the treasure!</div>' +
         '<div class="hh-riddle">' + esc(TREASURE.text) + '</div>' +
@@ -117,7 +117,7 @@
     try { if (window.HSGSound && HSGSound.powerup) HSGSound.powerup(); } catch (e) {}
   }
 
-  // index of the clue that FOLLOWS a given game's step — used by a game to hand
+  // index of the clue that FOLLOWS a given game's step - used by a game to hand
   // off directly to the next clue's URL (the hunt is URL-driven, not saved).
   function nextIndexAfter(game) {
     for (var i = 0; i < STEPS.length; i++) if (STEPS[i].game === game) return i + 1;

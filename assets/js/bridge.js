@@ -1,9 +1,9 @@
 // ============================================================
-// HSGBridge — real-time "lay-the-path runner".
+// HSGBridge - real-time "lay-the-path runner".
 // Pick a difficulty -> 3·2·1·GO -> your character WALKS forward at a steady
 // speed and never stops. Every correct answer drops the next block ahead of
 // him; if he reaches the end of the laid path he falls into the chasm. Reach
-// the far platform to clear the level — each level is faster, harder, and has
+// the far platform to clear the level - each level is faster, harder, and has
 // new terrain (canyon, volcano, skyscrapers, sky).
 //
 // Self-contained: injects CSS, builds DOM, runs the loop. Reusable: pass
@@ -399,7 +399,7 @@
           blocksEl.appendChild(rl);
         });
       }
-      // rope side-rail + posts — flat drawbridge only
+      // rope side-rail + posts - flat drawbridge only
       if (mode.rail && builtBlocks > 0) {
         const span = builtBlocks * W;
         const rail = document.createElement('div');
@@ -470,7 +470,7 @@
         summit.style.bottom = `calc(${GROUND_BOTTOM}% - 16px + ${summitY}px)`;
         platsEl.appendChild(summit);
         flagAt(fvx, `${GROUND_BOTTOM}% + ${summitY}px`);
-      } else { // dock — the far shore for the boat
+      } else { // dock - the far shore for the boat
         const dock = document.createElement('div');
         dock.className = 'br-slab';
         dock.style.left = (fvx - 4) + 'px'; dock.style.width = '204px';
@@ -501,7 +501,7 @@
       const lead = builtFrontX() - runnerX;
       const onStart = runnerX <= START_PLAT;
       if (!onStart && lead <= 0) {
-        // God mode: never fall — hold the runner at the edge of the laid path
+        // God mode: never fall - hold the runner at the edge of the laid path
         // until the next correct answer extends it. (Unlimited lives.)
         if (window.HSGGod && HSGGod.on) { runnerX = builtFrontX() - 1; setWorld(); }
         else return fall();
@@ -536,7 +536,7 @@
 
     function enterCoast() {
       coasting = true;
-      // Path is built — sprint to the finish so you never wait on a big lead.
+      // Path is built - sprint to the finish so you never wait on a big lead.
       const remaining = finishX() - runnerX;
       speed = Math.max(speed * 2.6, remaining / 1.6);   // ~1.6s dash, min 2.6× pace
       charEl.style.setProperty('--wd', Math.max(0.14, 22 / speed).toFixed(2) + 's');
@@ -597,7 +597,7 @@
           onPlayAgain: () => { rail.reset(); level = 1; totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0; startLevel(); },
           allGamesHref: cfg.allGamesHref || '../../index.html',
           extraHTML: '<div id="brBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
-          // run over — bank the longest streak + show placement/name entry inline
+          // run over - bank the longest streak + show placement/name entry inline
           onMount: card => rail.gameOver(banked, card.querySelector('#brBoard')),
         });
       } else {
@@ -605,10 +605,10 @@
       }
     }
 
-    // typed numeric answer (fast path) — digits + optional leading minus.
+    // typed numeric answer (fast path) - digits + optional leading minus.
     // Auto-submit the instant the typed value matches the answer, so a correct
     // number counts immediately without pressing Enter. (Wrong values keep
-    // waiting — typing toward a multi-digit answer is never penalised.)
+    // waiting - typing toward a multi-digit answer is never penalised.)
     inputEl.addEventListener('input', () => {
       inputEl.value = inputEl.value.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '');
       if (running && !coasting && q && inputEl.value === String(q.answer)) answer(inputEl.value);
@@ -645,7 +645,7 @@
       _debug: () => ({ level, target, builtBlocks, runnerX: Math.round(runnerX), running, over, coasting, speed,
         totalCorrect, totalQ, streak, bestStreak, answer: q && q.answer, tier: tiers[tierIdx] && tiers[tierIdx].key }),
       _tick: (ms) => loop((lastTs || 0) + ms),
-      // static visual preview of a level's scene (no countdown/loop) — for screenshots
+      // static visual preview of a level's scene (no countdown/loop) - for screenshots
       _preview: (n, blocks) => {
         running = false; cancelAnimationFrame(raf);
         startEl.style.display = 'none'; promptEl.style.display = 'none'; answersEl.innerHTML = '';

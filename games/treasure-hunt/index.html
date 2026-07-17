@@ -93,7 +93,7 @@
   var H = window.HSGHunt;
   var N = H.STEPS.length;
   // The clue shown is driven ENTIRELY by the URL via an opaque per-clue token
-  // (?c=<token>) — no saved progress and no guessable numbers. Typing "treasure"
+  // (?c=<token>) - no saved progress and no guessable numbers. Typing "treasure"
   // (no token) always starts at clue 1; each game hands off to the next clue's
   // token URL. An unknown/absent token falls back to the first clue.
   function clueIndex() {
@@ -127,7 +127,7 @@
 
   function renderClue() {
     var s = effCurrent(), n = effStep() + 1;
-    if (s.placeholder) {   // trail not yet carved past here — show a gentle "coming soon"
+    if (s.placeholder) {   // trail not yet carved past here - show a gentle "coming soon"
       $('content').innerHTML =
         '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
         '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>' +

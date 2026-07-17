@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="../../assets/css/streak-rail.css">
 <style>
   .roots-wrap { max-width: 1200px; margin: 0 auto; padding: 1.1rem 1rem 3rem; }
-  /* widen the centered play column so 3–4 part words sit on one row */
+  /* widen the centered play column so 3-4 part words sit on one row */
   .roots-wrap .game-layout { max-width: 1200px; }
   .roots-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; }
   .roots-top h1 { margin:0; font-size:1.7rem; }
@@ -209,9 +209,9 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// ROOTS — forge words from Greek/Latin building blocks.
+// ROOTS - forge words from Greek/Latin building blocks.
 //   BUILD:  read a definition, assemble the word from morpheme tiles.
-//   DECODE: an unknown word appears split into parts — pick its meaning.
+//   DECODE: an unknown word appears split into parts - pick its meaning.
 // Difficulty (Easy/Medium/Hard) sets the tiers, distractor count, decode
 // rate and hints; you level up as you go, unlocking roots that recur in
 // later, harder words. A local "codex" remembers every root you discover.
@@ -246,7 +246,7 @@ const M = {
 };
 
 const WORDS = [
-  // Tier 1 — two friendly parts
+  // Tier 1 - two friendly parts
   {w:'telescope',   p:['tele','scope'],  d:'A far-seeing device', t:1},
   {w:'microscope',  p:['micro','scope'], d:'A tool for seeing tiny things', t:1},
   {w:'biology',     p:['bio','logy'],    d:'The study of life', t:1},
@@ -275,7 +275,7 @@ const WORDS = [
   {w:'visible',     p:['vis','ible'],    d:'Able to be seen', t:1},
   {w:'audible',     p:['aud','ible'],    d:'Able to be heard', t:1},
 
-  // Tier 2 — a prefix or root steers the meaning
+  // Tier 2 - a prefix or root steers the meaning
   {w:'transport',   p:['trans','port'],  d:'To carry across', t:2},
   {w:'export',      p:['ex','port'],     d:'To carry goods out of a country', t:2},
   {w:'import',      p:['im','port'],     d:'To carry goods into a country', t:2},
@@ -321,7 +321,7 @@ const WORDS = [
   {w:'biologist',   p:['bio','log','ist'], d:'A scientist who studies life', t:2},
   {w:'geologist',   p:['geo','log','ist'], d:'A scientist who studies rocks', t:2},
 
-  // Tier 3 — three parts, many are science words
+  // Tier 3 - three parts, many are science words
   {w:'thermodynamics', p:['thermo','dynam','ics'], d:'The science of heat and power', t:3},
   {w:'autobiography',  p:['auto','bio','graphy'],  d:'Writing about your own life', t:3},
   {w:'microbiology',   p:['micro','bio','logy'],   d:'The study of tiny living things', t:3},
@@ -336,7 +336,7 @@ const WORDS = [
   {w:'production',     p:['pro','duct','ion'],     d:'The act of bringing things forward', t:3},
   {w:'microscopic',    p:['micro','scop','ic'],    d:'So tiny you need a microscope', t:3},
 
-  // Tier 4 — monster words
+  // Tier 4 - monster words
   {w:'electrocardiogram', p:['electro','cardio','gram'], d:"A record of the heart's electricity", t:4},
   {w:'biodegradable',     p:['bio','de','grad','able'],  d:'Able to be broken down by living things', t:4},
   {w:'microorganism',     p:['micro','organ','ism'],     d:'A tiny living thing', t:4},
@@ -358,7 +358,7 @@ const WORDS = [
   {w:'hydrology',    p:['hydro','logy'],     d:'The study of water on Earth', t:2},
   {w:'philosophy',   p:['philo','sophy'],    d:'The love and study of wisdom', t:2},
   {w:'theology',     p:['theo','logy'],      d:'The study of God and religion', t:2},
-  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer — one who uses the voice', t:3},
+  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer - one who uses the voice', t:3},
   {w:'projection',   p:['pro','ject','ion'], d:'The act of throwing an image forward', t:3},
   {w:'inspection',   p:['in','spect','ion'], d:'A close looking-into of something', t:3},
   {w:'anthropology', p:['anthropo','logy'],  d:'The study of humans and their cultures', t:3},
@@ -378,7 +378,7 @@ function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.flo
 const gloss = id => M[id] || '';
 const $ = id => document.getElementById(id);
 const ALL_PARTS = [...new Set(WORDS.flatMap(w => w.p))];   // parts that actually appear in answers
-const POOL = Object.keys(M);                               // every real root — the full decoy pool
+const POOL = Object.keys(M);                               // every real root - the full decoy pool
 
 // Confusable clusters: roots that live in the same meaning-family, so a decoy is
 // tempting (you must know the EXACT piece, not just "a study-ending"). A morpheme
@@ -387,7 +387,7 @@ const CLUSTERS = [
   ['uni','mono','bi','tri','octo','omni'],                                             // number
   ['logy','nomy','graphy','cracy','ics','logue','sophy','pathy','metry','log'],        // field / -study endings
   ['scope','meter','phone','gram','graph','metry','scop'],                             // instruments / measuring
-  ['ist','ator','naut','vore'],                                                        // agent — "one who"
+  ['ist','ator','naut','vore'],                                                        // agent - "one who"
   ['able','ible','al','ic','ion','ation','ism'],                                       // adjective / noun endings
   ['vis','spect','scop','scope'],                                                      // see / look
   ['dict','voc','graph','script','scribe','onym','logue','phone','gram'],              // say / write / name
@@ -551,13 +551,13 @@ function checkBuild(){
   if(window.HSGSound) HSGSound.wrong();
   $('slots').classList.add('shake'); setTimeout(()=>$('slots').classList.remove('shake'), 420);
   rail.broke();
-  $('feedback').innerHTML = '<span style="color:var(--red)">Not quite — check the order.</span>';
+  $('feedback').innerHTML = '<span style="color:var(--red)">Not quite - check the order.</span>';
   answered = true;
   setTimeout(()=>{ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .slot')].forEach(s=>s.classList.add('wrongpick')); finishRound(false); }, 900);
 }
 
 // Tougher decode options: prefer definitions of words that SHARE a root with the
-// target (tempting near-misses), then same-tier words, then anything — 3 in all.
+// target (tempting near-misses), then same-tier words, then anything - 3 in all.
 function decodeDistractors(){
   const seen = new Set([cur.d]), picks = [];
   const related = shuffle(WORDS.filter(x => x.w !== cur.w && x.p.some(id => cur.p.includes(id))));
@@ -620,7 +620,7 @@ function finishRound(won){
   const rev = $('reveal'); rev.style.display = 'block';
   const pieces = cur.p.map(id => '<span class="hl">'+id+'</span>').join('<span style="color:var(--ink-light)"> · </span>');
   const literal = cur.p.map(id => id+' = '+gloss(id)).join('  ·  ');
-  rev.innerHTML = '<div class="built">'+pieces+'</div><div class="meaning"><b>'+cur.w+'</b> — '+cur.d+'</div><div class="literal">'+literal+'</div>';
+  rev.innerHTML = '<div class="built">'+pieces+'</div><div class="meaning"><b>'+cur.w+'</b> - '+cur.d+'</div><div class="literal">'+literal+'</div>';
   const a = $('actions'); a.innerHTML = '';
   const btn = document.createElement('button'); btn.className='btn btn-gold'; btn.textContent='Next word →';
   btn.addEventListener('click', nextRound); a.appendChild(btn);
@@ -628,7 +628,7 @@ function finishRound(won){
 
 function levelUp(){
   const cap = currentMaxTier();
-  const notes = { 2:'Prefixes now flip meanings — un-, re-, trans-…', 3:'Three-part science words incoming.', 4:'🔥 Monster words unlocked!' };
+  const notes = { 2:'Prefixes now flip meanings - un-, re-, trans-…', 3:'Three-part science words incoming.', 4:'🔥 Monster words unlocked!' };
   $('luN').textContent = 'Level ' + level;
   $('luS').textContent = notes[cap] || 'The words get juicier.';
   const lu = $('levelup'); lu.classList.add('show');
@@ -692,7 +692,7 @@ document.addEventListener('keydown', e => {
 renderDiff();
 
 // God mode: type "godmode" to enable the badge + jump straight into any
-// difficulty. (Wrong answers only reset the streak — there's no life system.)
+// difficulty. (Wrong answers only reset the streak - there's no life system.)
 HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({
   tiers: Object.values(DIFF).map(d => ({ v:d.key, label:d.label })),
   label:'Difficulty', onJump: v => startGame(DIFF[v]) }); });

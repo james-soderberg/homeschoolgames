@@ -1,4 +1,4 @@
-# HomeschoolGames — Game Mechanics & Decisions
+# HomeschoolGames - Game Mechanics & Decisions
 
 > Working doc for the "give each quiz game a purposeful mechanism" initiative and
 > the Circa period-selector / deck expansion. Written so another agent can pick
@@ -46,7 +46,7 @@ A **theme** supplies: `buildGoal`, `threatMax` (hidden lose threshold),
 
 **Two engine modes now exist.** The default is the build-vs-threat model above.
 A theme can set **`mode: 'timeline'`** for a single-axis "move a pointer forward/
-backward along ordered stops" mechanic instead — `correct()` advances, `wrong()`
+backward along ordered stops" mechanic instead - `correct()` advances, `wrong()`
 retreats (floor 0), reaching the last stop banks a "trip." Used by the Time
 Machine (§2d). `init` accepts a `stops` array in this mode; `quest.position()`
 returns the current stop index.
@@ -58,13 +58,13 @@ returns the current stop index.
 | Game | Mechanic | Status |
 |---|---|---|
 | Bible Quiz | **Noah's Ark** (build vs. flood) | **DONE** |
-| Bible Trivia (NEW game) | **Chariot Chase (Exodus)** — full canvas arcade | **DONE** |
+| Bible Trivia (NEW game) | **Chariot Chase (Exodus)** - full canvas arcade | **DONE** |
 | Flag Frenzy | **Around the World in 80 Days** (Fogg vs. Detective Fix) | **DONE** |
 | Who Said It? | **Hall of Fame** (collect cartoon portraits) | **DONE** (replaced Time Machine) |
-| Math Drill | **Asteroid Math** (full arcade reskin — NOT quest-rail) | **DESIGNED** |
+| Math Drill | **Asteroid Math** (full arcade reskin - NOT quest-rail) | **DESIGNED** |
 | Circa | unchanged mechanic; getting period-selector + bigger deck | see §3 |
 
-### 2a. Bible Quiz → Noah's Ark — DONE
+### 2a. Bible Quiz → Noah's Ark - DONE
 `HSGQuest.themes.ark`. Wired into `games/bible-quiz/index.html`
 (`quest.correct()` on right, `quest.wrong()` on wrong, `quest.endRun()` in
 `startRound()`). Behaviour:
@@ -73,18 +73,18 @@ returns the current stop index.
   (hammer-tap FX).
 - **Wrong answer → the ark sinks lower** toward the waves.
 - **Water covering the ark = lose** (run banks, ark plunges + splash). The lose
-  threshold is **hidden** — tuning `threatMax: 6`, and a correct answer does
+  threshold is **hidden** - tuning `threatMax: 6`, and a correct answer does
   `threat = max(0, threat-1)`. Only goal shown to the player: "keep the ark
   above water." No flood meter; meters are 🔨 build and 🛟 arks.
 - **Finish an ark** (8 pieces) → 🌈 rainbow + sun + animals aboard, counts toward
   the **Arks Built** leaderboard. The payoff scene **lingers ~5s** before resetting
   (both the engine reset timeout and `onComplete` cleanup are 5000ms; during that
-  window the rail is "busy" and ignores answers — acceptable because the player is
+  window the rail is "busy" and ignores answers - acceptable because the player is
   reading + clicking Next).
 - Rail is wide (~560px) via `game-layout--quest`.
 
-### 2b. Bible Trivia (NEW game) → Chariot Chase (Exodus) — DONE
-A **David-vs-Goliath quest-rail theme was built first and scrapped** — a passive
+### 2b. Bible Trivia (NEW game) → Chariot Chase (Exodus) - DONE
+A **David-vs-Goliath quest-rail theme was built first and scrapped** - a passive
 side-rail charge meter felt lame bolted onto a plain quiz. Replaced with a full
 **standalone canvas arcade** (à la Dragon Siege), self-contained in
 `games/bible-trivia/index.html` (no quest-rail; uses `sfx.js` + `fx.js` only).
@@ -100,21 +100,21 @@ Bible-trivia deck (people, events, numbers, places, OT & NT).
 - **Win** → `progress` hits 100 → the **Red Sea finale** (scripted, ~6.6s):
   the sea parts → the Israelites cross → the **sea rises to engulf the whole
   screen**, consuming Pharaoh's chariots → the waters recede to reveal the
-  **Israelites safe on the far shore** (no violence — the army just sinks/fades).
+  **Israelites safe on the far shore** (no violence - the army just sinks/fades).
   Victory overlay + confetti.
 - **Lose** → `gap` reaches 0 (army catches up) → a clean **"They caught you!"**
   game-over (no violence), with Correct / Best Streak / % to the Sea.
 - Three pace presets (Stroll / Gallop / Full Flight) tune `drain`, `gain`, `loss`,
   and `step`. Best streak persists in `localStorage['bible_trivia_chase_best']`.
 - Rendering: parallax desert (pyramids, dunes, scrolling ground); the fleeing crowd
-  (`drawWalker`/`drawIsraelites` — Moses with raised staff + a deterministic group);
+  (`drawWalker`/`drawIsraelites` - Moses with raised staff + a deterministic group);
   Pharaoh's four chariots (`drawRig`/`drawArmy`, galloping horses + spoked wheels +
   spear-bearing riders); a dust particle system; on-canvas 🌊/🐎 meters; and the
   full-screen engulf finale. Scene sized like Dragon Siege (`min(72vh, 680px)`).
 - The scrapped goliath theme + its `.gv-*` CSS were removed from
   `quest-rail.js` / `quest-rail.css`.
 
-### 2c. Flag Frenzy → Around the World in 80 Days — DONE
+### 2c. Flag Frenzy → Around the World in 80 Days - DONE
 **The storm chase was reskinned to Jules Verne's _Around the World in 80 Days_**
 (public domain, 1872): **Phileas Fogg** circles the globe while **Detective Fix**
 pursues. Self-contained canvas in `games/flag-frenzy/index.html` (no streak-rail;
@@ -123,7 +123,7 @@ uses `sfx.js` + `fx.js`). Name the flag → sail to the next port.
 **History / pivot:** first built as an **80-day wager** (a pocket-watch day clock,
 a wrong answer = a day-costing mishap, win = reach London ≤ 80 days, with an
 "on pace / behind" badge and three difficulty paces). At the user's request this
-was **scrapped for an endless streak game** — the day-clock, wager, win/lose-by-days
+was **scrapped for an endless streak game** - the day-clock, wager, win/lose-by-days
 overlays, pace badge, and difficulty filters were all **removed**. The single design
 goal now: **how long a streak (flags in a row) can you build before Fix catches you.**
 
@@ -158,8 +158,8 @@ Current design (DONE):
   `localStorage['atw_name']`), it writes to the board, and your row highlights gold in
   the rail. Header badges show **current streak** + **best**.
 - **Flags** render from **vendored SVGs** at `assets/flags/<iso>.svg` (38 files from
-  the MIT **flag-icons** set — national flags are factual symbols; see
-  `assets/flags/ATTRIBUTION.txt`) for crisp, Wikipedia-style art — emoji blown up to
+  the MIT **flag-icons** set - national flags are factual symbols; see
+  `assets/flags/ATTRIBUTION.txt`) for crisp, Wikipedia-style art - emoji blown up to
   hero size was blurry. Each deck entry carries an `iso`. **Clues are opt-in:** the
   blurb is hidden behind a **💡 Need a hint?** button (in a fixed-height slot so the
   reveal doesn't shift the layout) and also reveals on answer; the continent label is
@@ -169,7 +169,7 @@ Current design (DONE):
   route are intact) even though there's no literal 80-day limit now. Listed on the
   home/geography grids as **"Around the World"** (🎩); dir stays `games/flag-frenzy/`.
 
-### 2d. Who Said It? → Hall of Fame collection — DONE (redesigned)
+### 2d. Who Said It? → Hall of Fame collection - DONE (redesigned)
 Self-contained in `games/who-said-it/index.html` (does **not** use quest-rail).
 **History:** first shipped as a "Time Machine" (timeline rail: forward on right,
 knocked back + paradox meter on wrong, paradox-full = timeline collapse). Playtest
@@ -177,7 +177,7 @@ verdict: **visuals too busy + gameplay too shallow** (the time machine was paint
 plain MC, knockback was frustrating + repetitive). Scrapped and redesigned around a
 **collection** hook instead.
 
-Current mechanic — **collect famous people into a Hall of Fame:**
+Current mechanic - **collect famous people into a Hall of Fame:**
 - Bare-bones quiz on the left (quote → 4 names). The right rail is a **gallery of
   silhouette portraits**, one per person.
 - **Right answer → that person's silhouette fills in with their cartoon portrait**
@@ -193,7 +193,7 @@ Current mechanic — **collect famous people into a Hall of Fame:**
   so the Hall of Fame fills up across sessions. "Reset Hall of Fame" clears it.
 - **Complete the set (27 people)** → `HSGfx.showSummary` celebration.
 
-Portraits — **`assets/js/portrait.js`** (`HSGPortrait.svg(features)`):
+Portraits - **`assets/js/portrait.js`** (`HSGPortrait.svg(features)`):
 - A **parameterized cartoon-avatar renderer** (no image assets → no licensing
   issues, fully offline). One SVG portrait built from a feature config: `skin`,
   `hair`/`hairStyle`, `facial`/`facialColor`, `hat`, `glasses`, `clothes` (+ tie/
@@ -212,7 +212,7 @@ Portraits — **`assets/js/portrait.js`** (`HSGPortrait.svg(features)`):
   tweaking its config or adding a new `hairStyle`/`hat` part to `portrait.js`.
 
 Note: the old **`HSGQuest.themes.timeMachine`** (+ `.tm-*` CSS, + the `mode:'timeline'`
-engine path in quest-rail) is now **orphaned** — left in place, harmless, reusable if
+engine path in quest-rail) is now **orphaned** - left in place, harmless, reusable if
 another game ever wants a timeline rail. Safe to delete if quest-rail gets trimmed.
 
 Full Who-Said-It idea menu (for reference): Carve the Monument, **Hall of Fame /
@@ -220,7 +220,7 @@ Wall of Fame ✅ (built)**, Time Machine (built, then scrapped), Torch Relay, Un
 the Scroll, Printing Press, Win the Debate (crowd meter), Build the Great Library,
 Light the Marquee, Mint the Collection.
 
-### 2e. Math Drill → Asteroid Math — DESIGNED (its own game, not quest-rail)
+### 2e. Math Drill → Asteroid Math - DESIGNED (its own game, not quest-rail)
 A full arcade reskin (like Dragon Siege), NOT the quest rail. Math problems ride
 in as **asteroids** drifting toward the ship. **One active problem is shown at a
 time, but multiple asteroids are visibly incoming** so the player feels the time
@@ -228,29 +228,29 @@ pressure. Answer the active asteroid: correct = blast it; **a wrong answer (or a
 asteroid that reaches the ship) deals a hit**. Lives/shields, score, ramping
 spawn rate/speed, game over at zero shields.
 - **Input:** lean toward "tap the right answer" for the active asteroid (4 chips,
-  also A/B/C/D) — matches "answer the wrong one and it hits you" and works on
+  also A/B/C/D) - matches "answer the wrong one and it hits you" and works on
   touch. (Type-the-number was the alternative.)
 
 ---
 
-## 3. Circa — period selector + deck expansion
+## 3. Circa - period selector + deck expansion
 
 ### 3a. Period selector (DESIGNED, not built)
 After clicking **Solo**, the player picks a **time period** (era chips), then
 plays with cards from those periods only.
 - Doubles as a **difficulty dial** (narrow/dense span = harder, since Circa is
-  "pick the closest date") and a **study-focus tool** (drill one era) — strong
+  "pick the closest date") and a **study-focus tool** (drill one era) - strong
   homeschool fit.
 - Buckets are **derived from each card's `year`** (no manual tagging):
-  Prehistory `<3000BC`, Ancient `3000–500BC`, Classical `500BC–500AD`,
-  Medieval `500–1500`, Early Modern `1500–1800`, 1800s, 1900s, 2000s.
+  Prehistory `<3000BC`, Ancient `3000-500BC`, Classical `500BC-500AD`,
+  Medieval `500-1500`, Early Modern `1500-1800`, 1800s, 1900s, 2000s.
 - **Multi-select** recommended (combine eras to grow the pool / make combos like
   "the ancient world"). Show a card count on each chip. Default = "All Time"
   (today's behaviour).
-- Note: "narrow ≠ always harder" — difficulty comes from card **density**, not
+- Note: "narrow ≠ always harder" - difficulty comes from card **density**, not
   span (Prehistory is sparse-but-spread = easy; 1900s is dense = hard). Don't
   label eras easy/hard.
-- Watch thin pools vs. the 6-card hand — combine eras or shrink the hand for
+- Watch thin pools vs. the 6-card hand - combine eras or shrink the hand for
   small selections.
 
 ### 3b. Deck expansion (DATA-READY)
@@ -266,32 +266,32 @@ merged with the existing 170 cards and title-deduped.
 | Era | Cards |
 |---|---|
 | Prehistory (<3000 BC) | 132 |
-| Ancient (3000–500 BC) | 230 |
-| Classical (500 BC–500 AD) | 234 |
-| Medieval (500–1500) | 242 |
-| Early Modern (1500–1800) | 239 |
+| Ancient (3000-500 BC) | 230 |
+| Classical (500 BC-500 AD) | 234 |
+| Medieval (500-1500) | 242 |
+| Early Modern (1500-1800) | 239 |
 | 1800s | 218 |
 | 1900s | 298 |
-| 2000s (2000–2024) | 153 |
+| 2000s (2000-2024) | 153 |
 
-Prehistory (132) and 2000s (153) fall short of 200 on purpose — there aren't 200
+Prehistory (132) and 2000s (153) fall short of 200 on purpose - there aren't 200
 distinct, datable prehistoric events, and 2000s is only a 25-year span. Both are
 still plenty for a filtered game. `approx` usage is honest (high in deep
 antiquity, ~0 in the modern eras).
 
 **The generated deck is saved at `assets/data/circa-deck.json`** (1,746 cards,
-sorted by year). It is **NOT yet wired into the game** — `games/circa/index.html`
+sorted by year). It is **NOT yet wired into the game** - `games/circa/index.html`
 still has its original inline `const DECK`. Integration notes:
-- 1,746 cards is too big to keep inline — load `circa-deck.json` (or convert to a
+- 1,746 cards is too big to keep inline - load `circa-deck.json` (or convert to a
   JS module `assets/js/circa-deck.js` exposing `window.CIRCA_DECK`, like
   `assets/js/map-data.js`) and replace the inline `DECK`.
-- The cards are LLM-generated and only sampled by a human so far — worth a
+- The cards are LLM-generated and only sampled by a human so far - worth a
   skim/spot-check before shipping, especially dates.
 
 ---
 
 ## 4. Related building blocks already in the repo
-- `assets/js/streak-rail.js` / `streak-rail.css` — the animated "Fire Streak"
+- `assets/js/streak-rail.js` / `streak-rail.css` - the animated "Fire Streak"
   counter + local streak leaderboard used by Flag Frenzy, Who Said It?, Math
   Drill, Map Quiz, and Circa (solo). Bible Quiz replaced it with quest-rail.
 - Local leaderboards only (localStorage); see the project memory note. Going
@@ -301,9 +301,9 @@ still has its original inline `const DECK`. Integration notes:
 
 ## 5. Open questions to resolve next
 - Who Said It? Time Machine: optionally **expand the deck** so each era has 5+
-  distinct speakers and the journey can grow to ~8–10 stops (today: 6).
+  distinct speakers and the journey can grow to ~8-10 stops (today: 6).
 - Circa period selector: final bucket list + multi-select vs single + whether the
   hand auto-shrinks for thin pools.
 - Whether to add `category`/`region` tags to the deck (cheap now, enables
-  "Science through the ages" style filters later) — currently **not** tagged.
+  "Science through the ages" style filters later) - currently **not** tagged.
 - Human review pass over the generated Circa deck before integration.

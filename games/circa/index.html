@@ -225,7 +225,7 @@
     #soloScreen .circa-card.center .card-img { max-height: 17vh; }
     #soloScreen .card-desc { -webkit-line-clamp: 2; }
     /* As a flex-column child, `margin:0 auto` would shrink the timeline to its
-       (near-zero) intrinsic width, collapsing the ribbon — pin it to full width. */
+       (near-zero) intrinsic width, collapsing the ribbon - pin it to full width. */
     #soloScreen .timeline-wrap { width: 100%; }
 
     /* Solo header bar */
@@ -267,7 +267,7 @@
     .stat-pill.best { background: var(--cream-dark); }
     .stat-pill.best .stat-val { color: var(--ink); }
 
-    /* Center card — the target */
+    /* Center card - the target */
     .center-card-wrap {
       text-align: center;
       margin-bottom: 1.5rem;
@@ -454,7 +454,7 @@
     }
     .circa-card.in-showdown { z-index: 5; box-shadow: 0 12px 28px rgba(26,23,20,0.22); }
     .circa-card.dimmed { opacity: 0.4; transition: opacity 0.3s; }
-    /* equal WIDTH while comparing — don't touch height (avoids a vertical jump) */
+    /* equal WIDTH while comparing - don't touch height (avoids a vertical jump) */
     .showdown.revealing .circa-card { width: 264px; max-width: none; }
 
     /* ---- living BC->AD timeline (reveal) ---- */
@@ -801,7 +801,7 @@
       </div>
     </div>
 
-    <!-- Timeline (reveal) — sits in the middle, right after the showdown -->
+    <!-- Timeline (reveal) - sits in the middle, right after the showdown -->
     <div class="timeline-wrap" id="timelineWrap"></div>
 
     <!-- Which card was closest -->
@@ -873,7 +873,7 @@
 <script src="../../assets/js/circa-deck.js"></script>
 <script>
 // ============================================================
-// CIRCA — Full deck
+// CIRCA - Full deck
 // ============================================================
 // Use the big generated deck (1,746 cards) when present; the inline list
 // below is a fallback if circa-deck.js fails to load.
@@ -901,7 +901,7 @@ const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK
   { title: "Homer composes the Iliad", desc: "The epic poems attributed to Homer are set down, shaping Greek identity and literature for centuries.", year: -750, approx: true },
   { title: "Rome founded", desc: "According to Roman tradition, Romulus establishes the city on the banks of the Tiber River.", year: -753 },
   { title: "Buddha born", desc: "Siddhartha Gautama is born in Lumbini, in what is now Nepal, the future founder of Buddhism.", year: -563, approx: true },
-  { title: "Confucius born", desc: "Kong Qiu — later known as Confucius — is born in the state of Lu, in present-day Shandong, China.", year: -551 },
+  { title: "Confucius born", desc: "Kong Qiu - later known as Confucius - is born in the state of Lu, in present-day Shandong, China.", year: -551 },
   { title: "Persian Empire founded", desc: "Cyrus the Great unites the Medes and Persians, creating the largest empire the world had yet seen.", year: -550 },
   { title: "Democracy in Athens", desc: "Cleisthenes introduces sweeping reforms that give Athenian male citizens direct political power.", year: -507 },
   { title: "Battle of Marathon", desc: "A smaller Athenian force defeats the Persian invasion, securing Greek independence.", year: -490 },
@@ -1002,7 +1002,7 @@ const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK
   { title: "Pearl Harbor attacked", desc: "Japan launches a surprise aerial attack on the U.S. naval base at Pearl Harbor, bringing America into World War II.", year: 1941 },
   { title: "D-Day landings", desc: "Allied forces launch the largest seaborne invasion in history on the beaches of Normandy, turning the tide in Europe.", year: 1944 },
   { title: "World War II ends", desc: "Germany surrenders in May and Japan in September, ending a war that killed over 70 million people worldwide.", year: 1945 },
-  { title: "Atomic bomb dropped on Hiroshima", desc: "The United States drops the world's first atomic bomb on Hiroshima, killing an estimated 70,000–80,000 people instantly.", year: 1945 },
+  { title: "Atomic bomb dropped on Hiroshima", desc: "The United States drops the world's first atomic bomb on Hiroshima, killing an estimated 70,000-80,000 people instantly.", year: 1945 },
   { title: "United Nations founded", desc: "Fifty-one nations sign the UN Charter in San Francisco, creating an international body to preserve peace.", year: 1945 },
   { title: "Indian independence", desc: "India gains independence from British rule; the subcontinent is simultaneously partitioned into India and Pakistan.", year: 1947 },
   { title: "State of Israel established", desc: "Jewish leaders declare the State of Israel, immediately triggering war with neighboring Arab states.", year: 1948 },
@@ -1051,7 +1051,7 @@ const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK
 ];
 
 // ============================================================
-// High score — persists via localStorage
+// High score - persists via localStorage
 // ============================================================
 const HS_KEY = 'circa_solo_highscore';
 
@@ -1309,7 +1309,7 @@ function renderTimeline(centerYear, pickYear, isCorrect) {
     // the viewport bottom, so when the solo screen fills the height the ribbon
     // isn't left peeking below the fold (block:'nearest' only nudged it ~25px).
     // Wait for the max-height expand (0.4s) to finish so the element is at full
-    // height before scrolling — otherwise block:'end' under-scrolls to a partly
+    // height before scrolling - otherwise block:'end' under-scrolls to a partly
     // collapsed ribbon and leaves it below the fold.
     setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 480);
   });
@@ -1340,7 +1340,7 @@ function soloPickCard(pickedIdx) {
 
   const pickedDiff = Math.abs(pickedCard.year - soloCenterCard.year);
   const bestDiff = Math.abs(bestCard.year - soloCenterCard.year);
-  // correct if the pick is as close as the best possible — ties (two cards
+  // correct if the pick is as close as the best possible - ties (two cards
   // equally near the center) both count, not just the lowest-index one.
   const isCorrect = (pickedDiff === bestDiff);
 
@@ -1487,7 +1487,7 @@ function soloPickCard(pickedIdx) {
         streakNote.textContent = `Streak of ${prevStreak} ended.`;
         bar.appendChild(streakNote);
       }
-      rail.broke(); // wrong pick snaps the streak — play continues, no modal
+      rail.broke(); // wrong pick snaps the streak - play continues, no modal
     }
   };
 
@@ -1518,7 +1518,7 @@ function soloEndGame(reason) {
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
 
-  // The run is over — bank the longest streak and show the placement + name entry
+  // The run is over - bank the longest streak and show the placement + name entry
   // inline on the end screen (no popup). Only shows if it makes the Top 10.
   rail.gameOver(undefined, document.getElementById('circaEndBoard'));
 
@@ -1590,7 +1590,7 @@ function startSoloWithMode(key, tileEl) {
   mode = 'solo';
   const m = MODES.find(x => x.key === key) || MODES[0];
   handSize = m.hand;
-  soloSourceDeck = DECK;                 // one combined deck — no era split
+  soloSourceDeck = DECK;                 // one combined deck - no era split
   tlBounds = wholeDeckBounds();
   rail.setLevel(key, m.label);           // Easy / Hard keep separate streak boards
   if (window.HSGSound) HSGSound.tick();
@@ -1606,7 +1606,7 @@ function startSoloWithMode(key, tileEl) {
 }
 
 // Quit a solo run: show the end screen (with the inline placement + name entry),
-// same as a natural game-over — so there's no separate popup.
+// same as a natural game-over - so there's no separate popup.
 function quitSolo() {
   if (soloRoundNum > 0) soloEndGame('You stopped early');
   else { document.body.classList.remove('solo-active');
@@ -1614,7 +1614,7 @@ function quitSolo() {
     document.getElementById('setupScreen').style.display = 'block'; }
 }
 
-// Init — fire counter on the solo screen, leaderboard mirrored on the
+// Init - fire counter on the solo screen, leaderboard mirrored on the
 // setup and end screens via the boardMount selector.
 const rail = HSGStreak.init({
   gameId: 'circa', gameName: 'Circa', minStreak: 1,
@@ -1624,7 +1624,7 @@ const rail = HSGStreak.init({
 });
 
 // ============================================================
-//  MULTIPLAYER — pass & play
+//  MULTIPLAYER - pass & play
 // ============================================================
 let players = [];
 let deck = [];
@@ -1700,7 +1700,7 @@ function startRound() {
 
   document.getElementById('roundNum').textContent = roundNum;
 
-  // Show the target EVENT face-up — its date stays hidden until the reveal.
+  // Show the target EVENT face-up - its date stays hidden until the reveal.
   const tMount = document.getElementById('targetCardEl');
   tMount.innerHTML = '';
   tMount.appendChild(makeCardFront(targetCard, 'no-hover'));
@@ -1869,7 +1869,7 @@ function showEndScreen() {
   document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = 'Game Over';
-  document.getElementById('endSubtitle').textContent = 'Final scores — most cards wins';
+  document.getElementById('endSubtitle').textContent = 'Final scores - most cards wins';
 
   const scores = players.map((p, i) => ({ name: p.name, wins: piles[i].length }));
   scores.sort((a, b) => b.wins - a.wins);

@@ -74,7 +74,7 @@
   <div class="cur-top">
     <div>
       <h1>Current</h1>
-      <div class="sub">Wire the circuit to light the room — real electricity, no fake rules.</div>
+      <div class="sub">Wire the circuit to light the room - real electricity, no fake rules.</div>
     </div>
     <div class="toolbar" style="margin:0">
       <button class="btn ghost" id="levelsBtn">◧ Levels</button>
@@ -118,7 +118,7 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// CURRENT — a real DC-circuit sandbox. The physics is the lesson:
+// CURRENT - a real DC-circuit sandbox. The physics is the lesson:
 // close a loop and current flows; series dims, parallel stays bright;
 // a short spikes the current and pops the fuse. All brightness comes
 // straight from HSGCircuit's nodal-analysis solve (V=IR), never faked.
@@ -193,7 +193,7 @@ function firstSwitch(){ return components.find(c=>c.type==='switch'); }
 const LEVELS = [
   {
     title: 'Close the loop',
-    goal: 'Wire the battery all the way around to the bulb — current only flows in a <b>complete loop</b>.',
+    goal: 'Wire the battery all the way around to the bulb - current only flows in a <b>complete loop</b>.',
     parts: [ {type:'battery', fx:.24, fy:.6}, {type:'bulb', fx:.72, fy:.4} ],
     check: r => r.per[byType('bulb')[0]] && r.per[byType('bulb')[0]].on,
     win: 'A complete loop lets current flow. Break it anywhere and the bulb goes dark.',
@@ -203,14 +203,14 @@ const LEVELS = [
     goal: 'Build the loop through the <b>switch</b>, then tap the switch to close it and light the bulb.',
     parts: [ {type:'battery', fx:.22, fy:.62}, {type:'switch', fx:.5, fy:.34, closed:false}, {type:'bulb', fx:.78, fy:.62} ],
     check: r => r.per[byType('bulb')[0]].on,
-    win: 'A switch is just a controllable gap in the loop — open breaks it, closed completes it.',
+    win: 'A switch is just a controllable gap in the loop - open breaks it, closed completes it.',
   },
   {
     title: 'Two bulbs, both bright',
-    goal: 'Light <b>both</b> bulbs at full brightness. In a single line they share the push and dim — find another way…',
+    goal: 'Light <b>both</b> bulbs at full brightness. In a single line they share the push and dim - find another way…',
     parts: [ {type:'battery', fx:.2, fy:.5}, {type:'bulb', fx:.66, fy:.28}, {type:'bulb', fx:.66, fy:.72} ],
     check: r => byType('bulb').every(id => r.per[id].brightness >= 0.8),
-    win: 'Wired in PARALLEL, each bulb gets the full battery voltage — so both stay bright. In series they’d split it and dim.',
+    win: 'Wired in PARALLEL, each bulb gets the full battery voltage - so both stay bright. In series they’d split it and dim.',
   },
   {
     title: 'One switch, both lights',
@@ -228,19 +228,19 @@ const LEVELS = [
   },
   {
     title: 'Don’t cook the resistor',
-    goal: 'Light the bulb, but keep the <b>resistor</b> under 2 watts — add it in <b>series</b> to tame the current.',
+    goal: 'Light the bulb, but keep the <b>resistor</b> under 2 watts - add it in <b>series</b> to tame the current.',
     parts: [ {type:'battery', fx:.2, fy:.6}, {type:'resistor', fx:.5, fy:.32, r:8}, {type:'bulb', fx:.8, fy:.6} ],
     check: r => { const b=byType('bulb')[0], res=byType('resistor')[0];
       return r.per[b].on && r.per[res].power > 0.05 && r.per[res].power < 2; },
-    win: 'In series the resistor and bulb share one current, so the resistor drops some voltage and limits the flow — power stays safe.',
+    win: 'In series the resistor and bulb share one current, so the resistor drops some voltage and limits the flow - power stays safe.',
   },
   {
     title: 'Mind the fuse',
-    goal: 'Light the bulb <b>without</b> shorting the battery — a bare wire across the cell dumps huge current and <b>pops the fuse</b>.',
+    goal: 'Light the bulb <b>without</b> shorting the battery - a bare wire across the cell dumps huge current and <b>pops the fuse</b>.',
     parts: [ {type:'battery', fx:.2, fy:.6}, {type:'fuse', fx:.48, fy:.32, rating:3}, {type:'bulb', fx:.8, fy:.6} ],
     check: r => { const b=byType('bulb')[0], f=byType('fuse')[0];
       return r.per[b].on && !componentById(f).blown; },
-    win: 'A short is a loop with almost no resistance — current skyrockets. The fuse sacrifices itself to protect the circuit.',
+    win: 'A short is a loop with almost no resistance - current skyrockets. The fuse sacrifices itself to protect the circuit.',
   },
 ];
 function byType(t){ return components.filter(c=>c.type===t).map(c=>c.id); }
@@ -269,7 +269,7 @@ function loadSandbox() {
   mode = 'sandbox'; solved = false;
   document.getElementById('bin').classList.add('show');
   document.getElementById('lvLabel').textContent = '✦';
-  document.getElementById('goalText').innerHTML = 'Sandbox — grab parts from the bin, wire whatever you like.';
+  document.getElementById('goalText').innerHTML = 'Sandbox - grab parts from the bin, wire whatever you like.';
   document.getElementById('goalStatus').className = 'status todo';
   document.getElementById('goalStatus').textContent = 'Free play';
   components = [
@@ -366,7 +366,7 @@ function render() {
 }
 
 function drawRoom(light) {
-  // back wall — dark, warms & brightens with the room light
+  // back wall - dark, warms & brightens with the room light
   const warm = light;
   const top = mix('#0c1119', '#3a3222', warm*0.9);
   const bot = mix('#070a10', '#241d13', warm*0.8);
@@ -537,7 +537,7 @@ function drawBattery(c){
   ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(px,c.y-h*0.32); ctx.lineTo(px,c.y+h*0.32); ctx.stroke();
   ctx.lineWidth=8; ctx.beginPath(); ctx.moveTo(mx,c.y-h*0.18); ctx.lineTo(mx,c.y+h*0.18); ctx.stroke();
   ctx.fillStyle='#ffcf6b'; ctx.font='800 13px Inter'; ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('+', c.x+w*0.34, c.y-h*0.02); ctx.fillText('–', c.x-w*0.34, c.y-h*0.02);
+  ctx.fillText('+', c.x+w*0.34, c.y-h*0.02); ctx.fillText('-', c.x-w*0.34, c.y-h*0.02);
   const v=(c.v!=null?c.v:9);
   ctx.fillStyle='rgba(255,255,255,.7)'; ctx.font='700 10px Inter'; ctx.fillText(v+'V', c.x, c.y+h*0.34);
 }
@@ -671,7 +671,7 @@ stage.addEventListener('touchstart', onDown, {passive:false}); stage.addEventLis
 window.addEventListener('touchend', onUp);
 
 // ============================================================
-// Sandbox bin — tap a part to drop it on the board, then drag to place.
+// Sandbox bin - tap a part to drop it on the board, then drag to place.
 // ============================================================
 const DEFAULTS = { battery:{v:9}, bulb:{r:10}, resistor:{r:20}, switch:{closed:true}, fuse:{rating:3} };
 const BIN_ICON = { battery:'🔋', bulb:'💡', switch:'🎚️', resistor:'🧱', fuse:'🧨' };
@@ -710,11 +710,11 @@ document.getElementById('undoBtn').addEventListener('click', ()=>{ if(wires.leng
 document.getElementById('nextBtn').addEventListener('click', ()=>{ if(levelIdx===LEVELS.length-1) loadSandbox(); else loadLevel(levelIdx+1); });
 document.getElementById('hintBtn').addEventListener('click', ()=>{ document.getElementById('hintLine').innerHTML = HINTS[mode==='sandbox'?'sandbox':levelIdx] || 'Drag terminal-to-terminal to wire. Tap switches. Tap a wire to delete it.'; });
 const HINTS = {
-  0: 'Two wires make a loop: battery + → bulb, and bulb → battery –.',
+  0: 'Two wires make a loop: battery + → bulb, and bulb → battery -.',
   1: 'Wire battery → switch → bulb → battery. Then tap the switch to close the gap.',
   2: 'Give each bulb its OWN pair of wires back to the battery (parallel), so neither steals the other’s voltage.',
   3: 'Wire the switch right after the battery +, THEN split to both bulbs. One gate, both branches.',
-  4: 'Put the resistor in the same line as the bulb so they share one current — that limits the power.',
+  4: 'Put the resistor in the same line as the bulb so they share one current - that limits the power.',
   5: 'Just make one clean loop through the fuse and bulb. Don’t add a bare wire straight across the battery.',
   sandbox: 'Grab parts from the bin, drop them on the board, and wire away. Tap a blown fuse to reset it.',
 };

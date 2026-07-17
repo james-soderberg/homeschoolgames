@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames — Quest Rail (Noah's Ark scene)
+   HomeschoolGames - Quest Rail (Noah's Ark scene)
    A big, animated "build vs. flood" scene for the right rail.
    Layout/board/modal classes come from streak-rail.css.
    ========================================================= */
@@ -147,10 +147,10 @@
 .quest-status.bad  { color: var(--red); }
 
 /* =========================================================
-   Time Machine theme (Who Said It?) — a big, animated time corridor.
+   Time Machine theme (Who Said It?) - a big, animated time corridor.
    Earliest era at the bottom, a glowing wormhole (the present) at the top.
    A traveller pod warps up on right answers, is knocked down on wrong ones,
-   and the PARADOX gauge fills — fill it and the timeline collapses (game over).
+   and the PARADOX gauge fills - fill it and the timeline collapses (game over).
    ========================================================= */
 .tm-stage { position: relative; line-height: 0; }
 .tm-svg { display: block; width: 100%; height: auto; }
