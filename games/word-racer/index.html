@@ -78,6 +78,8 @@
     .ch.current { background: var(--gold-light); color: var(--ink); border-radius: 3px; }
     .ch.err { background: #F6C9C9; color: var(--red); border-radius: 3px; }
     .ch.space { white-space: pre; }
+    /* trailing punctuation: shown for a complete sentence, but not part of the typed race */
+    .ch.tail { color: #6f685b; }
 
     /* cars ride the ring */
     .ecar, .pcar { position: absolute; left: 0; top: 0; z-index: 5; filter: drop-shadow(0 2px 2px rgba(0,0,0,0.4)); }
@@ -116,6 +118,7 @@
     .wr-confetti { position: fixed; inset: 0; pointer-events: none; z-index: 1090; overflow: hidden; }
     .wr-confetti i { position: absolute; top: -16px; width: 10px; height: 14px; border-radius: 2px; animation: wrfall linear forwards; }
     @keyframes wrfall { to { transform: translateY(105vh) rotate(720deg); opacity: 0.9; } }
+    @media (prefers-reduced-motion: reduce) { .wr-confetti { display: none; } }
 
     /* hidden line-measurer */
     .measure { position: absolute; left: -99999px; top: 0; visibility: hidden; font-family: var(--font-serif); }
@@ -306,7 +309,7 @@ function layout() {
 }
 
 // ---- state ----
-let passage = '', chars = [], passageLen = 0;
+let passage = '', chars = [], passageLen = 0, tail = '';   // tail = trailing punctuation shown but not typed
 let lines = [];              // [{start,end}]
 let activeLine = 0, topSpans = [];
 let index = 0, errors = 0, totalKeystrokes = 0;
@@ -374,7 +377,7 @@ function lineIndexForChar(ch) {
   for (let i = 0; i < lines.length; i++) if (ch >= lines[i].start && ch < lines[i].end) return i;
   return lines.length - 1;
 }
-function lineText(li) { return lines[li] ? passage.slice(lines[li].start, lines[li].end) : ''; }
+function lineText(li) { return lines[li] ? passage.slice(lines[li].start, lines[li].end) + (li === lines.length - 1 ? tail : '') : ''; }
 
 // fill the four edges from the window around activeLine
 function renderEdges() {
@@ -385,6 +388,15 @@ function renderEdges() {
     s.className = 'ch' + (chars[i] === ' ' ? ' space' : '') + (i < index ? ' done' : (i === index ? ' current' : ''));
     s.textContent = chars[i];
     edgeTop.appendChild(s); topSpans.push(s);
+  }
+  // on the final line, show the sentence's trailing punctuation (faint, never typed)
+  if (tail && activeLine === lines.length - 1) {
+    for (const t of tail) {
+      const s = document.createElement('span');
+      s.className = 'ch tail' + (t === ' ' ? ' space' : '');
+      s.textContent = t;
+      edgeTop.appendChild(s); topSpans.push(s);
+    }
   }
   edgeRight.textContent = lineText(activeLine + 1);
   edgeBottom.textContent = lineText(activeLine + 2);
@@ -401,7 +413,8 @@ function positionCars() {
     ? left + topSpans[topSpans.length - 1].offsetLeft + topSpans[topSpans.length - 1].offsetWidth + spaceW()
     : cx + TRACK / 2;
   // your car: innermost lane, right above your caret on the top edge
-  const li = clamp(index - ln.start, 0, topSpans.length - 1);
+  // (at the finish, sit on the very last span — past the trailing punctuation — so you land on the line)
+  const li = (index >= ln.end) ? topSpans.length - 1 : clamp(index - ln.start, 0, topSpans.length - 1);
   const span = topSpans[li];
   let px = left;
   if (span) px += (index >= ln.end ? span.offsetLeft + span.offsetWidth + (onLast ? spaceW() : 0)  // finished → sit on the line
@@ -449,7 +462,9 @@ function startRace() {
   const sel = pickPassage();
   // trim trailing punctuation/space so the race ends on the last letter — the final
   // period (or ! ? " …) isn't required; typing the last letter finishes the race.
+  // The trimmed punctuation is kept as `tail` and shown (faint) after the last letter.
   passage = sel.text.replace(/[^\p{L}\p{N}]+$/u, ''); chars = passage.split(''); passageLen = chars.length;
+  tail = sel.text.slice(passage.length);
   document.getElementById('verseRef').innerHTML = sel.ref +
     '<br><span style="font-size:.72em;letter-spacing:.18em;opacity:.7">KJV</span>';
   index = 0; errors = 0; totalKeystrokes = 0; activeLine = 0;

@@ -461,6 +461,7 @@
   var tier = TIERS.tax, day = [], custIdx = 0;   // starts on Sales Tax; Expert unlocks after a day
   var till = 0, salesTotal = 0, tipsTotal = 0, feesTotal = 0, servedOK = 0, perfectCount = 0, lostCount = 0;
   var combo = 0, bestCombo = 0, prevMult = 1, goalCents = 0, goalHit = false, hintedDay = false;
+  var advTimer = null;   // pending "next customer" timeout — cancelled if the day ends first
   var cur = null, tray = [], resolved = false, tillRaf = 0;
 
   // ---- math helpers ----
@@ -711,7 +712,7 @@
     if (m > prevMult && m > 1 && m >= 3) confetti();
     prevMult = m; renderStreak();
 
-    setTimeout(function () { trayEl.style.opacity = '1'; advance(); }, 1150);
+    advTimer = setTimeout(function () { trayEl.style.opacity = '1'; advance(); }, 1150);
   }
 
   // ---- teach overlay: pause, compare what you gave vs the best way, then proceed ----
@@ -775,17 +776,18 @@
     var msg = $('dispMsg'); msg.textContent = extra + (extra===1?' EXTRA COIN — ':' EXTRA COINS — ') + money(fee) + ' FEE'; msg.className = 'scr-msg over';
     floatFrom($('tillAmt'), (gain>=0?'+':'') + money(gain));
     animateTill(till - gain, till); updateGoal(); renderStreak();
-    setTimeout(advance, 750);
+    advTimer = setTimeout(advance, 750);
   }
   function resolveWrong() {
     combo = 0; prevMult = 1; lostCount++;
     if (tier.hideChange) $('dispChange').textContent = money(cur.change);
     var msg = $('dispMsg'); msg.textContent = 'WRONG CHANGE — LOST SALE'; msg.className = 'scr-msg over';
     renderStreak();
-    setTimeout(advance, 750);
+    advTimer = setTimeout(advance, 750);
   }
 
   function advance() {
+    advTimer = null;
     custIdx++;
     if (custIdx >= CUSTOMERS_PER_DAY) endDay();
     else presentCustomer();
@@ -839,6 +841,7 @@
   }
 
   function endDay() {
+    if (advTimer) { clearTimeout(advTimer); advTimer = null; }   // don't let a queued customer pop over the summary
     $('endScreen').classList.remove('hidden');
     $('endLevel').textContent = 'End of day';
     $('endTill').textContent = money(till);

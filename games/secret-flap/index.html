@@ -38,6 +38,7 @@
     .ov.hidden { display: none; }
     .ov .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.25rem; animation: bob 2.2s ease-in-out infinite; }
     @keyframes bob { 0%,100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-8px) rotate(4deg); } }
+    @media (prefers-reduced-motion: reduce) { .ov .crest { animation: none; } }
     .ov h2 { font-family: var(--font-serif); font-size: 1.9rem; margin: 0 0 0.3rem; color: #fff; }
     .ov p { color: #e6f3ea; margin: 0 0 1.1rem; max-width: 26ch; font-size: 0.98rem; }
     .final-stats { display: flex; gap: 1.5rem; margin-bottom: 1.2rem; }
