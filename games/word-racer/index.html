@@ -772,7 +772,6 @@ function tsStep(){
     tsFly.style.left = tsX + 'px';
     if (tsX >= window.innerWidth + 20) {                    // cleared the edge, open the entrance page
       if (tsFly) { tsFly.remove(); tsFly = null; }
-      const hint = document.getElementById('tsHint'); if (hint) hint.innerHTML = 'reach the gate! keep typing <b>treasure</b>';
       tsEl().classList.add('on', 'track');
       const car = document.getElementById('tsCar'); if (car) car.style.transition = 'left .1s linear';
       tsPhase = 'track'; tsX = 0;
@@ -786,7 +785,6 @@ function tsStep(){
 function tsBoom(){
   const s = tsEl(), car = document.getElementById('tsCar');
   if (car) car.style.left = '48%';        // slam into the gate
-  const hint = document.getElementById('tsHint'); if (hint) hint.textContent = '';
   setTimeout(() => { s.classList.add('boom'); if (window.HSGSound && HSGSound.boom) HSGSound.boom(); }, 280);
   setTimeout(() => { location.href = '../redline/index.html'; }, 1500);   // enter the desmond game
 }
@@ -803,7 +801,6 @@ startRace();   // no intro screen - drop straight into the track, armed and wait
   <div class="ts-gate"><div class="ts-arch">🏁</div><div class="ts-sign">Enter here to race</div></div>
   <div class="ts-blast">💥</div>
   <div class="ts-car" id="tsCar">🏎️</div>
-  <div class="ts-hint" id="tsHint">the road opens… keep typing <b>treasure</b></div>
 </div>
 
 </body>
