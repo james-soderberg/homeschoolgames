@@ -2085,14 +2085,9 @@ function revealHuntClue(){
 function finishHuntWin(){
   if (!huntWinning) return;
   huntWinning = false; running = false; if (rafId) cancelAnimationFrame(rafId);
-  // mark the arcade trial cleared no matter how the player arrived, then open the clue page
-  try {
-    if (window.HSGHunt){
-      const idx = HSGHunt.STEPS.findIndex(s => s.game === 'typeinvaders');
-      if (idx >= 0) HSGHunt.setStep(Math.max(HSGHunt.step(), idx + 1));
-    }
-  } catch(e){}
-  location.href = '../treasure-hunt/index.html';
+  // hand off straight to the next clue's URL (the hunt is URL-driven, not saved)
+  const c = (window.HSGHunt && HSGHunt.nextIndexAfter) ? HSGHunt.nextIndexAfter('typeinvaders') : 2;
+  location.href = '../treasure-hunt/index.html?c=' + c;
 }
 function quitToMenu(){
   if (running && !gameLost && !arcade) endRun(false);   // bank the run (arcade never scores)

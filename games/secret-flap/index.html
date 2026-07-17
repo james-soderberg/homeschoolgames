@@ -274,8 +274,9 @@ function triggerWin() {
 function finishWin() {
   if (finishedWin) return; finishedWin = true;
   if (rafId) cancelAnimationFrame(rafId);
-  try { if (window.HSGHunt) HSGHunt.reach('flappy', score); } catch (e) {}   // advance the hunt
-  location.href = '../treasure-hunt/index.html';   // open the clue page, like the first clue
+  // hand off straight to the next clue's URL (the hunt is URL-driven, not saved)
+  var c = (window.HSGHunt && HSGHunt.nextIndexAfter) ? HSGHunt.nextIndexAfter('flappy') : 1;
+  location.href = '../treasure-hunt/index.html?c=' + c;
 }
 
 // ---- leaderboard (local Top-10 via streak-rail, built into the game-over screen) ----

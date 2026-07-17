@@ -117,10 +117,17 @@
     try { if (window.HSGSound && HSGSound.powerup) HSGSound.powerup(); } catch (e) {}
   }
 
+  // index of the clue that FOLLOWS a given game's step — used by a game to hand
+  // off directly to the next clue's URL (the hunt is URL-driven, not saved).
+  function nextIndexAfter(game) {
+    for (var i = 0; i < STEPS.length; i++) if (STEPS[i].game === game) return i + 1;
+    return 0;
+  }
+
   window.HSGHunt = {
     STEPS: STEPS, TREASURE: TREASURE,
     step: step, done: done, current: current, reach: reach,
-    setStep: function (n) { setStep(n); },
+    setStep: function (n) { setStep(n); }, nextIndexAfter: nextIndexAfter,
     reset: function () { setStep(0); },
     // word -> url map for the home-page code listener
     codes: STEPS.map(function (s) { return { code: s.word, url: s.open }; })

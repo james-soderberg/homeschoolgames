@@ -92,17 +92,22 @@
   var $ = function (id) { return document.getElementById(id); };
   var H = window.HSGHunt;
   var N = H.STEPS.length;
-  // dev shortcut: ?step=N jumps the journal straight to a given clue (0-based).
-  // Works even when localStorage is blocked (e.g. Safari on file://) by overriding
-  // the displayed step in memory; also writes storage when it's available.
-  var forcedStep = null;
-  try { var _s = new URLSearchParams(location.search).get('step');
-    if (_s !== null) { forcedStep = Math.max(0, parseInt(_s, 10) || 0);
-      try { localStorage.setItem('hsg_hunt_step', String(forcedStep)); } catch (e) {} }
-  } catch (e) {}
-  function effStep()    { return forcedStep !== null ? forcedStep : H.step(); }
-  function effDone()    { return effStep() >= N; }
-  function effCurrent() { return effDone() ? null : H.STEPS[effStep()]; }
+  // The clue shown is driven ENTIRELY by the URL (?c=N, 0-based) — there is no saved
+  // progress. Typing "treasure" (no param) always starts at clue 1, and each game
+  // hands off to the next clue's URL. The hunt is meant to be done in one sitting.
+  // (?step is kept as an alias for older links.)
+  function clueIndex() {
+    try {
+      var p = new URLSearchParams(location.search);
+      var v = p.get('c'); if (v === null) v = p.get('step');
+      var n = (v === null) ? 0 : Math.max(0, parseInt(v, 10) || 0);
+      return Math.min(n, N);   // N === the treasure (all clues cleared)
+    } catch (e) { return 0; }
+  }
+  var CUR = clueIndex();
+  function effStep()    { return CUR; }
+  function effDone()    { return CUR >= N; }
+  function effCurrent() { return effDone() ? null : H.STEPS[CUR]; }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
   function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
@@ -178,7 +183,7 @@
     $('content').innerHTML =
       '<div class="treasure"><div class="crest">🏆</div><h2>' + esc(H.TREASURE.title) + '</h2>' +
       '<p>' + esc(H.TREASURE.text) + '</p><button id="againBtn">Hunt again</button></div>';
-    $('againBtn').addEventListener('click', function () { H.reset(); render(); });
+    $('againBtn').addEventListener('click', function () { location.href = location.pathname; });
     confetti();
     if (window.HSGSound && HSGSound.finish) HSGSound.finish(true);
   }
@@ -196,10 +201,8 @@
   }
 
   $('resetBtn').addEventListener('click', function () {
-    if (window.confirm('Reset the hunt to the first clue?')) { H.reset(); render(); }
+    if (window.confirm('Start the hunt over from the first clue?')) location.href = location.pathname;
   });
-  // reflect a newly-unlocked clue if the player returns from a game
-  document.addEventListener('visibilitychange', function () { if (!document.hidden) render(); });
 
   render();
 })();
