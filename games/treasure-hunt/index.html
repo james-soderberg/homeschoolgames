@@ -7,68 +7,64 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <style>
     :root { --gold:#c8a24a; --gold-lt:#e7c979; --ink2:#2c2213; }
-    body.th-body { background:#0c0a07; color:#e9e2d2; }
+    body.th-body { background:#0c0a07; color:#e9e2d2; min-height:100vh; }
     .th-header { background:#0f0c08; border-bottom:1px solid #241d12; }
     .th-header .site-logo { color:#e9e2d2; } .th-header .site-logo span { color:var(--gold); }
     .th-header .site-nav a { color:#9a8a63; } .th-header .site-nav a:hover { color:var(--gold-lt); }
 
-    .th-wrap { max-width: 720px; margin: 0 auto; padding: 1.4rem 0.9rem 3rem; }
+    .th-wrap { max-width: 560px; margin: 0 auto; padding: 3.4rem 1.1rem 3rem; text-align:center; }
 
-    .th-vault { position:relative; border-radius:16px; overflow:hidden; padding:1.5rem 1.3rem 1.4rem;
-      background: radial-gradient(120% 80% at 50% -10%, #2a2116 0%, #16110b 55%, #0c0906 100%);
-      border:1px solid #2c2415; box-shadow:0 0 0 1px #000, inset 0 0 120px rgba(0,0,0,.7), 0 20px 60px rgba(0,0,0,.6); }
-    .th-vault::after { content:''; position:absolute; inset:0; pointer-events:none; border-radius:16px;
-      box-shadow:inset 0 0 140px rgba(0,0,0,.85); animation:flicker 5s ease-in-out infinite; }
-    @keyframes flicker { 0%,100%{opacity:1} 45%{opacity:.86} 70%{opacity:.95} }
+    /* faint progress dots */
+    .th-rail { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-bottom:2.4rem; }
+    .th-rail .seal { width:9px; height:9px; border-radius:50%; background:#2b2417; border:1px solid #3a2f1b; }
+    .th-rail .seal.done { background:var(--gold-lt); border-color:var(--gold); box-shadow:0 0 7px rgba(200,162,74,.7); }
+    .th-rail .seal.cur { border-color:var(--gold-lt); box-shadow:0 0 0 2px rgba(231,201,121,.3); }
+    .th-rail .seal.chest { width:12px; height:12px; }
 
-    /* progress trail */
-    .th-rail { display:flex; align-items:center; justify-content:center; gap:.5rem; margin-bottom:1.4rem; flex-wrap:wrap; }
-    .th-rail .node { display:flex; align-items:center; gap:.5rem; }
-    .th-rail .seal { width:20px; height:20px; border-radius:50%;
-      background:radial-gradient(circle at 38% 32%, #2b2417, #14100a); border:1.5px solid #3a2f1b; box-shadow:inset 0 1px 2px rgba(0,0,0,.7); }
-    .th-rail .seal.done { background:radial-gradient(circle at 38% 32%, var(--gold-lt), #8a6a26); border-color:var(--gold); box-shadow:0 0 8px rgba(200,162,74,.7); }
-    .th-rail .seal.cur { border-color:var(--gold-lt); box-shadow:0 0 0 2px rgba(231,201,121,.35), 0 0 10px rgba(200,162,74,.5); animation:pulse 1.6s ease-in-out infinite; }
-    .th-rail .seal.chest { width:26px; height:26px; }
-    .th-rail .link { width:20px; height:2px; background:#33291a; }
-    @keyframes pulse { 0%,100%{box-shadow:0 0 0 2px rgba(231,201,121,.3),0 0 8px rgba(200,162,74,.4)} 50%{box-shadow:0 0 0 3px rgba(231,201,121,.5),0 0 16px rgba(200,162,74,.7)} }
+    .th-tag { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:#8a7526; margin-bottom:1.3rem; }
 
-    /* parchment clue card */
-    .parchment { position:relative; background:linear-gradient(160deg,#efe4ca,#e2d2ac 60%,#d3bf94);
-      color:var(--ink2); border-radius:5px; padding:1.6rem 1.7rem 1.5rem;
-      box-shadow:0 2px 0 #b8a271, 0 16px 34px rgba(0,0,0,.55), inset 0 0 60px rgba(150,120,70,.28); }
-    .parchment::before { content:''; position:absolute; inset:0; border-radius:5px; pointer-events:none;
-      box-shadow:inset 0 0 0 1px rgba(120,90,45,.3), inset 0 0 40px rgba(120,90,45,.25);
-      background:radial-gradient(120% 100% at 85% 10%, rgba(120,90,45,.12), transparent 40%), radial-gradient(80% 80% at 10% 90%, rgba(120,90,45,.14), transparent 45%); }
-    .ch-tag { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.22em; text-transform:uppercase; color:#9a7526; }
-    .ch-riddle { font-family:var(--font-serif); font-size:1.55rem; line-height:1.4; font-style:italic; margin:.5rem 0 1rem; }
-    .ch-trial { font-family:var(--font-sans); font-size:.92rem; color:#5a4a24; border-left:3px solid var(--gold); padding:.15rem 0 .15rem .7rem; margin:1rem 0 .2rem; }
-    .ch-trial b { color:#6e2f12; }
+    /* the riddle */
+    .riddle { font-family:var(--font-serif); font-style:italic; font-size:clamp(1.7rem,5.5vw,2.5rem); line-height:1.4;
+      color:#f0e6cf; margin:0 auto 2.2rem; max-width:22ch; }
+    .riddle .q { color:var(--gold); font-style:normal; }
 
-    .how { margin-top:1.3rem; padding-top:1rem; border-top:1px dashed rgba(120,90,45,.4); font-family:var(--font-sans); font-size:.86rem; color:#6a5836; line-height:1.6; }
-    .how b { color:#6e2f12; }
-    .how .steps { display:flex; gap:.5rem; margin-top:.6rem; flex-wrap:wrap; }
-    .how .steps span { flex:1 1 150px; background:rgba(120,90,45,.1); border:1px solid rgba(120,90,45,.3); border-radius:8px; padding:.5rem .6rem; }
-    .how .steps b { display:block; color:#9a7526; font-size:.66rem; letter-spacing:.1em; text-transform:uppercase; margin-bottom:.15rem; }
+    /* answer box */
+    .answer { display:flex; gap:.5rem; max-width:400px; margin:0 auto; }
+    .answer input { flex:1 1 auto; min-width:0; background:rgba(255,252,244,.06); border:none; border-bottom:2px solid #4a3f24;
+      color:#f4ecd7; font-family:var(--font-serif); font-size:1.4rem; text-align:center; padding:.5rem .4rem; outline:none; transition:border-color .2s; }
+    .answer input:focus { border-bottom-color:var(--gold); }
+    .answer input::placeholder { color:#6a5a3a; font-style:italic; font-size:1rem; }
+    .answer button { flex:0 0 auto; border:none; cursor:pointer; border-radius:8px; padding:0 1.3rem; font-family:var(--font-sans);
+      font-weight:800; font-size:1rem; color:#1a1207; background:linear-gradient(180deg,var(--gold-lt),var(--gold)); box-shadow:0 4px 0 #7a5c1f; }
+    .answer button:active { transform:translateY(3px); box-shadow:0 1px 0 #7a5c1f; }
+    .answer.wrong input { animation:shake .4s; border-bottom-color:#a6432a; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-7px)} 40%{transform:translateX(7px)} 60%{transform:translateX(-5px)} 80%{transform:translateX(5px)} }
+    .answer.right input { border-bottom-color:#5aa06a; color:#bfe9c8; }
+
+    .fb { min-height:1.3em; margin-top:1rem; font-family:var(--font-serif); font-style:italic; font-size:1rem; color:#a08a5e; }
+    .fb.bad { color:#c07a5a; } .fb.good { color:#8fce9a; font-style:normal; font-weight:700; }
+
+    .hint-wrap { margin-top:2rem; }
+    .hint-toggle { background:none; border:none; color:#5a4d34; font-size:.8rem; cursor:pointer; text-decoration:underline; font-family:var(--font-sans); }
+    .hint-toggle:hover { color:var(--gold-lt); }
+    .hint-text { display:none; margin-top:.7rem; font-family:var(--font-sans); font-size:.86rem; color:#8a7a55; line-height:1.6; }
+    .hint-text.show { display:block; }
 
     /* treasure reveal */
-    .th-treasure { text-align:center; padding:1rem 0 .5rem; }
-    .th-treasure .crest { font-size:3rem; }
-    .th-treasure h2 { font-family:var(--font-serif); font-size:2.2rem; color:var(--gold-lt);
-      background:linear-gradient(180deg,#f3e2b4,#c8a24a 60%,#8a6a26); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; margin:.3rem 0 .6rem; }
-    .th-treasure p { color:#cfc2a2; font-family:var(--font-serif); font-size:1.15rem; line-height:1.55; max-width:42ch; margin:0 auto 1.4rem; }
-    .btn-gold { font-family:var(--font-sans); font-weight:800; border:none; cursor:pointer; border-radius:10px; padding:.7rem 1.8rem; font-size:1rem;
+    .treasure { text-align:center; }
+    .treasure .crest { font-size:3.2rem; }
+    .treasure h2 { font-family:var(--font-serif); font-size:2.3rem; margin:.4rem 0 .7rem;
+      background:linear-gradient(180deg,#f3e2b4,#c8a24a 60%,#8a6a26); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .treasure p { color:#cfc2a2; font-family:var(--font-serif); font-size:1.2rem; line-height:1.55; max-width:40ch; margin:0 auto 1.6rem; }
+    .treasure button { border:none; cursor:pointer; border-radius:10px; padding:.7rem 1.9rem; font-family:var(--font-sans); font-weight:800;
       color:#1a1207; background:linear-gradient(180deg,var(--gold-lt),var(--gold)); box-shadow:0 5px 0 #7a5c1f; }
-    .btn-gold:active { transform:translateY(4px); box-shadow:0 1px 0 #7a5c1f; }
 
-    .th-foot { display:flex; justify-content:space-between; align-items:center; margin-top:1.1rem; font-family:var(--font-sans); }
-    .th-note { font-size:.72rem; color:#6a5a3a; max-width:80%; line-height:1.5; }
-    .th-reset { background:none; border:none; color:#5a4d34; font-size:.72rem; cursor:pointer; text-decoration:underline; }
-    .th-reset:hover { color:var(--gold-lt); }
+    .th-reset { position:fixed; bottom:1rem; right:1rem; background:none; border:none; color:#4a3f28; font-size:.7rem; cursor:pointer; text-decoration:underline; font-family:var(--font-sans); }
+    .th-reset:hover { color:#8a7a55; }
 
     .th-confetti { position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden; }
     .th-confetti i { position:absolute; top:-14px; width:9px; height:14px; border-radius:2px; animation:conf 1.6s linear forwards; }
     @keyframes conf { to { transform:translateY(103vh) rotate(680deg); } }
-    @media (prefers-reduced-motion: reduce){ .th-vault::after, .th-rail .seal.cur { animation:none; } }
   </style>
 </head>
 <body class="th-body">
@@ -79,17 +75,11 @@
 </header>
 
 <div class="th-wrap">
-  <div class="th-vault">
-    <div class="th-rail" id="rail"></div>
-    <div id="content"></div>
-    <div class="th-foot">
-      <span class="th-note">Each clue solves to one word. Type that word on the home page to open a hidden game — beat its trial and the next clue is yours.</span>
-      <button class="th-reset" id="resetBtn">Reset hunt</button>
-    </div>
-  </div>
+  <div class="th-rail" id="rail"></div>
+  <div id="content"></div>
 </div>
 
-<footer class="site-footer" style="border-top-color:#241d12;"><a href="../../index.html" style="color:#9a8a63;">homeschoolgames.app</a></footer>
+<button class="th-reset" id="resetBtn">reset hunt</button>
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/hunt.js"></script>
@@ -98,51 +88,67 @@
   var $ = function (id) { return document.getElementById(id); };
   var H = window.HSGHunt;
   var N = H.STEPS.length;
-
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function norm(s) { return (s || '').toLowerCase().replace(/[^a-z0-9]/g, ''); }
 
   function renderRail() {
     var st = H.step(), done = H.done(), html = '';
-    for (var i = 0; i < N; i++) {
-      var cls = i < st ? 'done' : (i === st && !done ? 'cur' : '');
-      html += '<div class="node"><span class="seal ' + cls + '"></span></div>';
-      html += '<span class="link"></span>';
-    }
-    html += '<div class="node"><span class="seal chest ' + (done ? 'done' : '') + '"></span></div>';
+    for (var i = 0; i < N; i++) html += '<span class="seal ' + (i < st ? 'done' : (i === st && !done ? 'cur' : '')) + '"></span>';
+    html += '<span class="seal chest ' + (done ? 'done' : '') + '"></span>';
     $('rail').innerHTML = html;
   }
 
-  function renderContent() {
-    if (H.done()) {
-      $('content').innerHTML =
-        '<div class="th-treasure">' +
-          '<div class="crest">🏆</div>' +
-          '<h2>' + esc(H.TREASURE.title) + '</h2>' +
-          '<p>' + esc(H.TREASURE.text) + '</p>' +
-          '<button class="btn-gold" id="againBtn">Hunt again</button>' +
-        '</div>';
-      $('againBtn').addEventListener('click', function () { H.reset(); render(); });
-      confetti();
-      if (window.HSGSound && HSGSound.finish) HSGSound.finish(true);
-      return;
-    }
-    var s = H.current(), n = H.step() + 1;
-    $('content').innerHTML =
-      '<div class="parchment">' +
-        '<div class="ch-tag">Clue ' + n + ' of ' + N + '</div>' +
-        '<div class="ch-riddle">“' + esc(s.riddle) + '”</div>' +
-        '<div class="ch-trial">The trial that guards it: <b>' + esc(s.trial) + '</b></div>' +
-        '<div class="how"><b>How the hunt works</b> — read the riddle, work out the single word it hides, then:' +
-          '<div class="steps">' +
-            '<span><b>1 · Speak it</b>Type that word anywhere on the home page.</span>' +
-            '<span><b>2 · Enter</b>A hidden game opens its doors.</span>' +
-            '<span><b>3 · Prove it</b>Beat the trial — the next clue appears.</span>' +
-          '</div>' +
-        '</div>' +
-      '</div>';
+  function accepts(step, raw) {
+    var n = norm(raw); if (!n) return false;
+    var list = (step.accept && step.accept.length) ? step.accept : [step.word];
+    for (var i = 0; i < list.length; i++) if (norm(list[i]) === n) return true;
+    return false;
   }
 
-  function render() { renderRail(); renderContent(); }
+  function renderClue() {
+    var s = H.current(), n = H.step() + 1;
+    $('content').innerHTML =
+      '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
+      '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>' +
+      '<form class="answer" id="ansForm" autocomplete="off">' +
+        '<input id="ansInput" type="text" placeholder="the hidden word…" autocorrect="off" spellcheck="false" aria-label="Your answer">' +
+        '<button type="submit">Speak it</button>' +
+      '</form>' +
+      '<div class="fb" id="fb"></div>' +
+      (s.hint ? '<div class="hint-wrap"><button class="hint-toggle" id="hintToggle">Stuck? Reveal a hint</button>' +
+        '<div class="hint-text" id="hintText">' + esc(s.hint) + '</div></div>' : '');
+
+    var form = $('ansForm'), input = $('ansInput');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (accepts(s, input.value)) {
+        form.classList.remove('wrong'); form.classList.add('right');
+        var fb = $('fb'); fb.textContent = 'The lock gives way…'; fb.className = 'fb good';
+        if (window.HSGSound) HSGSound.correct();
+        setTimeout(function () { location.href = '../../' + s.open; }, 850);   // launch the hidden game
+      } else {
+        form.classList.remove('right'); void form.offsetWidth; form.classList.add('wrong');
+        var fb2 = $('fb'); fb2.textContent = 'That word turns nothing.'; fb2.className = 'fb bad';
+        if (window.HSGSound) HSGSound.wrong();
+      }
+    });
+    if (s.hint) $('hintToggle').addEventListener('click', function () {
+      $('hintText').classList.toggle('show');
+      this.textContent = $('hintText').classList.contains('show') ? 'Hide hint' : 'Stuck? Reveal a hint';
+    });
+    setTimeout(function () { try { input.focus(); } catch (e) {} }, 40);
+  }
+
+  function renderTreasure() {
+    $('content').innerHTML =
+      '<div class="treasure"><div class="crest">🏆</div><h2>' + esc(H.TREASURE.title) + '</h2>' +
+      '<p>' + esc(H.TREASURE.text) + '</p><button id="againBtn">Hunt again</button></div>';
+    $('againBtn').addEventListener('click', function () { H.reset(); render(); });
+    confetti();
+    if (window.HSGSound && HSGSound.finish) HSGSound.finish(true);
+  }
+
+  function render() { renderRail(); if (H.done()) renderTreasure(); else renderClue(); }
 
   function confetti() {
     var wrap = document.createElement('div'); wrap.className = 'th-confetti';
@@ -155,10 +161,9 @@
   }
 
   $('resetBtn').addEventListener('click', function () {
-    if (window.confirm('Reset the hunt back to the first clue?')) { H.reset(); render(); }
+    if (window.confirm('Reset the hunt to the first clue?')) { H.reset(); render(); }
   });
-  // if the player returns after clearing a game elsewhere, reflect the new step
-  window.addEventListener('focus', render);
+  // reflect a newly-unlocked clue if the player returns from a game
   document.addEventListener('visibilitychange', function () { if (!document.hidden) render(); });
 
   render();

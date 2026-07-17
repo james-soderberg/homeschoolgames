@@ -28,12 +28,16 @@
   // goal    → value that must be reached inside the game
   // trial   → plain-English goal shown in the journal (must NOT reveal `word`)
   var STEPS = [
-    { word: 'arcade', open: 'games/secret-flap/index.html', game: 'flappy', goal: 25,
-      riddle: 'A hall of blinking machines where coins once bought extra lives — and a little dragon flaps between the pipes. Name the hall.',
+    { word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 25,
+      accept: ['secret', 'secrets'],
+      riddle: 'This one magic whisper we kept.',
+      hint: 'It hides in plain sight — read the last letter of every word.',
       trial: 'Slip past a score of 25 without falling.' },
 
     { word: 'redline', open: 'games/redline/index.html', game: 'redline', goal: 3000,
+      accept: ['redline'],
       riddle: 'On the dashboard dial sits a crimson mark, where the engine screams its very limit. Race the neon night, and name that mark.',
+      hint: 'It’s the red line on an engine’s rev counter — floor it.',
       trial: 'Put 3,000 feet of highway behind you.' }
   ];
 
