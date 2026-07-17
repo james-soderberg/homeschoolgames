@@ -153,6 +153,11 @@
   .launch-btn:hover { filter:brightness(1.05); }
   .launch-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #a07f2c; }
   .launch-btn:disabled { opacity:.45; cursor:default; box-shadow:0 4px 0 #a07f2c; }
+  /* shown in place of Launch while a probe is mid-flight — abort a doomed shot */
+  .cancel-btn { font-family:var(--font-sans); font-weight:800; font-size:.95rem; color:#fff; cursor:pointer;
+    background:#b5482f; border:none; border-radius:99px; padding:.5rem 1.4rem; box-shadow:0 4px 0 #7d2f1c; }
+  .cancel-btn:hover { filter:brightness(1.07); }
+  .cancel-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #7d2f1c; }
 
   /* screenshot mode (open with ?shot) — hide chrome, fill viewport with the stage */
   body.sl-shot { overflow:hidden; background:#070a17; }
@@ -264,6 +269,7 @@
   <div class="control-row">
     <button class="reset-link" onclick="retryLevel()">Reset aim</button>
     <button class="launch-btn" id="launchBtn">🚀 Launch</button>
+    <button class="cancel-btn" id="cancelBtn" type="button" style="display:none">✕ Cancel shot</button>
     <button class="reset-link" id="solveBtn" style="display:none">💡 Show solution</button>
     <button class="reset-link" onclick="toMenu()">Quit to base</button>
   </div>
@@ -723,6 +729,22 @@ function crash(msg) {
   setTimeout(() => { if (phase === 'crashwait') { phase = 'aim'; refreshBodyPositions(); recomputePredict(); } }, 750);
 }
 
+// Abort a mid-flight probe instead of waiting out the timeout. Costs a probe
+// exactly like a crash/timeout would (otherwise you could dodge every failure),
+// but skips the wait and drops you straight back to aiming.
+function cancelShot() {
+  if (phase !== 'flight' || !probe) return;
+  if (!(window.HSGGod && HSGGod.on)) probes--;   // god mode: never lose a probe
+  streak = 0;
+  for (let i = 0; i < 12; i++) spawnParticle(probe.x, probe.y, rand(-120, 120), rand(-120, 120), rand(.3, .6), i % 2 ? '#9fb0dd' : '#c9d3f0', rand(1.5, 3));
+  probe = null; predicted = null;
+  if (window.HSGSound) HSGSound.tick();
+  updateHud();
+  toast('Shot cancelled');
+  if (probes <= 0) { setTimeout(gameOver, 500); phase = 'crashwait'; return; }
+  phase = 'aim'; refreshBodyPositions(); recomputePredict();
+}
+
 function showFact(gain, firstTry) {
   document.getElementById('factCrest').textContent = targetInfo.crest;
   document.getElementById('factManeuver').textContent = maneuver + ' · +' + gain + (firstTry ? ' (first try!)' : '');
@@ -1059,7 +1081,9 @@ function loop(ts) {
   bonusT = Math.max(0, bonusT - dt);
   for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= 0.97; p.vy *= 0.97; if (p.life <= 0) particles.splice(i, 1); }
 
-  { const lb = document.getElementById('launchBtn'); if (lb) lb.disabled = (phase !== 'aim'); }
+  { const inFlight = (phase === 'flight');
+    const lb = document.getElementById('launchBtn'); if (lb) { lb.disabled = (phase !== 'aim'); lb.style.display = inFlight ? 'none' : ''; }
+    const cb = document.getElementById('cancelBtn'); if (cb) cb.style.display = inFlight ? '' : 'none'; }
   if (phase === 'flight' && probe) {
     flightAcc += dt * FLIGHT_RATE; let n = 0;
     while (flightAcc >= FIXED_H && phase === 'flight' && n < 600) { stepFlight(FIXED_H); flightAcc -= FIXED_H; n++; }
@@ -1102,6 +1126,7 @@ stage.addEventListener('touchstart', onDown, { passive: false }); stage.addEvent
 
 document.addEventListener('keydown', e => {
   if (phase === 'fact' && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onward(); return; }
+  if (phase === 'flight' && (e.key === 'Escape' || e.key === ' ')) { e.preventDefault(); cancelShot(); return; }
   if (phase !== 'aim') return;
   const k = e.key;
   if (/^Arrow/.test(k)) solutionPath = null;   // manual re-aim clears the shown route
@@ -1118,6 +1143,7 @@ document.getElementById('beginBtn').addEventListener('click', (e) => { e.stopPro
 document.getElementById('tutorialBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); playTutorial(); });
 document.getElementById('tutClose').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); closeTutorial(); });
 document.getElementById('launchBtn').addEventListener('click', (e) => { e.stopPropagation(); launch(); });
+document.getElementById('cancelBtn').addEventListener('click', (e) => { e.stopPropagation(); cancelShot(); });
 document.getElementById('onwardBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); onward(); });
 document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(diffKey); });
 document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopPropagation(); toMenu(); });
