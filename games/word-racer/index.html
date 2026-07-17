@@ -736,16 +736,19 @@ if (typeGrab) {
   });
 }
 
-// ---------- secret: type "treasure" over and over to drive to REDLINE ----------
-// Phase 1: the REAL race car keeps driving straight along the top edge and off
-// the screen (instead of turning the corner). Phase 2: the dark entrance page.
-const TS_FLY = 4, TS_GATE = 5;
-let tsFly = null, tsFlyStart = 0;
+// ---------- secret: type "treasure" to drive the real car off the page, to REDLINE ----------
+// Once "treasure" is typed, the actual race car keeps driving, one nudge per
+// LETTER exactly like the normal game, off the right edge of the page and into
+// the dark "Enter here to race" entrance, which leads to Redline.
+const TS_TRK_STEP = 2.8;                                    // % of the page per letter (phase 2)
+let tsFly = null, tsX = 0;
+function tsFlyStepPx(){ return Math.max(26, window.innerWidth / 26); }   // px per letter (phase 1)
 function tsEl(){ return document.getElementById('tsScene'); }
 function tsFeed(ch){
   if (!/^[a-z]$/i.test(ch)) return;
+  if (tsActive) { tsStep(); return; }                       // secret running: every letter moves the car
   tsBuf = (tsBuf + ch.toLowerCase()).slice(-8);
-  if (tsBuf.endsWith('treasure')) { tsBuf = ''; tsAdvance(); }
+  if (tsBuf.endsWith('treasure')) { tsBuf = ''; tsSetup(); }   // first "treasure" starts it
 }
 // Lift a clone of the player's car (same size and look) out of the clipped arena
 // so it can travel across the whole page.
@@ -753,35 +756,32 @@ function tsSetup(){
   tsActive = true; racing = false; if (rafId) cancelAnimationFrame(rafId);
   const r = pcar.getBoundingClientRect();
   const fly = document.createElement('div');
-  fly.className = 'pcar';   // inherits the car's svg sizing
-  fly.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;z-index:99991;' +
-    'transform:none;pointer-events:none;transition:left .55s cubic-bezier(.35,.55,.5,1);';
+  fly.className = 'pcar';   // inherits the car's exact svg size + look
+  fly.style.cssText = 'position:fixed;top:' + r.top + 'px;left:' + r.left + 'px;z-index:99991;' +
+    'transform:none;pointer-events:none;transition:left .1s linear;';   // snappy per-key glide
   fly.innerHTML = pcar.innerHTML;
   document.body.appendChild(fly);
   pcar.style.visibility = 'hidden';
-  tsFly = fly; tsFlyStart = r.left; tsPhase = 'fly'; tsP = 0;
+  tsFly = fly; tsX = r.left; tsPhase = 'fly';
   if (window.HSGSound) HSGSound.tick();
 }
-function tsFlyStep(){
-  const endX = window.innerWidth + 90;   // fully off the right edge
-  tsFly.style.left = (tsFlyStart + Math.min(1, tsP / TS_FLY) * (endX - tsFlyStart)) + 'px';
-  if (tsP >= TS_FLY) {                    // reached the edge → open the dark entrance page
-    setTimeout(() => {
+// One nudge per typed letter, just like normal racing.
+function tsStep(){
+  if (tsPhase === 'fly') {
+    tsX += tsFlyStepPx();
+    tsFly.style.left = tsX + 'px';
+    if (tsX >= window.innerWidth + 20) {                    // cleared the edge, open the entrance page
       if (tsFly) { tsFly.remove(); tsFly = null; }
       const hint = document.getElementById('tsHint'); if (hint) hint.innerHTML = 'reach the gate! keep typing <b>treasure</b>';
       tsEl().classList.add('on', 'track');
-      tsPhase = 'track'; tsP = 0; tsPlace();
-    }, 600);
+      const car = document.getElementById('tsCar'); if (car) car.style.transition = 'left .1s linear';
+      tsPhase = 'track'; tsX = 0;
+    }
+  } else if (tsPhase === 'track') {
+    tsX += TS_TRK_STEP;
+    const car = document.getElementById('tsCar'); if (car) car.style.left = (6 + tsX) + '%';
+    if (6 + tsX >= 46) { tsPhase = 'done'; tsBoom(); }       // reached the gate
   }
-}
-function tsPlace(){
-  const car = document.getElementById('tsCar'); if (car) car.style.left = (6 + (tsP / TS_GATE) * 40) + '%';
-}
-function tsTrackStep(){ if (tsP >= TS_GATE) tsBoom(); else tsPlace(); }
-function tsAdvance(){
-  if (!tsActive) tsSetup();               // first "treasure": lift the car out and start driving
-  tsP++;
-  if (tsPhase === 'fly') tsFlyStep(); else tsTrackStep();
 }
 function tsBoom(){
   const s = tsEl(), car = document.getElementById('tsCar');
