@@ -166,6 +166,36 @@
     body.ti-shot .game-layout-wide::before { display: none !important; }
     body.ti-shot .game-layout, body.ti-shot .ti-page { margin: 0 !important; padding: 0 !important; max-width: none !important; width: 100% !important; }
     body.ti-shot .ti-sky { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; border: 0 !important; }
+
+    /* live typing-speed badge */
+    #wpmBadge { font-variant-numeric: tabular-nums; }
+
+    /* Constitution reading ticker — shows what document you're typing through */
+    .doc-ticker {
+      display: flex; align-items: center; gap: 0.6rem; max-width: min(1000px, 96%);
+      margin: 0.5rem auto 0; padding: 0.35rem 0.75rem;
+      background: #efe7d3; border: 1.5px solid var(--border); border-radius: 10px;
+      font-family: var(--font-serif); color: #4a3c22;
+    }
+    .doc-ticker[hidden] { display: none; }
+    .doc-ticker .dt-sec {
+      flex-shrink: 0; font-family: var(--font-sans); font-weight: 800; font-size: 0.66rem;
+      letter-spacing: 0.08em; text-transform: uppercase; color: #fff;
+      background: var(--green, #2A5C3F); border-radius: 99px; padding: 0.22rem 0.6rem;
+    }
+    .doc-ticker .dt-text {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      font-size: 1.02rem; font-style: italic; opacity: 0.92;
+    }
+    .doc-ticker .dt-text b { font-style: normal; font-weight: 800; color: #8a2020; opacity: 1; }
+
+    /* end-of-run typing summary line */
+    .run-typing { color:#cdd9f0; font-family: var(--font-sans); font-weight:700; font-size:0.95rem; margin: -0.35rem 0 1rem; }
+    .run-typing b { color:#ffd98a; }
+
+    /* reduced motion: calm the zooming wave banner (shake/flash handled in JS) */
+    body.reduce-motion .wave-flash.show { animation: waveFlashRM 1.4s ease forwards; }
+    @keyframes waveFlashRM { 0%{opacity:0} 15%{opacity:1} 80%{opacity:1} 100%{opacity:0} }
   </style>
 </head>
 <body>
@@ -185,6 +215,7 @@
     <div class="stat-group">
       <div class="stat-badge" id="waveBadge">🛸 Wave 1</div>
       <div class="stat-badge" id="killBadge">💥 0</div>
+      <div class="stat-badge" id="wpmBadge" title="Typing speed (words per minute)">⌨️ 0 wpm</div>
       <div class="stat-badge hearts" id="heartsBadge">🏛️🏛️🏛️🏛️🏛️</div>
     </div>
   </div>
@@ -225,6 +256,7 @@
         <div class="fs"><b id="fsBest">0</b><span>Best Streak</span></div>
         <div class="fs"><b id="fsWave">1</b><span>Wave</span></div>
       </div>
+      <div class="run-typing" id="runTyping"></div>
       <div class="hsg-board" id="tiBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
       <div class="overlay-actions">
         <button class="play-btn" id="againBtn">Defend Again 🚀</button>
@@ -236,6 +268,12 @@
            autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="latin" aria-hidden="true">
   </div>
 
+  <!-- Constitution reading ticker (Constitution difficulties only) -->
+  <div class="doc-ticker" id="docTicker" hidden>
+    <span class="dt-sec" id="dtSec">Preamble</span>
+    <span class="dt-text" id="dtText"></span>
+  </div>
+
   <p class="hint">
     Start typing a saucer's word to lock on. Every letter fires a laser, and finishing the word destroys it.
     Pink <strong>plasma bolts</strong> and gold <strong>power-ups</strong> have words too. Type a green
@@ -243,6 +281,7 @@
   </p>
   <div class="control-row">
     <button class="reset-link" onclick="quitToMenu()">Retreat &amp; Choose Difficulty</button>
+    <button class="reset-link" id="motionToggle" title="Reduce screen shake &amp; flashes">✨ Reduced motion: Off</button>
   </div>
 
 </div><!-- /.ti-page -->
@@ -283,7 +322,7 @@ const EASY_WORDS = [
 ];
 const MISSILE_WORDS = EASY_WORDS.filter(w => w.length <= 4);
 
-const CONSTITUTION = (`
+const CONST_RAW = (`
   We the People of the United States, in Order to form a more perfect Union, establish Justice,
   insure domestic Tranquility, provide for the common defence, promote the general Welfare, and
   secure the Blessings of Liberty to ourselves and our Posterity, do ordain and establish this
@@ -314,7 +353,34 @@ const CONSTITUTION = (`
   concur with Amendments as on other Bills. Every Bill which shall have passed the House of
   Representatives and the Senate, shall, before it become a Law, be presented to the President of the
   United States.
-`).toLowerCase().replace(/[^a-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
+`);
+// The document as an ordered word list. ORIG_WORDS keeps case (for the reading
+// ticker); CONSTITUTION is the lowercased form you actually type.
+const ORIG_WORDS = CONST_RAW.replace(/[^A-Za-z\s]+/g, ' ').split(/\s+/).filter(Boolean);
+const CONSTITUTION = ORIG_WORDS.map(w => w.toLowerCase());
+// section boundaries for the ticker: Preamble, then each Article
+const SECTIONS = (() => {
+  const roman = { one:'I', two:'II', three:'III', four:'IV', five:'V', six:'VI', seven:'VII' };
+  const secs = [{ start:0, label:'Preamble' }];
+  for (let i=0;i<ORIG_WORDS.length-1;i++){
+    if (ORIG_WORDS[i].toLowerCase()==='article'){
+      const n = ORIG_WORDS[i+1].toLowerCase();
+      secs.push({ start:i, label:'Article ' + (roman[n]||n) });
+    }
+  }
+  return secs;
+})();
+function sectionFor(idx){ let lbl = SECTIONS[0].label; for (const s of SECTIONS){ if (idx>=s.start) lbl=s.label; else break; } return lbl; }
+function updateTicker(idx){
+  if (!realm || realm.src!=='const') return;
+  const sec = document.getElementById('dtSec'), txt = document.getElementById('dtText');
+  if (!sec || !txt) return;
+  sec.textContent = sectionFor(idx);
+  const from = Math.max(0, idx-2), to = Math.min(ORIG_WORDS.length, idx+9);
+  let html = '';
+  for (let i=from;i<to;i++){ html += (i===idx ? '<b>'+ORIG_WORDS[i]+'</b>' : ORIG_WORDS[i]) + ' '; }
+  txt.innerHTML = html.trim();
+}
 
 // Mothership phrases — typed as a sequence of words (one laser volley each).
 const BOSS_PHRASES = [
@@ -340,7 +406,7 @@ const REALM_LABELS = { easy:'Easy', medium:'Medium', hard:'Hard', impossible:'Im
 // word serving — Constitution realms walk the text in order
 let constIdx = 0;
 function nextAlienWord(){
-  if (realm.src === 'const'){ const w = CONSTITUTION[constIdx % CONSTITUTION.length]; constIdx++; return w; }
+  if (realm.src === 'const'){ const i = constIdx % CONSTITUTION.length; constIdx++; updateTicker(i); return CONSTITUTION[i]; }
   return pickWord(EASY_WORDS, usedLetters());
 }
 const START_LIVES = 5;
@@ -358,16 +424,36 @@ const pauseOverlay= document.getElementById('pauseOverlay');
 const pauseBtn    = document.getElementById('pauseBtn');
 const waveFlash   = document.getElementById('waveFlash');
 
-let W = 800, H = 600, dpr = 1;
+let W = 800, H = 600, dpr = 1, canvasReady = false;
 function setupCanvas() {
   const r = sky.getBoundingClientRect();
-  W = Math.max(320, r.width);
-  H = Math.max(360, r.height);
+  const newW = Math.max(320, r.width);
+  const newH = Math.max(360, r.height);
+  const sx = newW / W, sy = newH / H;
+  const wasReady = canvasReady;
+  W = newW; H = newH;
   dpr = Math.min(window.devicePixelRatio || 1, 2);
   canvas.width = Math.round(W * dpr);
   canvas.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   buildStars();
+  // keep the battle aligned when the viewport changes mid-play, so a resize or
+  // device rotation can't strand saucers off-screen or cause unfair deaths
+  if (wasReady && running && (Math.abs(sx-1) > 0.001 || Math.abs(sy-1) > 0.001)) rescaleEntities(sx, sy);
+  canvasReady = true;
+}
+// scale every live entity's position to the new dimensions
+function rescaleEntities(sx, sy){
+  const groups = [aliens, bolts, walkers, powerups, helis, paras, tanks, bullets, particles, floaters, rings, roofAliens];
+  for (const g of groups) for (const o of g){
+    if (!o) continue;
+    if (o.x != null) o.x *= sx;  if (o.y != null) o.y *= sy;
+    if (o.px != null) o.px *= sx; if (o.py != null) o.py *= sy;
+  }
+  if (boss){ boss.x *= sx; boss.y *= sy; }
+  const gy = landY() + 2;                          // re-anchor ground units to the new grass line
+  for (const w of walkers) w.y = gy;
+  for (const t of tanks) t.y = gy;
 }
 window.addEventListener('resize', setupCanvas);
 
@@ -386,6 +472,17 @@ let rafId = null, lastTs = 0, sceneTime = 0;
 let shake = 0, flashRed = 0, flashWhite = 0;
 let shieldT = 0;                 // active shield (power-up) seconds remaining
 let slowT = 0;                   // freeze/slow power-up seconds remaining
+
+// ---- typing metrics (WPM + accuracy) ----
+let correctKeys = 0, totalKeys = 0, wordsTyped = 0, typeTime = 0, wpmUiT = 0;
+function curWpm(){ return typeTime > 0.7 ? Math.max(0, Math.round((correctKeys/5)/(typeTime/60))) : 0; }
+function curAcc(){ return totalKeys > 0 ? Math.round(100*correctKeys/totalKeys) : 100; }
+function updateWpmBadge(){ const el = document.getElementById('wpmBadge'); if (el) el.textContent = '⌨️ ' + curWpm() + ' wpm'; }
+
+// ---- reduced motion: damp shake / full-screen flashes / confetti ----
+let reduceMotion = false;
+try { reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){}
+try { const s = localStorage.getItem('ti_reduce_motion'); if (s!=null) reduceMotion = (s==='1'); } catch(e){}
 
 let aliens = [], bolts = [], bullets = [], particles = [], floaters = [], powerups = [], rings = [], walkers = [], tanks = [], helis = [], paras = [];
 let roofAliens = [];     // the celebrating aliens shown on the roof after a defeat
@@ -651,10 +748,13 @@ function spawnAlien(opts){
   const bomber = !!opts.bomber;
   const type = bomber ? { shape:'bomber', r:26, spd:0.8, wob:0.8, hues:[18] } : pickShip();
   const margin = 60;
+  const word = nextAlienWord();
+  // longer words fall slower, so difficulty scales with typing load rather than luck
+  const lenF = clamp(1 - (word.length - 5) * 0.05, 0.62, 1.15);
   const a = {
     kind: bomber ? 'bomber' : type.shape, shape: type.shape,
-    x: rand(margin, W-margin), y: rand(-90,-30), word: nextAlienWord(), typed: 0,
-    speed: descSpeed() * type.spd * rand(0.92, 1.12),
+    x: rand(margin, W-margin), y: rand(-90,-30), word, typed: 0,
+    speed: descSpeed() * type.spd * lenF * rand(0.92, 1.12),
     drift: rand(-20,20), wob: rand(0,6.28), wobAmp: rand(6,16)*type.wob, spin: rand(0,6.28),
     hue: choice(type.hues), fireT: rand(1.6, 3.2), dead: false, r: type.r,
   };
@@ -725,7 +825,7 @@ function waveSub(n){
   const tips = ['Incoming saucers!','Faster this time!','Hold the line!','They keep coming!','Steady, defender.'];
   return choice(tips);
 }
-function bomberChanceNow(){ return Math.min(0.65, realm.bomberChance + (wave-1)*realm.bomberStep); }
+function bomberChanceNow(){ if (wave <= 1) return 0; return Math.min(0.65, realm.bomberChance + (wave-1)*realm.bomberStep); }
 
 function maybeAdvanceWave(){
   // the wave isn't clear until the sky AND the ground are empty
@@ -1135,7 +1235,7 @@ function updateParticles(dt){
 // ===================================================================
 function draw(t){
   ctx.save();
-  if (shake>0){ ctx.translate(rand(-shake,shake), rand(-shake,shake)); }
+  if (shake>0 && !reduceMotion){ ctx.translate(rand(-shake,shake), rand(-shake,shake)); }
   drawBackground(t);
 
   // rings (shockwaves)
@@ -1167,9 +1267,18 @@ function draw(t){
 
   ctx.restore();
 
-  // full-screen flashes (outside shake transform)
-  if (flashRed>0){ ctx.fillStyle = 'rgba(200,30,30,'+flashRed*0.5+')'; ctx.fillRect(0,0,W,H); }
-  if (flashWhite>0){ ctx.fillStyle = 'rgba(255,255,255,'+flashWhite*0.7+')'; ctx.fillRect(0,0,W,H); }
+  // flashes (outside shake transform). Reduced motion swaps the full-screen fill —
+  // the seizure/photosensitivity concern — for a soft edge vignette.
+  if (reduceMotion){
+    const a = Math.max(flashRed*0.5, flashWhite*0.5);
+    if (a > 0.02){
+      ctx.save(); ctx.strokeStyle = (flashRed >= flashWhite ? 'rgba(200,40,40,' : 'rgba(255,255,255,') + a + ')';
+      ctx.lineWidth = 16; ctx.strokeRect(8, 8, W-16, H-16); ctx.restore();
+    }
+  } else {
+    if (flashRed>0){ ctx.fillStyle = 'rgba(200,30,30,'+flashRed*0.5+')'; ctx.fillRect(0,0,W,H); }
+    if (flashWhite>0){ ctx.fillStyle = 'rgba(255,255,255,'+flashWhite*0.7+')'; ctx.fillRect(0,0,W,H); }
+  }
 }
 
 function drawAlien(a, t){
@@ -1638,12 +1747,15 @@ function handleChar(chRaw){
   if (!running || paused || gameLost || arcade) return;
   const ch = chRaw.toLowerCase();
   if (!/^[a-z]$/.test(ch)) return;
+  totalKeys++;
   let tgt = active;
   if (!tgt || tgt.dead){ tgt = acquire(ch); if (tgt) setActive(tgt); }
   if (tgt && ch === tgt.word[tgt.typed]){
+    correctKeys++;
     tgt.typed++;
     const done = tgt.typed >= tgt.word.length;
     if (!done){ if (tgt.kind!=='heli') fireLaser(tgt, null); renderBubble(tgt); return; }   // in-between shot
+    wordsTyped++;
     // WORD DONE — fire the killing shot; the target dies when the bullet reaches it
     if (tgt.kind==='heli'){ activateHeli(tgt); return; }             // deploy air support
     if (powerups.indexOf(tgt)>=0){ fireLaser(tgt, null); grabPowerup(tgt); return; }
@@ -1696,7 +1808,7 @@ function destroyBoss(o){
   kills += 5; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
   document.getElementById('killBadge').textContent = '💥 ' + kills;
   floatText(o.x, o.y-40, 'MOTHERSHIP DOWN!', '#ffd23f');
-  if (window.HSGfx) HSGfx.confetti({ count: 60 });
+  if (window.HSGfx && !reduceMotion) HSGfx.confetti({ count: 60 });
   boss = o;   // keep ref so maybeAdvanceWave sees dead boss, then nulls it
 }
 
@@ -1774,6 +1886,9 @@ function revealEndScreen(){
   document.getElementById('fsKills').textContent = kills;
   document.getElementById('fsBest').textContent = bestStreak;
   document.getElementById('fsWave').textContent = wave;
+  const rt = document.getElementById('runTyping');
+  if (rt) rt.innerHTML = arcade ? '' :
+    'You typed <b>'+wordsTyped+'</b> '+(wordsTyped===1?'word':'words')+' · <b>'+curWpm()+'</b> WPM · <b>'+curAcc()+'%</b> accuracy';
   document.getElementById('overTitle').textContent = arcade ? '🕹 Arcade Over' : (bestStreak>=15 ? 'Heroic Last Stand!' : 'The White House Has Fallen');
   const oc = document.getElementById('overCrest'); if (oc) oc.textContent = '👽';
   overOverlay.classList.remove('hidden');
@@ -1798,6 +1913,8 @@ function tick(ts){
   let dt = (ts - lastTs)/1000; lastTs = ts;
   dt = Math.min(dt, 0.05);
   sceneTime += dt;
+  typeTime += dt;
+  wpmUiT -= dt; if (wpmUiT <= 0){ updateWpmBadge(); wpmUiT = 0.3; }
   shake = Math.max(0, shake - dt*40);
   flashRed = Math.max(0, flashRed - dt*1.6);
   flashWhite = Math.max(0, flashWhite - dt*2.4);
@@ -1874,7 +1991,11 @@ function startGame(key, isArcade){
   lives = START_LIVES; kills = 0; bestStreak = 0; gameLost = false; paused = false; constIdx = 0;
   shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0; cannonAng=-Math.PI/2; arcadeFireT=0;
   aimKeys.left=aimKeys.right=aimKeys.up=aimKeys.down=false;
+  correctKeys=0; totalKeys=0; wordsTyped=0; typeTime=0; wpmUiT=0; updateWpmBadge();
   heliTimer = rand(10, 18);
+  // Constitution reading ticker: only for the document difficulties, never in arcade
+  const ticker = document.getElementById('docTicker');
+  if (ticker){ ticker.hidden = arcade || realm.src!=='const'; if (!ticker.hidden) updateTicker(0); }
   for (const o of allTargets()) removeBubble(o);
   for (const h of helis) removeBubble(h);
   aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; helis=[]; paras=[]; roofAliens=[]; boss=null; active=null;
@@ -1909,6 +2030,7 @@ function quitToMenu(){
   for (const h of helis) removeBubble(h);
   aliens=[]; bolts=[]; bullets=[]; particles=[]; floaters=[]; powerups=[]; rings=[]; walkers=[]; tanks=[]; helis=[]; paras=[]; roofAliens=[]; boss=null; active=null;
   document.body.classList.remove('ti-active');
+  const ticker = document.getElementById('docTicker'); if (ticker) ticker.hidden = true;
   pauseBtn.classList.add('hidden');
   overOverlay.classList.add('hidden');
   pauseOverlay.classList.add('hidden');
@@ -1959,6 +2081,19 @@ document.getElementById('againBtn').addEventListener('click', ()=>{ if (window.H
 document.getElementById('changeRealmBtn').addEventListener('click', quitToMenu);
 document.getElementById('resumeBtn').addEventListener('click', ()=>togglePause(false));
 pauseBtn.addEventListener('click', ()=>togglePause());
+
+// reduced-motion toggle (persists; defaults to the OS prefers-reduced-motion setting)
+function applyMotionPref(){
+  document.body.classList.toggle('reduce-motion', reduceMotion);
+  const b = document.getElementById('motionToggle');
+  if (b) b.textContent = reduceMotion ? '✨ Reduced motion: On' : '✨ Reduced motion: Off';
+}
+document.getElementById('motionToggle').addEventListener('click', ()=>{
+  reduceMotion = !reduceMotion;
+  try { localStorage.setItem('ti_reduce_motion', reduceMotion ? '1' : '0'); } catch(e){}
+  applyMotionPref();
+});
+applyMotionPref();
 
 // ---------- boot ----------
 setupCanvas();
