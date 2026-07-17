@@ -1119,12 +1119,62 @@ function drawTaskmaster(x, gy) {
   ctx.beginPath(); ctx.moveTo(4, -24); ctx.lineTo(18, -34); ctx.quadraticCurveTo(30, -30, 34 + wsw, -20); ctx.stroke();
   ctx.restore();
 }
+// a tiny worker hauling on a rope (leaning back, straining)
+function drawPuller(x, gy, ph) {
+  const s = H / 340, lean = 0.5;
+  ctx.save(); ctx.translate(x, gy - Math.abs(Math.sin(ph)) * 1.5); ctx.scale(s, s); ctx.rotate(-lean * 0.4);
+  ctx.strokeStyle = '#8a6a4a'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+  const sw = Math.sin(ph) * 4;
+  ctx.beginPath(); ctx.moveTo(0, -13); ctx.lineTo(sw, 1); ctx.moveTo(0, -13); ctx.lineTo(-sw, 1); ctx.stroke();
+  ctx.fillStyle = '#8a6a4a'; ctx.beginPath(); ctx.moveTo(-6, -13); ctx.quadraticCurveTo(0, -16, 6, -13); ctx.lineTo(5, -28); ctx.lineTo(-5, -28); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#d8a070'; ctx.beginPath(); ctx.arc(0, -32, 4.6, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = '#d8a070'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(2, -24); ctx.lineTo(14, -18); ctx.stroke();  // arm on the rope
+  ctx.restore();
+}
+// a great pyramid mid-construction, with an earthen ramp and a stone block
+// being dragged up it by a rope team (loops continuously)
+function drawPyramidSite(cx, gy) {
+  const baseW = Math.min(W * 0.42, 380), fullH = baseW * 0.6, builtFrac = 0.7, steps = 10;
+  for (let i = 0; i < steps; i++) {
+    if (i / steps >= builtFrac) break;
+    const y0 = gy - (i / steps) * fullH, y1 = gy - ((i + 1) / steps) * fullH;
+    const wB = baseW * (1 - i / steps), wT = baseW * (1 - (i + 1) / steps);
+    ctx.fillStyle = i % 2 ? '#d3ac66' : '#c8a05e';
+    ctx.beginPath(); ctx.moveTo(cx - wB / 2, y0); ctx.lineTo(cx + wB / 2, y0); ctx.lineTo(cx + wT / 2, y1); ctx.lineTo(cx - wT / 2, y1); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = 'rgba(80,50,20,0.22)'; ctx.lineWidth = 1; ctx.stroke();
+  }
+  const builtH = builtFrac * fullH, topW = baseW * (1 - builtFrac);
+  // scaffolding poles on the unfinished top
+  ctx.strokeStyle = '#8a6a3a'; ctx.lineWidth = 2;
+  for (let i = -1; i <= 1; i++) { const px = cx + i * topW * 0.36; ctx.beginPath(); ctx.moveTo(px, gy - builtH); ctx.lineTo(px, gy - builtH - 22); ctx.stroke(); }
+  ctx.beginPath(); ctx.moveTo(cx - topW * 0.4, gy - builtH - 22); ctx.lineTo(cx + topW * 0.4, gy - builtH - 22); ctx.stroke();
+  // the earthen ramp up the left face
+  const faceX = cx - (baseW / 2) * (1 - builtFrac), ax = cx - baseW / 2 - baseW * 0.5;
+  ctx.fillStyle = '#b98f52';
+  ctx.beginPath(); ctx.moveTo(ax, gy); ctx.lineTo(faceX, gy - builtH); ctx.lineTo(faceX, gy); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(80,50,20,0.25)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(ax, gy); ctx.lineTo(faceX, gy - builtH); ctx.stroke();
+  // a stone block hauled up the ramp on a loop
+  const p = (sceneTime * 0.11) % 1.25; const q = Math.min(p, 1);
+  const bx = ax + (faceX - ax) * q, by = gy + (-(builtH) * q);
+  const nx = (faceX - ax), ny = -builtH, nl = Math.hypot(nx, ny), ux = nx / nl, uy = ny / nl, px = -uy, py = ux;
+  // rope team just ahead of the block
+  for (let k = 0; k < 3; k++) { const t = q + 0.05 + k * 0.03; if (t > 1) continue; const wx = ax + (faceX - ax) * t + px * 8, wy = gy - builtH * t + py * 8; drawPuller(wx, wy, sceneTime * 5 + k); }
+  // the block
+  const bs = 20; ctx.save(); ctx.translate(bx + px * 6, by + py * 6);
+  ctx.fillStyle = '#d8c088'; ctx.fillRect(-bs / 2, -bs, bs, bs);
+  ctx.strokeStyle = 'rgba(80,50,20,0.4)'; ctx.lineWidth = 1.5; ctx.strokeRect(-bs / 2, -bs, bs, bs);
+  ctx.strokeStyle = '#7a5a2a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(-bs / 2, -bs * 0.6); ctx.lineTo(ux * 26, -bs * 0.6 + uy * 26); ctx.stroke();
+  ctx.restore();
+}
 function drawSlavery(dt) {
   drawBackground(sceneTime);
   const gy = groundY(), L = LEVELS[0];
+  // the great pyramid under construction dominates the site
+  drawPyramidSite(W * 0.72, gy);
   // the store-city wall, built brick by brick (one course per correct answer)
-  const courses = Math.min(levelDone, L.goal), bw = 42, bh = 15, cols = 5;
-  const baseX = W * 0.60, baseY = gy - 2;
+  const courses = Math.min(levelDone, L.goal), bw = 40, bh = 15, cols = 5;
+  const baseX = W * 0.40, baseY = gy - 2;
   for (let c = 0; c < courses; c++) {
     const y = baseY - (c + 1) * bh;
     for (let col = 0; col < cols; col++) {
@@ -1137,12 +1187,12 @@ function drawSlavery(dt) {
   // faint outline of the finished structure to come
   ctx.strokeStyle = 'rgba(90,60,25,0.25)'; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.5;
   ctx.strokeRect(baseX - bw, baseY - L.goal * bh, cols * bw - 3, L.goal * bh); ctx.setLineDash([]);
-  // laborers hauling bricks
-  drawWorker(W * 0.30, gy, sceneTime, '#7a5a3a', '#d8a070', 0);
-  drawWorker(W * 0.41, gy, sceneTime + 1.3, '#5a7a6a', '#e2b487', 1.6);
-  drawWorker(W * 0.50, gy, sceneTime + 2.1, '#6a6a9a', '#caa074', 0.8);
+  // laborers hauling bricks to the wall
+  drawWorker(W * 0.20, gy, sceneTime, '#7a5a3a', '#d8a070', 0);
+  drawWorker(W * 0.28, gy, sceneTime + 1.3, '#5a7a6a', '#e2b487', 1.6);
+  drawWorker(W * 0.33, gy, sceneTime + 2.1, '#6a6a9a', '#caa074', 0.8);
   // the Egyptian taskmaster with his whip
-  drawTaskmaster(W * 0.14, gy);
+  drawTaskmaster(W * 0.10, gy);
   meter(14, 14, 150, '🧱 Store-city', courses / L.goal, '#c08a3a', '#7a4a14');
   if (fxT > 0) sceneBanner('A course of bricks is laid', courses + ' of ' + L.goal + ' complete');
 }
@@ -1356,21 +1406,48 @@ function waterEdge(x, y, w, top) {
 // ============================================================
 // STAGE 4 — Wandering the Desert
 // ============================================================
+// the towering pillar of cloud by day, fire glowing at its core — rises the
+// full height of the scene and billows as it sways
 function drawPillar(x, gy) {
-  for (let i = 0; i < 7; i++) {
-    ctx.fillStyle = 'rgba(245,245,252,0.14)';
-    ctx.beginPath(); ctx.ellipse(x + Math.sin(sceneTime + i) * 3, gy - 34 - i * 30, 24 - i * 1.6, 19, 0, 0, Math.PI * 2); ctx.fill();
+  const topY = H * 0.07, puffs = 12;
+  for (let i = 0; i < puffs; i++) {
+    const f = i / (puffs - 1);
+    const py = gy - 18 - f * (gy - 18 - topY);
+    const r = 32 - f * 13, sway = Math.sin(sceneTime * 1.2 + i * 0.6) * (4 + f * 12);
+    ctx.fillStyle = 'rgba(236,239,250,0.18)';
+    ctx.beginPath(); ctx.ellipse(x + sway, py, r + 7, r * 0.85 + 6, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(252,252,255,0.30)';
+    ctx.beginPath(); ctx.ellipse(x + sway, py, r, r * 0.8, 0, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.fillStyle = 'rgba(240,150,40,0.5)'; ctx.beginPath(); ctx.ellipse(x, gy - 22, 17, 13, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.fillStyle = 'rgba(250,210,120,0.6)'; ctx.beginPath(); ctx.ellipse(x, gy - 24, 9, 8, 0, 0, Math.PI * 2); ctx.fill();
+  // fire glowing up through the lower core
+  for (let i = 0; i < 5; i++) {
+    const py = gy - 22 - i * 30, glow = 0.5 + 0.3 * Math.sin(sceneTime * 4 + i);
+    ctx.fillStyle = 'rgba(240,150,50,' + (glow * (1 - i / 6)).toFixed(2) + ')';
+    ctx.beginPath(); ctx.ellipse(x + Math.sin(sceneTime * 3 + i) * 3, py, 14 - i * 1.6, 17 - i, 0, 0, Math.PI * 2); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(255,225,150,0.7)'; ctx.beginPath(); ctx.ellipse(x, gy - 26, 9, 13, 0, 0, Math.PI * 2); ctx.fill();
 }
 function drawManna(dt) {
-  const count = fxT > 0 ? 60 : 22;
-  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  const count = fxT > 0 ? 90 : 40;
   for (let i = 0; i < count; i++) {
     const x = (i * 71 + sceneTime * 30) % W;
     const y = (i * 47 + sceneTime * 120) % groundY();
-    ctx.beginPath(); ctx.arc(x, y, 1.8, 0, Math.PI * 2); ctx.fill();
+    const r = 1.6 + (i % 3) * 0.7;
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,240,200,0.5)'; ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, Math.PI * 2); ctx.fill();  // soft glow
+  }
+}
+// a flock of quail winging in low over the camp (Numbers 11)
+function drawQuail(dt) {
+  const gy = groundY();
+  for (let i = 0; i < 7; i++) {
+    const x = ((i * 90 + sceneTime * 130) % (W + 80)) - 40;
+    const y = gy - 60 - (i % 3) * 26 + Math.sin(sceneTime * 3 + i) * 6;
+    const flap = Math.sin(sceneTime * 14 + i) * 6;
+    ctx.fillStyle = '#7a5a38'; ctx.beginPath(); ctx.ellipse(x, y, 6, 3.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#5a4028'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 7, y - flap); ctx.moveTo(x, y); ctx.lineTo(x + 7, y - flap); ctx.stroke();
+    ctx.fillStyle = '#8a6a44'; ctx.beginPath(); ctx.arc(x + 6, y - 1, 2, 0, Math.PI * 2); ctx.fill();  // head
   }
 }
 function drawDesert(dt) {
@@ -1387,7 +1464,8 @@ function drawDesert(dt) {
   ctx.fillStyle = '#caa468'; ctx.fillRect(0, gy, W, H - gy);
   ctx.fillStyle = '#b8924f'; ctx.fillRect(0, gy, W, 4);
   const cx = W * 0.18 + prog * (W * 0.46);
-  drawPillar(cx - 36, gy);
+  drawPillar(cx - 40, gy);
+  drawQuail(dt);
   drawIsraelites(cx, sceneTime);
   drawManna(dt);
   meter(14, 14, 150, '⛰️ To Mount Sinai', prog, '#caa050', '#7a5a20');
@@ -1421,22 +1499,49 @@ function drawTablets() {
 }
 function drawSinai(dt) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, '#332f48'); g.addColorStop(1, '#6a5f6a');
+  g.addColorStop(0, '#282440'); g.addColorStop(1, '#645a68');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   const gy = groundY(), L = LEVELS[4], prog = levelDone / L.goal;
-  const mx = W * 0.66, base = gy, mw = W * 0.72, mh = H * 0.66;
-  ctx.fillStyle = '#4a4250';
-  ctx.beginPath(); ctx.moveTo(mx - mw / 2, base); ctx.lineTo(mx, base - mh); ctx.lineTo(mx + mw / 2, base); ctx.closePath(); ctx.fill();
-  for (let i = 0; i < 6; i++) { ctx.fillStyle = 'rgba(40,36,46,' + (0.4 - i * 0.05).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(mx + Math.sin(sceneTime + i) * 6, base - mh - 8 - i * 22, 18 + i * 5, 0, Math.PI * 2); ctx.fill(); }
-  ctx.fillStyle = 'rgba(240,120,40,' + (0.5 + 0.3 * Math.sin(sceneTime * 4)).toFixed(2) + ')';
-  ctx.beginPath(); ctx.arc(mx, base - mh + 6, 16, 0, Math.PI * 2); ctx.fill();
-  if (fxT > L.pause - 0.25) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.lineWidth = 3; lightning(mx + rand(-70, 70), 0, base - mh + 10);
-    ctx.fillStyle = 'rgba(255,255,255,0.22)'; ctx.fillRect(0, 0, W, H);
+  const mx = W * 0.64, base = gy, mw = W * 0.82, mh = H * 0.72, sumY = base - mh;
+  // mountain body with a jagged ridge + a shaded near face
+  ctx.fillStyle = '#453e4e';
+  ctx.beginPath(); ctx.moveTo(mx - mw / 2, base); ctx.lineTo(mx - mw * 0.16, base - mh * 0.82);
+  ctx.lineTo(mx - mw * 0.05, base - mh * 0.94); ctx.lineTo(mx, sumY); ctx.lineTo(mx + mw * 0.14, base - mh * 0.8);
+  ctx.lineTo(mx + mw / 2, base); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#39334a';
+  ctx.beginPath(); ctx.moveTo(mx, sumY); ctx.lineTo(mx + mw * 0.14, base - mh * 0.8); ctx.lineTo(mx + mw / 2, base); ctx.lineTo(mx, base); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(20,16,28,0.35)'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(mx - mw * 0.18, base); ctx.lineTo(mx - mw * 0.04, base - mh * 0.5); ctx.lineTo(mx + mw * 0.02, base - mh * 0.7);
+  ctx.moveTo(mx + mw * 0.2, base); ctx.lineTo(mx + mw * 0.06, base - mh * 0.55); ctx.stroke();
+  // thick billowing smoke crown
+  for (let i = 0; i < 9; i++) {
+    ctx.fillStyle = 'rgba(34,30,40,' + (0.5 - i * 0.045).toFixed(2) + ')';
+    ctx.beginPath(); ctx.arc(mx + Math.sin(sceneTime * 0.8 + i) * (6 + i * 2), sumY - 6 - i * 24, 20 + i * 6, 0, Math.PI * 2); ctx.fill();
   }
-  ctx.fillStyle = '#5a5040'; ctx.fillRect(0, gy, W, H - gy);
-  const moX = mx - mw / 2 + 30 + prog * (mw / 2) * 0.7, moY = base - prog * mh * 0.9;
-  drawWalker(moX, moY, sceneTime, { scale: 0.7, speed: 5, robe: '#d8d0c4', skin: '#e7b07a', staff: true });
+  // pulsing fire at the summit + rising embers
+  const fire = 0.55 + 0.35 * Math.sin(sceneTime * 5);
+  ctx.fillStyle = 'rgba(240,120,40,' + fire.toFixed(2) + ')'; ctx.beginPath(); ctx.arc(mx, sumY + 6, 22, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = 'rgba(255,210,120,' + (fire * 0.9).toFixed(2) + ')'; ctx.beginPath(); ctx.arc(mx, sumY + 6, 12, 0, Math.PI * 2); ctx.fill();
+  for (let i = 0; i < 10; i++) {
+    const t = (sceneTime * 0.9 + i * 0.5) % 1;
+    ctx.fillStyle = 'rgba(255,170,70,' + (0.8 * (1 - t)).toFixed(2) + ')';
+    ctx.beginPath(); ctx.arc(mx + Math.sin(i * 2 + sceneTime * 3) * 16, sumY + 4 - t * 70, 2.2, 0, Math.PI * 2); ctx.fill();
+  }
+  // lightning — flashes on each new commandment and ambiently through the storm
+  if (fxT > L.pause - 0.3 || Math.random() < dt * 1.6) {
+    ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineWidth = 3;
+    lightning(mx + rand(-90, 90), 0, sumY + rand(0, 30));
+    if (Math.random() < 0.5) { ctx.lineWidth = 2; lightning(mx + rand(-140, 140), 0, base - mh * 0.5); }
+    ctx.fillStyle = 'rgba(255,255,255,0.24)'; ctx.fillRect(0, 0, W, H);
+  }
+  ctx.fillStyle = '#4a4238'; ctx.fillRect(0, gy, W, H - gy);
+  // the people gather at the foot of the mountain, gazing up
+  for (let i = 0; i < 6; i++) {
+    drawWalker(mx - mw * 0.30 + i * 17, gy, sceneTime * 0.15, { scale: 0.52, speed: 1.4, ph: i * 1.3, robe: ROBES[i % ROBES.length], skin: '#e7b07a' });
+  }
+  // Moses climbs toward the summit as commandments are given
+  const moX = mx - mw / 2 + 40 + prog * (mw / 2) * 0.62, moY = base - prog * mh * 0.86;
+  drawWalker(moX, moY, sceneTime, { scale: 0.72, speed: 5, robe: '#e6ded0', skin: '#e7b07a', staff: true });
   drawTablets();
   meter(W - 164, 14, 150, '📜 Commandments', prog, '#e0c060', '#8a6a20', true);
   if (fxT > 0 && levelDone >= 1) sceneBanner('Commandment ' + ROMAN[levelDone - 1], COMMANDMENTS[levelDone - 1]);
@@ -1445,29 +1550,136 @@ function drawSinai(dt) {
 // ============================================================
 // STAGE 6 — The Fall of Jericho
 // ============================================================
-function drawCity(x, gy, laps) {
-  const w = 170, h = 120;
-  ctx.fillStyle = '#c9b07e'; ctx.fillRect(x - w / 2, gy - h, w, h);
-  ctx.fillStyle = '#b89a64';
-  for (let i = 0; i < 7; i++) ctx.fillRect(x - w / 2 + i * (w / 7), gy - h - 10, w / 7 - 4, 12);
-  ctx.fillStyle = '#bfa470'; ctx.fillRect(x - w / 2 - 12, gy - h - 18, 24, h + 18); ctx.fillRect(x + w / 2 - 12, gy - h - 18, 24, h + 18);
-  ctx.fillStyle = '#7a5a36'; ctx.beginPath(); ctx.moveTo(x - 18, gy); ctx.lineTo(x - 18, gy - 30); ctx.arc(x, gy - 30, 18, Math.PI, 0); ctx.lineTo(x + 18, gy); ctx.closePath(); ctx.fill();
-  // cracks deepen with each lap (deterministic — no per-frame jitter)
-  ctx.strokeStyle = 'rgba(80,50,20,0.5)'; ctx.lineWidth = 2;
-  for (let i = 0; i < laps; i++) {
-    const cx = x - w / 2 + 18 + (i * 23) % (w - 30);
-    ctx.beginPath(); ctx.moveTo(cx, gy - h + 10);
-    let yy = gy - h + 10, k = 0;
-    while (yy < gy - 8) { yy += 18; ctx.lineTo(cx + Math.sin(i * 3 + k) * 6, yy); k++; }
-    ctx.stroke();
+// A great fortress fills the scene; defenders hurl rocks from the battlements.
+let jerichoRocks = [], jerichoThrowT = 0, jerichoLastThrow = { x: -999, t: -9 };
+
+function jerichoGeo() {
+  const gy = groundY();
+  const left = W * 0.11, right = W * 0.89;
+  const wallH = Math.min(H * 0.52, gy - H * 0.14);
+  return { gy, left, right, w: right - left, wallH, wallTop: gy - wallH };
+}
+// a small helmeted defender; ph (0..1) drives a rock-throwing swing
+function drawSoldier(x, y, s, ph) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  ctx.fillStyle = '#6a5a44';
+  ctx.beginPath(); ctx.moveTo(-5, 0); ctx.quadraticCurveTo(0, -3, 5, 0); ctx.lineTo(4, -16); ctx.lineTo(-4, -16); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#caa074'; ctx.beginPath(); ctx.arc(0, -21, 4.4, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#8a7f4a'; ctx.beginPath(); ctx.arc(0, -22, 5.2, Math.PI, 0); ctx.fill(); ctx.fillRect(-5, -22, 10, 2);
+  ctx.strokeStyle = '#caa074'; ctx.lineWidth = 2.6; ctx.lineCap = 'round';
+  const a = ph > 0 ? (-2.5 + ph * 3.3) : -0.5;            // wind up behind → hurl forward
+  ctx.beginPath(); ctx.moveTo(2, -15); ctx.lineTo(2 + Math.cos(a) * 9, -15 + Math.sin(a) * 9); ctx.stroke();
+  if (ph > 0 && ph < 0.55) { ctx.fillStyle = '#8a7d6a'; ctx.beginPath(); ctx.arc(2 + Math.cos(a) * 9, -15 + Math.sin(a) * 9, 3, 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+}
+function drawFortress(laps) {
+  const G = jerichoGeo(), gy = G.gy;
+  // the raised mound the walled city stands on
+  ctx.fillStyle = '#b79a5e';
+  ctx.beginPath(); ctx.moveTo(G.left - 46, gy); ctx.quadraticCurveTo(W * 0.5, gy - 28, G.right + 46, gy); ctx.closePath(); ctx.fill();
+  // rooftops of the city peeking above the wall + a domed temple
+  ctx.fillStyle = '#c7a463';
+  for (let i = 0; i < 6; i++) { const rx = G.left + 34 + i * (G.w - 68) / 5; ctx.fillRect(rx, G.wallTop - 24 - (i % 2) * 12, 26, 28); }
+  ctx.fillStyle = '#b58f4e'; ctx.beginPath(); ctx.arc(W * 0.5, G.wallTop - 18, 22, Math.PI, 0); ctx.fill();
+  // the great wall
+  const wg = ctx.createLinearGradient(0, G.wallTop, 0, gy);
+  wg.addColorStop(0, '#dabf85'); wg.addColorStop(1, '#bf9f60');
+  ctx.fillStyle = wg; ctx.fillRect(G.left, G.wallTop, G.w, G.wallH);
+  ctx.strokeStyle = 'rgba(90,60,25,0.22)'; ctx.lineWidth = 1;
+  const rows = 9, bh = G.wallH / rows;
+  for (let r = 1; r < rows; r++) { const y = G.wallTop + r * bh; ctx.beginPath(); ctx.moveTo(G.left, y); ctx.lineTo(G.right, y); ctx.stroke(); }
+  for (let r = 0; r < rows; r++) { const y = G.wallTop + r * bh; for (let sx = G.left + (r % 2 ? 26 : 0); sx < G.right; sx += 52) { ctx.beginPath(); ctx.moveTo(sx, y); ctx.lineTo(sx, y + bh); ctx.stroke(); } }
+  ctx.fillStyle = 'rgba(50,34,14,0.5)';
+  for (let i = 0; i < 7; i++) { const wx = G.left + 44 + i * (G.w - 88) / 6; ctx.fillRect(wx, G.wallTop + G.wallH * 0.34, 6, 16); }
+  // battlements along the wall top
+  ctx.fillStyle = '#c8a961';
+  for (let mx = G.left; mx < G.right - 2; mx += 44) ctx.fillRect(mx, G.wallTop - 15, 26, 15);
+  // three towers, taller, each with a waving banner
+  const towerW = Math.max(48, G.w * 0.075), towerH = G.wallH + Math.min(74, H * 0.13);
+  [G.left, W * 0.5 - towerW / 2, G.right - towerW].forEach((tx, i) => {
+    const ty = gy - towerH;
+    ctx.fillStyle = '#cdb069'; ctx.fillRect(tx, ty, towerW, towerH);
+    ctx.strokeStyle = 'rgba(90,60,25,0.2)'; ctx.lineWidth = 1;
+    for (let r = 1; r < 10; r++) { const y = ty + r * towerH / 10; ctx.beginPath(); ctx.moveTo(tx, y); ctx.lineTo(tx + towerW, y); ctx.stroke(); }
+    ctx.fillStyle = '#bfa055';
+    for (let mx = tx - 3; mx < tx + towerW; mx += 19) ctx.fillRect(mx, ty - 13, 12, 13);
+    const bl = tx + towerW / 2, wav = Math.sin(sceneTime * 3 + i) * 5;
+    ctx.strokeStyle = '#6b4a24'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bl, ty - 13); ctx.lineTo(bl, ty - 42); ctx.stroke();
+    ctx.fillStyle = '#a23b3b'; ctx.beginPath(); ctx.moveTo(bl, ty - 42); ctx.lineTo(bl + 22, ty - 37 + wav); ctx.lineTo(bl, ty - 30); ctx.closePath(); ctx.fill();
+  });
+  // the great gate
+  const gx = W * 0.5, gw = Math.max(52, G.w * 0.09), gh = Math.min(G.wallH * 0.55, 130);
+  ctx.fillStyle = '#5a3c20';
+  ctx.beginPath(); ctx.moveTo(gx - gw / 2, gy); ctx.lineTo(gx - gw / 2, gy - gh + gw / 2); ctx.arc(gx, gy - gh + gw / 2, gw / 2, Math.PI, 0); ctx.lineTo(gx + gw / 2, gy); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)'; ctx.lineWidth = 2;
+  for (let i = 1; i < 4; i++) { ctx.beginPath(); ctx.moveTo(gx - gw / 2 + i * gw / 4, gy); ctx.lineTo(gx - gw / 2 + i * gw / 4, gy - gh); ctx.stroke(); }
+  // cracks grow with each lap; the wall trembles on the final one
+  if (laps > 0) {
+    ctx.strokeStyle = 'rgba(60,38,14,0.55)'; ctx.lineWidth = 2;
+    for (let i = 0; i < laps; i++) {
+      const cx = G.left + 34 + (i * 71) % (G.w - 68);
+      ctx.beginPath(); ctx.moveTo(cx, G.wallTop + 6); let yy = G.wallTop + 6, k = 0;
+      while (yy < gy - 6) { yy += 20; ctx.lineTo(cx + Math.sin(i * 2.3 + k) * 8, yy); k++; }
+      ctx.stroke();
+    }
+    if (laps >= 6) shake = Math.max(shake, 1.6);
   }
+  return G;
+}
+function drawDefenders(G, dt) {
+  const y = G.wallTop - 2, s = Math.max(0.9, H / 430);
+  const posts = [];
+  for (let x = G.left + 18; x < G.right - 10; x += 44) posts.push(x);
+  // periodically a defender hurls a rock down at the marchers
+  jerichoThrowT -= dt;
+  if (jerichoThrowT <= 0) {
+    jerichoThrowT = rand(0.3, 0.8);
+    const px = posts[(Math.random() * posts.length) | 0];
+    jerichoLastThrow = { x: px, t: sceneTime };
+    jerichoRocks.push({ x: px, y: y - 12 * s, vx: rand(-40, 40), vy: rand(-150, -80) });
+  }
+  posts.forEach(px => {
+    const dtt = sceneTime - jerichoLastThrow.t;
+    const ph = (Math.abs(px - jerichoLastThrow.x) < 3 && dtt < 0.3) ? clamp01(dtt / 0.3) : 0;
+    drawSoldier(px, y, s, ph);
+  });
+  for (let i = jerichoRocks.length - 1; i >= 0; i--) {
+    const r = jerichoRocks[i]; r.vy += 460 * dt; r.x += r.vx * dt; r.y += r.vy * dt;
+    if (r.y >= G.gy - 2) { spawnDust(r.x, G.gy, 5, 120); jerichoRocks.splice(i, 1); continue; }
+    ctx.fillStyle = '#8a7d6a'; ctx.beginPath(); ctx.arc(r.x, r.y, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(120,110,95,0.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(r.x - r.vx * 0.03, r.y - r.vy * 0.03); ctx.lineTo(r.x, r.y); ctx.stroke();
+  }
+  if (jerichoRocks.length > 40) jerichoRocks.splice(0, jerichoRocks.length - 40);
+}
+// the golden Ark of the Covenant, carried on poles
+function drawArk(x, gy, s) {
+  ctx.save(); ctx.translate(x, gy - 26 * s); ctx.scale(s, s);
+  ctx.strokeStyle = '#8a6a36'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(-30, 4); ctx.lineTo(30, 4); ctx.stroke();
+  ctx.fillStyle = '#e6c25a'; roundRect(-16, -12, 32, 20, 3); ctx.fill();
+  ctx.strokeStyle = '#b8912e'; ctx.lineWidth = 1.5; roundRect(-16, -12, 32, 20, 3); ctx.stroke();
+  ctx.fillStyle = '#f0d477';
+  ctx.beginPath(); ctx.moveTo(-6, -12); ctx.quadraticCurveTo(-2, -24, 2, -12); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(6, -12); ctx.quadraticCurveTo(2, -24, -2, -12); ctx.closePath(); ctx.fill();
+  ctx.restore();
 }
 function drawMarchers(dt) {
-  const gy = groundY(), n = 6, spacing = 78, span = W + spacing * 2, base = (sceneTime * 60) % span;
+  const gy = groundY(), n = 8, spacing = W / 7, span = W + spacing * 2, base = (sceneTime * 72) % span;
+  const s = Math.max(0.9, H / 320);
   for (let i = 0; i < n; i++) {
-    const x = ((base + i * spacing) % span) - spacing, priest = (i % 3 === 0);
-    drawWalker(x, gy + 4, sceneTime, { scale: H / 360, speed: 7, ph: i, robe: priest ? '#d8d0c4' : ROBES[i % ROBES.length], skin: '#e7b07a', staff: priest });
-    if (priest) { ctx.save(); ctx.translate(x + 9, gy - 26); ctx.fillStyle = '#e8d27a'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(15, -4); ctx.lineTo(15, 4); ctx.closePath(); ctx.fill(); ctx.restore(); }
+    const x = ((base + i * spacing) % span) - spacing, role = i % 4;
+    if (role === 0) {                       // a priest blowing the ram's-horn trumpet
+      drawWalker(x, gy + 4, sceneTime, { scale: s, speed: 7, ph: i, robe: '#eae3d3', skin: '#e7b07a' });
+      ctx.save(); ctx.translate(x + 7 * s, gy - 30 * s); ctx.scale(s, s);
+      ctx.strokeStyle = '#d9c48a'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.quadraticCurveTo(15, -6, 21, -16); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,' + (0.35 + 0.35 * Math.abs(Math.sin(sceneTime * 8 + i))).toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(25, -20, 3.4, 0, Math.PI * 2); ctx.fill();
+      ctx.restore();
+    } else if (role === 1) {
+      drawArk(x, gy, s);
+    } else {
+      drawWalker(x, gy + 4, sceneTime, { scale: s, speed: 7, ph: i, robe: ROBES[i % ROBES.length], skin: '#e7b07a' });
+    }
   }
 }
 function drawJericho(dt) {
@@ -1477,35 +1689,61 @@ function drawJericho(dt) {
   const gy = groundY(), L = LEVELS[5];
   ctx.fillStyle = '#9ab36a'; ctx.fillRect(0, gy, W, H - gy);
   ctx.fillStyle = '#8aa35c'; ctx.fillRect(0, gy, W, 4);
-  drawCity(W * 0.72, gy, Math.min(levelDone, L.goal));
+  const laps = Math.min(levelDone, L.goal);
+  const G = drawFortress(laps);
+  drawDefenders(G, dt);
+  drawDust(dt);              // rock-impact puffs
   drawMarchers(dt);
-  meter(14, 14, 150, '🎺 Marches', Math.min(levelDone, L.goal) / L.goal, '#caa050', '#7a5a20');
-  if (fxT > 0) sceneBanner('March ' + Math.min(levelDone, L.goal) + ' of ' + L.goal, levelDone >= L.goal ? 'Now the trumpets sound!' : 'Marching around Jericho');
+  meter(14, 14, 150, '🎺 Marches', laps / L.goal, '#caa050', '#7a5a20');
+  if (fxT > 0) sceneBanner('March ' + laps + ' of ' + L.goal, laps >= L.goal ? 'Now the trumpets sound!' : 'Marching around Jericho');
 }
 function drawJerichoFall(dt) {
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, '#bfe0ef'); g.addColorStop(1, '#dfe8c0');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
   const gy = groundY(); ctx.fillStyle = '#9ab36a'; ctx.fillRect(0, gy, W, H - gy);
-  const t = finaleT, fall = clamp01(t / 2.2);
-  const x = W * 0.72, w = 170, h = 120, cols = 8, rows = 5, bw = w / cols, bh = h / rows;
-  // towers + battlements crumble into falling blocks
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-    const delay = (r / rows) * 0.4 + ((c % 2) ? 0.1 : 0);
-    const f = clamp01((fall - delay) / 0.6);
-    const bx = x - w / 2 + c * bw, by = gy - h + r * bh;
-    const dy = f * f * (H * 0.5), rot = f * ((c % 2) ? 0.7 : -0.7);
-    ctx.save(); ctx.translate(bx + bw / 2, by + bh / 2 + dy); ctx.rotate(rot);
-    ctx.fillStyle = '#c9b07e'; ctx.fillRect(-bw / 2 + 1, -bh / 2 + 1, bw - 2, bh - 2);
-    ctx.strokeStyle = 'rgba(80,50,20,0.4)'; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2 + 1, -bh / 2 + 1, bw - 2, bh - 2);
+  ctx.fillStyle = '#8aa35c'; ctx.fillRect(0, gy, W, 4);
+  const G = jerichoGeo(), t = finaleT, fall = clamp01(t / 2.4);
+  if (t < 1.4 && Math.random() < 0.6) shake = Math.max(shake, 5);     // the ground quakes
+  // mound remains
+  ctx.fillStyle = '#b79a5e'; ctx.beginPath(); ctx.moveTo(G.left - 46, gy); ctx.quadraticCurveTo(W * 0.5, gy - 28, G.right + 46, gy); ctx.closePath(); ctx.fill();
+  // the whole wall + towers break into tumbling blocks
+  const cols = 16, rows = 9, bw = G.w / cols, towerExtra = Math.min(74, H * 0.13);
+  for (let r = -2; r < rows; r++) for (let c = 0; c < cols; c++) {
+    const bhh = G.wallH / rows;
+    const delay = (r + 2) / (rows + 2) * 0.3 + Math.abs(c - cols / 2) / cols * 0.28 + ((c + r) % 3) * 0.03;
+    const f = clamp01((fall - delay) / 0.55);
+    if (r < 0) { // tower crenellations only over tower columns
+      const overTower = c < 2 || (c >= cols / 2 - 1 && c <= cols / 2) || c >= cols - 2;
+      if (!overTower) continue;
+    }
+    const bx = G.left + c * bw, by = G.wallTop + r * bhh;
+    const spread = (c - cols / 2) * 7 * f, dy = f * f * (H * 0.6), rot = f * (((c + r) % 2) ? 1 : -1) * 1.8;
+    ctx.save(); ctx.translate(bx + bw / 2 + spread, by + bhh / 2 + dy); ctx.rotate(rot);
+    ctx.fillStyle = (r <= 0) ? '#c8a961' : '#cdb069';
+    ctx.fillRect(-bw / 2 + 0.5, -bhh / 2 + 0.5, bw - 1, bhh - 1);
+    ctx.strokeStyle = 'rgba(80,50,20,0.35)'; ctx.lineWidth = 1; ctx.strokeRect(-bw / 2 + 0.5, -bhh / 2 + 0.5, bw - 1, bhh - 1);
     ctx.restore();
   }
-  ctx.fillStyle = 'rgba(200,180,140,' + (0.5 * fall).toFixed(2) + ')';
-  for (let i = 0; i < 30; i++) { const dx = x - w / 2 + (i * 53) % w; const dy = gy - Math.sin(t * 2 + i) * 18 - ((i * 7) % 60) * fall; ctx.beginPath(); ctx.arc(dx, dy, 10 + (i % 4) * 4, 0, Math.PI * 2); ctx.fill(); }
+  // a great rolling dust cloud
+  const cloudA = Math.min(0.55, fall * 0.7);
+  ctx.fillStyle = 'rgba(210,190,150,' + cloudA.toFixed(2) + ')';
+  for (let i = 0; i < 46; i++) {
+    const px = G.left - 20 + (i * 137) % (G.w + 40);
+    const py = gy - 8 - ((i * 53) % 90) * fall - (Math.sin(t * 1.6 + i) * 0.5 + 0.5) * H * 0.16 * fall;
+    ctx.beginPath(); ctx.arc(px, py, 15 + (i % 5) * 6, 0, Math.PI * 2); ctx.fill();
+  }
+  // defenders tumble off the walls
+  for (let i = 0; i < 6; i++) {
+    const f = clamp01((fall - i * 0.05) / 0.5); if (f <= 0) continue;
+    const x = G.left + 40 + i * (G.w - 80) / 5 + (i - 2.5) * 24 * f;
+    const y = Math.min(G.wallTop - 6 + f * f * (gy - G.wallTop + 20), gy - 6);
+    ctx.save(); ctx.translate(x, y); ctx.rotate(f * 7); drawSoldier(0, 0, Math.max(0.9, H / 430), 0); ctx.restore();
+  }
   drawMarchers(dt);
-  ctx.save(); ctx.globalAlpha = clamp01((t - 1.4) / 0.8); ctx.textAlign = 'center';
-  ctx.font = '800 26px Inter, system-ui, sans-serif'; ctx.fillStyle = '#7a3520';
-  ctx.fillText('The walls fell down flat!', W / 2, H * 0.2); ctx.restore();
+  ctx.save(); ctx.globalAlpha = clamp01((t - 1.6) / 0.8); ctx.textAlign = 'center';
+  ctx.font = '800 ' + Math.round(Math.min(34, W / 17)) + 'px Inter, system-ui, sans-serif';
+  ctx.fillStyle = '#7a3520'; ctx.fillText('The walls fell down flat!', W / 2, H * 0.17); ctx.restore();
 }
 
 // ============================================================
