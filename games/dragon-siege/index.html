@@ -408,6 +408,29 @@ const HARD_VERSES = [
   "Charity suffereth long and is kind charity envieth not charity vaunteth not itself",
   "Casting all your care upon him for he careth for you",
 ];
+// the longest, richest KJV verses — the Impossible pool
+const IMPOSSIBLE_VERSES = [
+  "The LORD is my light and my salvation whom shall I fear the LORD is the strength of my life of whom shall I be afraid",
+  "For the wages of sin is death but the gift of God is eternal life through Jesus Christ our Lord",
+  "And the peace of God which passeth all understanding shall keep your hearts and minds through Christ Jesus",
+  "For by grace are ye saved through faith and that not of yourselves it is the gift of God not of works lest any man should boast",
+  "Blessed are the merciful for they shall obtain mercy blessed are the pure in heart for they shall see God",
+  "Let us therefore come boldly unto the throne of grace that we may obtain mercy and find grace to help in time of need",
+  "Jesus saith unto him I am the way the truth and the life no man cometh unto the Father but by me",
+  "Thou wilt keep him in perfect peace whose mind is stayed on thee because he trusteth in thee",
+  "Seeing we also are compassed about with so great a cloud of witnesses let us lay aside every weight",
+  "In my Father's house are many mansions if it were not so I would have told you I go to prepare a place for you",
+];
+// Reverence: divine names and titles are always shown capitalized (the words are
+// stored lowercase for matching; this only affects how they are DISPLAYED).
+const REVERENT = {
+  god:'God', lord:'Lord', jesus:'Jesus', christ:'Christ', saviour:'Saviour',
+  jehovah:'Jehovah', almighty:'Almighty', messiah:'Messiah', emmanuel:'Emmanuel',
+  redeemer:'Redeemer', father:'Father', son:'Son'
+};
+function reverentCase(text){
+  return text.replace(/[a-z]+/gi, function (w) { return REVERENT[w.toLowerCase()] || w; });
+}
 function makeScripturePool(verses){
   const words = [];
   for (const v of verses){
@@ -419,8 +442,9 @@ function makeScripturePool(verses){
   words.__cur = 0;
   return words;
 }
-WORDS.scriptureMed  = makeScripturePool(MEDIUM_VERSES);
-WORDS.scriptureHard = makeScripturePool(HARD_VERSES);
+WORDS.scriptureMed        = makeScripturePool(MEDIUM_VERSES);
+WORDS.scriptureHard       = makeScripturePool(HARD_VERSES);
+WORDS.scriptureImpossible = makeScripturePool(IMPOSSIBLE_VERSES);
 const BOSS_WORDS = [
   "fire-breathing","ancient wyrm","scorched earth","wings of doom","conflagration",
   "leviathan","incandescent","devastation","behemoth","ruination","molten fury",
@@ -473,9 +497,9 @@ const REALMS = {
     dragonBase:7, dragonStep:0.2, dragonMin:5.5,
     mountedFrom:1, siegeInterval:1.2
   },
-  // left exactly as the build you liked — only the words are the hardest pool
+  // left exactly as the build you liked — now the words are the hardest KJV verses
   impossible: {
-    pool:"warlord", bossWords:BOSS_WORDS, targetWpm:"60+",
+    pool:"scriptureImpossible", bossWords:BOSS_WORDS, targetWpm:"60+",
     marchBase:30, marchStep:0.8,
     rockBase:11, rockStep:0.2, rockMin:8,
     dragonBase:9, dragonStep:0.2, dragonMin:6.5,
@@ -1001,7 +1025,7 @@ function rockDuration(){ return Math.max(realm.rockMin, realm.rockBase - (level-
 function dragonDuration(){ return Math.max(realm.dragonMin, realm.dragonBase - (level-1)*realm.dragonStep); }
 
 function renderBubble(th){
-  const w=th.word, d=w.slice(0,th.typed), nx=w.slice(th.typed,th.typed+1), rest=w.slice(th.typed+1);
+  const w=reverentCase(th.word), d=w.slice(0,th.typed), nx=w.slice(th.typed,th.typed+1), rest=w.slice(th.typed+1);
   const letters='<span class="done">'+escapeHtml(d)+'</span>'+
                 '<span class="next">'+escapeHtml(nx)+'</span>'+
                 '<span class="rest">'+escapeHtml(rest)+'</span>';
