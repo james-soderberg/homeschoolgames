@@ -28,11 +28,11 @@
   // goal    → value that must be reached inside the game
   // trial   → plain-English goal shown in the journal (must NOT reveal `word`)
   var STEPS = [
-    { word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 25,
+    { word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 15,
       accept: ['secret', 'secrets'],
       riddle: 'This one magic whisper we kept.',
-      hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Solomon level difficulty).",
-      trial: 'Slip past a score of 25 without falling.' },
+      hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Hard or Solomon level difficulty).",
+      trial: 'Slip past a score of 15 without falling.' },
 
     { word: 'redline', open: 'games/redline/index.html', game: 'redline', goal: 3000,
       accept: ['redline'],
