@@ -1,0 +1,11 @@
+# robots.txt for https://homeschoolgames.org
+User-agent: *
+Allow: /
+
+# Secret / work-in-progress pages — keep out of the index
+Disallow: /games/redline/
+Disallow: /games/secret-flap/
+Disallow: /games/treasure-hunt/
+Disallow: /games/current/
+
+Sitemap: https://homeschoolgames.org/sitemap.xml
