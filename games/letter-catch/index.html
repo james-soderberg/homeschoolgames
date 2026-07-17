@@ -193,7 +193,7 @@ const LEVELS = {
   einstein: { baseFall:[96,150], baseSpawn:0.72, fallStep:0.060, needRatio0:0.34 }
 };
 const MAX_MISTAKES = 3;
-const READ_SECONDS = 2.6;          // pause to read the clue before letters fall
+const READ_MIN = 0.6;              // brief guard so an in-motion mouse can't skip a new word instantly
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
 
 // Tricky look-alike / sound-alike letters. When a decoy spawns we often pull
@@ -232,7 +232,7 @@ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 let level='easy', cfg=LEVELS.easy;
 let word='', clueStr='', typed=0, score=0, mistakes=0, bestStreak=0;
 let tiles=[], basketX=280, basketTargetX=280;
-let running=false, reading=false, readT=0;
+let running=false, reading=false, readArmed=false, readGuardT=0, readArmX=0;
 let lastTs=0, rafId=null, spawnAcc=0, sinceNeeded=0, shakeT=0, flashT=0;
 let nextId=1;
 
@@ -273,8 +273,15 @@ function newWord(){
   catchHint.classList.remove('hidden');
   renderSlots();
   speak(word);
-  // pause so the player can read the clue & figure out the word before it falls
-  reading = true; readT = READ_SECONDS;
+  // Pause on every new word until the player is ready — press any key, tap, or
+  // move the basket to start the letters falling. A brief guard (READ_MIN) keeps
+  // an already-moving mouse from skipping the fresh word the instant it appears.
+  reading = true; readArmed = false; readGuardT = READ_MIN;
+}
+// leave the read-the-clue pause and let the letters begin to fall
+function beginFalling(){
+  if (!reading || !readArmed) return;
+  reading = false; spawnAcc = 0; sinceNeeded = 0;
 }
 // blank slots that reveal only the letters you've caught in order
 function renderSlots(){
@@ -396,10 +403,10 @@ function tick(ts){
   basketX += (basketTargetX-basketX)*Math.min(1, dt*16);
   basketX = clamp(basketX, BASKET_W()/2, W-BASKET_W()/2);
 
-  // read-the-clue pause: no letters fall yet, just count down
+  // read-the-clue pause: no letters fall until the player signals they're ready
+  // (any key / tap / mouse move). Only the short arm-guard is timed.
   if (reading){
-    readT -= dt;
-    if (readT<=0){ reading=false; spawnAcc=0; sinceNeeded=0; }
+    if (!readArmed){ readGuardT -= dt; if (readGuardT<=0){ readArmed=true; readArmX=basketTargetX; } }
     if (shakeT>0) shakeT=Math.max(0,shakeT-dt);
     if (flashT>0) flashT=Math.max(0,flashT-dt);
     render();
@@ -462,11 +469,10 @@ function render(){
   if (flashT>0){ ctx.fillStyle='rgba(120,210,140,'+(flashT*0.5)+')'; ctx.fillRect(0,0,W,H); }
   if (reading && running) drawReadyBanner();
 }
-// "Word N — read the clue!" with a countdown, shown over the board during the pause
+// "Word N — read the clue!" shown over the board; waits for the player to start.
 function drawReadyBanner(){
-  const n = Math.ceil(readT);
   ctx.save();
-  ctx.fillStyle='rgba(20,28,38,0.30)'; ctx.fillRect(0,0,W,H);
+  ctx.fillStyle='rgba(20,28,38,0.34)'; ctx.fillRect(0,0,W,H);
   ctx.textAlign='center'; ctx.textBaseline='middle';
   const big = Math.round(clamp(W*0.05,26,46));
   ctx.fillStyle='#1A1714';
@@ -474,11 +480,21 @@ function drawReadyBanner(){
   ctx.fillText('Word '+(score+1), W/2, H*0.40);
   ctx.fillStyle='#3a3128';
   ctx.font="700 "+Math.round(clamp(W*0.028,16,24))+"px system-ui, -apple-system, sans-serif";
-  ctx.fillText('Read the clue, get ready!', W/2, H*0.40 + big*0.95);
-  // big countdown digit
-  ctx.fillStyle='#C4A040';
-  ctx.font="800 "+Math.round(clamp(W*0.11,60,120))+"px Georgia, 'Times New Roman', serif";
-  ctx.fillText(String(n), W/2, H*0.62);
+  ctx.fillText('Read the clue, then get ready!', W/2, H*0.40 + big*0.95);
+  // start prompt — pulses once you're free to go; a calm "get ready" during the guard
+  const py = H*0.62;
+  if (readArmed){
+    const a = 0.62 + 0.38*Math.sin(performance.now()/300);
+    ctx.globalAlpha = a;
+    ctx.fillStyle='#C4A040';
+    ctx.font="800 "+Math.round(clamp(W*0.038,20,32))+"px system-ui, -apple-system, sans-serif";
+    ctx.fillText('▶  Press any key or move the basket to start', W/2, py);
+    ctx.globalAlpha = 1;
+  } else {
+    ctx.fillStyle='#8a7d63';
+    ctx.font="700 "+Math.round(clamp(W*0.032,17,26))+"px system-ui, -apple-system, sans-serif";
+    ctx.fillText('Get ready…', W/2, py);
+  }
   ctx.restore();
 }
 function drawTile(t){
@@ -522,11 +538,17 @@ function pointerX(e){
   const px=(e.touches?e.touches[0].clientX:e.clientX)-r.left;
   return clamp(px*(W/r.width), 0, W);
 }
-stage.addEventListener('mousemove', e=>{ if(running) basketTargetX=pointerX(e); });
-stage.addEventListener('touchmove', e=>{ if(running){ basketTargetX=pointerX(e); e.preventDefault(); } }, {passive:false});
-stage.addEventListener('touchstart', e=>{ if(running) basketTargetX=pointerX(e); }, {passive:true});
+stage.addEventListener('mousemove', e=>{
+  if(!running) return;
+  const px=pointerX(e); basketTargetX=px;
+  if(reading && readArmed && Math.abs(px-readArmX)>8) beginFalling();   // a real mouse move starts it
+});
+stage.addEventListener('mousedown', ()=>{ if(running && reading && readArmed) beginFalling(); });   // or a click
+stage.addEventListener('touchmove', e=>{ if(running){ basketTargetX=pointerX(e); if(reading&&readArmed) beginFalling(); e.preventDefault(); } }, {passive:false});
+stage.addEventListener('touchstart', e=>{ if(running){ basketTargetX=pointerX(e); if(reading&&readArmed) beginFalling(); } }, {passive:true});
 document.addEventListener('keydown', e=>{
   if(!running) return;
+  if(reading){ if(readArmed) beginFalling(); return; }   // any key starts the fall (once armed)
   if(e.key==='ArrowLeft'||e.key.toLowerCase()==='a'){ basketTargetX=clamp(basketTargetX-W*0.12, 0, W); e.preventDefault(); }
   else if(e.key==='ArrowRight'||e.key.toLowerCase()==='d'){ basketTargetX=clamp(basketTargetX+W*0.12, 0, W); e.preventDefault(); }
 });
