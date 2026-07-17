@@ -1774,7 +1774,7 @@ function winGame() {
   document.getElementById('wStages').textContent = LEVELS.length;
   var wb = document.getElementById('winBonus');
   if (difficulty === 'hard' || difficulty === 'solomon') {   // bonus clue for the treasure hunt
-    wb.innerHTML = 'Well done. <b>Bonus clue:</b> Notice the last letter of each word.';
+    wb.innerHTML = 'Well done. <b>Treasure hunt bonus clue:</b> Notice the last letter of each word.';
     wb.style.display = '';
   } else { wb.style.display = 'none'; }
   winOverlay.classList.remove('hidden');
