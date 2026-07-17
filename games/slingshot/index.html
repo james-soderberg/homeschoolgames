@@ -21,7 +21,7 @@
     border-radius:16px; overflow:hidden; border:2.5px solid #232a44;
     box-shadow:0 12px 34px rgba(8,10,25,.5); background:#070a17; touch-action:none; user-select:none; }
 
-  /* tutorial (auto-played demo of a level) — caption + close button over the stage */
+  /* tutorial (auto-played demo of a level), caption + close button over the stage */
   .tut-cap { position:absolute; top:.7rem; left:50%; transform:translateX(-50%); z-index:11;
     max-width:min(92%,620px); text-align:center; padding:.55rem 1rem; border-radius:12px;
     background:rgba(9,12,26,.82); border:1.5px solid #33406e; color:#eaf0ff; backdrop-filter:blur(3px);
@@ -125,7 +125,10 @@
   .fact-card .maneuver { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.12em; text-transform:uppercase;
     color:#8fe3c0; margin-bottom:.7rem; }
   .fact-card .fact { color:#cdd8f5; font-size:.98rem; line-height:1.5; margin-bottom:1.1rem; }
-  .fact-card .brief-dist { font-family:var(--font-sans); font-size:.82rem; font-weight:700; color:#ffd98a; margin:.1rem 0 .7rem; }
+  .fact-card .brief-dist { font-family:var(--font-sans); font-size:.82rem; font-weight:700; color:#ffd98a; margin:.1rem 0 .5rem; }
+  .fact-card .brief-au { font-family:var(--font-sans); font-size:.74rem; line-height:1.45; color:#9fb0dd;
+    background:rgba(143,176,255,.10); border:1px solid rgba(143,176,255,.22); border-radius:8px; padding:.4rem .6rem; margin:0 auto .8rem; max-width:34ch; }
+  .fact-card .brief-au b { color:#cdd8f5; }
   #briefOrder { color:#8fbcff; }
   #briefOverlay .fact-card { max-width:400px; }
 
@@ -162,13 +165,13 @@
   .launch-btn:hover { filter:brightness(1.05); }
   .launch-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #a07f2c; }
   .launch-btn:disabled { opacity:.45; cursor:default; box-shadow:0 4px 0 #a07f2c; }
-  /* shown in place of Launch while a probe is mid-flight — abort a doomed shot */
+  /* shown in place of Launch while a probe is mid-flight, abort a doomed shot */
   .cancel-btn { font-family:var(--font-sans); font-weight:800; font-size:.95rem; color:#fff; cursor:pointer;
     background:#b5482f; border:none; border-radius:99px; padding:.5rem 1.4rem; box-shadow:0 4px 0 #7d2f1c; }
   .cancel-btn:hover { filter:brightness(1.07); }
   .cancel-btn:active { transform:translateY(3px); box-shadow:0 1px 0 #7d2f1c; }
 
-  /* screenshot mode (open with ?shot) — hide chrome, fill viewport with the stage */
+  /* screenshot mode (open with ?shot), hide chrome, fill viewport with the stage */
   body.sl-shot { overflow:hidden; background:#070a17; }
   body.sl-shot .site-header, body.sl-shot .sl-top, body.sl-shot .voyage-wrap, body.sl-shot .sl-hint, body.sl-shot .control-row, body.sl-shot .site-footer { display:none !important; }
   body.sl-shot .sl-page { margin:0 !important; padding:0 !important; max-width:none !important; }
@@ -252,6 +255,7 @@
         <div class="maneuver" id="briefOrder">4th planet from the Sun</div>
         <div class="planet-name" id="briefName">Mars</div>
         <div class="brief-dist" id="briefDist"></div>
+        <div class="brief-au" id="briefAu">An <b>AU</b> (astronomical unit) is just the distance from Earth to the Sun, about 93 million miles. It's the ruler we use to measure the solar system.</div>
         <div class="fact" id="briefText"></div>
         <button class="go-btn" id="briefBtn">Begin approach →</button>
       </div>
@@ -303,7 +307,7 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-// SLINGSHOT — fling a probe and let planetary gravity curve it
+// SLINGSHOT, fling a probe and let planetary gravity curve it
 // to each world in turn, outward from the Sun. A live forward
 // simulation shows exactly how gravity will bend your path, so
 // the game IS the physics. The 25 levels are a hand-vetted
@@ -328,7 +332,7 @@ const DW = 960, DH = 600;
 // The level box (960x600) always fits, but we CAP the zoom so worlds keep a
 // constant on-screen size instead of ballooning on big monitors. The leftover
 // stage area then shows the surrounding space, so you can watch a probe swing
-// far out and loop back. On small screens the cap never binds — it fits as before.
+// far out and loop back. On small screens the cap never binds, it fits as before.
 const SCALE_CAP = 1.05;
 
 const DIFF = {
@@ -339,14 +343,14 @@ const DIFF = {
 const PAL = [['#8fb0e6','#2a4a86'],['#e0b98f','#8a5a2a'],['#b79ae0','#5a3a8a'],['#8fd6c0','#2f6a58'],['#e79ab0','#8a3a56']];
 
 // Worlds visited in order, one per level (cycles after 25). This order MUST
-// match the voyage map (VY_GROUPS) exactly — same bodies, same sequence — so the
+// match the voyage map (VY_GROUPS) exactly, same bodies, same sequence, so the
 // map's highlighted world is always the one you're actually flying to: the nine
 // planets first (levels 1-9), then moons & dwarf worlds, then deep space.
 const TARGETS = [
   // --- the nine planets, outward from the Sun (levels 1-9) ---
   { name:'Mercury',         crest:'☿️', c1:'#cdbfa8', c2:'#7a6a52', fact:"The smallest planet and the closest to the Sun. Strangely, a single day on Mercury lasts longer than its whole year." },
   { name:'Venus',           crest:'♀️', c1:'#f6e3a1', c2:'#c99a45', fact:"The hottest planet, hot enough to melt lead, wrapped in thick clouds of carbon dioxide that trap the Sun's heat." },
-  { name:'Earth',           crest:'🌍', c1:'#6ab0f0', c2:'#245e46', fact:"Our home, and the only world we know that brims with life. Oceans of liquid water cover most of it, and its distance from the Sun is the very ruler — one 'astronomical unit' — we measure the whole solar system by." },
+  { name:'Earth',           crest:'🌍', c1:'#6ab0f0', c2:'#245e46', fact:"Our home, and the only world we know that brims with life. Oceans of liquid water cover most of it. Its distance from the Sun even gives astronomers a ruler: that gap is one astronomical unit (AU), the yardstick for the whole solar system." },
   { name:'Mars',            crest:'🔴', c1:'#e57a45', c2:'#8f3a1e', fact:"The Red Planet, colored by rusty dust. It has Olympus Mons, the tallest volcano in the solar system, three times the height of Everest." },
   { name:'Jupiter',         crest:'🟠', c1:'#e8cba0', c2:'#a8703a', ring:false, fact:"The largest planet. Over 1,300 Earths would fit inside, and its Great Red Spot is a storm wider than our whole planet." },
   { name:'Saturn',          crest:'🪐', c1:'#f0dcae', c2:'#b99a5a', ring:true,  fact:"Famous for its dazzling rings of ice and rock. Saturn is so light that it would float in a big enough tub of water." },
@@ -373,29 +377,28 @@ const TARGETS = [
   { name:'Sagittarius A*',  crest:'🕳️', c1:'#ffce87', c2:'#3a2a10', fact:"The supermassive black hole at the center of our galaxy, about four million times the mass of the Sun. Everything here orbits it." },
 ];
 
-// A short briefing shown BEFORE the level for each of the nine classic planets
-// (Earth is home base, so it isn't a destination). Written plainly, the way a
-// person would tell you about a place — order out from the Sun, how far, and
-// the one or two things worth remembering. Nothing after Pluto gets a briefing.
+// A short briefing shown BEFORE the level for each of the nine classic planets.
+// Written plainly, the way a person would tell you about a place: how far out it
+// is, and the one or two things worth remembering. Nothing after Pluto gets one.
 const PLANET_BRIEF = {
-  'Mercury': { order: '1st planet from the Sun', dist: '0.39 AU — about 36 million miles out',
-    text: "Closest to the Sun and barely bigger than our own Moon. With almost no air to hold heat, noon bakes at around 800°F while the night side plunges past −290°F. The strangest part: one full day on Mercury, sunrise to sunrise, lasts longer than its entire year." },
-  'Venus':   { order: '2nd planet from the Sun', dist: '0.72 AU — about 67 million miles out',
-    text: "Nearly Earth's twin in size, but a furnace next door. A thick blanket of carbon dioxide traps so much heat that the ground stays hot enough to melt lead, all under clouds of sulfuric acid. It even spins backwards, so there the Sun comes up in the west." },
-  'Earth':   { order: '3rd planet from the Sun', dist: '1 AU — 93 million miles (this is home)',
-    text: "Home — the one world we know that's packed with life, from deep oceans to mountaintops. Its distance from the Sun even gives us our ruler for space: that gap is one 'astronomical unit,' and everything else out here gets measured against it." },
-  'Mars':    { order: '4th planet from the Sun', dist: '1.52 AU — about 142 million miles out',
-    text: "The rusty red world, its color coming from iron dust — basically rust. It's frozen and dry today, but dried-up riverbeds say water once ran across it. It also has Olympus Mons, a volcano three times taller than Mount Everest." },
-  'Jupiter': { order: '5th planet from the Sun', dist: '5.2 AU — about 484 million miles out',
-    text: "The giant of the family; you could pour more than 1,300 Earths inside it. It's a ball of gas with no solid ground to stand on, wrapped in bands of storm. Its Great Red Spot has been spinning for centuries and is wider than our whole planet." },
-  'Saturn':  { order: '6th planet from the Sun', dist: '9.6 AU — about 886 million miles out',
-    text: "The one everyone recognizes, circled by thousands of rings of ice and rock — some chunks as small as sand, others as big as a house. For all its bulk, Saturn is so light for its size that it would float if you had a big enough tub of water." },
-  'Uranus':  { order: '7th planet from the Sun', dist: '19.2 AU — about 1.8 billion miles out',
-    text: "A pale blue-green ice giant that got knocked over long ago and now rolls around the Sun on its side. Because of that tilt, each pole gets 42 straight years of daylight, then 42 years of night." },
-  'Neptune': { order: '8th planet from the Sun', dist: '30 AU — about 2.8 billion miles out',
-    text: "The last of the big planets, a deep blue giant so far out that sunlight takes over four hours to get there. It's the windiest place we know, with storms howling faster than the speed of sound — and it was found by math before anyone ever saw it." },
-  'Pluto':   { order: 'The 9th world out — a dwarf planet', dist: '39.5 AU — about 3.7 billion miles out',
-    text: "Out in the frozen Kuiper Belt, smaller than our Moon and no longer counted as a full planet. It's so far away that one lap around the Sun takes 248 years — it hasn't finished a single one since it was discovered in 1930. It even wears a big heart-shaped plain of frozen nitrogen." },
+  'Mercury': { order: '1st planet from the Sun', dist: '0.39 AU from the Sun, about 36 million miles',
+    text: "Closest to the Sun and barely bigger than our own Moon. It has almost no air to hold heat, so noon bakes at around 800°F while the night side drops past 290 below zero. The strangest part is the clock. One full day on Mercury, sunrise to sunrise, lasts longer than its whole year." },
+  'Venus':   { order: '2nd planet from the Sun', dist: '0.72 AU from the Sun, about 67 million miles',
+    text: "Nearly Earth's twin in size, but a furnace next door. A thick blanket of carbon dioxide traps so much heat that the ground stays hot enough to melt lead, all under clouds of sulfuric acid. It even spins backwards, so on Venus the Sun comes up in the west." },
+  'Earth':   { order: '3rd planet from the Sun', dist: '1 AU from the Sun, about 93 million miles (home)',
+    text: "This one's home, and the only world we know that's packed with life, from deep oceans to mountaintops. Its distance from the Sun does double duty too. We call that gap one astronomical unit, and it's the yardstick we use to measure everything else out here." },
+  'Mars':    { order: '4th planet from the Sun', dist: '1.52 AU from the Sun, about 142 million miles',
+    text: "The red planet, and the color really is rust: iron dust coating the whole surface. It's frozen and dry now, but dried-up riverbeds tell us water once ran across it. It also has Olympus Mons, a volcano three times taller than Mount Everest." },
+  'Jupiter': { order: '5th planet from the Sun', dist: '5.2 AU from the Sun, about 484 million miles',
+    text: "The giant of the family. You could pour more than 1,300 Earths inside it. It's a ball of gas with no solid ground to stand on, wrapped in bands of storm, and its Great Red Spot has been spinning for centuries. That one storm alone is wider than our whole planet." },
+  'Saturn':  { order: '6th planet from the Sun', dist: '9.6 AU from the Sun, about 886 million miles',
+    text: "The one everyone recognizes, circled by thousands of rings of ice and rock. Some chunks are as small as sand, others as big as a house. For all its size, Saturn is so light that it would actually float if you found a bathtub big enough." },
+  'Uranus':  { order: '7th planet from the Sun', dist: '19.2 AU from the Sun, about 1.8 billion miles',
+    text: "A pale blue-green ice giant that got knocked over long ago, so now it rolls around the Sun on its side. Because of that tilt, each pole gets 42 straight years of daylight, then 42 years of night." },
+  'Neptune': { order: '8th planet from the Sun', dist: '30 AU from the Sun, about 2.8 billion miles',
+    text: "The last of the big planets, a deep blue giant so far out that sunlight takes over four hours to reach it. It's the windiest place we know, with storms howling faster than the speed of sound. Astronomers actually found it using math before anyone ever saw it in a telescope." },
+  'Pluto':   { order: 'The 9th world out (a dwarf planet)', dist: '39.5 AU from the Sun, about 3.7 billion miles',
+    text: "Way out in the frozen Kuiper Belt, smaller than our Moon and no longer counted as a full planet. It's so far away that one lap around the Sun takes 248 years, so it hasn't finished even one since it was discovered back in 1930. It even wears a big heart-shaped plain of frozen nitrogen." },
 };
 
 // 25 curated levels (design space 960x600); r -> gm = r²·GM_K. kind = gravity swings required.
@@ -486,7 +489,7 @@ function setupCanvas() {
   buildStars();
 }
 // The world region currently visible on screen, in design-space units, padded a
-// little. A probe is only "lost in space" once it leaves THIS — so on a big
+// little. A probe is only "lost in space" once it leaves THIS, so on a big
 // screen it can roam as far as the screen shows before dying. Never smaller than
 // the original ±0.28·DW envelope, so smaller screens play exactly as before.
 function flightBounds() {
@@ -613,7 +616,7 @@ function solveLevel() {
     }
     return { hit: false, dmin };
   }
-  // 1) coarse full-circle sweep — bail the moment we land a hit
+  // 1) coarse full-circle sweep, bail the moment we land a hit
   const seeds = [];
   for (let ad = 0; ad < 360; ad++) {
     const a = ad * Math.PI / 180;
@@ -650,7 +653,7 @@ function showSolution() {
   const v = aimVelocity();
   solutionPath = simulate(pad.x, pad.y, v.vx, v.vy, Math.ceil(MAX_FLIGHT / FIXED_H) + 2, allBodies()).pts;
   recomputePredict();   // refresh the short preview + aim vector to match
-  toast('Route shown — press Launch to fly it 🚀');
+  toast('Route shown. Press Launch to fly it 🚀');
 }
 
 // ---------- tutorial: auto-play a real solved run of level 15 as an animation ----------
@@ -663,7 +666,7 @@ function playTutorial() {
   setupCanvas();
   level = TUT_LEVEL; genLevel(TUT_LEVEL);
   const sol = solveLevel();
-  if (!sol) { toMenu(); return; }               // shouldn't happen — every level is solvable
+  if (!sol) { toMenu(); return; }               // shouldn't happen, every level is solvable
   aim.angle = sol.angle; aim.power = sol.power;
   refreshBodyPositions();
   const v = aimVelocity();
@@ -673,7 +676,7 @@ function playTutorial() {
   tutT = 0; tutAcc = 0; tutLaunched = false; tutDone = false;
   phase = 'tutorial';
   objBadge.textContent = 'Tutorial · reach ' + targetInfo.name;
-  setTutCap('Level ' + TUT_LEVEL + ' — reach ' + targetInfo.name + '. The dotted line is the planned route; gravity will curve the probe along it.');
+  setTutCap('Level ' + TUT_LEVEL + ': reach ' + targetInfo.name + '. The dotted line is the planned route, and gravity will curve the probe along it.');
   document.getElementById('tutClose').style.display = '';
   if (!rafId) rafId = requestAnimationFrame(loop);
 }
@@ -684,7 +687,7 @@ function tutArrive(missed) {
     for (let i = 0; i < 26; i++) spawnParticle(target._p.x, target._p.y, rand(-160, 160), rand(-160, 160), rand(.4, .9), i % 2 ? target.c1 : '#ffe6a0', rand(2, 4));
     if (window.HSGSound) HSGSound.correct();
     if (window.HSGfx) HSGfx.confetti({ count: 28 });
-    setTutCap('🎉 Arrived at ' + targetInfo.name + '! Gravity did the steering — that\'s a slingshot. Replaying…');
+    setTutCap('🎉 Arrived at ' + targetInfo.name + '! Gravity did the steering, and that\'s a slingshot. Replaying…');
   }
   tutReplay = setTimeout(() => { if (phase === 'tutorial') playTutorial(); }, 2600);
 }
@@ -692,7 +695,7 @@ function stepTutorial(dt) {
   tutT += dt;
   if (!tutLaunched) {                            // sit on the pad a beat so the route is readable
     if (tutT >= 1.5) { tutLaunched = true; if (window.HSGSound) HSGSound.laser(); shake = 5; flashG = 0.12;
-      setTutCap('Watch the path bend as it swings past each planet — every curve is a gravity assist.'); }
+      setTutCap('Watch the path bend as it swings past each planet. Every curve is a gravity assist.'); }
     return;
   }
   if (tutDone) return;
@@ -732,7 +735,7 @@ function launch() {
   predicted = null; solutionPath = null; phase = 'flight'; flightT = 0; flightAcc = 0; attempts++;
   shake = 5; flashG = 0.12; if (window.HSGSound) HSGSound.laser();
 }
-// ONE fixed physics step — identical to the preview, so a green preview always hits
+// ONE fixed physics step, identical to the preview, so a green preview always hits
 function stepFlight(h) {
   refreshBodyPositions();
   const list = allBodies();
@@ -821,6 +824,8 @@ function maybeBrief() {
   document.getElementById('briefOrder').textContent = b.order;
   document.getElementById('briefName').textContent = titleName(targetInfo.name);
   document.getElementById('briefDist').textContent = '📏 ' + b.dist;
+  // AU only needs explaining the first time it appears (Mercury); after that it's known
+  document.getElementById('briefAu').style.display = (targetInfo.name === 'Mercury') ? '' : 'none';
   document.getElementById('briefText').textContent = b.text;
   briefOverlay.classList.remove('hidden');
   phase = 'brief';
@@ -842,7 +847,7 @@ function spawnParticle(x, y, vx, vy, life, color, size) { particles.push({ x, y,
 function toast(msg) { bonusMsg = msg; bonusT = 1.6; }
 
 // ---------- HUD ----------
-// display radius (px) per destination — roughly to scale by real SIZE (not distance)
+// display radius (px) per destination, roughly to scale by real SIZE (not distance)
 // The voyage map is shown one GROUP at a time (planets first). Each body is
 // labeled and sized roughly to scale (by size, not distance). r = display radius px.
 const VY_GROUPS = [
@@ -1133,7 +1138,7 @@ function drawScene() {
   drawProbe();
   drawParticles();
 }
-// the full route the probe has flown this shot — a steady line under the bright
+// the full route the probe has flown this shot, a steady line under the bright
 // comet tail. Cleared on crash/cancel, so it only lingers on a live or won shot.
 function drawFlightPath() {
   if (flightPath.length < 2) return;

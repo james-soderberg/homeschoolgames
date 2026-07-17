@@ -737,49 +737,59 @@ if (typeGrab) {
 }
 
 // ---------- secret: type "treasure" over and over to drive to REDLINE ----------
+// Phase 1: the REAL race car keeps driving straight along the top edge and off
+// the screen (instead of turning the corner). Phase 2: the dark entrance page.
+const TS_FLY = 4, TS_GATE = 5;
+let tsFly = null, tsFlyStart = 0;
 function tsEl(){ return document.getElementById('tsScene'); }
 function tsFeed(ch){
   if (!/^[a-z]$/i.test(ch)) return;
   tsBuf = (tsBuf + ch.toLowerCase()).slice(-8);
   if (tsBuf.endsWith('treasure')) { tsBuf = ''; tsAdvance(); }
 }
-function tsPlace(){
-  const car = document.getElementById('tsCar'); if (!car) return;
-  car.style.left = (tsPhase === 'road' ? 6 + (tsP / TS_EDGE) * 82 : 6 + (tsP / TS_GATE) * 40) + '%';
-}
-function tsShow(){
+// Lift a clone of the player's car (same size and look) out of the clipped arena
+// so it can travel across the whole page.
+function tsSetup(){
   tsActive = true; racing = false; if (rafId) cancelAnimationFrame(rafId);
-  tsEl().classList.add('on'); tsPlace();
+  const r = pcar.getBoundingClientRect();
+  const fly = document.createElement('div');
+  fly.className = 'pcar';   // inherits the car's svg sizing
+  fly.style.cssText = 'position:fixed;left:' + r.left + 'px;top:' + r.top + 'px;z-index:99991;' +
+    'transform:none;pointer-events:none;transition:left .55s cubic-bezier(.35,.55,.5,1);';
+  fly.innerHTML = pcar.innerHTML;
+  document.body.appendChild(fly);
+  pcar.style.visibility = 'hidden';
+  tsFly = fly; tsFlyStart = r.left; tsPhase = 'fly'; tsP = 0;
   if (window.HSGSound) HSGSound.tick();
 }
-function tsFlash(){ const s = tsEl(); const f = document.createElement('div'); f.className = 'ts-flash'; s.appendChild(f); setTimeout(() => f.remove(), 480); }
-function tsAdvance(){
-  if (!tsActive) { tsShow(); return; }
-  tsP++;
-  const s = tsEl(), car = document.getElementById('tsCar'), hint = document.getElementById('tsHint');
-  if (tsPhase === 'road') {
-    if (tsP >= TS_EDGE) {
-      car.style.left = '116%';                       // drive off the edge of the page
-      setTimeout(() => {
-        tsFlash();
-        s.classList.add('track'); tsPhase = 'track'; tsP = 0;
-        hint.innerHTML = 'reach the gate! keep typing <b>treasure</b>';
-        car.style.transition = 'none'; car.style.left = '-14%';   // re-enter the new scene from the left
-        requestAnimationFrame(() => { car.style.transition = ''; tsPlace(); });
-      }, 520);
-    } else tsPlace();
-  } else {
-    if (tsP >= TS_GATE) tsBoom(); else tsPlace();
+function tsFlyStep(){
+  const endX = window.innerWidth + 90;   // fully off the right edge
+  tsFly.style.left = (tsFlyStart + Math.min(1, tsP / TS_FLY) * (endX - tsFlyStart)) + 'px';
+  if (tsP >= TS_FLY) {                    // reached the edge → open the dark entrance page
+    setTimeout(() => {
+      if (tsFly) { tsFly.remove(); tsFly = null; }
+      const hint = document.getElementById('tsHint'); if (hint) hint.innerHTML = 'reach the gate! keep typing <b>treasure</b>';
+      tsEl().classList.add('on', 'track');
+      tsPhase = 'track'; tsP = 0; tsPlace();
+    }, 600);
   }
+}
+function tsPlace(){
+  const car = document.getElementById('tsCar'); if (car) car.style.left = (6 + (tsP / TS_GATE) * 40) + '%';
+}
+function tsTrackStep(){ if (tsP >= TS_GATE) tsBoom(); else tsPlace(); }
+function tsAdvance(){
+  if (!tsActive) tsSetup();               // first "treasure": lift the car out and start driving
+  tsP++;
+  if (tsPhase === 'fly') tsFlyStep(); else tsTrackStep();
 }
 function tsBoom(){
   const s = tsEl(), car = document.getElementById('tsCar');
-  car.style.left = '48%';                            // slam into the gate
+  if (car) car.style.left = '48%';        // slam into the gate
   const hint = document.getElementById('tsHint'); if (hint) hint.textContent = '';
   setTimeout(() => { s.classList.add('boom'); if (window.HSGSound && HSGSound.boom) HSGSound.boom(); }, 280);
   setTimeout(() => { location.href = '../redline/index.html'; }, 1500);   // enter the desmond game
 }
-const TS_EDGE = 4, TS_GATE = 5;
 window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
 document.addEventListener('keydown', onKeyDown);
 showBest();
