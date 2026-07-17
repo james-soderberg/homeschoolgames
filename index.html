@@ -47,8 +47,6 @@
   .morse .mlet{display:flex;align-items:center;gap:6px;}
   .morse .dot{width:8px;height:8px;border-radius:50%;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
   .morse .dash{width:22px;height:8px;border-radius:4px;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
-  .morse .mkey{display:flex;align-items:center;gap:7px;font-size:.56rem;letter-spacing:.28em;color:rgba(64,40,12,.6);font-weight:800;text-transform:uppercase;}
-  .morse .mkey .dot{width:6px;height:6px;} .morse .mkey .dash{width:15px;height:6px;}
 
   /* invisible ink — the same colour as the cork, only readable when the page is
      drag-/select-all-highlighted (⌘/Ctrl+A) */
@@ -85,9 +83,7 @@
     'TREASURE'.split('').forEach(ch=>{ const l=document.createElement('div'); l.className='mlet';
       M[ch].split('').forEach(s=>{ const d=document.createElement('span'); d.className=s==='-'?'dash':'dot'; l.appendChild(d); });
       row.appendChild(l); });
-    const key=document.createElement('div'); key.className='mkey';
-    key.innerHTML='<span class="dot"></span>short<span class="dash"></span>long';
-    wrap.appendChild(row); wrap.appendChild(key);
+    wrap.appendChild(row);   // no legend — let them work out short vs long
   })();
 
   // Secret games: type a code word anywhere on the home page to unlock one.
