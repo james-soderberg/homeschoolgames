@@ -12,15 +12,11 @@
       margin: 0 auto;
       padding: 1.5rem 1.25rem 3rem;
     }
-    /* let the battlefield use most of the viewport width next to the rail */
-    .game-layout-wide { max-width: min(2400px, 98vw); gap: 1rem; }
-    /* center the battlefield itself in the viewport — balance the rail on the
-       right with an equal phantom spacer on the left so the leaderboard isn't
-       counted in the centering */
-    @media (min-width: 1001px) {
-      .game-layout-wide { justify-content: center; }
-      .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
-    }
+    /* the leaderboard shows on the game-over card, so drop the side rail and the
+       balancing spacer and let the battlefield fill the width */
+    .game-layout-wide { max-width: min(1400px, 98vw); gap: 1rem; justify-content: center; }
+    .game-layout-wide::before { display: none; }
+    .hsg-rail { display: none; }
 
     .siege-top {
       display: flex;
