@@ -755,7 +755,9 @@ function tsFeed(ch){
 // Lift a clone of the player's car (same size and look) out of the clipped arena
 // so it can travel across the whole page.
 function tsSetup(){
-  tsActive = true; racing = false; if (rafId) cancelAnimationFrame(rafId);
+  // NOTE: the race keeps running — the rivals go on lapping in their normal
+  // pattern while your car peels off onto the secret road.
+  tsActive = true;
   const r = pcar.getBoundingClientRect();
   const fly = document.createElement('div');
   fly.className = 'pcar';   // inherits the car's exact svg size + look
@@ -766,6 +768,7 @@ function tsSetup(){
   pcar.style.visibility = 'hidden';
   tsFly = fly; tsX = r.left; tsPhase = 'fly';
   if (window.HSGSound) HSGSound.tick();
+  tsStep();   // start moving immediately on the keystroke that finished "treasure"
 }
 // One nudge per typed letter, just like normal racing.
 function tsStep(){
