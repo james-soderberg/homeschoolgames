@@ -765,7 +765,7 @@ document.addEventListener('keydown', e => {
 
 renderDiff();
 
-// God mode: type "godmode" to enable the badge + jump straight into any
+// Deity mode: type "godmode" to enable the badge + jump straight into any
 // difficulty. (Wrong answers only reset the streak - there's no life system.)
 HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({
   tiers: Object.values(DIFF).map(d => ({ v:d.key, label:d.label })),

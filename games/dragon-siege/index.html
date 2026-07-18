@@ -2105,7 +2105,7 @@ function impactCatapult(th, i){
 
 function damageCastle(x, y, size){
   if (defeat) return;            // already falling - ignore further hits
-  if (!(window.HSGGod && HSGGod.on)) lives--;   // god mode: castle never falls
+  if (!(window.HSGGod && HSGGod.on)) lives--;   // deity mode: castle never falls
   if (window.HSGSound) HSGSound.wrong();
   rail.broke(); // breaking the line snuffs the live streak (keeps the session best, no modal)
   decals.push({ x:clamp(x,8,castleW()), y:clamp(y,wallTopY()-20,groundY()), r: size==='small'?16:28 });

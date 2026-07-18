@@ -1969,7 +1969,7 @@ function houseHit(x){
     floatText(whX(), whTopY()-10, 'SHIELD HELD!', '#9be7ff');
     return;
   }
-  if (window.HSGGod && HSGGod.on) return;   // god mode: the White House is invincible
+  if (window.HSGGod && HSGGod.on) return;   // deity mode: the White House is invincible
   explosion(hx, whTopY()+12, false, 18);
   lives--; updateHearts();
   rail.broke();                       // a breach snuffs the live streak (keeps best, no modal)

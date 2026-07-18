@@ -748,8 +748,8 @@ buildBin();
 loadLevel(0);
 requestAnimationFrame(frame);
 
-// God mode: type "godmode" to enable the badge + jump to any circuit level.
-// (No life system here, so god mode is just the badge + level picker.)
+// Deity mode: type "godmode" to enable the badge + jump to any circuit level.
+// (No life system here, so deity mode is just the badge + level picker.)
 HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({ levels: LEVELS.length, label:'Level', onJump: n => loadLevel(n-1) }); });
 </script>
 </body>

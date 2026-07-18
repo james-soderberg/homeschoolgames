@@ -501,7 +501,7 @@
       const lead = builtFrontX() - runnerX;
       const onStart = runnerX <= START_PLAT;
       if (!onStart && lead <= 0) {
-        // God mode: never fall - hold the runner at the edge of the laid path
+        // Deity mode: never fall - hold the runner at the edge of the laid path
         // until the next correct answer extends it. (Unlimited lives.)
         if (window.HSGGod && HSGGod.on) { runnerX = builtFrontX() - 1; setWorld(); }
         else return fall();

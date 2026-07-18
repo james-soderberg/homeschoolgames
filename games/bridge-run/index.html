@@ -196,7 +196,7 @@ const bridge = HSGBridge.init({
   makeQuestion,
 });
 
-// God mode: type "godmode" to enable unlimited lives (the runner can never fall
+// Deity mode: type "godmode" to enable unlimited lives (the runner can never fall
 // into the chasm; see bridge.js) and jump to any of the 8 themed levels.
 HSGGod.watch(() => { HSGGod.enable(); HSGGod.picker({ levels: 8, label: 'Level', onJump: n => bridge.jumpTo(n) }); });
 </script>

@@ -252,7 +252,7 @@ function startGame() {
 }
 
 function die() {
-  if (window.HSGGod && HSGGod.on) return;   // god mode: invincible - collisions can't kill you
+  if (window.HSGGod && HSGGod.on) return;   // deity mode: invincible - collisions can't kill you
   if (state !== 'play') return;
   state = 'dead';
   shake = 12;
@@ -589,7 +589,7 @@ document.addEventListener('keydown', (e) => {
 document.getElementById('startBtn').addEventListener('click', (e) => { e.stopPropagation(); startGame(); });
 againBtn.addEventListener('click', (e) => { e.stopPropagation(); if (restartReady) startGame(); });
 
-// god mode - type "godmode": invincible, pipes/ground can't end the run
+// deity mode - type "godmode": invincible, pipes/ground can't end the run
 if (window.HSGGod) HSGGod.watch(() => {
   HSGGod.enable();
   HSGGod.picker({ label: 'Flight', note: 'Invincible! Towers and the ground can’t stop you.' });

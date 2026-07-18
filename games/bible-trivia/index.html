@@ -2117,7 +2117,7 @@ function toMenu() {
   answersEl.innerHTML = '';
 }
 
-// God mode: jump to any stage via the game's own intro→Begin path.
+// Deity mode: jump to any stage via the game's own intro→Begin path.
 function jumpToStage(n) {
   const idx = Math.max(0, Math.min(LEVELS.length - 1, n - 1));
   if (!queue.length) queue = shuffle(DECK[difficulty] || DECK.medium);

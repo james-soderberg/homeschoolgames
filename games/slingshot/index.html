@@ -308,10 +308,10 @@
       </div>
     </div>
 
-    <!-- God mode: hidden level picker (type "godmode" to open) -->
+    <!-- Deity mode: hidden level picker (type "godmode" to open) -->
     <div class="ov hidden" id="godOverlay">
       <div class="crest">🛸</div>
-      <h2>God mode</h2>
+      <h2>Deity mode</h2>
       <p class="learn-note">Jump straight to any level.</p>
       <div class="god-grid" id="godGrid"></div>
       <button class="go-btn secondary" id="godClose">Close</button>
@@ -857,7 +857,7 @@ function win() {
   showFact(gain, firstTry);
 }
 function crash(msg) {
-  if (!UNLIMITED_PROBES && !(window.HSGGod && HSGGod.on)) probes--;   // god mode / unlimited: never lose a probe
+  if (!UNLIMITED_PROBES && !(window.HSGGod && HSGGod.on)) probes--;   // deity mode / unlimited: never lose a probe
   streak = 0;
   for (let i = 0; i < 22; i++) spawnParticle(probe.x, probe.y, rand(-210, 210), rand(-210, 210), rand(.35, .8), i % 2 ? '#ff9a5a' : '#ffd27a', rand(2, 4.5));
   flashR = 0.45; shake = 11; probe = null; predicted = null; flightPath = [];   // the path vanishes with the probe
@@ -875,7 +875,7 @@ function crash(msg) {
 // but skips the wait and drops you straight back to aiming.
 function cancelShot() {
   if (phase !== 'flight' || !probe) return;
-  if (!UNLIMITED_PROBES && !(window.HSGGod && HSGGod.on)) probes--;   // god mode / unlimited: never lose a probe
+  if (!UNLIMITED_PROBES && !(window.HSGGod && HSGGod.on)) probes--;   // deity mode / unlimited: never lose a probe
   streak = 0;
   for (let i = 0; i < 12; i++) spawnParticle(probe.x, probe.y, rand(-120, 120), rand(-120, 120), rand(.3, .6), i % 2 ? '#9fb0dd' : '#c9d3f0', rand(1.5, 3));
   probe = null; predicted = null; flightPath = [];   // the path vanishes with the cancelled shot
@@ -1344,7 +1344,7 @@ document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopProp
 document.getElementById('saveNameBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); saveName(); });
 document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveName(); } });
 
-// ---------- god mode: type "godmode" anywhere to open a level picker ----------
+// ---------- deity mode: type "godmode" anywhere to open a level picker ----------
 (function () {
   const grid = document.getElementById('godGrid');
   const god = document.getElementById('godOverlay');

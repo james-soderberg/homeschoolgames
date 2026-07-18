@@ -606,7 +606,7 @@
   }
 
   function crash(c) {
-    if (window.HSGGod && HSGGod.on) return;   // god mode: invincible - phase through, keep driving
+    if (window.HSGGod && HSGGod.on) return;   // deity mode: invincible - phase through, keep driving
     state = 'over'; shake = 24; flash = 0.75;
     var pr = project(PLAYER_D), scale = pr.s;
     var px = cx + player.off * roadHalfBot * scale, py = pr.y;
@@ -775,7 +775,7 @@
     if (q('#startBtn')) $('startBtn').textContent = 'BEGIN THE RUN ▸';
     if (q('.rl-secret')) q('.rl-secret').textContent = 'checkpoint · ten miles';
   }
-  // god mode - type "godmode": invincible, crashes can't end the run
+  // deity mode - type "godmode": invincible, crashes can't end the run
   if (window.HSGGod) HSGGod.watch(function () {
     HSGGod.enable();
     HSGGod.picker({ label: 'Drive', note: 'Invincible! Crashes can’t stop you, so just keep driving.' });

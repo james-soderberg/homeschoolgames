@@ -609,7 +609,7 @@ function wordComplete(){
 }
 // wrong letter -> lose a heart (snake keeps its size); no reset
 function loseLife(){
-  if (!(window.HSGGod && HSGGod.on)) mistakes++;   // god mode: unlimited hearts
+  if (!(window.HSGGod && HSGGod.on)) mistakes++;   // deity mode: unlimited hearts
   HSGSound.wrong(); HSGfx.shake();
   shakeT=0.35; lifeT=0.55; updateHud();
   if (mistakes>=MAX_MISTAKES) gameOver('hearts');
@@ -812,7 +812,7 @@ pauseBtn.addEventListener('click', (e)=>{ e.stopPropagation(); togglePause(); })
 document.getElementById('endPlayAgain').addEventListener('click', (e)=>{ e.stopPropagation(); startGame(level); });
 document.querySelectorAll('.level-btn').forEach(b=> b.addEventListener('click', (e)=>{ e.stopPropagation(); startGame(b.dataset.level); }));
 
-// god mode - type "godmode": unlimited lives (no wall/self death) + jump to any level
+// deity mode - type "godmode": unlimited lives (no wall/self death) + jump to any level
 const GOD_TIERS = [['easy','🐤 Easy'],['medium','🦊 Medium'],['hard','🦉 Hard'],['einstein','🧠 Einstein']];
 HSGGod.watch(() => {
   HSGGod.enable();

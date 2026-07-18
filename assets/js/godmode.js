@@ -1,5 +1,5 @@
 // ============================================================
-// HSGGod - shared "god mode" cheat.
+// HSGGod - shared "deity mode" cheat.
 // Type "godmode" anywhere in a game to turn it on: it grants
 // unlimited lives (each game gates its own life-loss on HSGGod.on)
 // and can pop a picker to jump to any level / stage / difficulty.
@@ -49,11 +49,11 @@
     injectStyles();
     badgeEl = document.createElement('div');
     badgeEl.className = 'hsg-god-badge';
-    badgeEl.textContent = '😈 GOD MODE';
+    badgeEl.textContent = 'DEITY MODE';
     document.body.appendChild(badgeEl);
   }
 
-  // Flip god mode on (idempotent). Games read HSGGod.on to skip life-loss / game-over.
+  // Flip deity mode on (idempotent). Games read HSGGod.on to skip life-loss / game-over.
   NS.enable = function () {
     if (NS.on) return;
     NS.on = true;
@@ -83,7 +83,7 @@
     if (!overlayEl) {
       overlayEl = document.createElement('div');
       overlayEl.className = 'hsg-god-ov hidden';
-      overlayEl.innerHTML = '<div class="hsg-god-card"><h3>😈 God mode</h3>' +
+      overlayEl.innerHTML = '<div class="hsg-god-card"><h3>Deity mode</h3>' +
         '<div class="sub" data-god-sub></div><div class="hsg-god-grid" data-god-grid></div>' +
         '<button class="hsg-god-close" data-god-close>Close</button></div>';
       document.body.appendChild(overlayEl);
