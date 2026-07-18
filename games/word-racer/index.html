@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="canonical" href="https://homeschoolgames.org/games/word-racer/">
   <meta property="og:url" content="https://homeschoolgames.org/games/word-racer/">
-  <meta name="description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.">
+  <meta name="description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers. Sharpen keyboarding skills in your browser.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#C4A040">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -18,14 +18,14 @@
   <meta property="og:site_name" content="HomeschoolGames">
   <meta property="og:locale" content="en_US">
   <meta property="og:title" content="Word Racer">
-  <meta property="og:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.">
+  <meta property="og:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers. Sharpen keyboarding skills in your browser.">
   <meta property="og:image" content="https://homeschoolgames.org/assets/img/og/word-racer.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Word Racer - free typing game">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Word Racer">
-  <meta name="twitter:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.">
+  <meta name="twitter:description" content="Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers. Sharpen keyboarding skills in your browser.">
   <meta name="twitter:image" content="https://homeschoolgames.org/assets/img/og/word-racer.jpg">
   <title>Word Racer - Free Typing Speed Game | HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
@@ -210,7 +210,7 @@
         "@type": "VideoGame",
         "name": "Word Racer",
         "url": "https://homeschoolgames.org/games/word-racer/",
-        "description": "Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers - sharpen keyboarding skills in your browser.",
+        "description": "Type words as fast as you can to win the race. A free typing-speed game for kids and homeschoolers. Sharpen keyboarding skills in your browser.",
         "image": "https://homeschoolgames.org/assets/img/og/word-racer.jpg",
         "genre": "Typing",
         "gamePlatform": "Web browser",
@@ -299,7 +299,7 @@
       <div class="type-prompt hidden" id="typePrompt"><span>⌨️ Start typing to begin…</span></div>
     </div>
 
-    <div class="race-hint">Type the top line - your car rides right where you are.</div>
+    <div class="race-hint">Type the top line. Your car rides right where you are.</div>
   </section>
 
   <section class="hidden results" id="resultScreen">
@@ -644,7 +644,7 @@ function updateRace() {
     lastLeader = order[0].name;
     setCommentary(order[0].you ? "🏁 You're in the lead!" : `💨 ${order[0].name} grabs the lead!`, false);
   }
-  if (!said85 && index / passageLen >= 0.85) { said85 = true; setCommentary('⚡ Final stretch - floor it!', true); }
+  if (!said85 && index / passageLen >= 0.85) { said85 = true; setCommentary('⚡ Final stretch, floor it!', true); }
 }
 
 function setCommentary(msg, force) {

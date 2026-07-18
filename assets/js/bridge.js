@@ -597,7 +597,7 @@
           onPlayAgain: () => { rail.reset(); level = 1; totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0; startLevel(); },
           allGamesHref: cfg.allGamesHref || '../../index.html',
           extraHTML: '<div id="brBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
-          // run over - bank the longest streak + show placement/name entry inline
+          // run over: bank the longest streak + show placement/name entry inline
           onMount: card => rail.gameOver(banked, card.querySelector('#brBoard')),
         });
       } else {

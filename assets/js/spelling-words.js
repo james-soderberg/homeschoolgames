@@ -143,7 +143,7 @@
     maintenance:"🔧 Keeping something in good working order", conscience:"😇 The inner voice of right and wrong",
     conscious:"👁️ Awake and aware of what's happening", pronunciation:"🗣️ The way a word is said out loud (no \"noun\")",
     accommodate:"🛏️ To make room for someone (two c, two m)", occurrence:"📅 Something that happens (two c, two r)",
-    recommend:"👍 To suggest something is good (one c, two m)", possess:"🫳 To own or have something (two s, two s)",
+    recommend:"👍 To suggest something is good (one c, two m)", possess:"🫳 To own or have something (four s's, in two pairs)",
     miscellaneous:"🗃️ A mix of various different things", perseverance:"💪 Never giving up, even when it's hard",
     mischievous:"😈 Playfully causing a little trouble (no extra i)", exaggerate:"📈 To make something sound bigger (two g)",
     guarantee:"🤝 A firm promise that something will happen", hierarchy:"🪜 A ranking from highest to lowest",

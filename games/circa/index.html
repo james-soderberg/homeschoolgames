@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="canonical" href="https://homeschoolgames.org/games/circa/">
   <meta property="og:url" content="https://homeschoolgames.org/games/circa/">
-  <meta name="description" content="Put history in order, card by card. A free timeline card game where you rank real events by date - history practice for kids and homeschoolers.">
+  <meta name="description" content="Put history in order, card by card. A free timeline card game where you rank real events by date. History practice for kids and homeschoolers.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#C4A040">
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -17,17 +17,17 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="HomeschoolGames">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="Circa - History Card Game">
-  <meta property="og:description" content="Put history in order, card by card. A free timeline card game where you rank real events by date - history practice for kids and homeschoolers.">
+  <meta property="og:title" content="Circa: History Card Game">
+  <meta property="og:description" content="Put history in order, card by card. A free timeline card game where you rank real events by date. History practice for kids and homeschoolers.">
   <meta property="og:image" content="https://homeschoolgames.org/assets/img/og/circa.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Circa - History Card Game - free history game">
+  <meta property="og:image:alt" content="Circa: a free history card game">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Circa - History Card Game">
-  <meta name="twitter:description" content="Put history in order, card by card. A free timeline card game where you rank real events by date - history practice for kids and homeschoolers.">
+  <meta name="twitter:title" content="Circa: History Card Game">
+  <meta name="twitter:description" content="Put history in order, card by card. A free timeline card game where you rank real events by date. History practice for kids and homeschoolers.">
   <meta name="twitter:image" content="https://homeschoolgames.org/assets/img/og/circa.jpg">
-  <title>Circa - Free History Timeline Card Game | HomeschoolGames</title>
+  <title>Circa: Free History Timeline Card Game | HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -760,9 +760,9 @@
     "@graph": [
       {
         "@type": "VideoGame",
-        "name": "Circa - History Card Game",
+        "name": "Circa: History Card Game",
         "url": "https://homeschoolgames.org/games/circa/",
-        "description": "Put history in order, card by card. A free timeline card game where you rank real events by date - history practice for kids and homeschoolers.",
+        "description": "Put history in order, card by card. A free timeline card game where you rank real events by date. History practice for kids and homeschoolers.",
         "image": "https://homeschoolgames.org/assets/img/og/circa.jpg",
         "genre": "History",
         "gamePlatform": "Web browser",
@@ -802,7 +802,7 @@
           {
             "@type": "ListItem",
             "position": 3,
-            "name": "Circa - History Card Game",
+            "name": "Circa: History Card Game",
             "item": "https://homeschoolgames.org/games/circa/"
           }
         ]
@@ -981,7 +981,7 @@ const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK
   { title: "Homer composes the Iliad", desc: "The epic poems attributed to Homer are set down, shaping Greek identity and literature for centuries.", year: -750, approx: true },
   { title: "Rome founded", desc: "According to Roman tradition, Romulus establishes the city on the banks of the Tiber River.", year: -753 },
   { title: "Buddha born", desc: "Siddhartha Gautama is born in Lumbini, in what is now Nepal, the future founder of Buddhism.", year: -563, approx: true },
-  { title: "Confucius born", desc: "Kong Qiu - later known as Confucius - is born in the state of Lu, in present-day Shandong, China.", year: -551 },
+  { title: "Confucius born", desc: "Kong Qiu, later known as Confucius, is born in the state of Lu, in present-day Shandong, China.", year: -551 },
   { title: "Persian Empire founded", desc: "Cyrus the Great unites the Medes and Persians, creating the largest empire the world had yet seen.", year: -550 },
   { title: "Democracy in Athens", desc: "Cleisthenes introduces sweeping reforms that give Athenian male citizens direct political power.", year: -507 },
   { title: "Battle of Marathon", desc: "A smaller Athenian force defeats the Persian invasion, securing Greek independence.", year: -490 },
@@ -1949,7 +1949,7 @@ function showEndScreen() {
   document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = 'Game Over';
-  document.getElementById('endSubtitle').textContent = 'Final scores - most cards wins';
+  document.getElementById('endSubtitle').textContent = 'Final scores: most cards wins';
 
   const scores = players.map((p, i) => ({ name: p.name, wins: piles[i].length }));
   scores.sort((a, b) => b.wins - a.wins);

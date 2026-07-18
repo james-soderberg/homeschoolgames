@@ -420,7 +420,7 @@
       var status = host.querySelector('.quest-status');
       if (status && !host._banner) {
         status.className = 'quest-status';
-        if (st.threat >= st.threatMax - 2) { status.textContent = 'She\'s going under - answer fast!'; status.classList.add('bad'); }
+        if (st.threat >= st.threatMax - 2) { status.textContent = 'She\'s going under, answer fast!'; status.classList.add('bad'); }
         else { status.textContent = 'Keep the ark above water!'; }
       }
     },
@@ -430,7 +430,7 @@
       var svg = host.querySelector('.ark-svg'); if (svg) svg.classList.add('saved');
       var animals = host.querySelector('.ark-animals'); if (animals) animals.classList.add('aboard');
       var banner = host.querySelector('.ark-banner'); if (banner) { banner.textContent = '🌈 Ark afloat!'; banner.className = 'ark-banner win show'; }
-      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'The animals are safe - the rains stop!'; status.className = 'quest-status good'; }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'The animals are safe! The rains stop!'; status.className = 'quest-status good'; }
       setTimeout(function () {
         host._banner = false;
         if (banner) banner.className = 'ark-banner';
@@ -635,7 +635,7 @@
       if (status && !host._banner) {
         status.className = 'quest-status';
         if (arrived) { status.textContent = 'You made it to the present!'; status.classList.add('good'); }
-        else if (frac >= 0.78) { status.textContent = '⚠ Timeline collapsing - answer right!'; status.classList.add('bad'); }
+        else if (frac >= 0.78) { status.textContent = '⚠ Timeline collapsing, answer right!'; status.classList.add('bad'); }
         else if (pos >= n - 1) { status.textContent = 'One more jump to the present!'; }
         else { status.textContent = 'Right = jump forward · Wrong = paradox!'; }
       }
@@ -655,7 +655,7 @@
 
     onBack: function (host) {
       host._banner = true;
-      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '⏪ Knocked back - paradox rising!'; banner.className = 'tm-banner fail show'; }
+      var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '⏪ Knocked back, paradox rising!'; banner.className = 'tm-banner fail show'; }
       tmFlag(host, '.tm-svg', 'glitch', 480);
       var stage = host.querySelector('.tm-stage'); if (stage) { stage.classList.add('quest-shake'); setTimeout(function () { stage.classList.remove('quest-shake'); }, 420); }
       var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Swept back to an earlier era…'; status.className = 'quest-status bad'; }
@@ -667,7 +667,7 @@
       var svg = host.querySelector('.tm-svg'); if (svg) { svg.classList.remove('danger', 'unstable'); svg.classList.add('collapsing'); }
       var banner = host.querySelector('.tm-banner'); if (banner) { banner.textContent = '💥 Timeline Collapsed!'; banner.className = 'tm-banner doom show'; }
       var stage = host.querySelector('.tm-stage'); if (stage) { stage.classList.add('quest-shake'); setTimeout(function () { stage.classList.remove('quest-shake'); }, 600); }
-      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Too many paradoxes - history unravels…'; status.className = 'quest-status bad'; }
+      var status = host.querySelector('.quest-status'); if (status) { status.textContent = 'Too many paradoxes, history unravels…'; status.className = 'quest-status bad'; }
       setTimeout(function () {
         host._banner = false;
         if (banner) banner.className = 'tm-banner';

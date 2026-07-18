@@ -576,8 +576,8 @@
   "license": "Wikimedia Commons"
  },
  {
-  "title": "Maya civilization reaches its peak",
-  "desc": "Maya cities in Central America built pyramids, tracked the stars, and used a full writing system.",
+  "title": "Maya civilization enters its golden age",
+  "desc": "Maya cities in Central America began their Classic era, building pyramids, tracking the stars, and using a full writing system.",
   "year": 250,
   "img": "ev73.jpg",
   "approx": true,
@@ -880,7 +880,7 @@
  {
   "title": "Pope launches the First Crusade",
   "desc": "Pope Urban II called knights to retake Jerusalem, beginning two centuries of crusades.",
-  "year": 1096,
+  "year": 1095,
   "img": "ev112.jpg",
   "license": "Wikimedia Commons"
  },
@@ -1131,7 +1131,7 @@
  {
   "title": "Ottomans take Cairo and the Arab world",
   "desc": "Selim I defeated the Mamluks and took Cairo, making the Ottomans rulers of Mecca, Jerusalem, and the Arab heartland.",
-  "year": 1516,
+  "year": 1517,
   "img": "ev143.jpg",
   "license": "Wikimedia Commons"
  },

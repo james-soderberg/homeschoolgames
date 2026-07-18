@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="canonical" href="https://homeschoolgames.org/games/roots/">
 <meta property="og:url" content="https://homeschoolgames.org/games/roots/">
-<meta name="description" content="Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers - learn roots, prefixes, and suffixes.">
+<meta name="description" content="Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers. Learn roots, prefixes, and suffixes.">
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#C4A040">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -18,14 +18,14 @@
 <meta property="og:site_name" content="HomeschoolGames">
 <meta property="og:locale" content="en_US">
 <meta property="og:title" content="Roots">
-<meta property="og:description" content="Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers - learn roots, prefixes, and suffixes.">
+<meta property="og:description" content="Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers. Learn roots, prefixes, and suffixes.">
 <meta property="og:image" content="https://homeschoolgames.org/assets/img/og/roots.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:image:alt" content="Roots - free vocabulary game">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Roots">
-<meta name="twitter:description" content="Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers - learn roots, prefixes, and suffixes.">
+<meta name="twitter:description" content="Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers. Learn roots, prefixes, and suffixes.">
 <meta name="twitter:image" content="https://homeschoolgames.org/assets/img/og/roots.jpg">
 <title>Roots - Free Greek &amp; Latin Vocabulary Game | HomeschoolGames</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
@@ -155,7 +155,7 @@
         "@type": "VideoGame",
         "name": "Roots",
         "url": "https://homeschoolgames.org/games/roots/",
-        "description": "Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers - learn roots, prefixes, and suffixes.",
+        "description": "Forge words from Greek and Latin roots to grow your vocabulary. A free word-building game for kids and homeschoolers. Learn roots, prefixes, and suffixes.",
         "image": "https://homeschoolgames.org/assets/img/og/roots.jpg",
         "genre": "Vocabulary",
         "gamePlatform": "Web browser",
@@ -432,7 +432,7 @@ const WORDS = [
   {w:'hydrology',    p:['hydro','logy'],     d:'The study of water on Earth', t:2},
   {w:'philosophy',   p:['philo','sophy'],    d:'The love and study of wisdom', t:2},
   {w:'theology',     p:['theo','logy'],      d:'The study of God and religion', t:2},
-  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer - one who uses the voice', t:3},
+  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer who uses the voice', t:3},
   {w:'projection',   p:['pro','ject','ion'], d:'The act of throwing an image forward', t:3},
   {w:'inspection',   p:['in','spect','ion'], d:'A close looking-into of something', t:3},
   {w:'anthropology', p:['anthropo','logy'],  d:'The study of humans and their cultures', t:3},
@@ -625,7 +625,7 @@ function checkBuild(){
   if(window.HSGSound) HSGSound.wrong();
   $('slots').classList.add('shake'); setTimeout(()=>$('slots').classList.remove('shake'), 420);
   rail.broke();
-  $('feedback').innerHTML = '<span style="color:var(--red)">Not quite - check the order.</span>';
+  $('feedback').innerHTML = '<span style="color:var(--red)">Not quite. Check the order.</span>';
   answered = true;
   setTimeout(()=>{ slots = cur.p.slice(); renderSlots(); [...document.querySelectorAll('#slots .slot')].forEach(s=>s.classList.add('wrongpick')); finishRound(false); }, 900);
 }
@@ -694,7 +694,7 @@ function finishRound(won){
   const rev = $('reveal'); rev.style.display = 'block';
   const pieces = cur.p.map(id => '<span class="hl">'+id+'</span>').join('<span style="color:var(--ink-light)"> · </span>');
   const literal = cur.p.map(id => id+' = '+gloss(id)).join('  ·  ');
-  rev.innerHTML = '<div class="built">'+pieces+'</div><div class="meaning"><b>'+cur.w+'</b> - '+cur.d+'</div><div class="literal">'+literal+'</div>';
+  rev.innerHTML = '<div class="built">'+pieces+'</div><div class="meaning"><b>'+cur.w+'</b>: '+cur.d+'</div><div class="literal">'+literal+'</div>';
   const a = $('actions'); a.innerHTML = '';
   const btn = document.createElement('button'); btn.className='btn btn-gold'; btn.textContent='Next word →';
   btn.addEventListener('click', nextRound); a.appendChild(btn);
@@ -702,7 +702,7 @@ function finishRound(won){
 
 function levelUp(){
   const cap = currentMaxTier();
-  const notes = { 2:'Prefixes now flip meanings - un-, re-, trans-…', 3:'Three-part science words incoming.', 4:'🔥 Monster words unlocked!' };
+  const notes = { 2:'Prefixes now flip meanings: un-, re-, trans-…', 3:'Three-part science words incoming.', 4:'🔥 Monster words unlocked!' };
   $('luN').textContent = 'Level ' + level;
   $('luS').textContent = notes[cap] || 'The words get juicier.';
   const lu = $('levelup'); lu.classList.add('show');

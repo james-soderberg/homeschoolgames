@@ -22,12 +22,12 @@
   <meta property="og:image" content="https://homeschoolgames.org/assets/img/og/type-invaders.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Independence Day - free typing game">
+  <meta property="og:image:alt" content="Independence Day, a free typing game">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Independence Day">
   <meta name="twitter:description" content="Type to blast alien invaders before they reach the White House. A free typing game that builds speed and accuracy for kids and homeschoolers.">
   <meta name="twitter:image" content="https://homeschoolgames.org/assets/img/og/type-invaders.jpg">
-  <title>Independence Day - Free Typing Game | HomeschoolGames</title>
+  <title>Independence Day: Free Typing Game | HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -347,7 +347,7 @@
     <div class="bf-overlay hidden" id="huntStartOverlay">
       <div class="crest">🗝️</div>
       <h2>Arcade Assault</h2>
-      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong> - the cannon fires on its own; sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Wave 15</strong> and the next clue is yours. Good luck!</p>
+      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong>: the cannon fires on its own, so sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Wave 15</strong> and the next clue is yours. Good luck!</p>
       <button class="play-btn" id="huntStartBtn">Launch 🚀</button>
     </div>
 
@@ -407,7 +407,7 @@
 <script src="../../assets/js/hunt.js"></script>
 <script>
 // ============================================================
-// TYPE INVADERS - an arcade typing-defense game.
+// TYPE INVADERS: an arcade typing-defense game.
 // Alien saucers descend on the White House. Type a saucer's word
 // to lock on; every keystroke fires a laser from the roof cannon,
 // and finishing the word blows the saucer out of the sky. Bombers
@@ -418,7 +418,7 @@
 
 // ---------- Word pools ----------
 // EASY reuses Dragon Siege's gentle word list. MEDIUM / HARD / IMPOSSIBLE serve
-// the real words of the U.S. Constitution, in order (letters only) - you type
+// the real words of the U.S. Constitution, in order (letters only). You type
 // your way through the document as you defend the capital.
 const EASY_WORDS = [
   "cat","hat","dog","sun","run","red","big","bed","cup","top",
@@ -444,7 +444,7 @@ const CONST_RAW = (`
   United States, and who shall not, when elected, be an Inhabitant of that State in which he shall be
   chosen. Representatives and direct Taxes shall be apportioned among the several States which may be
   included within this Union, according to their respective Numbers. The actual Enumeration shall be
-  made within three Years after the first Meeting of the Congress, and within every subsequent Term
+  made within three Years after the first Meeting of the Congress of the United States, and within every subsequent Term
   of ten Years, in such Manner as they shall by Law direct. The House of Representatives shall choose
   their Speaker and other Officers, and shall have the sole Power of Impeachment.
   The Senate of the United States shall be composed of two Senators from each State, chosen by the
@@ -490,7 +490,7 @@ function updateTicker(idx){
   txt.innerHTML = html.trim();
 }
 
-// Mothership phrases - typed as a sequence of words (one laser volley each).
+// Mothership phrases: typed as a sequence of words (one laser volley each).
 const BOSS_PHRASES = [
   ["take","your","leader"],
   ["we","come","in","peace"],
@@ -511,7 +511,7 @@ const REALMS = {
 };
 const REALM_LABELS = { easy:'Easy', medium:'Medium', hard:'Hard', impossible:'Impossible' };
 
-// word serving - Constitution realms walk the text in order
+// word serving: Constitution realms walk the text in order
 let constIdx = 0;
 function nextAlienWord(){
   if (realm.src === 'const'){ const i = constIdx % CONSTITUTION.length; constIdx++; updateTicker(i); return CONSTITUTION[i]; }
@@ -1179,7 +1179,7 @@ function shootDownHeli(h){
   if (h.dead) return;
   h.dead = true; removeBubble(h); if (active===h) active=null;
   explosion(h.x, h.y, false, 30);
-  floatText(h.x, h.y-20, 'CHOPPER HIT - BAIL OUT!', '#ffb84d');
+  floatText(h.x, h.y-20, 'CHOPPER HIT! BAIL OUT!', '#ffb84d');
   spawnPara(h.x, h.y);
 }
 function spawnPara(x, y){
@@ -2146,7 +2146,7 @@ function startGame(key, isArcade){
 function enterArcade(){
   secretBuf = '';
   startGame('impossible', true);
-  flashWave('🕹 ARCADE MODE', 'Aim with ← → arrows - the cannon fires itself!');
+  flashWave('🕹 ARCADE MODE', 'Aim with the ← → arrows. The cannon fires itself!');
   if (window.HSGSound) HSGSound.powerup();
 }
 // treasure-hunt entry (via ?arcade): straight into arcade with a clue goal
@@ -2154,14 +2154,14 @@ function startHuntArcade(){
   document.getElementById('huntStartOverlay').classList.add('hidden');
   huntCluePopped = false;
   startGame(HUNT_ARCADE_REALM, true);
-  flashWave('🗝 REACH WAVE ' + HUNT_GOAL_WAVE, 'Aim with ← → - the cannon fires itself!');
+  flashWave('🗝 REACH WAVE ' + HUNT_GOAL_WAVE, 'Aim with ← →. The cannon fires itself!');
   if (window.HSGSound) HSGSound.powerup();
 }
 // reached the goal wave - the capital erupts, then we sail to the clue page
 function revealHuntClue(){
   huntCluePopped = true;
   huntWinning = true; huntWinT = 0; huntBoomT = 0;
-  flashWave('🗝 CLUE UNLOCKED', 'Wave ' + HUNT_GOAL_WAVE + ' held - the capital is saved!');
+  flashWave('🗝 CLUE UNLOCKED', 'Wave ' + HUNT_GOAL_WAVE + ' held, the capital is saved!');
   // blow every invader on screen sky-high
   for (const o of allTargets()) explosion(o.x, o.y, true, rand(0, 60));
   for (const w of walkers) explosion(w.x, w.y, false, rand(0, 60));

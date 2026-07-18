@@ -46,7 +46,7 @@
 
   var TREASURE = {
     title: 'The Cartographer’s Hoard',
-    text: 'Every trial passed, every buried game unearthed. The last clue dissolves and the map is finally yours - you are a true explorer.'
+    text: 'Every trial passed, every buried game unearthed. The last clue dissolves and the map is finally yours. You are a true explorer.'
   };
 
   // ---- state --------------------------------------------------------------
@@ -96,7 +96,7 @@
     var b = document.createElement('div');
     b.className = 'hsg-hunt-banner';
     b.innerHTML = (next
-      ? '<div class="hh-tag">🗝 Trial cleared - a new clue surfaces!</div>' +
+      ? '<div class="hh-tag">🗝 Trial cleared: a new clue surfaces!</div>' +
         '<div class="hh-riddle">“' + esc(next.riddle) + '”</div>' +
         '<div class="hh-hint">' + (next.placeholder
           ? 'More of the trail is still being carved - check back soon, hunter.'
