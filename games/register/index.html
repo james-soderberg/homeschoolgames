@@ -604,7 +604,8 @@
         bigbill:     Math.min(4.5, 1 + t*0.55),
         evenchange:  n>=3 ? Math.min(6.5, (t-1)*1.0) : 0,         // they add coins so the change is even
         coinheavy:   n>=4 ? Math.min(5,   (t-2)*0.85) : 0,
-        splittender: n>=6 ? Math.min(4,   (t-4)*0.8)  : 0
+        splittender: n>=6 ? Math.min(4,   (t-4)*0.8)  : 0,
+        discount:    n>=5 ? Math.min(3.5, (t-3)*0.7)  : 0        // a percent off before tax (read the receipt)
       }
     };
   }
@@ -626,7 +627,7 @@
       var cents = total % 100, dollarPart = total - cents;
 
       var scen = pickWeighted(D.weights);
-      var pay, change, exact = false, note = '', payNote = '';
+      var pay, change, exact = false, note = '', payNote = '', discCents = 0, discPct = 0;
 
       if (scen === 'plain' && Math.random() < D.exactPct && (type.key==='reg'||type.key==='senior')) {
         pay = total; change = 0; exact = true; note = 'exact change';
@@ -648,12 +649,25 @@
       } else if (scen === 'splittender') {
         pay = smallestPayOver(total, bills) + pick(bills);        // hands an extra bill on top of a covering bill
         change = pay - total; note = 'odd tender';
+      } else if (scen === 'discount') {
+        // a percent off the order, applied before tax; the receipt shows a discount line
+        discPct = pick([10, 10, 15, 20, 25]);
+        discCents = Math.round(subtotal * discPct / 100);
+        var newSub = subtotal - discCents;
+        if (newSub < 80) continue;
+        taxCents = tier.tax ? Math.round(newSub * taxRate / 100) : 0;   // tax on the discounted price
+        total = newSub + taxCents; cents = total % 100; dollarPart = total - cents;
+        pay = smallestPayOver(total, bills);
+        if (Math.random() < D.bigOdds) { var b3 = smallestPayOver(pay, bills); if (b3 > pay) pay = b3; }
+        change = pay - total; note = discPct + '% off';
       } else {                                                    // coinheavy / plain
         pay = smallestPayOver(total, bills);
         if (Math.random() < D.bigOdds) { var b2 = smallestPayOver(pay, bills); if (b2 > pay) pay = b2; }
         change = pay - total;
         if (scen === 'coinheavy') note = 'coin-heavy';
       }
+
+      if (!exact && effectiveDay() >= 8) note = '';               // harder days: no hint, read the tender yourself
 
       if (!exact) {
         if (change <= 0 || change > 3999) continue;
@@ -666,7 +680,7 @@
 
       return {
         type:type, items:items, subtotal:subtotal, taxRate:taxRate, taxCents:taxCents,
-        total:total, pay:pay, change:change, exact:exact, hidden:hidden,
+        total:total, pay:pay, change:change, exact:exact, hidden:hidden, discCents:discCents, discPct:discPct,
         optimal: exact ? 0 : optimalPieces(change, drawer).n, scen:scen, payNote:payNote, note:note,
         name:pick(NAMES), bar:rand(1000,9999) + ' ' + rand(1000,9999)
       };
@@ -754,6 +768,7 @@
     var rt = '';
     if (tier.tax) {
       rt += '<div class="row"><span>Subtotal</span><span>'+(cur.subtotal/100).toFixed(2)+'</span></div>';
+      if (cur.discCents) rt += '<div class="row"><span>'+cur.discPct+'% off</span><span>-'+(cur.discCents/100).toFixed(2)+'</span></div>';
       rt += '<div class="row"><span>Tax '+cur.taxRate+'%</span><span>'+(cur.taxCents/100).toFixed(2)+'</span></div>';
     }
     rt += '<div class="row grand"><span>TOTAL</span><span>'+(cur.total/100).toFixed(2)+'</span></div>';
@@ -1043,8 +1058,9 @@
       $('ovLab').textContent = 'How to play';
       $('ovTitle').textContent = 'Register';
       $('ovDesc').innerHTML = 'Ring up each customer, then hand back their <b>exact change</b> using the ' +
-        '<b>fewest coins &amp; bills</b>. No clock, so take your time and get it right, but every extra coin costs a fee. ' +
-        'Fill the till and clear the day\'s rent to win.';
+        '<b>fewest coins &amp; bills</b>. No clock, so take your time, but every extra coin costs a fee. ' +
+        'Clear the day\'s rent to move on, and <b>each day gets harder</b>: shoppers who <b>add coins so the change comes out even</b>, ' +
+        'big-bill overpays, coin-heavy change, and later the <b>change is hidden</b> so you work it out yourself.';
       $('startBtn').textContent = 'Play →';
     }
     renderDrawer(); renderStartBoard();
