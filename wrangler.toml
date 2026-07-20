@@ -1,0 +1,11 @@
+# Cloudflare Pages config for the static site + Functions.
+# The D1 binding can also be set in the Pages dashboard
+# (Settings -> Functions -> D1 database bindings, variable name DB).
+name = "homeschoolgames"
+pages_build_output_dir = "."
+compatibility_date = "2024-11-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "homeschoolgames-scores"
+database_id = "REPLACE_WITH_ID_FROM_wrangler_d1_create"

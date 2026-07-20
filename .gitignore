@@ -4,6 +4,9 @@ Thumbs.db
 node_modules/
 .env
 
+# Wrangler / Cloudflare local dev state
+.wrangler/
+
 # Personal Claude Code settings (do not commit)
 .claude/settings.local.json
 
