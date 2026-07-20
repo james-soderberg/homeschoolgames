@@ -168,9 +168,15 @@
     requestAnimationFrame(step);
   }
 
-  function showSummary({ title = 'Round complete', correct = 0, total = 0, best = 0, onPlayAgain, allGamesHref = '../../index.html', extraHTML = '', onMount }) {
+  function showSummary({ title = 'Round complete', correct = 0, total = 0, best = 0, onPlayAgain, allGamesHref = '../../index.html', extraHTML = '', onMount, stats }) {
     const pct = total ? Math.round((correct / total) * 100) : 0;
     const grade = gradeFor(pct);
+    // Callers may pass their own stat tiles; otherwise fall back to the default three.
+    const statsHTML = (stats && stats.length)
+      ? stats.map(s => `<div class="hsg-stat"><div class="hsg-stat-num${s.cls ? ' ' + s.cls : ''}" data-num="${s.num}">0</div><div class="hsg-stat-label">${s.label}</div></div>`).join('')
+      : `<div class="hsg-stat"><div class="hsg-stat-num" data-num="${pct}">0</div><div class="hsg-stat-label">% Score</div></div>
+          <div class="hsg-stat"><div class="hsg-stat-num" data-num="${correct}">0</div><div class="hsg-stat-label">Correct</div></div>
+          <div class="hsg-stat"><div class="hsg-stat-num best" data-num="${best}">0</div><div class="hsg-stat-label">Best streak</div></div>`;
 
     const overlay = document.createElement('div');
     overlay.className = 'hsg-summary';
@@ -180,9 +186,7 @@
         <div class="hsg-grade" style="color:${grade.color}">${grade.g}</div>
         <div class="hsg-grade-msg">${grade.msg}</div>
         <div class="hsg-stats">
-          <div class="hsg-stat"><div class="hsg-stat-num" data-num="${pct}">0</div><div class="hsg-stat-label">% Score</div></div>
-          <div class="hsg-stat"><div class="hsg-stat-num" data-num="${correct}">0</div><div class="hsg-stat-label">Correct</div></div>
-          <div class="hsg-stat"><div class="hsg-stat-num best" data-num="${best}">0</div><div class="hsg-stat-label">Best streak</div></div>
+          ${statsHTML}
         </div>
         ${extraHTML}
         <div class="hsg-summary-actions">

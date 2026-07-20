@@ -113,6 +113,10 @@
   .wall-nm { font-family:var(--font-sans); font-size:8px; font-weight:700; color:var(--ink); padding:2px 1px 3px; line-height:1.05; min-height:2.1em; }
   .wall-cell.locked .wall-nm { color:transparent; }
   .wall-cell.justwon { animation: pop .5s cubic-bezier(.34,1.56,.64,1); border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,162,74,.4); }
+  .wall-cell.missed { border-color:var(--red); }
+  .wall-cell.missed .wall-pic::after { content:'✗'; position:absolute; inset:0; display:grid; place-items:center;
+    font-size:1.5rem; font-weight:700; color:#d98a8a; background:#3a2a2a; }
+  .wall-cell.missed .wall-nm { color:transparent; }
   .wall-note { font-family:var(--font-sans); font-size:.8rem; color:var(--ink-light); text-align:center; padding:.3rem 1rem .9rem; }
   .credit { font-size:.72rem; color:var(--ink-light); text-align:center; margin-top:1rem; }
   .credit a { color:inherit; }
@@ -197,7 +201,7 @@
         <span class="dot"></span><span id="autoLabel">Auto-advance: Off</span>
       </button>
       <div class="stat-badge">Wall of Fame <b id="wallStat">0</b> / <span id="wallGoal">0</span></div>
-      <button class="quit-btn" id="quitBtn" type="button" title="End the game (you can save your streak first)">Quit</button>
+      <button class="quit-btn" id="quitBtn" type="button" title="End the game (only a finished run of 24 is scored)">Quit</button>
     </div>
   </div>
 
@@ -262,8 +266,13 @@ let answerPool = shuffle(PEOPLE);   // order to draw answers from
 let collected = [];            // people filling the wall this game (in order)
 const collectedNames = new Set();
 let answered = false, current = null, advanceTimer = null;
-let totalAnswered = 0, streak = 0, bestStreak = 0;   // for the end-of-game summary
-let hintUsed = false;                                // any hint this run → leaderboard asterisk
+// The game is a fixed run of WALL_SIZE (24) questions. Score = correct - hints,
+// so a flawless 24/24 with no hints is the best possible (24). A miss or a hint
+// each costs a point.
+let roundIndex = 0;          // questions asked so far (0..WALL_SIZE)
+let correctCount = 0;        // correct answers (portraits earned)
+let hintCount = 0;           // hints revealed across the run (each costs a point)
+let hintThisRound = false;   // whether the current question's hint was revealed
 
 // ---- preload the portrait, skipping any that 404 ----
 function loadPortrait(p){
@@ -319,24 +328,27 @@ function buildWall(){
   updateWallCount();
 }
 function updateWallCount(){
-  const c = collected.length;
-  document.getElementById('wallCount').textContent = c;
-  document.getElementById('wallStat').textContent = c;
-  document.getElementById('wallBar').style.width = (c/WALL_SIZE*100)+'%';
+  document.getElementById('wallCount').textContent = correctCount;
+  document.getElementById('wallStat').textContent = correctCount;
+  document.getElementById('wallBar').style.width = (roundIndex/WALL_SIZE*100)+'%';
+  const left = WALL_SIZE - roundIndex;
   const note = document.getElementById('wallNote');
-  if(c===0) note.textContent='Name a speaker right to add their portrait.';
-  else if(c>=WALL_SIZE) note.textContent='🏆 Wall complete! You filled it!';
-  else note.textContent=(WALL_SIZE-c)+' more to fill the wall.';
+  if(roundIndex===0) note.textContent='Name the speaker to earn their portrait.';
+  else if(left<=0) note.textContent='🏛️ Game complete!';
+  else note.textContent = left + ' question' + (left>1?'s':'') + ' to go.';
 }
-function addToWall(p){
-  collected.push(p); collectedNames.add(p.n);
-  const cells = document.querySelectorAll('.wall-cell');
-  const cell = cells[collected.length-1];
-  if(cell){
-    cell.classList.remove('locked');
+// Fill the cell for the round just played: their portrait if correct, a red mark if not.
+function markCell(idx, p, correct){
+  const cell = document.querySelectorAll('.wall-cell')[idx];
+  if(!cell) return;
+  cell.classList.remove('locked');
+  if(correct){
+    collected.push(p);
     cell.querySelector('.wall-pic').innerHTML = '<img src="'+imgFor(p)+'" alt="'+p.n+'">';
     cell.querySelector('.wall-nm').textContent = p.n;
     cell.classList.add('justwon'); setTimeout(()=>cell.classList.remove('justwon'),700);
+  } else {
+    cell.classList.add('missed');
   }
   updateWallCount();
 }
@@ -345,6 +357,7 @@ function addToWall(p){
 async function nextCard(){
   clearTimeout(advanceTimer);
   answered = false;
+  hintThisRound = false;
   document.getElementById('feedback').textContent = '';
   document.getElementById('revealLine').innerHTML = '';
   document.getElementById('nextBtn').style.display = 'none';
@@ -375,15 +388,16 @@ function handleAnswer(chosen, btn){
   const btns = document.querySelectorAll('.option-btn');
   btns.forEach(b=>b.disabled=true);
   const correct = chosen === current.n;
-  totalAnswered++;
-  if(correct){ streak++; if(streak>bestStreak) bestStreak=streak; } else { streak=0; }
+  collectedNames.add(current.n);          // never ask this person again this run
+  if(correct) correctCount++;
+  markCell(roundIndex, current, correct);
+  roundIndex++;
 
   if(correct){
     btn.classList.add('correct');
     if(window.HSGSound) HSGSound.correct();
     document.getElementById('portraitWrap').classList.add('win');
     document.getElementById('feedback').innerHTML = '<span style="color:var(--green)">✓ Correct!</span>';
-    addToWall(current);
     if(window.HSGfx && HSGfx.confetti) HSGfx.confetti({count:18});
   } else {
     if(window.HSGSound) HSGSound.wrong();
@@ -400,7 +414,7 @@ function handleAnswer(chosen, btn){
   blurb.textContent = bio; blurb.hidden = false;
   document.getElementById('hintBtn').hidden = true;   // the hint is moot once answered
 
-  if(collected.length >= WALL_SIZE){ setTimeout(winGame, DELAY_OK); return; }
+  if(roundIndex >= WALL_SIZE){ setTimeout(endGame, DELAY_OK); return; }
 
   const nb = document.getElementById('nextBtn');
   nb.style.display='inline-block';
@@ -410,12 +424,20 @@ function handleAnswer(chosen, btn){
   }
 }
 
-function winGame(){
-  // Show the leaderboard + inline placement/name entry right in the summary card.
-  const panel = { gameId:'who-said-it', gameName:'Who Said It?', minStreak:3,
-                  score:bestStreak, hinted:hintUsed };
+function endGame(){
+  // Final score = correct answers minus hints used; a flawless 24/24 with no hints is 24.
+  const score = Math.max(0, correctCount - hintCount);
+  const hinted = hintCount > 0;
+  const perfect = score >= WALL_SIZE;
+  const panel = { gameId:'who-said-it', gameName:'Who Said It?', level:'best', levelName:'Best Score',
+                  minStreak:1, unit:'wall24', score:score, hinted:hinted };
   if(window.HSGfx && HSGfx.showSummary){
-    HSGfx.showSummary({ title:'🏛️ Wall of Fame complete!', correct:WALL_SIZE, total:totalAnswered, best:bestStreak,
+    HSGfx.showSummary({
+      title: perfect ? '🏛️ Perfect wall! '+WALL_SIZE+' / '+WALL_SIZE : '🏛️ Wall of Fame complete!',
+      correct:score, total:WALL_SIZE,
+      stats:[ {num:score, label:'Score / '+WALL_SIZE, cls:'best'},
+              {num:correctCount, label:'Correct'},
+              {num:hintCount, label:'Hints used'} ],
       onPlayAgain:resetGame,
       extraHTML:'<div id="wsiBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
       onMount:()=>{ if(window.HSGStreak) HSGStreak.endPanel('#wsiBoard', panel); } });
@@ -423,7 +445,7 @@ function winGame(){
 }
 function resetGame(){
   collected = []; collectedNames.clear();
-  totalAnswered = 0; streak = 0; bestStreak = 0; hintUsed = false;
+  roundIndex = 0; correctCount = 0; hintCount = 0; hintThisRound = false;
   answerPool = shuffle(PEOPLE.filter(p=>!brokenImg.has(p.n)));
   buildWall(); nextCard();
 }
@@ -431,7 +453,7 @@ function resetGame(){
 document.getElementById('hintBtn').addEventListener('click', ()=>{
   document.getElementById('quoteBlurb').hidden = false;
   document.getElementById('hintBtn').hidden = true;
-  hintUsed = true;   // mark the run as hint-assisted
+  if(!hintThisRound){ hintThisRound = true; hintCount++; }   // each hint costs a point
 });
 document.getElementById('nextBtn').addEventListener('click', ()=>{ if(answered) nextCard(); });
 document.addEventListener('keydown', e=>{
@@ -463,19 +485,13 @@ autoToggle.addEventListener('click', ()=>{
 });
 renderAutoToggle();
 
-// ---- quit / leave: offer to save the streak if it makes the Top 10 ----
+// ---- quit / leave: only a finished game (all 24) makes the leaderboard, so quitting
+// early just leaves without recording a partial score. ----
 let leaving = false;
 function leaveGame(dest){
   if(leaving) return; leaving = true;
   clearTimeout(advanceTimer); answered = true;        // freeze the current round
-  const go = ()=>{ if(dest) window.location.href = dest; };
-  // record() shows a save prompt ONLY when the best streak makes the Top 10;
-  // otherwise it calls onDone(null) right away and we just leave.
-  if(window.HSGStreak && HSGStreak.record){
-    HSGStreak.record({ gameId:'who-said-it', gameName:'Who Said It?',
-      score:bestStreak, minStreak:3, unit:'streak',
-      onDone:()=>{ leaving = false; go(); } });
-  } else { go(); }
+  if(dest) window.location.href = dest;
 }
 document.getElementById('quitBtn').addEventListener('click', ()=> leaveGame('../../index.html'));
 const allGamesLink = document.getElementById('allGamesLink');

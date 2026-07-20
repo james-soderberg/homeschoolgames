@@ -64,7 +64,10 @@
               of: function (n) { return (n / 5280).toFixed(2) + ' miles!'; },       claim: 'run', rIcon: '🏁', rLabel: 'MILES' },
     // generic points metric - whole-number score, higher is better
     points: { head: '🏆 High Scores',           score: function (n) { return '⭐ ' + n.toLocaleString(); },
-              of: function (n) { return n.toLocaleString() + ' pts!'; },           claim: 'score', rIcon: '⭐', rLabel: 'SCORE' }
+              of: function (n) { return n.toLocaleString() + ' pts!'; },           claim: 'score', rIcon: '⭐', rLabel: 'SCORE' },
+    // Who Said It - score out of 24 (higher is better)
+    wall24: { head: '🏆 Wall of Fame',           score: function (n) { return n + ' / 24'; },
+              of: function (n) { return n + ' / 24!'; },                           claim: 'game', rIcon: '🏛️', rLabel: 'SCORE' }
   };
   function unitOf(u) { return UNITS[u] || UNITS.streak; }
 
