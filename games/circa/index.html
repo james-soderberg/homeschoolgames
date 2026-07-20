@@ -351,20 +351,29 @@
       max-width: 1080px;
       align-items: stretch;
     }
-    /* a 6-card hand: all six across, dropping to two rows of three when narrow */
+    /* bigger hands: all cards across on a wide screen, wrapping when narrow */
+    .hand-grid.hand-5 { grid-template-columns: repeat(5, 1fr); gap: 0.9rem; max-width: 1150px; }
     .hand-grid.hand-6 { grid-template-columns: repeat(6, 1fr); gap: 0.8rem; max-width: 1220px; }
+    .hand-grid.hand-7 { grid-template-columns: repeat(7, 1fr); gap: 0.7rem; max-width: 1360px; }
+    .hand-grid.hand-8 { grid-template-columns: repeat(8, 1fr); gap: 0.6rem; max-width: 1440px; }
     @media (max-width: 820px) {
       .hand-grid { grid-template-columns: repeat(2, 1fr); max-width: 560px; }
     }
     @media (max-width: 400px) {
       .hand-grid { grid-template-columns: 1fr; max-width: 320px; }
     }
-    /* keep the 6-card rules AFTER the base breakpoints so they win by specificity+order */
+    /* keep the big-hand rules AFTER the base breakpoints so they win by specificity+order */
+    @media (max-width: 1200px) {
+      .hand-grid.hand-7 { grid-template-columns: repeat(4, 1fr); gap: 0.9rem; max-width: 900px; }
+      .hand-grid.hand-8 { grid-template-columns: repeat(4, 1fr); gap: 0.9rem; max-width: 900px; }
+    }
     @media (max-width: 1040px) {
-      .hand-grid.hand-6 { grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 620px; }
+      .hand-grid.hand-5, .hand-grid.hand-6, .hand-grid.hand-7, .hand-grid.hand-8 {
+        grid-template-columns: repeat(3, 1fr); gap: 1rem; max-width: 620px; }
     }
     @media (max-width: 520px) {
-      .hand-grid.hand-6 { grid-template-columns: repeat(2, 1fr); max-width: 360px; }
+      .hand-grid.hand-5, .hand-grid.hand-6, .hand-grid.hand-7, .hand-grid.hand-8 {
+        grid-template-columns: repeat(2, 1fr); max-width: 360px; }
     }
 
     /* ---- Circa card (shared) ---- */
@@ -689,7 +698,9 @@
     }
 
     /* ---- PASS-AND-PLAY game screen (unchanged) ---- */
-    .game-screen { display: none; max-width: 820px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    .game-screen { display: none; max-width: 1400px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    /* keep the header/target/result in a readable centered column; the hand spreads wide */
+    #gameScreen .game-header, #gameScreen .target-area, #gameScreen .round-result { max-width: 760px; margin-left: auto; margin-right: auto; }
     /* centered header: title centered, End Game to the right, scores below */
     .game-header {
       display: grid;
@@ -839,6 +850,23 @@
         <option value="4">4 players</option>
         <option value="5">5 players</option>
         <option value="6">6 players</option>
+      </select>
+
+      <label>Cards per player</label>
+      <select id="handSizeSel">
+        <option value="4">4 cards (easier)</option>
+        <option value="5">5 cards</option>
+        <option value="6" selected>6 cards</option>
+        <option value="7">7 cards</option>
+        <option value="8">8 cards</option>
+      </select>
+
+      <label>Rounds</label>
+      <select id="roundsSel">
+        <option value="5">5 rounds</option>
+        <option value="10" selected>10 rounds</option>
+        <option value="15">15 rounds</option>
+        <option value="20">20 rounds</option>
       </select>
 
       <label>Player names <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
@@ -1713,6 +1741,7 @@ let deck = [];
 let hands = [];
 let piles = [];
 let roundNum = 0;
+let numRounds = 10;
 let targetCard = null;
 let currentPickerIndex = 0;
 let picks = [];
@@ -1742,7 +1771,10 @@ function showFriendsSetup() {
 
 function startFriendsGame() {
   mode = 'pass';
-  handSize = 4;
+  var hsSel = document.getElementById('handSizeSel');
+  var rSel = document.getElementById('roundsSel');
+  handSize = hsSel ? (parseInt(hsSel.value) || 6) : 6;
+  numRounds = rSel ? (parseInt(rSel.value) || 10) : 10;
   document.getElementById('setupScreen').style.display = 'none';
   startPassGame();
 }
@@ -1772,15 +1804,15 @@ function startPassGame() {
 }
 
 function startRound() {
+  if (roundNum >= numRounds || deck.length === 0) { showEndScreen(); return; }
   phase = 'pick';
   picks = [];
   currentPickerIndex = 0;
 
-  if (deck.length === 0) { showEndScreen(); return; }
   targetCard = deck.pop();
   roundNum++;
 
-  document.getElementById('roundNum').textContent = roundNum;
+  document.getElementById('roundNum').textContent = roundNum + ' of ' + numRounds;
 
   // Show the target EVENT face-up - its date stays hidden until the reveal.
   const tMount = document.getElementById('targetCardEl');
@@ -1824,7 +1856,8 @@ function renderHand(playerIndex) {
 
   const grid = document.getElementById('handGrid');
   grid.innerHTML = '';
-  grid.classList.toggle('hand-6', hand.length > 4);   // 6-card hand → one row of six
+  grid.classList.remove('hand-5', 'hand-6', 'hand-7', 'hand-8');   // reset
+  if (hand.length > 4) grid.classList.add('hand-' + Math.min(hand.length, 8));   // 5-8 cards → one wide row
   selectedCardIndex = -1;
 
   hand.forEach((card, i) => {
@@ -1916,6 +1949,11 @@ function revealRound() {
   piles[winnerIdx].push(targetCard);
   picks.forEach(p => { hands[p.playerIndex].splice(p.cardIndex, 1); });
 
+  // Replenish: every player draws back up to their hand size so the hand never shrinks.
+  for (let i = 0; i < players.length; i++) {
+    while (hands[i].length < handSize && deck.length > 0) hands[i].push(deck.pop());
+  }
+
   const resultEl = document.getElementById('roundResult');
   resultEl.style.display = 'block';
   resultEl.textContent = `${players[winnerIdx].name} wins round ${roundNum} (+${picks.length + 1} cards)`;
@@ -1924,13 +1962,13 @@ function revealRound() {
   if (window.HSGSound && HSGSound.correct) HSGSound.correct();
   if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 40 });
 
-  const handsEmpty = hands.every(h => h.length === 0);
+  const gameOver = roundNum >= numRounds || deck.length === 0;
   const bar = document.getElementById('actionBar');
   bar.innerHTML = '';
   const nextBtn = document.createElement('button');
   nextBtn.className = 'btn btn-gold';
-  nextBtn.textContent = handsEmpty ? 'See final scores →' : 'Next round →';
-  nextBtn.addEventListener('click', handsEmpty ? showEndScreen : startRound);
+  nextBtn.textContent = gameOver ? 'See final scores →' : 'Next round →';
+  nextBtn.addEventListener('click', gameOver ? showEndScreen : startRound);
   bar.appendChild(nextBtn);
   document.getElementById('handLabel').textContent = 'Results';
   document.getElementById('soloHint').textContent = '';
