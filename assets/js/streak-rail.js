@@ -67,7 +67,15 @@
               of: function (n) { return n.toLocaleString() + ' pts!'; },           claim: 'score', rIcon: '⭐', rLabel: 'SCORE' },
     // Who Said It - score out of 24 (higher is better)
     wall24: { head: '🏆 Wall of Fame',           score: function (n) { return n + ' / 24'; },
-              of: function (n) { return n + ' / 24!'; },                           claim: 'game', rIcon: '🏛️', rLabel: 'SCORE' }
+              of: function (n) { return n + ' / 24!'; },                           claim: 'game', rIcon: '🏛️', rLabel: 'SCORE' },
+    // Map Quiz accuracy - a single integer encodes BOTH correct and wrong:
+    //   score = correct*1000 + (999 - min(wrong,999))
+    // so it sorts by most-correct first, then by fewest-wrong (best accuracy).
+    // Displayed as "correct/total · pct%".
+    mapscore: { head: '🗺️ Map Masters',
+              score: function (n) { var c = Math.floor(n / 1000), w = 999 - (n % 1000), t = c + w, p = t ? Math.round(100 * c / t) : 100; return c + '/' + t + ' · ' + p + '%'; },
+              of: function (n) { var c = Math.floor(n / 1000), w = 999 - (n % 1000), t = c + w, p = t ? Math.round(100 * c / t) : 100; return c + '/' + t + ' correct · ' + p + '%!'; },
+              claim: 'map', rIcon: '🎯', rLabel: 'FOUND' }
   };
   function unitOf(u) { return UNITS[u] || UNITS.streak; }
 

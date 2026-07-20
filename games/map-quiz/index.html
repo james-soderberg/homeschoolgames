@@ -42,37 +42,37 @@
     .map-header { margin-bottom: 1rem; }
     .map-header h1 { font-size: 1.8rem; margin-bottom: 0.1rem; }
 
-    /* Region selector */
-    .region-tabs {
-      display: flex;
-      gap: 0.5rem;
-      flex-wrap: wrap;
-      margin-bottom: 1rem;
+    /* ---- World-map region picker (start screen) ---- */
+    .world-pick { text-align: center; }
+    .pick-intro { font-size: 1.05rem; color: var(--ink-light); margin: 0 0 0.9rem; }
+    .world-map-wrap {
+      background: #CFE6F0; border: 2px solid var(--border); border-radius: 14px;
+      overflow: hidden; padding: 0.3rem; box-shadow: 0 2px 10px rgba(26,23,20,0.08);
     }
-
-    .region-tab {
-      padding: 0.55rem 1.1rem;
-      border: 2px solid var(--border);
-      border-radius: 99px;
-      background: white;
-      font-size: 0.9rem;
-      font-weight: 500;
-      cursor: pointer;
-      font-family: var(--font-sans);
-      color: var(--ink-light);
-      transition: all 0.15s;
+    .world-svg { display: block; width: 100%; height: auto; }
+    .wm-country { stroke-width: 0.5; transition: filter 0.12s; }
+    .wm-region { cursor: pointer; }
+    .wm-region[data-region="americas"] .wm-country { fill: #E4A65B; stroke: #b07a34; }
+    .wm-region[data-region="europe"]   .wm-country { fill: #7BB0E0; stroke: #43719e; }
+    .wm-region[data-region="asia"]     .wm-country { fill: #C58BD0; stroke: #835690; }
+    .wm-region[data-region="africa"]   .wm-country { fill: #77C08A; stroke: #43855a; }
+    .wm-region:hover .wm-country, .wm-region.hot .wm-country { filter: brightness(1.14) saturate(1.15); }
+    .wm-region:hover .wm-country, .wm-region.hot .wm-country { stroke-width: 0.9; }
+    .wm-label {
+      font-family: var(--font-serif); font-weight: 800; font-size: 30px; fill: #22201a;
+      paint-order: stroke; stroke: #fff; stroke-width: 5px; stroke-linejoin: round; pointer-events: none;
     }
-
-    .region-tab.active {
-      background: var(--ink);
-      color: var(--cream);
-      border-color: var(--ink);
+    .region-legend { display: flex; gap: 0.55rem; flex-wrap: wrap; justify-content: center; margin-top: 1rem; }
+    .region-chip {
+      display: flex; align-items: center; gap: 0.45rem; padding: 0.5rem 0.95rem;
+      border: 2px solid var(--border); border-radius: 99px; background: #fff; cursor: pointer;
+      font-family: var(--font-sans); font-weight: 600; color: var(--ink);
+      box-shadow: 0 2px 0 var(--border); transition: transform 0.1s, border-color 0.12s;
     }
-
-    .region-tab:hover:not(.active) {
-      border-color: var(--ink-light);
-      color: var(--ink);
-    }
+    .region-chip:hover { transform: translateY(-2px); border-color: var(--gold); }
+    .region-chip .rc-count { font-size: 0.78rem; color: var(--ink-light); font-weight: 500; }
+    .mq-board-region { font-family: var(--font-sans); font-weight: 700; font-size: 0.82rem;
+      text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-light); margin-bottom: 0.4rem; text-align: center; }
 
     /* Country prompt - big */
     .prompt-box {
@@ -297,36 +297,44 @@
     <h1>Map Quiz</h1>
   </div>
 
-  <div class="region-tabs">
-    <button class="region-tab active" data-region="americas" onclick="loadRegion('americas')">🌎 Americas</button>
-    <button class="region-tab" data-region="europe" onclick="loadRegion('europe')">🌍 Europe</button>
-    <button class="region-tab" data-region="asia" onclick="loadRegion('asia')">🌏 Asia</button>
-    <button class="region-tab" data-region="africa" onclick="loadRegion('africa')">🌍 Africa</button>
+  <!-- START: whole-world region picker -->
+  <div id="worldPicker" class="world-pick">
+    <p class="pick-intro">Pick a region of the world — click it right on the map to start.</p>
+    <div class="world-map-wrap" id="worldMapWrap"></div>
+    <div class="region-legend" id="regionLegend"></div>
   </div>
 
-  <div class="prompt-box">
-    <div class="prompt-left">
-      <div class="prompt-label">Click this country on the map →</div>
-      <div class="prompt-country" id="promptCountry">Loading…</div>
-    </div>
-    <div class="score-box">
-      <div class="score-item">
-        <span class="score-num correct" id="scoreCorrect">0</span>
-        <span class="score-label">✓ Found</span>
+  <!-- GAME: the region quiz (hidden until a region is chosen) -->
+  <div id="gameScreen" style="display:none">
+    <div class="prompt-box">
+      <div class="prompt-left">
+        <div class="prompt-label">Click this country on the map →</div>
+        <div class="prompt-country" id="promptCountry">Loading…</div>
       </div>
-      <div class="score-item">
-        <span class="score-num wrong" id="scoreWrong">0</span>
-        <span class="score-label">✗ Missed</span>
+      <div class="score-box">
+        <div class="score-item">
+          <span class="score-num correct" id="scoreCorrect">0</span>
+          <span class="score-label">✓ Found</span>
+        </div>
+        <div class="score-item">
+          <span class="score-num wrong" id="scoreWrong">0</span>
+          <span class="score-label">✗ Missed</span>
+        </div>
+        <div class="score-item">
+          <span class="score-num" id="scoreAcc" style="color:var(--gold)">—</span>
+          <span class="score-label">Accuracy</span>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="feedback-bar" id="feedbackBar"></div>
+    <div class="feedback-bar" id="feedbackBar"></div>
 
-  <div class="map-container" id="mapContainer"></div>
+    <div class="map-container" id="mapContainer"></div>
 
-  <div class="btn-row">
-    <button class="btn btn-outline btn-sm" onclick="resetScores()">Reset Scores</button>
+    <div class="btn-row">
+      <button class="btn btn-gold btn-sm" id="quitBtn" onclick="quitAndSave()">🏁 Quit &amp; save score</button>
+      <button class="btn btn-outline btn-sm" onclick="restartRegion()">🔄 Restart region</button>
+    </div>
   </div>
 
 </div><!-- /.map-page -->
@@ -445,26 +453,61 @@ function buildRegionSVG(region) {
 }
 
 // ---- State ----
-let currentRegion = 'americas';
+// Each entry into a region is a FRESH run (all its countries to find), so the
+// accuracy score is a full, comparable attempt. runCorrect/runWrong drive both
+// the live readout and the leaderboard score.
+let currentRegion = null;
 let queue = [];
 let currentCountry = null;
-let completed = new Set();   // ids of countries already found (this region)
-let scoreWrong = 0;
-let streak = 0;
-let bestStreak = 0;
+let completed = new Set();   // ids found so far THIS run (colours the map)
+let runCorrect = 0;          // correct clicks this run
+let runWrong = 0;            // wrong clicks this run
+let streak = 0;              // local streak — only drives confetti milestones
 let waitingForNext = false;
 let advanceTimer = null;
 let regionJustFinished = false;
 
-// ---- Persistence: found countries survive reloads so you fill them in over time ----
-function storageKey(region) { return 'hsg-mapquiz-found-' + region; }
-function loadCompleted(region) {
-  try { return new Set(JSON.parse(localStorage.getItem(storageKey(region)) || '[]')); }
-  catch (e) { return new Set(); }
-}
-function saveCompleted() {
-  try { localStorage.setItem(storageKey(currentRegion), JSON.stringify([...completed])); }
-  catch (e) { /* ignore quota / private-mode errors */ }
+// A single integer encodes correct + wrong for the leaderboard (see the
+// `mapscore` unit in streak-rail.js): more correct wins, ties broken by fewer wrong.
+function encodeScore(correct, wrong) { return correct * 1000 + (999 - Math.min(wrong, 999)); }
+
+// ---- Whole-world map (start picker), composed from the four region datasets.
+// Each region is independently projected to its own ~1016 box, so we rescale each
+// to a common ~5px-per-degree and place it at its real lon/lat. Approximate, but
+// it reads as a clean world map with four clickable, highlightable regions.
+const GEO = {
+  americas: { latSpan: 127, cLon: -95, cLat: 8 },
+  africa:   { latSpan: 72,  cLon: 20,  cLat: 2 },
+  asia:     { latSpan: 65,  cLon: 104, cLat: 28 },
+  europe:   { latSpan: 36,  cLon: 12,  cLat: 57 },
+};
+const REGION_META = {
+  americas: { label: 'Americas', emoji: '🌎', labelLon: -100, labelLat: 46 },
+  europe:   { label: 'Europe',   emoji: '🌍', labelLon: 15,   labelLat: 50 },
+  asia:     { label: 'Asia',     emoji: '🌏', labelLon: 93,   labelLat: 41 },
+  africa:   { label: 'Africa',   emoji: '🌍', labelLon: 22,   labelLat: 3 },
+};
+function buildWorldSVG() {
+  const K = 5, wx = lon => (lon + 170) * K, wy = lat => (85 - lat) * K;
+  const order = ['americas', 'africa', 'asia', 'europe'];   // Europe last = on top at the Euro-Asia seam
+  let inner = '', labels = '', minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  for (const region of order) {
+    const data = window.HSG_MAP_DATA[region]; if (!data) continue;
+    const vb = data.viewBox.split(/\s+/).map(Number);       // [x, y, w, h]
+    const g = GEO[region], s = K * g.latSpan / vb[3];
+    const wsc = vb[2] * s, hsc = vb[3] * s;
+    const cx = wx(g.cLon), cy = wy(g.cLat), px = cx - wsc / 2, py = cy - hsc / 2;
+    minX = Math.min(minX, px); minY = Math.min(minY, py);
+    maxX = Math.max(maxX, px + wsc); maxY = Math.max(maxY, py + hsc);
+    inner += `<g class="wm-region" data-region="${region}" transform="translate(${px.toFixed(1)},${py.toFixed(1)}) scale(${s.toFixed(4)}) translate(${(-vb[0]).toFixed(1)},${(-vb[1]).toFixed(1)})">`;
+    for (const d of Object.values(data.paths)) inner += `<path class="wm-country" d="${d}"></path>`;
+    inner += `</g>`;
+    const m = REGION_META[region];
+    labels += `<text class="wm-label" x="${wx(m.labelLon).toFixed(0)}" y="${wy(m.labelLat).toFixed(0)}" text-anchor="middle">${m.emoji} ${m.label}</text>`;
+  }
+  const pad = 26;
+  const vbox = `${(minX - pad).toFixed(0)} ${(minY - pad).toFixed(0)} ${(maxX - minX + 2 * pad).toFixed(0)} ${(maxY - minY + 2 * pad).toFixed(0)}`;
+  return `<svg viewBox="${vbox}" xmlns="http://www.w3.org/2000/svg" class="world-svg">${inner}${labels}</svg>`;
 }
 
 // Native SVG tooltip on a country path
@@ -554,80 +597,103 @@ function setPrompt(text, isCountry) {
   }
 }
 
+// ---- screen switching ----
+function showPicker() {
+  clearTimeout(advanceTimer); waitingForNext = false; currentCountry = null;
+  document.getElementById('gameScreen').style.display = 'none';
+  document.getElementById('worldPicker').style.display = '';
+  const fp = document.getElementById('fpBottom'); if (fp) fp.classList.remove('show');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function enterRegion(region) {
+  currentRegion = region;
+  document.getElementById('worldPicker').style.display = 'none';
+  document.getElementById('gameScreen').style.display = '';
+  loadRegion(region);
+  renderRegionBoard();
+}
+
 function loadRegion(region) {
   currentRegion = region;
-  const labels = { americas:'Americas', europe:'Europe', asia:'Asia', africa:'Africa' };
-  if (typeof rail !== 'undefined') rail.setLevel(region, labels[region]);  // per-region board
-  document.querySelectorAll('.region-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.region === region);
-  });
-
-  // Render map
   document.getElementById('mapContainer').innerHTML = buildRegionSVG(region);
-
-  // Attach click handlers
   document.querySelectorAll('#mapContainer .country').forEach(path => {
     path.addEventListener('click', () => handleCountryClick(path.id));
   });
-
   startRound();
 }
 
+// Every entry into a region is a fresh, full run so the score is comparable.
 function startRound() {
-  completed = loadCompleted(currentRegion);
-  scoreWrong = 0;
-  streak = 0;
-  bestStreak = 0;
-  regionJustFinished = false;
-
-  // Colour + label everything already found
-  completed.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) { el.classList.add('completed'); setTitle(el, getCountryName(id)); paintCompleted(el, id); }
-  });
-
-  // Only ask for countries not yet found
-  queue = shuffle(REGIONS[currentRegion].countries.filter(c => !completed.has(c.id)));
+  completed = new Set();
+  runCorrect = 0; runWrong = 0; streak = 0; regionJustFinished = false;
+  queue = shuffle(REGIONS[currentRegion].countries.slice());
   updateScoreDisplay();
   nextQuestion();
 }
 
-function resetScores() {
-  if (!confirm('Reset your found countries and scores for ' + REGIONS[currentRegion].label + '?')) return;
-  try { localStorage.removeItem(storageKey(currentRegion)); } catch (e) {}
-  loadRegion(currentRegion);
+function restartRegion() { clearTimeout(advanceTimer); loadRegion(currentRegion); }
+
+// ---- leaderboard (per region, accuracy-based) ----
+function renderRegionBoard() {
+  const host = document.getElementById('streakRail');
+  if (!host || !currentRegion) return;
+  host.innerHTML = '<div class="mq-board-region">' + REGIONS[currentRegion].label + ' · Top scores</div><div id="mqRailBoard"></div>';
+  HSGStreak.renderBoardInto('#mqRailBoard', { gameId: 'map-quiz', level: currentRegion, minStreak: 1, unit: 'mapscore' });
+}
+
+// Bank this run to the leaderboard (only if at least one country was found), then
+// run onDone. Prompts for a name inline only when the score makes the Top 10.
+function bankRun(onDone) {
+  if (runCorrect <= 0) { if (onDone) onDone(); return; }
+  HSGStreak.record({
+    gameId: 'map-quiz', gameName: 'Map Quiz',
+    level: currentRegion, levelName: REGIONS[currentRegion].label,
+    unit: 'mapscore', minStreak: 1, score: encodeScore(runCorrect, runWrong),
+    onDone: () => { renderRegionBoard(); if (onDone) onDone(); }
+  });
+}
+// Quit mid-run: save the score even though the region isn't finished, then return
+// to the world picker.
+function quitAndSave() {
+  clearTimeout(advanceTimer); waitingForNext = false; currentCountry = null;
+  bankRun(showPicker);
 }
 
 function nextQuestion() {
   clearTimeout(advanceTimer);
   waitingForNext = false;
-  // Clear feedback + transient highlights (keep persistent .completed greying)
   document.getElementById('feedbackBar').textContent = '';
   document.querySelectorAll('#mapContainer .country').forEach(el => {
     el.classList.remove('correct-flash', 'wrong-flash', 'show-correct');
   });
 
   if (queue.length === 0) {
-    // Region complete!
+    // Region complete — every country found.
     currentCountry = null;
     const total = REGIONS[currentRegion].countries.length;
     setPrompt('All found! 🎉', false);
+    const totalGuesses = runCorrect + runWrong;
+    const pct = totalGuesses ? Math.round(100 * runCorrect / totalGuesses) : 100;
     document.getElementById('feedbackBar').innerHTML =
-      `<span class="feedback-correct">🌍 You found all ${total} countries in ${REGIONS[currentRegion].label}!</span>`;
-    // Only celebrate when the region was just finished by play (not on reload).
+      `<span class="feedback-correct">🌍 You found all ${total} countries in ${REGIONS[currentRegion].label}! ${pct}% accuracy.</span>`;
     if (regionJustFinished) {
       regionJustFinished = false;
       HSGfx.confetti({ count: 90, big: true });
-      const banked = bestStreak;
       HSGfx.showSummary({
         title: `${REGIONS[currentRegion].label} complete!`,
-        correct: total, total: total + scoreWrong, best: bestStreak,
-        onPlayAgain: () => {
-          try { localStorage.removeItem(storageKey(currentRegion)); } catch (e) {}
-          loadRegion(currentRegion);
-        },
+        correct: runCorrect, total: totalGuesses,
+        stats: [
+          { num: runCorrect, label: 'Found' },
+          { num: totalGuesses, label: 'Guesses' },
+          { num: pct, label: '% Accuracy', cls: 'best' },
+        ],
         extraHTML: '<div id="mqBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
-        onMount: card => rail.gameOver(banked, card.querySelector('#mqBoard')),
+        onMount: card => HSGStreak.endPanel(card.querySelector('#mqBoard'), {
+          gameId: 'map-quiz', gameName: 'Map Quiz', level: currentRegion, levelName: REGIONS[currentRegion].label,
+          unit: 'mapscore', score: encodeScore(runCorrect, runWrong), minStreak: 1,
+          onSaved: () => renderRegionBoard(),
+        }),
+        onPlayAgain: () => enterRegion(currentRegion),
       });
     }
     return;
@@ -649,28 +715,25 @@ function handleCountryClick(countryId) {
   const correctEl = document.getElementById(currentCountry.id);
 
   if (countryId === currentCountry.id) {
+    runCorrect++;
     streak++;
-    if (streak > bestStreak) bestStreak = streak;
-    rail.hit();
     HSGSound.correct();
     if (HSGfx.milestone(streak)) HSGSound.streak(streak);
-    // Mark found: persists, greys out, and reveals its name on hover.
     completed.add(currentCountry.id);
-    saveCompleted();
     if (completed.size === REGIONS[currentRegion].countries.length) regionJustFinished = true;
     if (correctEl) {
       correctEl.classList.add('correct-flash', 'completed');
       setTitle(correctEl, currentCountry.name);
       paintCompleted(correctEl, currentCountry.id);                 // set the colour (under the flash)
       const fid = currentCountry.id;
-      setTimeout(() => { const e = document.getElementById(fid); if (e) e.classList.remove('correct-flash'); }, 450); // reveal it
+      setTimeout(() => { const e = document.getElementById(fid); if (e) e.classList.remove('correct-flash'); }, 450);
     }
     fb.innerHTML = `<span class="feedback-correct">🎉 Yes! That's ${currentCountry.name}!</span>`;
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1000);
   } else {
-    scoreWrong++;
+    runWrong++;
     streak = 0;
     HSGSound.wrong();
     const wrongName = getCountryName(countryId);
@@ -681,13 +744,12 @@ function handleCountryClick(countryId) {
       wrongEl.classList.add('wrong-flash');
       setTimeout(() => wrongEl.classList.remove('wrong-flash'), 800);
     }
-    // Missed - put it back in the rotation so you get another shot at it.
+    // Missed — put it back in the rotation so you get another shot at it.
     const at = Math.floor(Math.random() * (queue.length + 1));
     queue.splice(at, 0, currentCountry);
     updateScoreDisplay();
     waitingForNext = true;
     advanceTimer = setTimeout(nextQuestion, 1800);
-    rail.broke();   // wrong click snaps the streak - keep going, no modal
   }
 }
 
@@ -698,8 +760,10 @@ function getCountryName(id) {
 
 function updateScoreDisplay() {
   const total = REGIONS[currentRegion].countries.length;
-  document.getElementById('scoreCorrect').textContent = `${completed.size} / ${total}`;
-  document.getElementById('scoreWrong').textContent = scoreWrong;
+  document.getElementById('scoreCorrect').textContent = `${runCorrect} / ${total}`;
+  document.getElementById('scoreWrong').textContent = runWrong;
+  const g = runCorrect + runWrong;
+  document.getElementById('scoreAcc').textContent = g ? Math.round(100 * runCorrect / g) + '%' : '—';
 }
 
 function shuffle(arr) {
@@ -711,12 +775,27 @@ function shuffle(arr) {
 }
 
 // ============================================================
-// Init
+// Init — build the world picker; a region is chosen before play
 // ============================================================
-const rail = HSGStreak.init({
-  gameId: 'map-quiz', gameName: 'Map Quiz', minStreak: 1,
-  mount: document.getElementById('streakRail')
+document.getElementById('worldMapWrap').innerHTML = buildWorldSVG();
+document.querySelectorAll('#worldMapWrap .wm-region').forEach(g => {
+  g.addEventListener('click', () => enterRegion(g.dataset.region));
 });
+// legend chips: hovering highlights the region on the map; clicking enters it
+(function buildLegend() {
+  const legend = document.getElementById('regionLegend');
+  ['americas', 'europe', 'asia', 'africa'].forEach(r => {
+    const m = REGION_META[r], n = REGIONS[r].countries.length;
+    const chip = document.createElement('button');
+    chip.className = 'region-chip'; chip.dataset.region = r;
+    chip.innerHTML = m.emoji + ' <b>' + m.label + '</b> <span class="rc-count">' + n + ' countries</span>';
+    const grp = () => document.querySelector('#worldMapWrap .wm-region[data-region="' + r + '"]');
+    chip.addEventListener('mouseenter', () => { const el = grp(); if (el) el.classList.add('hot'); });
+    chip.addEventListener('mouseleave', () => { const el = grp(); if (el) el.classList.remove('hot'); });
+    chip.addEventListener('click', () => enterRegion(r));
+    legend.appendChild(chip);
+  });
+})();
 
 // Hover a found country to see its name (delegated, so it survives map rebuilds).
 const mapTip = document.createElement('div');
@@ -743,7 +822,9 @@ mapContainerEl.addEventListener('mousemove', (e) => {
 });
 mapContainerEl.addEventListener('mouseleave', hideTip);
 
-loadRegion('americas');
+// Deep link straight into a region, e.g. ?r=asia (otherwise start on the picker).
+const rq = new URLSearchParams(location.search).get('r');
+if (rq && REGIONS[rq]) enterRegion(rq);
 </script>
 
 </body>
