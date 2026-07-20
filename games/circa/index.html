@@ -1134,14 +1134,15 @@ const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK
 // High score - persists via localStorage
 // ============================================================
 const HS_KEY = 'circa_solo_highscore';
+let soloDiff = 'easy';   // current solo difficulty (easy/hard) - keeps the Best pill per-difficulty
 
 function getHighScore() {
-  const v = localStorage.getItem(HS_KEY);
+  const v = localStorage.getItem(HS_KEY + '_' + soloDiff);
   return v ? parseInt(v, 10) : 0;
 }
 
 function setHighScore(n) {
-  localStorage.setItem(HS_KEY, String(n));
+  localStorage.setItem(HS_KEY + '_' + soloDiff, String(n));
 }
 
 // ============================================================
@@ -1670,6 +1671,7 @@ function startSoloWithMode(key, tileEl) {
   mode = 'solo';
   const m = MODES.find(x => x.key === key) || MODES[0];
   handSize = m.hand;
+  soloDiff = m.key;                      // Best pill + high score track the chosen difficulty
   soloSourceDeck = DECK;                 // one combined deck - no era split
   tlBounds = wholeDeckBounds();
   rail.setLevel(key, m.label);           // Easy / Hard keep separate streak boards

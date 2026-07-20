@@ -959,8 +959,8 @@ function shuffle(arr) {
   return a;
 }
 function groundY() { return H * 0.80; }
-function getBest() { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; }
-function setBest(n) { try { localStorage.setItem(BEST_KEY, String(n)); } catch (e) {} }
+function getBest() { return parseInt(localStorage.getItem(BEST_KEY + '_' + difficulty) || '0', 10) || 0; }
+function setBest(n) { try { localStorage.setItem(BEST_KEY + '_' + difficulty, String(n)); } catch (e) {} }
 function roundRect(x, y, w, h, r) {
   r = Math.min(r, h / 2, w / 2);
   ctx.beginPath();
