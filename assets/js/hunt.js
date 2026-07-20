@@ -30,7 +30,7 @@
   var STEPS = [
     { token: 'v7k2m9', word: 'secret', open: 'games/secret-flap/index.html', game: 'flappy', goal: 15,
       accept: ['secret', 'secrets'],
-      riddle: 'This one magic whisper we kept.',
+      riddle: 'This one magic murmur we kept.',
       hint: "Ignore the words, notice the letters. If you're still stuck, another clue lies at the completion of the Exodus Journey (Hard or Solomon level difficulty).",
       trial: 'Slip past a score of 15 without falling.' },
 
