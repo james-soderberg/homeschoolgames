@@ -35,7 +35,7 @@ const WSI_PEOPLE = [
 {n:"Omar Khayyam",g:"m",y:1048,e:"Medieval Persia",q:"The Moving Finger writes; and, having writ, moves on.",b:"Persian poet and mathematician."},
 {n:"Thomas Aquinas",g:"m",y:1225,e:"Middle Ages",q:"Wonder is the desire for knowledge.",b:"Medieval philosopher and theologian."},
 {n:"Dante Alighieri",g:"m",y:1265,e:"Middle Ages",q:"Abandon all hope, ye who enter here.",b:"Author of the Divine Comedy."},
-{n:"Geoffrey Chaucer",g:"m",y:1343,e:"Middle Ages",q:"Love is blind.",b:"Author of The Canterbury Tales."},
+{n:"Geoffrey Chaucer",g:"m",y:1343,e:"Middle Ages",q:"Patience is a conquering virtue.",b:"Author of The Canterbury Tales."},
 {n:"Joan of Arc",g:"f",y:1412,e:"Middle Ages",q:"If I am not in God's grace, may God put me there; and if I am, may God so keep me.",b:"French heroine of the Hundred Years' War."},
 {n:"Leonardo da Vinci",g:"m",y:1452,e:"Renaissance",q:"The noblest pleasure is the joy of understanding.",b:"Painter of the Mona Lisa and inventor."},
 {n:"Christopher Columbus",g:"m",y:1451,e:"Age of Exploration",q:"You can never cross the ocean unless you have the courage to lose sight of the shore.",b:"Explorer who reached the Americas in 1492."},
