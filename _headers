@@ -1,0 +1,9 @@
+# Cloudflare Pages custom headers.
+# Shared scripts/styles change and MUST propagate to returning visitors quickly,
+# so revalidate them every load (ETag -> cheap 304 when unchanged) instead of the
+# 4-hour default browser cache. Images and other assets keep the default caching.
+/assets/js/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/assets/css/*
+  Cache-Control: public, max-age=0, must-revalidate
