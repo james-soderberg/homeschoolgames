@@ -102,9 +102,47 @@
       .map(function (e) { return { name: e.name, score: e.score, ts: e.ts || 0, hinted: !!e.hinted }; })
       .slice(0, MAX);
   }
-  // GET the global top-10 for a board; on success refresh the cache and resolve
-  // the fresh list. Any failure (offline, timeout, error) resolves null and the
-  // cache is left untouched.
+
+  // ---- pending queue: scores saved locally but not yet confirmed by the server.
+  // A save records optimistically AND queues here; every board refresh re-submits
+  // anything still pending, so a dropped/cancelled POST never loses the score.
+  var PENDING_PREFIX = 'hsg_lbq_';
+  function loadPending(key) {
+    try { var raw = localStorage.getItem(PENDING_PREFIX + key); var l = raw ? JSON.parse(raw) : []; return Array.isArray(l) ? l : []; }
+    catch (e) { return []; }
+  }
+  function savePending(key, list) {
+    try {
+      if (list && list.length) localStorage.setItem(PENDING_PREFIX + key, JSON.stringify(list.slice(0, 20)));
+      else localStorage.removeItem(PENDING_PREFIX + key);
+    } catch (e) {}
+  }
+  function addPending(key, entry) {
+    var l = loadPending(key);
+    if (!l.some(function (e) { return e.ts === entry.ts; })) { l.push(entry); savePending(key, l); }
+  }
+  function removePending(key, ts) {
+    savePending(key, loadPending(key).filter(function (e) { return e.ts !== ts; }));
+  }
+  // display list = server list plus any still-pending local entries (deduped by ts)
+  function mergeWithPending(key, serverList) {
+    var pend = loadPending(key);
+    if (!pend.length) return serverList;
+    var seen = {};
+    serverList.forEach(function (e) { seen[e.ts] = true; });
+    var merged = serverList.concat(pend.filter(function (e) { return !seen[e.ts]; }));
+    merged.sort(byScore);
+    return merged.slice(0, MAX);
+  }
+  // re-POST everything still queued for this board (fire-and-forget)
+  function flushPending(key) {
+    if (!remoteEnabled()) return;
+    loadPending(key).forEach(function (e) { submitScore(key, e); });
+  }
+
+  // GET the global top-10 for a board; on success refresh the cache (merged with
+  // any pending local scores) and retry pending submits. Any failure (offline,
+  // timeout, error) resolves null and the cache is left untouched.
   function fetchTop(key) {
     if (!remoteEnabled()) return Promise.resolve(null);
     var ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
@@ -114,7 +152,7 @@
       .then(function (list) {
         if (timer) clearTimeout(timer);
         var norm = normalizeList(list);
-        if (norm) { save(key, norm); return norm; }
+        if (norm) { var shown = mergeWithPending(key, norm); save(key, shown); flushPending(key); return shown; }
         return null;
       })
       .catch(function () { if (timer) clearTimeout(timer); return null; });
@@ -122,8 +160,12 @@
   // Fetch the latest board, then run cb() regardless of outcome (cache is the
   // fallback). Keeps render paths sync-first: caller paints cache, then repaints.
   function withFreshBoard(key, cb) { fetchTop(key).then(function () { cb(); }); }
-  // POST a score to the global board; resolves { top, rank } or null on failure.
+  // Queue + POST a score. Resolves { top, rank } on success (and clears it from
+  // the queue), null otherwise. Malformed (400) is dropped; network/5xx/429 stay
+  // queued for the next flush so the score is never lost.
   function submitScore(key, entry) {
+    entry = { name: formatName(entry.name), score: entry.score, hinted: !!entry.hinted, ts: entry.ts };
+    addPending(key, entry);   // queue first, so a failed/cancelled POST still retries later
     if (!remoteEnabled()) return Promise.resolve(null);
     return fetch(API_BASE + '/score', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -132,12 +174,17 @@
         hinted: entry.hinted ? 1 : 0, ts: entry.ts
       })
     })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (res) {
-        if (res && Array.isArray(res.top)) { save(key, normalizeList(res.top)); return res; }
-        return null;
+      .then(function (r) { return r.text().then(function (t) { var b = null; try { b = JSON.parse(t); } catch (e) {} return { status: r.status, body: b }; }); })
+      .then(function (resp) {
+        if (resp.status >= 200 && resp.status < 300 && resp.body && Array.isArray(resp.body.top)) {
+          removePending(key, entry.ts);
+          save(key, mergeWithPending(key, normalizeList(resp.body.top)));
+          return resp.body;
+        }
+        if (resp.status === 400) removePending(key, entry.ts);   // malformed - never going to succeed
+        return null;                                             // else keep queued for retry
       })
-      .catch(function () { return null; });
+      .catch(function () { return null; });                      // network error - keep queued
   }
 
   function qualifies(key, score, minStreak) {
