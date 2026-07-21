@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide Puzzle (a secret game)</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <style>
+    body.sp-body { background:#0c0a07; color:#e9e2d2; }
+    .sp-header { background:#0f0c08; border-bottom:1px solid #241d12; }
+    .sp-header .site-logo { color:#e9e2d2; } .sp-header .site-logo span { color:#c8a24a; }
+    .sp-header .site-nav a { color:#9a8a63; } .sp-header .site-nav a:hover { color:#e7c979; }
+
+    .sp-wrap { max-width: 1120px; margin: 0 auto; padding: 1.2rem 1rem 2.6rem; }
+    .sp-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:.9rem; }
+    .sp-top h1 { margin:0; font-size:1.5rem; color:#f0e6cf; }
+    .sp-stats { display:flex; gap:.5rem; align-items:center; }
+    .stat-badge {
+      background:#1a150d; border:1.5px solid #3a2f1b; border-radius:99px;
+      padding:.4rem .85rem; font-weight:800; font-size:.9rem; font-family:var(--font-sans); color:#e9e2d2; white-space:nowrap;
+      font-variant-numeric:tabular-nums;
+    }
+    .stat-badge.time.low { border-color:#a0431f; color:#ff9a6a; }
+    .stat-badge b { color:#e7c979; }
+
+    /* ---------- the board ---------- */
+    .board-wrap { position:relative; width:min(94vw, 86vh, 1040px); margin:0 auto; }
+    .board {
+      position:relative; width:100%; aspect-ratio:1/1; border-radius:12px; overflow:hidden;
+      background:#161009; border:3px solid #2c2314; box-shadow:0 14px 40px rgba(0,0,0,.5), inset 0 0 40px rgba(0,0,0,.45);
+      touch-action:manipulation; user-select:none;
+    }
+    .tile {
+      position:absolute; width:25%; height:25%; left:0; top:0;
+      background-image:url('bg.jpg'); background-size:400% 400%;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.45), inset 0 0 22px rgba(0,0,0,.25);
+      cursor:pointer; transition:left .13s ease, top .13s ease;
+    }
+    .tile .num {
+      position:absolute; top:3px; left:5px; font-family:var(--font-sans); font-weight:800; font-size:.8rem;
+      color:#fff; text-shadow:0 1px 3px rgba(0,0,0,.9), 0 0 5px rgba(0,0,0,.7); opacity:.72;
+    }
+    .board.solved .tile { box-shadow:inset 0 0 0 1px rgba(231,201,121,.35); cursor:default; }
+    .board.solved .tile .num { opacity:0; }
+    .board.nonum .tile .num { display:none; }
+
+    /* overlays */
+    .ov {
+      position:absolute; inset:0; z-index:8; display:flex; flex-direction:column; align-items:center; justify-content:safe center;
+      text-align:center; padding:1.4rem; background:radial-gradient(120% 90% at 50% 30%, rgba(30,22,8,.86), rgba(8,6,3,.94));
+      backdrop-filter:blur(2px); overflow-y:auto; border-radius:12px;
+    }
+    .ov.hidden { display:none; }
+    .ov .crest { font-size:2.6rem; line-height:1; margin-bottom:.3rem; }
+    .ov h2 { font-family:var(--font-serif); font-size:1.7rem; color:#fff; margin:0 0 .3rem; }
+    .ov p { color:#cdbf9f; max-width:34ch; margin:.1rem auto 1rem; font-size:.95rem; line-height:1.5; }
+    .ov .preview { width:120px; height:120px; border-radius:8px; margin:.2rem auto 1rem; border:2px solid #4a3c22;
+      background-image:url('bg.jpg'); background-size:cover; box-shadow:0 6px 18px rgba(0,0,0,.5); }
+    .sp-btn {
+      background:linear-gradient(180deg,#e7c979,#c8a24a); color:#1a1207; border:none; border-radius:12px;
+      padding:.8rem 2rem; font-size:1.05rem; font-weight:900; font-family:var(--font-sans); cursor:pointer;
+      box-shadow:0 5px 0 #7a5c1f; transition:transform .1s, box-shadow .12s;
+    }
+    .sp-btn:hover { filter:brightness(1.05); }
+    .sp-btn:active { transform:translateY(4px); box-shadow:0 1px 0 #7a5c1f; }
+    .sp-btn.ghost { background:#241d12; color:#e9e2d2; box-shadow:0 5px 0 #120d07; margin-top:.6rem; }
+    .win-time { font-family:var(--font-serif); font-size:2.6rem; font-weight:800; color:#e7c979; line-height:1; margin:.2rem 0 .1rem; }
+    .win-time-label { font-size:.68rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#bcae8a; margin-bottom:1rem; }
+
+    .sp-controls { display:flex; align-items:center; justify-content:center; gap:1rem; margin-top:.9rem; }
+    .reset-link { background:none; border:none; color:#9a8a63; font-size:.85rem; cursor:pointer; font-family:var(--font-sans); text-decoration:underline; padding:.3rem .5rem; }
+    .reset-link:hover { color:#e7c979; }
+    .sp-hint { text-align:center; font-size:.82rem; color:#8a7a55; margin-top:.7rem; line-height:1.5; }
+    .sp-secret { text-align:center; font-size:.7rem; color:#5f5540; margin-top:.4rem; }
+  </style>
+</head>
+<body class="sp-body">
+
+<header class="site-header sp-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav"><a href="../../index.html">← Home</a></nav>
+</header>
+
+<div class="sp-wrap">
+  <div class="sp-top">
+    <h1>🧩 Slide Puzzle</h1>
+    <div class="sp-stats">
+      <div class="stat-badge time" id="timeBadge">⏱ 2:00</div>
+      <div class="stat-badge" id="moveBadge">0 moves</div>
+      <div class="stat-badge" id="bestBadge"></div>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <div class="board" id="board"></div>
+
+    <!-- start -->
+    <div class="ov" id="startOv">
+      <div class="crest">🧩</div>
+      <h2>Restore the Map</h2>
+      <div class="preview"></div>
+      <p>Solve the slide puzzle in under 2 minutes to reveal the next clue.</p>
+      <button class="sp-btn" id="startBtn">Start the Clock ▸</button>
+    </div>
+
+    <!-- win -->
+    <div class="ov hidden" id="winOv">
+      <div class="crest">🗝</div>
+      <h2>Map Restored!</h2>
+      <div class="win-time" id="winTime">0:00</div>
+      <div class="win-time-label">your time</div>
+      <p>Well solved, hunter. The picture is whole again — and so is your trail.</p>
+      <button class="sp-btn" id="nextClueBtn">Reveal your next clue →</button>
+      <button class="sp-btn ghost" id="winAgainBtn">Play again</button>
+    </div>
+
+    <!-- solved, but over 2:00 -->
+    <div class="ov hidden" id="failOv">
+      <div class="crest">🧩</div>
+      <h2>Good try!</h2>
+      <div class="win-time" id="slowTime">2:14</div>
+      <div class="win-time-label">your time</div>
+      <p>You solved it, but not fast enough. Get under <b>2:00</b> to reveal the next clue.</p>
+      <button class="sp-btn" id="retryBtn">Try again ▸</button>
+    </div>
+  </div>
+
+  <div class="sp-controls">
+    <button class="reset-link" id="shuffleBtn">↻ Reshuffle</button>
+    <button class="reset-link" id="numBtn">Numbers: on</button>
+  </div>
+  <p class="sp-hint">Tap a tile beside the empty gap to slide it into place. Rebuild the whole picture to win.</p>
+  <p class="sp-secret">🤫 a secret game</p>
+</div>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/hunt.js"></script>
+<script>
+// ============================================================
+// SLIDE PUZZLE — a treasure-hunt trial. Rebuild the scrambled
+// homescreen before the clock runs out; solving hands off to the
+// next clue. Reached from the journal by typing "quatro".
+// ============================================================
+
+// ---- tuning (grid size + time limit are the two knobs) ----
+const N = 4;                 // 4x4 = the classic 15-puzzle (~2 min for most)
+const TIME_LIMIT = 120;      // seconds (2:00)
+const SHUFFLE_MOVES = 400;   // random legal slides from solved (guarantees solvable)
+
+const board = document.getElementById('board');
+const $ = (id) => document.getElementById(id);
+const BEST_KEY = 'hsg_slidepuzzle_best';
+
+let arr = [];        // arr[pos] = tile value at that board position (N*N-1 = the gap)
+let blank = N * N - 1;
+let moves = 0, elapsed = 0, timerId = null, playing = false, showNums = true;
+const BLANK = N * N - 1;
+const tiles = [];    // tiles[value] = its DOM element (value 0..N*N-2)
+
+const rowOf = (p) => Math.floor(p / N), colOf = (p) => p % N;
+const adjacent = (a, b) => (rowOf(a) === rowOf(b) && Math.abs(colOf(a) - colOf(b)) === 1) ||
+                           (colOf(a) === colOf(b) && Math.abs(rowOf(a) - rowOf(b)) === 1);
+function neighbors(p) {
+  const out = [];
+  if (colOf(p) > 0) out.push(p - 1);
+  if (colOf(p) < N - 1) out.push(p + 1);
+  if (rowOf(p) > 0) out.push(p - N);
+  if (rowOf(p) < N - 1) out.push(p + N);
+  return out;
+}
+
+// build the tile elements once (each value always shows the same slice of the image)
+for (let v = 0; v < BLANK; v++) {
+  const t = document.createElement('div');
+  t.className = 'tile';
+  const r = Math.floor(v / N), c = v % N;
+  t.style.backgroundPosition = (c / (N - 1) * 100) + '% ' + (r / (N - 1) * 100) + '%';
+  t.innerHTML = '<span class="num">' + (v + 1) + '</span>';
+  t.addEventListener('click', () => tryMove(v));
+  board.appendChild(t);
+  tiles[v] = t;
+}
+
+function place(p, el) {
+  el.style.left = (colOf(p) / N * 100) + '%';
+  el.style.top = (rowOf(p) / N * 100) + '%';
+}
+function render() {
+  for (let p = 0; p < arr.length; p++) {
+    const v = arr[p];
+    if (v !== BLANK) place(p, tiles[v]);
+  }
+}
+function isSolved() { for (let p = 0; p < arr.length; p++) if (arr[p] !== p) return false; return true; }
+
+// Standard 15-puzzle solvability test (inversion parity + blank row). Our shuffle
+// only ever makes legal slides from the solved board, so this is ALWAYS true —
+// it's a guard so a bad shuffle could never hand the player an impossible board.
+function isSolvable(a) {
+  const seq = a.filter((v) => v !== BLANK);          // tiles in board order, blank removed
+  let inv = 0;
+  for (let i = 0; i < seq.length; i++)
+    for (let j = i + 1; j < seq.length; j++)
+      if (seq[i] > seq[j]) inv++;
+  if (N % 2 === 1) return inv % 2 === 0;             // odd width: even inversions
+  const rowFromBottom = N - Math.floor(a.indexOf(BLANK) / N);   // 1-indexed
+  return (inv + rowFromBottom) % 2 === 1;            // even width: parity with blank row
+}
+
+function shuffle() {
+  do {
+    arr = Array.from({ length: N * N }, (_, i) => i);
+    blank = BLANK;
+    let prev = -1;
+    for (let i = 0; i < SHUFFLE_MOVES; i++) {
+      const opts = neighbors(blank).filter((x) => x !== prev);
+      const pick = opts[(Math.random() * opts.length) | 0];
+      arr[blank] = arr[pick]; arr[pick] = BLANK; prev = blank; blank = pick;
+    }
+  } while (isSolved() || !isSolvable(arr));   // never start solved, never start impossible
+  moves = 0;
+  board.classList.remove('solved');
+  render();
+  updateHUD();
+}
+
+function tryMove(v) {
+  if (!playing) return;
+  const p = arr.indexOf(v);
+  if (!adjacent(p, blank)) return;
+  const dest = blank;                 // the tile slides INTO the hole's cell
+  arr[dest] = v; arr[p] = BLANK; blank = p;
+  place(dest, tiles[v]);              // ...so move its element there (not back to p)
+  moves++;
+  updateHUD();
+  if (window.HSGSound && HSGSound.tick) HSGSound.tick();
+  if (isSolved()) win();
+}
+// arrow keys slide the tile that would move INTO the gap
+function keyMove(dir) {
+  if (!playing) return;
+  let from = -1;
+  if (dir === 'ArrowLeft'  && colOf(blank) < N - 1) from = blank + 1;   // tile to the right slides left
+  if (dir === 'ArrowRight' && colOf(blank) > 0)     from = blank - 1;
+  if (dir === 'ArrowUp'    && rowOf(blank) < N - 1) from = blank + N;
+  if (dir === 'ArrowDown'  && rowOf(blank) > 0)     from = blank - N;
+  if (from >= 0) tryMove(arr[from]);
+}
+
+function fmt(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+function updateHUD() {
+  $('moveBadge').textContent = moves + (moves === 1 ? ' move' : ' moves');
+  const tb = $('timeBadge'); tb.textContent = '⏱ ' + fmt(elapsed) + ' / 2:00';
+  tb.classList.toggle('low', elapsed >= TIME_LIMIT - 15);   // urgent as 2:00 nears / passes
+  const best = getBest();
+  $('bestBadge').textContent = best ? 'Best ' + fmt(best) : '';
+}
+function getBest() { return parseInt(localStorage.getItem(BEST_KEY) || '0', 10) || 0; }
+function setBest(s) { try { localStorage.setItem(BEST_KEY, String(s)); } catch (e) {} }
+
+function tick() {          // counts UP; the clock never ends the run, it just keeps time
+  elapsed += 0.25;
+  updateHUD();
+}
+
+function startGame() {
+  $('startOv').classList.add('hidden'); $('winOv').classList.add('hidden'); $('failOv').classList.add('hidden');
+  shuffle();
+  elapsed = 0; moves = 0; playing = true;
+  updateHUD();
+  clearInterval(timerId); timerId = setInterval(tick, 250);
+  if (window.HSGSound && HSGSound.tick) HSGSound.tick();
+}
+function win() {
+  playing = false; clearInterval(timerId);
+  board.classList.add('solved');
+  const solveSec = Math.floor(elapsed);
+  const best = getBest();
+  if (!best || solveSec < best) setBest(solveSec);   // track fastest solve, fast or slow
+  updateHUD();
+  if (solveSec < TIME_LIMIT) {
+    // under 2:00 → reveal the next clue
+    $('winTime').textContent = fmt(solveSec);
+    $('winOv').classList.remove('hidden');
+    if (window.HSGSound) { if (HSGSound.correct) HSGSound.correct(); if (HSGSound.finish) HSGSound.finish(true); }
+  } else {
+    // solved, but over 2:00 → good practice, no clue yet
+    $('slowTime').textContent = fmt(solveSec);
+    $('failOv').classList.remove('hidden');
+    if (window.HSGSound && HSGSound.tick) HSGSound.tick();
+  }
+}
+// solving the puzzle clears the hunt trial → hand off to the next clue's token URL
+function goNextClue() {
+  const c = (window.HSGHunt && HSGHunt.nextTokenAfter) ? HSGHunt.nextTokenAfter('slidepuzzle') : '';
+  location.href = '../treasure-hunt/index.html?c=' + c;
+}
+
+// ---- wiring ----
+$('startBtn').addEventListener('click', startGame);
+$('retryBtn').addEventListener('click', startGame);
+$('winAgainBtn').addEventListener('click', startGame);
+$('nextClueBtn').addEventListener('click', goNextClue);
+$('shuffleBtn').addEventListener('click', function () { if (!$('startOv').classList.contains('hidden')) return; startGame(); });
+$('numBtn').addEventListener('click', function () {
+  showNums = !showNums;
+  board.classList.toggle('nonum', !showNums);
+  this.textContent = 'Numbers: ' + (showNums ? 'on' : 'off');
+});
+document.addEventListener('keydown', function (e) {
+  if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].indexOf(e.key) >= 0) { e.preventDefault(); keyMove(e.key); }
+});
+
+// show a solved board behind the start overlay
+arr = Array.from({ length: N * N }, (_, i) => i);
+render();
+updateHUD();
+</script>
+
+</body>
+</html>

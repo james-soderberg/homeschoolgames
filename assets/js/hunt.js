@@ -41,7 +41,19 @@
       trial: 'Then hold the capital to Wave 15 in the arcade.' },
 
     { token: 'z3n6wd', directive: true, open: 'games/word-racer/index.html', goText: 'Go to Word Racer →',
-      riddle: 'Go to Word Racer and type treasure repeatedly.' }
+      game: 'redline', goal: 10,
+      riddle: 'Go to Word Racer and type treasure repeatedly.' },
+
+    { token: 'p9m4tq', word: 'four', open: 'games/slide-puzzle/index.html', game: 'slidepuzzle', goal: 1,
+      accept: ['four', '4'],
+      image: 'assets/img/hunt/four-stereogram.png',
+      trial: 'Rebuild the scrambled map before the clock runs out.' },
+
+    // PLACEHOLDER - revealed once the slide puzzle is solved. Swap in the real
+    // next clue (word/game/goal or a directive) when it's ready.
+    { token: 'k8v3xq', placeholder: true,
+      riddle: 'The map is whole again, and the trail runs on. The next stretch is still being carved…',
+      trial: 'Coming soon.' }
   ];
 
   var TREASURE = {
@@ -113,6 +125,9 @@
     try { if (window.HSGSound && HSGSound.powerup) HSGSound.powerup(); } catch (e) {}
   }
 
+  // Handing off PAST the final step lands on this opaque "done" token, which the
+  // treasure page resolves to the finish (the 🏆 treasure screen).
+  var DONE_TOKEN = 'w1nd7z';
   // index of the clue that FOLLOWS a given game's step - used by a game to hand
   // off directly to the next clue's URL (the hunt is URL-driven, not saved).
   function nextIndexAfter(game) {
@@ -120,10 +135,18 @@
     return 0;
   }
   // Clue URLs use an opaque per-clue token (?c=<token>) so nobody can guess/skip
-  // ahead by incrementing a number. Unknown/absent token → the first clue.
+  // ahead by incrementing a number. Unknown/absent token → the first clue; the
+  // done token → past the last step (the treasure finale).
   function tokenFor(i)        { return (STEPS[i] && STEPS[i].token) || ''; }
-  function indexForToken(tok) { for (var i = 0; i < STEPS.length; i++) if (STEPS[i].token === tok) return i; return -1; }
-  function nextTokenAfter(game) { return tokenFor(nextIndexAfter(game)); }
+  function indexForToken(tok) {
+    if (tok === DONE_TOKEN) return STEPS.length;
+    for (var i = 0; i < STEPS.length; i++) if (STEPS[i].token === tok) return i;
+    return -1;
+  }
+  function nextTokenAfter(game) {
+    var i = nextIndexAfter(game);
+    return (i >= STEPS.length) ? DONE_TOKEN : tokenFor(i);
+  }
 
   window.HSGHunt = {
     STEPS: STEPS, TREASURE: TREASURE,

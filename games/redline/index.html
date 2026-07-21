@@ -150,6 +150,7 @@
         <div class="st"><b id="overMiss">0</b><span>Near misses</span></div>
       </div>
       <div id="rlBoard"></div>
+      <button class="rl-btn hidden" id="huntNextBtn" style="background:linear-gradient(180deg,#e7c979,#c8a24a);color:#1a1207;box-shadow:0 6px 0 #7a5c1f,0 10px 26px rgba(200,162,74,0.45);margin-bottom:0.7rem;">🗝 REVEAL YOUR NEXT CLUE →</button>
       <button class="rl-btn" id="againBtn">DRIVE AGAIN ▸</button>
       <div class="rl-secret">← Home to leave</div>
     </div>
@@ -657,6 +658,7 @@
 
   function startGame() {
     $('titleOv').classList.add('hidden'); $('overOv').classList.add('hidden');
+    $('huntNextBtn').classList.add('hidden');
     reset(); state = 'play'; startEngine();
     if (window.HSGSound) HSGSound.tick();
   }
@@ -692,25 +694,14 @@
       gameId: 'redline', gameName: 'Redline',
       unit: 'miles', score: finalM, minStreak: 1
     });
-    revealClue4();
+    $('huntNextBtn').classList.remove('hidden');   // funnel the player onward to the next clue
   }
 
-  // Clue #4 - a placeholder banner for now (styled to match the hunt's clue cards).
-  function revealClue4() {
-    var b = document.createElement('div');
-    b.style.cssText = 'position:fixed;top:0;left:50%;transform:translate(-50%,-140%);z-index:99999;' +
-      'width:min(94vw,470px);background:linear-gradient(#20180d,#150e06);color:#f0e6cf;' +
-      'border:1px solid #c8a24a;border-top:none;border-radius:0 0 16px 16px;box-shadow:0 16px 44px rgba(0,0,0,.55);' +
-      'padding:1rem 2.2rem 1.05rem 1.2rem;font-family:Inter,system-ui,sans-serif;transition:transform .45s cubic-bezier(.2,.9,.3,1.15);';
-    b.innerHTML = '<div style="font-weight:800;font-size:.78rem;letter-spacing:.03em;color:#e7c979;margin-bottom:.35rem;">🗝 Checkpoint cleared &middot; Clue #4</div>' +
-      '<div style="font-family:\'Cormorant Garamond\',Georgia,serif;font-size:1.18rem;line-height:1.4;font-style:italic;">"The fourth stretch of the trail is still being carved. Check back soon, hunter."</div>' +
-      '<div style="font-size:.72rem;color:#b6a985;margin-top:.55rem;line-height:1.5;">A placeholder for now. Type <b style="color:#e7c979">treasure</b> on the home page to track the hunt.</div>' +
-      '<button aria-label="Dismiss" style="position:absolute;top:.35rem;right:.5rem;width:1.5rem;height:1.5rem;background:none;border:none;color:#8a7a55;font-size:1.2rem;cursor:pointer;line-height:1;">×</button>';
-    document.body.appendChild(b);
-    requestAnimationFrame(function () { b.style.transform = 'translate(-50%,0)'; });
-    var close = function () { b.style.transform = 'translate(-50%,-140%)'; setTimeout(function () { if (b.parentNode) b.remove(); }, 450); };
-    b.querySelector('button').addEventListener('click', close);
-    setTimeout(close, 16000);
+  // Clearing the ten-mile checkpoint clears the hunt's Redline trial → hand off to
+  // the next clue's token URL (the treasure page), exactly like the other games.
+  function goNextClue() {
+    var c = (window.HSGHunt && HSGHunt.nextTokenAfter) ? HSGHunt.nextTokenAfter('redline') : '';
+    location.href = '../treasure-hunt/index.html?c=' + c;
   }
 
   // ================= engine sound (Web Audio) =================
@@ -759,6 +750,7 @@
   stage.addEventListener('pointerdown', function (e) { if (e.target.closest('.rl-btn')) return; pointerAt(e.clientX); });
   $('startBtn').addEventListener('click', startGame);
   $('againBtn').addEventListener('click', startGame);
+  $('huntNextBtn').addEventListener('click', goNextClue);
 
   // ================= boot =================
   if (window.HSGStreak) HSGStreak.renderBoardInto('#rlBoardStart', { gameId: 'redline', unit: 'miles', minStreak: 1 });

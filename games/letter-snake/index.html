@@ -99,14 +99,6 @@
     .ready-banner.hidden { display: none; }
     @keyframes rpPulse { 0%,100%{ transform: scale(1); } 50%{ transform: scale(1.05); } }
 
-    /* always-on second clue (first & last letter) */
-    .second-clue {
-      font-family: var(--font-sans); font-weight: 700; font-size: 0.88rem; text-align: center;
-      color: var(--ink-light); background: var(--cream-dark); border: 1.5px solid var(--border);
-      border-radius: 99px; padding: 0.35rem 1rem; max-width: 50ch;
-    }
-    .second-clue.hidden { display: none; }
-
     /* pause / resume button, floating on the board */
     .pause-btn {
       position: absolute; top: 0.6rem; right: 0.6rem; z-index: 8;
@@ -282,7 +274,6 @@
     <div class="clue-line"><button class="hear-btn" id="hearBtn" title="Hear the word" aria-label="Hear the word">🔊</button><span class="clue-label">Clue</span><span id="clueText">Pick a level to start!</span></div>
     <div class="word-slots" id="wordSlots"></div>
     <div class="ready-banner hidden" id="readyBanner">Press any key to start ▶</div>
-    <div class="second-clue hidden" id="secondClue"></div>
   </div>
 
   <div class="stage" id="stage">
@@ -352,28 +343,50 @@
 // The snake grows with every letter, so longer words get tricky.
 // ============================================================
 const LEVELS = {                               // stepMs = ms per move (CONSTANT all game); higher = slower
-  easy:     { stepMs:470, decoys:4 },  // grades 1-3 • super slow
-  medium:   { stepMs:400, decoys:6 },  // grades 4-7 • steady
-  hard:     { stepMs:330, decoys:8 },  // high school+ • quicker
-  einstein: { stepMs:290, decoys:9 }   // spelling-bee • fast
+  easy:     { stepMs:470, decoys:7 },  // grades 1-3 • super slow
+  medium:   { stepMs:400, decoys:10 }, // grades 4-7 • steady
+  hard:     { stepMs:330, decoys:13 }, // high school+ • quicker
+  einstein: { stepMs:290, decoys:16 }  // spelling-bee • fast
 };
 const MAX_MISTAKES = 3;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
 
-// Look-alike / sound-alike letters - decoys lean on these so a stray 'a' can
-// masquerade as the 'e' you're hunting for. Forces real spelling knowledge.
+// Near-miss letters - the ones a speller genuinely wavers between. Decoys lean on
+// these so a stray 'a' can masquerade as the 'e' you're hunting for (dependEnt or
+// dependAnt? sepArate? definIte?). Forces a real spelling decision, not look-and-grab.
 const CONFUSE = {
-  a:'eo', e:'ai', i:'eyl', o:'ua', u:'ov', y:'ie',
-  b:'dp', d:'bpq', p:'bqd', q:'pgd', g:'qjy', c:'ks', k:'cq', s:'cz',
-  m:'n', n:'mh', h:'n', v:'wu', w:'vu', f:'t', t:'f', j:'gi', l:'it', r:'n', x:'ks', z:'s'
+  // vowels - the schwa swaps that trip up almost every hard spelling
+  a:'eio', e:'aiy', i:'eya', o:'uae', u:'oae', y:'ie',
+  // /s/ and /k/ sounds
+  c:'ks', k:'cq', s:'czx', z:'s', q:'kc', x:'s',
+  // soft g, f/v, and look-alikes
+  g:'jq', j:'g', f:'v', v:'f',
+  b:'pd', d:'bt', p:'bq', t:'d',
+  m:'n', n:'m', l:'i', r:'', h:'', w:'v'
 };
 function trickyDecoy(){
-  // 60% of the time, a look-alike of some letter actually in the word
-  if (word.length && Math.random()<0.6){
+  // 70% of the time, a look-alike of some letter actually in the word
+  if (word.length && Math.random()<0.7){
     const base=word[Math.floor(Math.random()*word.length)], conf=CONFUSE[base];
     if (conf) return conf[Math.floor(Math.random()*conf.length)];
   }
   return ALPHA[Math.floor(Math.random()*26)];
+}
+// Choose n decoy letters for the current word. FIRST guarantee a genuine near-miss
+// for the letters actually in the word - one that is NOT itself in the word, so it's
+// always wrong - so the real letter and its impostor sit on the board together (an
+// 'a' AND an 'e' for "dependent"). Then top up with the usual tricky look-alikes.
+function decoyLetters(n){
+  const out=[];
+  const inWord=new Set(word.split(''));
+  const bases=shuffleCells([...inWord]);          // distinct word letters, shuffled
+  for (const base of bases){
+    if (out.length>=n) break;
+    const conf=(CONFUSE[base]||'').split('').filter(c=>!inWord.has(c));  // wrong-but-tempting
+    if (conf.length) out.push(conf[Math.floor(Math.random()*conf.length)]);
+  }
+  while (out.length<n) out.push(trickyDecoy());
+  return out;
 }
 
 const stage    = document.getElementById('stage');
@@ -385,7 +398,6 @@ const scoreBadge = document.getElementById('scoreBadge');
 const heartsBadge= document.getElementById('heartsBadge');
 const startOverlay = document.getElementById('startOverlay');
 const readyBanner  = document.getElementById('readyBanner');
-const secondClue   = document.getElementById('secondClue');
 const pauseBtn     = document.getElementById('pauseBtn');
 const endOverlay = document.getElementById('endOverlay');
 const endTitle = document.getElementById('endTitle');
@@ -486,7 +498,6 @@ function newWord(){
   // ready state - snake sits frozen in place until the player presses a key / taps
   state='ready'; stepAcc=0; lastSnake=snake.map(s=>({c:s.c,r:s.r}));
   hidePauseUI();
-  showSecondClue();               // first & last letter + length - a permanent extra hint
   HSGSpellWords.say(word);        // announce the word aloud (the goal is the spelling)
   readyBanner.textContent = wordsDone===0 ? 'Press any key to start ▶' : 'New word! Press any key to continue ▶';
   readyBanner.classList.remove('hidden');
@@ -497,15 +508,6 @@ function beginPlay(){
   state='playing'; lastTs=0; stepAcc=0;
   pauseBtn.classList.add('show');
 }
-
-// ---- always-on second clue (first & last letter) ----
-function secondClueText(){
-  if(!word) return '';
-  const first=word[0].toUpperCase(), last=word[word.length-1].toUpperCase();
-  const n=word.length;
-  return '🔎 Starts with “'+first+'” · ends with “'+last+'” · '+n+' letter'+(n===1?'':'s');
-}
-function showSecondClue(){ secondClue.textContent=secondClueText(); secondClue.classList.remove('hidden'); }
 
 // ---- pause / resume ----
 function pauseGame(){
@@ -522,7 +524,6 @@ function togglePause(){ if(state==='playing') pauseGame(); else if(state==='paus
 function hidePauseUI(){
   pauseBtn.classList.remove('show');
   pauseBtn.textContent='⏸'; pauseBtn.setAttribute('aria-label','Pause');
-  secondClue.classList.add('hidden');
 }
 
 // ---- pellet placement ----
@@ -545,8 +546,7 @@ function buildPellets(){
   const free=shuffleCells(freeCells());
   let i=0;
   for (const ch of word){ if(i>=free.length) break; pellets.push({id:nextId++, ...free[i++], ch}); }
-  let placed=0;
-  while (placed<cfg.decoys && i<free.length){ pellets.push({id:nextId++, ...free[i++], ch:trickyDecoy()}); placed++; }
+  for (const ch of decoyLetters(cfg.decoys)){ if(i>=free.length) break; pellets.push({id:nextId++, ...free[i++], ch}); }
 }
 // move a (wrong) pellet to a fresh empty spot so the full letter set stays on screen
 function relocate(p){

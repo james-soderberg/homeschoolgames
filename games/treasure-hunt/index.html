@@ -47,6 +47,9 @@
 
     .th-tag { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.26em; text-transform:uppercase; color:#8a7526; margin-bottom:1.3rem; }
 
+    /* a picture clue (e.g. a stereogram) shown above the riddle */
+    .clue-img { display:block; width:min(88vw,480px); margin:0.4rem auto 1.4rem; border-radius:12px;
+      border:2px solid #4a3c22; box-shadow:0 10px 30px rgba(0,0,0,.5); background:#1a150d; }
     /* the riddle */
     .riddle { font-family:var(--font-serif); font-style:italic; font-size:clamp(1.7rem,5.5vw,2.5rem); line-height:1.4;
       color:#f0e6cf; margin:0 auto 2.2rem; max-width:22ch; }
@@ -168,7 +171,9 @@
     }
     $('content').innerHTML =
       '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
-      (s.mono
+      (s.image ? '<img class="clue-img" src="../../' + esc(s.image) + '" alt="A hidden-word puzzle">' : '') +
+      (!s.riddle ? ''
+        : s.mono
         ? '<p class="riddle mono">' + esc(s.riddle) + '</p>'
         : '<p class="riddle"><span class="q">“</span>' + esc(s.riddle) + '<span class="q">”</span></p>') +
       '<form class="answer" id="ansForm" autocomplete="off">' +

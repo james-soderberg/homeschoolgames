@@ -319,137 +319,145 @@ const M = {
   sophy:'wisdom', pathy:'feeling', metry:'measuring', onym:'name',
 };
 
+// Each word carries TWO clues:
+//   d  = literal gloss (spells out the parts) - shown on EASY as a gentle scaffold.
+//   rd = real dictionary definition - shown on MEDIUM/HARD, so you must TRANSLATE
+//        the meaning into the word using your root knowledge instead of reading it off.
 const WORDS = [
   // Tier 1 - two friendly parts
-  {w:'telescope',   p:['tele','scope'],  d:'A far-seeing device', t:1},
-  {w:'microscope',  p:['micro','scope'], d:'A tool for seeing tiny things', t:1},
-  {w:'biology',     p:['bio','logy'],    d:'The study of life', t:1},
-  {w:'geology',     p:['geo','logy'],    d:'The study of the earth and rocks', t:1},
-  {w:'psychology',  p:['psycho','logy'], d:'The study of the mind', t:1},
-  {w:'telephone',   p:['tele','phone'],  d:'A device for sound from far away', t:1},
-  {w:'microphone',  p:['micro','phone'], d:'A tool that picks up sound', t:1},
-  {w:'photograph',  p:['photo','graph'], d:'A picture drawn with light', t:1},
-  {w:'autograph',   p:['auto','graph'],  d:"Writing your own name", t:1},
-  {w:'telegraph',   p:['tele','graph'],  d:'A machine that writes from far away', t:1},
-  {w:'thermometer', p:['thermo','meter'],d:'A tool that measures heat', t:1},
-  {w:'chronometer', p:['chrono','meter'],d:'A tool that measures time', t:1},
-  {w:'astronaut',   p:['astro','naut'],  d:'A star-sailor who travels space', t:1},
-  {w:'automobile',  p:['auto','mobile'], d:'A self-moving vehicle', t:1},
-  {w:'biography',   p:['bio','graphy'],  d:"Writing about someone's life", t:1},
-  {w:'geography',   p:['geo','graphy'],  d:"The study of the earth's places", t:1},
-  {w:'bicycle',     p:['bi','cycle'],    d:'A two-wheeled ride', t:1},
-  {w:'tricycle',    p:['tri','cycle'],   d:'A three-wheeled ride', t:1},
-  {w:'unicycle',    p:['uni','cycle'],   d:'A one-wheeled ride', t:1},
-  {w:'recycle',     p:['re','cycle'],    d:'To use again in a new cycle', t:1},
-  {w:'tripod',      p:['tri','pod'],     d:'A three-footed stand', t:1},
-  {w:'octopus',     p:['octo','pus'],    d:'An eight-footed sea creature', t:1},
-  {w:'manual',      p:['manu','al'],     d:'Done by hand', t:1},
-  {w:'vocal',       p:['voc','al'],      d:'Relating to the voice', t:1},
-  {w:'portable',    p:['port','able'],   d:'Able to be carried', t:1},
-  {w:'visible',     p:['vis','ible'],    d:'Able to be seen', t:1},
-  {w:'audible',     p:['aud','ible'],    d:'Able to be heard', t:1},
+  {w:'telescope',   p:['tele','scope'],  d:'A far-seeing device', rd:'An instrument for viewing distant objects such as planets and stars', t:1},
+  {w:'microscope',  p:['micro','scope'], d:'A tool for seeing tiny things', rd:'An instrument that magnifies things too small to see with the eye', t:1},
+  {w:'biology',     p:['bio','logy'],    d:'The study of life', rd:'The science of plants, animals, and other living things', t:1},
+  {w:'geology',     p:['geo','logy'],    d:'The study of the earth and rocks', rd:"The science of the Earth's rocks and physical structure", t:1},
+  {w:'psychology',  p:['psycho','logy'], d:'The study of the mind', rd:'The science of the mind and human behavior', t:1},
+  {w:'telephone',   p:['tele','phone'],  d:'A device for sound from far away', rd:'A device you use to speak with someone far away', t:1},
+  {w:'microphone',  p:['micro','phone'], d:'A tool that picks up sound', rd:'A device that captures sound and makes it louder', t:1},
+  {w:'photograph',  p:['photo','graph'], d:'A picture drawn with light', rd:'A picture made with a camera', t:1},
+  {w:'autograph',   p:['auto','graph'],  d:"Writing your own name", rd:"A famous person's handwritten signature", t:1},
+  {w:'telegraph',   p:['tele','graph'],  d:'A machine that writes from far away', rd:'An old machine that sent messages over wires as coded signals', t:1},
+  {w:'thermometer', p:['thermo','meter'],d:'A tool that measures heat', rd:'An instrument that measures temperature', t:1},
+  {w:'chronometer', p:['chrono','meter'],d:'A tool that measures time', rd:'A very precise clock, used for navigation at sea', t:1},
+  {w:'astronaut',   p:['astro','naut'],  d:'A star-sailor who travels space', rd:'A person trained to travel in space', t:1},
+  {w:'automobile',  p:['auto','mobile'], d:'A self-moving vehicle', rd:'A road vehicle powered by its own engine; a car', t:1},
+  {w:'biography',   p:['bio','graphy'],  d:"Writing about someone's life", rd:"The story of a person's life told by someone else", t:1},
+  {w:'geography',   p:['geo','graphy'],  d:"The study of the earth's places", rd:"The study of the Earth's lands, features, and peoples", t:1},
+  {w:'bicycle',     p:['bi','cycle'],    d:'A two-wheeled ride', rd:'A vehicle with two wheels that you pedal', t:1},
+  {w:'tricycle',    p:['tri','cycle'],   d:'A three-wheeled ride', rd:'A three-wheeled cycle, often ridden by young children', t:1},
+  {w:'unicycle',    p:['uni','cycle'],   d:'A one-wheeled ride', rd:'A pedal cycle with a single wheel, often used by performers', t:1},
+  {w:'recycle',     p:['re','cycle'],    d:'To use again in a new cycle', rd:'To process used materials so they can be used again', t:1},
+  {w:'tripod',      p:['tri','pod'],     d:'A three-footed stand', rd:'A three-legged stand for a camera or telescope', t:1},
+  {w:'octopus',     p:['octo','pus'],    d:'An eight-footed sea creature', rd:'A soft sea creature with eight arms', t:1},
+  {w:'manual',      p:['manu','al'],     d:'Done by hand', rd:'Involving physical work done with the hands', t:1},
+  {w:'vocal',       p:['voc','al'],      d:'Relating to the voice', rd:'Relating to or produced by the voice', t:1},
+  {w:'portable',    p:['port','able'],   d:'Able to be carried', rd:'Light and easy to carry around', t:1},
+  {w:'visible',     p:['vis','ible'],    d:'Able to be seen', rd:'In view; not hidden from sight', t:1},
+  {w:'audible',     p:['aud','ible'],    d:'Able to be heard', rd:'Loud enough to be heard', t:1},
 
   // Tier 2 - a prefix or root steers the meaning
-  {w:'transport',   p:['trans','port'],  d:'To carry across', t:2},
-  {w:'export',      p:['ex','port'],     d:'To carry goods out of a country', t:2},
-  {w:'import',      p:['im','port'],     d:'To carry goods into a country', t:2},
-  {w:'report',      p:['re','port'],     d:'To carry information back', t:2},
-  {w:'predict',     p:['pre','dict'],    d:'To say beforehand what will happen', t:2},
-  {w:'contradict',  p:['contra','dict'], d:'To speak against someone', t:2},
-  {w:'subtract',    p:['sub','tract'],   d:'To pull away / take away', t:2},
-  {w:'retract',     p:['re','tract'],    d:'To pull back what you said', t:2},
-  {w:'distract',    p:['dis','tract'],   d:'To pull attention away', t:2},
-  {w:'reject',      p:['re','ject'],     d:'To throw back / refuse', t:2},
-  {w:'inject',      p:['in','ject'],     d:'To push fluid into something', t:2},
-  {w:'interrupt',   p:['inter','rupt'],  d:'To break in between', t:2},
-  {w:'submarine',   p:['sub','marine'],  d:'A boat that travels under the sea', t:2},
-  {w:'transform',   p:['trans','form'],  d:'To change shape', t:2},
-  {w:'reform',      p:['re','form'],     d:'To shape again / improve', t:2},
-  {w:'deform',      p:['de','form'],     d:'To spoil the shape of', t:2},
-  {w:'malfunction', p:['mal','function'],d:'To work badly / break down', t:2},
-  {w:'monologue',   p:['mono','logue'],  d:'A speech by one person', t:2},
-  {w:'dialogue',    p:['dia','logue'],   d:'Talk that goes between people', t:2},
-  {w:'manuscript',  p:['manu','script'], d:'A document written by hand', t:2},
-  {w:'describe',    p:['de','scribe'],   d:'To write down what something is like', t:2},
-  {w:'spectator',   p:['spect','ator'],  d:'One who looks on / a watcher', t:2},
-  {w:'inspect',     p:['in','spect'],    d:'To look into something closely', t:2},
-  {w:'respect',     p:['re','spect'],    d:'To look up to someone', t:2},
-  {w:'construct',   p:['con','struct'],  d:'To build something together', t:2},
-  {w:'destruct',    p:['de','struct'],   d:'To tear a thing down', t:2},
-  {w:'instruct',    p:['in','struct'],   d:'To build knowledge into someone', t:2},
-  {w:'transmit',    p:['trans','mit'],   d:'To send across', t:2},
-  {w:'submit',      p:['sub','mit'],     d:'To hand in / put under', t:2},
-  {w:'emit',        p:['e','mit'],       d:'To send out', t:2},
-  {w:'conduct',     p:['con','duct'],    d:'To lead together', t:2},
-  {w:'produce',     p:['pro','duce'],    d:'To bring forward / make', t:2},
-  {w:'reduce',      p:['re','duce'],     d:'To lead back / make less', t:2},
-  {w:'introduce',   p:['intro','duce'],  d:'To lead someone in', t:2},
-  {w:'transfer',    p:['trans','fer'],   d:'To carry from one place to another', t:2},
-  {w:'omnivore',    p:['omni','vore'],   d:'A creature that eats everything', t:2},
-  {w:'carnivore',   p:['carni','vore'],  d:'A meat-eater', t:2},
-  {w:'herbivore',   p:['herbi','vore'],  d:'A plant-eater', t:2},
-  {w:'democracy',   p:['demo','cracy'],  d:'Rule by the people', t:2},
-  {w:'thermostat',  p:['thermo','stat'], d:'A device that controls heat', t:2},
-  {w:'astronomy',   p:['astro','nomy'],  d:'The study of the stars', t:2},
-  {w:'economy',     p:['eco','nomy'],    d:'Managing a household or country', t:2},
-  {w:'biologist',   p:['bio','log','ist'], d:'A scientist who studies life', t:2},
-  {w:'geologist',   p:['geo','log','ist'], d:'A scientist who studies rocks', t:2},
+  {w:'transport',   p:['trans','port'],  d:'To carry across', rd:'To move people or goods from one place to another', t:2},
+  {w:'export',      p:['ex','port'],     d:'To carry goods out of a country', rd:'To sell and ship goods to another country', t:2},
+  {w:'import',      p:['im','port'],     d:'To carry goods into a country', rd:'To bring in goods from abroad to sell', t:2},
+  {w:'report',      p:['re','port'],     d:'To carry information back', rd:'To give an account of something you saw or learned', t:2},
+  {w:'predict',     p:['pre','dict'],    d:'To say beforehand what will happen', rd:'To say what will happen before it does', t:2},
+  {w:'contradict',  p:['contra','dict'], d:'To speak against someone', rd:'To say the opposite of what someone else has said', t:2},
+  {w:'subtract',    p:['sub','tract'],   d:'To pull away / take away', rd:'To take one number or amount away from another', t:2},
+  {w:'retract',     p:['re','tract'],    d:'To pull back what you said', rd:'To take back a statement or promise', t:2},
+  {w:'distract',    p:['dis','tract'],   d:'To pull attention away', rd:"To draw someone's attention away from what they were doing", t:2},
+  {w:'reject',      p:['re','ject'],     d:'To throw back / refuse', rd:'To refuse to accept or agree to something', t:2},
+  {w:'inject',      p:['in','ject'],     d:'To push fluid into something', rd:'To force a liquid into the body with a needle', t:2},
+  {w:'interrupt',   p:['inter','rupt'],  d:'To break in between', rd:'To stop someone by breaking in while they are speaking', t:2},
+  {w:'submarine',   p:['sub','marine'],  d:'A boat that travels under the sea', rd:'A ship that can travel underwater', t:2},
+  {w:'transform',   p:['trans','form'],  d:'To change shape', rd:'To completely change the form or nature of something', t:2},
+  {w:'reform',      p:['re','form'],     d:'To shape again / improve', rd:'To change something in order to make it better', t:2},
+  {w:'deform',      p:['de','form'],     d:'To spoil the shape of', rd:'To spoil or twist the natural shape of something', t:2},
+  {w:'malfunction', p:['mal','function'],d:'To work badly / break down', rd:'To fail to work properly', t:2},
+  {w:'monologue',   p:['mono','logue'],  d:'A speech by one person', rd:'A long speech by a single speaker', t:2},
+  {w:'dialogue',    p:['dia','logue'],   d:'Talk that goes between people', rd:'A conversation between two or more people', t:2},
+  {w:'manuscript',  p:['manu','script'], d:'A document written by hand', rd:"An author's original text before it is printed", t:2},
+  {w:'describe',    p:['de','scribe'],   d:'To write down what something is like', rd:'To tell in words what something is like', t:2},
+  {w:'spectator',   p:['spect','ator'],  d:'One who looks on / a watcher', rd:'A person who watches an event or game', t:2},
+  {w:'inspect',     p:['in','spect'],    d:'To look into something closely', rd:'To examine something closely and carefully', t:2},
+  {w:'respect',     p:['re','spect'],    d:'To look up to someone', rd:'To admire someone for their qualities or achievements', t:2},
+  {w:'construct',   p:['con','struct'],  d:'To build something together', rd:'To build something by putting parts together', t:2},
+  {w:'destruct',    p:['de','struct'],   d:'To tear a thing down', rd:'To destroy something, often itself', t:2},
+  {w:'instruct',    p:['in','struct'],   d:'To build knowledge into someone', rd:'To teach someone or tell them how to do something', t:2},
+  {w:'transmit',    p:['trans','mit'],   d:'To send across', rd:'To send out a signal, message, or disease', t:2},
+  {w:'submit',      p:['sub','mit'],     d:'To hand in / put under', rd:'To hand in work, or to give in to authority', t:2},
+  {w:'emit',        p:['e','mit'],       d:'To send out', rd:'To give off light, heat, sound, or gas', t:2},
+  {w:'conduct',     p:['con','duct'],    d:'To lead together', rd:'To lead or direct, as an orchestra or an experiment', t:2},
+  {w:'produce',     p:['pro','duce'],    d:'To bring forward / make', rd:'To make or manufacture something', t:2},
+  {w:'reduce',      p:['re','duce'],     d:'To lead back / make less', rd:'To make something smaller or less in amount', t:2},
+  {w:'introduce',   p:['intro','duce'],  d:'To lead someone in', rd:'To present one person to another for the first time', t:2},
+  {w:'transfer',    p:['trans','fer'],   d:'To carry from one place to another', rd:'To move something or someone to a different place', t:2},
+  {w:'omnivore',    p:['omni','vore'],   d:'A creature that eats everything', rd:'An animal that eats both plants and meat', t:2},
+  {w:'carnivore',   p:['carni','vore'],  d:'A meat-eater', rd:'An animal that feeds on the flesh of other animals', t:2},
+  {w:'herbivore',   p:['herbi','vore'],  d:'A plant-eater', rd:'An animal that eats only plants', t:2},
+  {w:'democracy',   p:['demo','cracy'],  d:'Rule by the people', rd:'A system of government in which the people vote for their leaders', t:2},
+  {w:'thermostat',  p:['thermo','stat'], d:'A device that controls heat', rd:'A device that keeps a room at a set temperature', t:2},
+  {w:'astronomy',   p:['astro','nomy'],  d:'The study of the stars', rd:'The science of stars, planets, and outer space', t:2},
+  {w:'economy',     p:['eco','nomy'],    d:'Managing a household or country', rd:"The way a country manages its money, goods, and resources", t:2},
+  {w:'biologist',   p:['bio','log','ist'], d:'A scientist who studies life', rd:'A scientist who studies living things', t:2},
+  {w:'geologist',   p:['geo','log','ist'], d:'A scientist who studies rocks', rd:'A scientist who studies the Earth and its rocks', t:2},
 
   // Tier 3 - three parts, many are science words
-  {w:'thermodynamics', p:['thermo','dynam','ics'], d:'The science of heat and power', t:3},
-  {w:'autobiography',  p:['auto','bio','graphy'],  d:'Writing about your own life', t:3},
-  {w:'microbiology',   p:['micro','bio','logy'],   d:'The study of tiny living things', t:3},
-  {w:'television',     p:['tele','vis','ion'],     d:'Seeing pictures from far away', t:3},
-  {w:'geothermal',     p:['geo','therm','al'],     d:"Relating to the earth's heat", t:3},
-  {w:'transportation', p:['trans','port','ation'], d:'The act of carrying things across', t:3},
-  {w:'photosynthesis', p:['photo','syn','thesis'], d:'Making food by putting light together', t:3},
-  {w:'psychologist',   p:['psycho','log','ist'],   d:'A scientist who studies the mind', t:3},
-  {w:'introduction',   p:['intro','duct','ion'],   d:'The act of leading someone in', t:3},
-  {w:'construction',   p:['con','struct','ion'],   d:'The act of building together', t:3},
-  {w:'prediction',     p:['pre','dict','ion'],     d:'A saying of what will happen', t:3},
-  {w:'production',     p:['pro','duct','ion'],     d:'The act of bringing things forward', t:3},
-  {w:'microscopic',    p:['micro','scop','ic'],    d:'So tiny you need a microscope', t:3},
+  {w:'thermodynamics', p:['thermo','dynam','ics'], d:'The science of heat and power', rd:'The branch of physics dealing with heat and energy', t:3},
+  {w:'autobiography',  p:['auto','bio','graphy'],  d:'Writing about your own life', rd:'The story of a person\'s life written by that person', t:3},
+  {w:'microbiology',   p:['micro','bio','logy'],   d:'The study of tiny living things', rd:'The study of microbes such as bacteria and viruses', t:3},
+  {w:'television',     p:['tele','vis','ion'],     d:'Seeing pictures from far away', rd:'A device that receives broadcast pictures and sound', t:3},
+  {w:'geothermal',     p:['geo','therm','al'],     d:"Relating to the earth's heat", rd:'Relating to heat that comes from inside the Earth', t:3},
+  {w:'transportation', p:['trans','port','ation'], d:'The act of carrying things across', rd:'The system of moving people and goods from place to place', t:3},
+  {w:'photosynthesis', p:['photo','syn','thesis'], d:'Making food by putting light together', rd:'The process plants use to make food from sunlight', t:3},
+  {w:'psychologist',   p:['psycho','log','ist'],   d:'A scientist who studies the mind', rd:'An expert who studies the mind and behavior', t:3},
+  {w:'introduction',   p:['intro','duct','ion'],   d:'The act of leading someone in', rd:'An opening section, or the act of presenting someone', t:3},
+  {w:'construction',   p:['con','struct','ion'],   d:'The act of building together', rd:'The act or industry of building things', t:3},
+  {w:'prediction',     p:['pre','dict','ion'],     d:'A saying of what will happen', rd:'A statement about what will happen in the future', t:3},
+  {w:'production',     p:['pro','duct','ion'],     d:'The act of bringing things forward', rd:'The making of goods, or a staged performance', t:3},
+  {w:'microscopic',    p:['micro','scop','ic'],    d:'So tiny you need a microscope', rd:'So small it can only be seen with a microscope', t:3},
 
   // Tier 4 - monster words
-  {w:'electrocardiogram', p:['electro','cardio','gram'], d:"A record of the heart's electricity", t:4},
-  {w:'biodegradable',     p:['bio','de','grad','able'],  d:'Able to be broken down by living things', t:4},
-  {w:'microorganism',     p:['micro','organ','ism'],     d:'A tiny living thing', t:4},
-  {w:'microbiologist',    p:['micro','bio','log','ist'], d:'A scientist who studies tiny life', t:4},
+  {w:'electrocardiogram', p:['electro','cardio','gram'], d:"A record of the heart's electricity", rd:'A medical test that records the heart\'s electrical activity', t:4},
+  {w:'biodegradable',     p:['bio','de','grad','able'],  d:'Able to be broken down by living things', rd:'Able to rot away naturally without harming the environment', t:4},
+  {w:'microorganism',     p:['micro','organ','ism'],     d:'A tiny living thing', rd:'A living thing too small to see, such as a germ', t:4},
+  {w:'microbiologist',    p:['micro','bio','log','ist'], d:'A scientist who studies tiny life', rd:'A scientist who studies microbes', t:4},
 
   // ---- audited batch: more words + tougher, closely-related roots ----
-  {w:'thermal',      p:['therm','al'],       d:'Relating to heat', t:1},
-  {w:'vision',       p:['vis','ion'],        d:'The act or power of seeing', t:2},
-  {w:'periscope',    p:['peri','scope'],     d:'A tube for seeing around or over things', t:2},
-  {w:'perimeter',    p:['peri','meter'],     d:'The measured distance around a shape', t:2},
-  {w:'synonym',      p:['syn','onym'],       d:'A word with the same meaning as another', t:2},
-  {w:'telepathy',    p:['tele','pathy'],     d:"Sensing another's thoughts from far away", t:2},
-  {w:'empathy',      p:['em','pathy'],       d:'Feeling what another person feels', t:2},
-  {w:'sympathy',     p:['sym','pathy'],      d:"Sharing in another's feelings", t:2},
-  {w:'apathy',       p:['a','pathy'],        d:'A lack of feeling or interest', t:2},
-  {w:'dictation',    p:['dict','ation'],     d:'Speaking words aloud for someone to write', t:2},
-  {w:'chronology',   p:['chrono','logy'],    d:'The arrangement of events in time order', t:2},
-  {w:'geometry',     p:['geo','metry'],      d:'The math of shapes, sizes and space', t:2},
-  {w:'hydrology',    p:['hydro','logy'],     d:'The study of water on Earth', t:2},
-  {w:'philosophy',   p:['philo','sophy'],    d:'The love and study of wisdom', t:2},
-  {w:'theology',     p:['theo','logy'],      d:'The study of God and religion', t:2},
-  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer who uses the voice', t:3},
-  {w:'projection',   p:['pro','ject','ion'], d:'The act of throwing an image forward', t:3},
-  {w:'inspection',   p:['in','spect','ion'], d:'A close looking-into of something', t:3},
-  {w:'anthropology', p:['anthropo','logy'],  d:'The study of humans and their cultures', t:3},
-  {w:'pandemic',     p:['pan','dem','ic'],   d:'A disease spreading among all the people', t:3},
-  {w:'epidemic',     p:['epi','dem','ic'],   d:'A disease spreading upon a whole community', t:3},
+  {w:'thermal',      p:['therm','al'],       d:'Relating to heat', rd:'Relating to heat, or designed to keep in warmth', t:1},
+  {w:'vision',       p:['vis','ion'],        d:'The act or power of seeing', rd:'The sense of sight, or the ability to imagine the future', t:2},
+  {w:'periscope',    p:['peri','scope'],     d:'A tube for seeing around or over things', rd:'A tube with mirrors that lets you see over or around obstacles, as from a submarine', t:2},
+  {w:'perimeter',    p:['peri','meter'],     d:'The measured distance around a shape', rd:'The total distance around the edge of a shape or area', t:2},
+  {w:'synonym',      p:['syn','onym'],       d:'A word with the same meaning as another', rd:'A word that means the same as another word', t:2},
+  {w:'telepathy',    p:['tele','pathy'],     d:"Sensing another's thoughts from far away", rd:'The supposed power to read minds without words', t:2},
+  {w:'empathy',      p:['em','pathy'],       d:'Feeling what another person feels', rd:"The ability to understand and share another person's feelings", t:2},
+  {w:'sympathy',     p:['sym','pathy'],      d:"Sharing in another's feelings", rd:"Feelings of pity and sorrow for someone else's trouble", t:2},
+  {w:'apathy',       p:['a','pathy'],        d:'A lack of feeling or interest', rd:'A lack of interest, concern, or enthusiasm', t:2},
+  {w:'dictation',    p:['dict','ation'],     d:'Speaking words aloud for someone to write', rd:'The act of saying words aloud for another to write down', t:2},
+  {w:'chronology',   p:['chrono','logy'],    d:'The arrangement of events in time order', rd:'The arrangement of events in the order they happened', t:2},
+  {w:'geometry',     p:['geo','metry'],      d:'The math of shapes, sizes and space', rd:'The branch of math dealing with shapes, lines, and angles', t:2},
+  {w:'hydrology',    p:['hydro','logy'],     d:'The study of water on Earth', rd:"The study of the Earth's water and how it moves", t:2},
+  {w:'philosophy',   p:['philo','sophy'],    d:'The love and study of wisdom', rd:'The study of knowledge, truth, and the meaning of life', t:2},
+  {w:'theology',     p:['theo','logy'],      d:'The study of God and religion', rd:'The study of God and religious belief', t:2},
+  {w:'vocalist',     p:['voc','al','ist'],   d:'A singer who uses the voice', rd:'A singer, especially the lead singer in a band', t:3},
+  {w:'projection',   p:['pro','ject','ion'], d:'The act of throwing an image forward', rd:'An image cast onto a surface, or an estimate of the future', t:3},
+  {w:'inspection',   p:['in','spect','ion'], d:'A close looking-into of something', rd:'A careful official examination of something', t:3},
+  {w:'anthropology', p:['anthropo','logy'],  d:'The study of humans and their cultures', rd:'The study of human societies and cultures', t:3},
+  {w:'pandemic',     p:['pan','dem','ic'],   d:'A disease spreading among all the people', rd:'A disease outbreak that spreads across whole countries or the world', t:3},
+  {w:'epidemic',     p:['epi','dem','ic'],   d:'A disease spreading upon a whole community', rd:'A sudden outbreak of disease that spreads quickly through a community', t:3},
 ];
 
 // difficulty presets
+// clue: 'literal' spells the parts out (a gentle scaffold); 'real' gives the true
+// dictionary definition, so you must translate meaning -> word using your roots.
 const DIFF = {
-  easy:   { key:'easy',   label:'Easy',   icon:'🌱', desc:'Two-part words, glosses shown', tiers:[1],       distract:3, decodeEvery:0, hint:true,  perLevel:5 },
-  medium: { key:'medium', label:'Medium', icon:'🌳', desc:'Prefixes & three-part words',   tiers:[1,2,3],   distract:5, decodeEvery:5, hint:true,  perLevel:5 },
-  hard:   { key:'hard',   label:'Hard',   icon:'🔥', desc:'All tiers, monster words',      tiers:[1,2,3,4], distract:6, decodeEvery:3, hint:false, perLevel:4 },
+  easy:   { key:'easy',   label:'Easy',   icon:'🌱', desc:'Two-part words, literal clues', tiers:[1],       distract:3, decodeEvery:0, hint:true,  perLevel:5, clue:'literal' },
+  medium: { key:'medium', label:'Medium', icon:'🌳', desc:'Real definitions, three-part words', tiers:[1,2,3],   distract:5, decodeEvery:5, hint:true,  perLevel:5, clue:'real' },
+  hard:   { key:'hard',   label:'Hard',   icon:'🔥', desc:'Real definitions, monster words',    tiers:[1,2,3,4], distract:6, decodeEvery:3, hint:false, perLevel:4, clue:'real' },
 };
 
 // ---- helpers ----
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 const gloss = id => M[id] || '';
+// The clue text shown for a word: real dictionary def on medium/hard, literal on easy.
+const clueFor = w => (cfg && cfg.clue === 'real' && w.rd) ? w.rd : w.d;
 const $ = id => document.getElementById(id);
 const ALL_PARTS = [...new Set(WORDS.flatMap(w => w.p))];   // parts that actually appear in answers
 const POOL = Object.keys(M);                               // every real root - the full decoy pool
@@ -551,7 +559,7 @@ function renderBuild(){
   const monster = cur.t >= 4;
   const mt = $('modeTag'); mt.textContent = monster ? '🔥 Monster word' : 'Build the word'; mt.className = 'mode-tag' + (monster?' monster':'');
   $('buildView').style.display = ''; $('decodeView').style.display = 'none';
-  $('defText').textContent = cur.d;
+  $('defText').textContent = clueFor(cur);
   slots = new Array(cur.p.length).fill(null);
   renderSlots();
 
@@ -633,12 +641,12 @@ function checkBuild(){
 // Tougher decode options: prefer definitions of words that SHARE a root with the
 // target (tempting near-misses), then same-tier words, then anything - 3 in all.
 function decodeDistractors(){
-  const seen = new Set([cur.d]), picks = [];
+  const seen = new Set([clueFor(cur)]), picks = [];
   const related = shuffle(WORDS.filter(x => x.w !== cur.w && x.p.some(id => cur.p.includes(id))));
   const sameTier = shuffle(WORDS.filter(x => x.w !== cur.w && x.t === cur.t));
   const rest = shuffle(WORDS.filter(x => x.w !== cur.w));
   for(const src of [related, sameTier, rest]){
-    for(const x of src){ if(picks.length >= 3) break; if(!seen.has(x.d)){ seen.add(x.d); picks.push(x.d); } }
+    for(const x of src){ if(picks.length >= 3) break; const c = clueFor(x); if(!seen.has(c)){ seen.add(c); picks.push(c); } }
   }
   return picks.slice(0,3);
 }
@@ -655,14 +663,15 @@ function renderDecode(){
     c.innerHTML = '<span class="p">'+id+'</span><span class="g">'+gloss(id)+'</span>';
     parts.appendChild(c);
   });
+  const answer = clueFor(cur);
   const wrong = decodeDistractors();
   const grid = $('decodeOptions'); grid.innerHTML = '';
-  shuffle([cur.d, ...wrong]).forEach(text => {
+  shuffle([answer, ...wrong]).forEach(text => {
     const b=document.createElement('button'); b.className='opt'; b.textContent=text;
     b.addEventListener('click', () => {
       if(answered) return; answered = true;
-      [...grid.querySelectorAll('.opt')].forEach(o=>{ o.disabled=true; if(o.textContent===cur.d) o.classList.add('correct'); });
-      if(text === cur.d) winRound('decode');
+      [...grid.querySelectorAll('.opt')].forEach(o=>{ o.disabled=true; if(o.textContent===answer) o.classList.add('correct'); });
+      if(text === answer) winRound('decode');
       else { b.classList.add('wrong'); if(window.HSGSound) HSGSound.wrong(); rail.broke(); finishRound(false); }
     });
     grid.appendChild(b);
@@ -694,7 +703,7 @@ function finishRound(won){
   const rev = $('reveal'); rev.style.display = 'block';
   const pieces = cur.p.map(id => '<span class="hl">'+id+'</span>').join('<span style="color:var(--ink-light)"> · </span>');
   const literal = cur.p.map(id => id+' = '+gloss(id)).join('  ·  ');
-  rev.innerHTML = '<div class="built">'+pieces+'</div><div class="meaning"><b>'+cur.w+'</b>: '+cur.d+'</div><div class="literal">'+literal+'</div>';
+  rev.innerHTML = '<div class="built">'+pieces+'</div><div class="meaning"><b>'+cur.w+'</b>: '+clueFor(cur)+'</div><div class="literal">'+literal+'</div>';
   const a = $('actions'); a.innerHTML = '';
   const btn = document.createElement('button'); btn.className='btn btn-gold'; btn.textContent='Next word →';
   btn.addEventListener('click', nextRound); a.appendChild(btn);

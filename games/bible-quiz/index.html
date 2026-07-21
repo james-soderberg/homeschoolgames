@@ -65,15 +65,20 @@
 
     /* journey map panel (right of the canvas, outside the scene's centering) */
     .map-panel {
-      flex: 0 0 232px; width: 232px; display: flex; flex-direction: column; gap: 0.45rem;
+      flex: 0 0 256px; width: 256px; display: flex; flex-direction: column; gap: 0.5rem;
       background: #eef6fc; border: 2.5px solid #234a63; border-radius: 16px;
       padding: 0.7rem 0.65rem; box-shadow: 0 10px 30px rgba(20,33,46,0.18);
     }
     .map-panel h3 {
       margin: 0; text-align: center; font-family: var(--font-serif);
-      font-size: 1.02rem; color: var(--ink);
+      font-size: 1.02rem; color: var(--ink); flex: 0 0 auto;
     }
-    .map-wrap { flex: 1 1 auto; min-height: 0; position: relative; }
+    /* keep the map a landscape rectangle so the Mediterranean is never squished,
+       centred in whatever vertical space the panel has */
+    .map-wrap {
+      flex: 0 0 auto; aspect-ratio: 16 / 9; margin: auto 0; position: relative;
+      border-radius: 10px; overflow: hidden; border: 1.5px solid #b9d4e6; background: #a6d2ea;
+    }
     #mapCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .map-cap {
       flex: 0 0 auto; text-align: center; font-family: var(--font-sans);
@@ -195,14 +200,14 @@
     /* On phones/short screens, stop fitting to the viewport - stack and allow scroll. */
     /* narrow OR short windows: stop fitting to the viewport - scroll instead, and
        give the scene a real height so the start menu never gets crushed */
-    @media (max-width: 760px), (max-height: 640px) {
+    @media (max-width: 760px), (max-height: 780px) {
       html, body { height: auto; }
       body { display: block; overflow: auto; }
       .voy-page { display: block; padding-bottom: 2rem; }
       .stage { flex-direction: column; }
-      .scene-wrap { height: 52vh; min-height: 340px; }
+      .scene-wrap { height: 56vh; min-height: 380px; }
       .map-panel { flex: none; width: auto; }
-      .map-wrap { height: 150px; }
+      .map-wrap { aspect-ratio: 16 / 9; height: auto; width: 100%; max-width: 440px; margin: 0.1rem auto 0; }
       .qpanel { margin-top: 0.7rem; }
     }
     @media (max-width: 480px) {
@@ -869,11 +874,27 @@ function roundRect(x, y, w, h, r) {
 // Side map - Paul's real route across the Mediterranean
 // ============================================================
 const MAP_LON0 = 10.5, MAP_LON1 = 38.0, MAP_LAT0 = 31.0, MAP_LAT1 = 43.5;
+// The Mediterranean spans ~27.5deg lon x 12.5deg lat; corrected for latitude the
+// route wants roughly a 1.75:1 landscape box. Fit the largest such box inside the
+// canvas and centre it, so the geography keeps its true shape at any panel size.
+const MAP_AR = ((MAP_LON1 - MAP_LON0) * Math.cos(37 * Math.PI / 180)) / (MAP_LAT1 - MAP_LAT0);
+function mapRect() {
+  const outer = 6;
+  let w = Math.max(1, mapW - outer * 2), h = Math.max(1, mapH - outer * 2);
+  if (w / h > MAP_AR) w = h * MAP_AR; else h = w / MAP_AR;
+  return { x: (mapW - w) / 2, y: (mapH - h) / 2, w, h };
+}
+function mapRoundRect(c, x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  c.beginPath(); c.moveTo(x + r, y);
+  c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
+  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
 function mapProj(p) {
-  const pad = 16;
+  const R = mapRect(), ip = R.w * 0.075;
   return {
-    x: pad + ((p.lon - MAP_LON0) / (MAP_LON1 - MAP_LON0)) * (mapW - 2 * pad),
-    y: pad + ((MAP_LAT1 - p.lat) / (MAP_LAT1 - MAP_LAT0)) * (mapH - 2 * pad),
+    x: R.x + ip + ((p.lon - MAP_LON0) / (MAP_LON1 - MAP_LON0)) * (R.w - 2 * ip),
+    y: R.y + ip + ((MAP_LAT1 - p.lat) / (MAP_LAT1 - MAP_LAT0)) * (R.h - 2 * ip),
   };
 }
 // where the ship is on the map right now, and how many ports are behind us
@@ -886,17 +907,21 @@ function mapShipState() {
   return { x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t, reached: atPort ? legIndex + 1 : legIndex };
 }
 function drawMiniMap() {
-  const c = mapCtx, w = mapW, h = mapH;
-  c.clearRect(0, 0, w, h);
+  const c = mapCtx;
+  c.clearRect(0, 0, mapW, mapH);
+  const R = mapRect();
+  c.save();
+  mapRoundRect(c, R.x, R.y, R.w, R.h, 9); c.clip();
   // sea
-  const sg = c.createLinearGradient(0, 0, 0, h);
+  const sg = c.createLinearGradient(0, R.y, 0, R.y + R.h);
   sg.addColorStop(0, '#bfe0f2'); sg.addColorStop(1, '#a6d2ea');
-  c.fillStyle = sg; c.fillRect(0, 0, w, h);
+  c.fillStyle = sg; c.fillRect(R.x, R.y, R.w, R.h);
   // stylized landmasses, positioned to sit behind the real city dots
   c.fillStyle = '#dcc79a';
   // North Africa band along the bottom
-  c.beginPath(); c.moveTo(0, h); c.lineTo(0, h * 0.82);
-  c.quadraticCurveTo(w * 0.5, h * 0.72, w, h * 0.8); c.lineTo(w, h); c.closePath(); c.fill();
+  c.beginPath(); c.moveTo(R.x, R.y + R.h); c.lineTo(R.x, R.y + R.h * 0.82);
+  c.quadraticCurveTo(R.x + R.w * 0.5, R.y + R.h * 0.72, R.x + R.w, R.y + R.h * 0.8);
+  c.lineTo(R.x + R.w, R.y + R.h); c.closePath(); c.fill();
   // Italy (around Rome, top-left)
   blob([[0.0,0.02],[0.16,0.0],[0.2,0.18],[0.12,0.4],[0.16,0.55],[0.06,0.6],[0.04,0.36],[0.0,0.2]]);
   // Greece (around Philippi/Athens, top-centre)
@@ -922,28 +947,33 @@ function drawMiniMap() {
   c.lineTo(sh.x, sh.y);
   c.stroke();
   // port dots + labels
-  c.font = '700 9px Inter, system-ui, sans-serif';
+  c.font = '700 10px Inter, system-ui, sans-serif';
   MAP_POINTS.forEach((p, i) => {
     const q = mapProj(p);
     const done = i <= sh.reached;
-    c.beginPath(); c.arc(q.x, q.y, 3.4, 0, Math.PI * 2);
+    c.beginPath(); c.arc(q.x, q.y, 3.6, 0, Math.PI * 2);
     c.fillStyle = done ? '#d99a2b' : '#fff';
     c.fill(); c.strokeStyle = '#234a63'; c.lineWidth = 1.2; c.stroke();
-    c.fillStyle = 'rgba(20,44,66,0.92)'; c.textAlign = (q.x > w * 0.7) ? 'right' : 'left';
-    const lx = (q.x > w * 0.7) ? q.x - 6 : q.x + 6;
-    c.fillText(p.name, lx, q.y + 3);
+    c.fillStyle = 'rgba(20,44,66,0.92)';
+    const right = q.x > R.x + R.w * 0.66;
+    c.textAlign = right ? 'right' : 'left';
+    c.fillText(p.name, right ? q.x - 6 : q.x + 6, q.y + 3);
   });
   // the ship marker (pulsing)
   c.beginPath(); c.arc(sh.x, sh.y, 5.5 + Math.sin(sceneTime * 4) * 1.2, 0, Math.PI * 2);
   c.fillStyle = '#b9433a'; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
+  c.restore();
+  // frame the map card
+  c.strokeStyle = 'rgba(35,74,99,0.55)'; c.lineWidth = 1.5;
+  mapRoundRect(c, R.x + 0.75, R.y + 0.75, R.w - 1.5, R.h - 1.5, 9); c.stroke();
 
   function blob(pts) {
     c.beginPath();
-    pts.forEach((p, i) => { const x = p[0] * w, y = p[1] * h; i ? c.lineTo(x, y) : c.moveTo(x, y); });
+    pts.forEach((p, i) => { const x = R.x + p[0] * R.w, y = R.y + p[1] * R.h; i ? c.lineTo(x, y) : c.moveTo(x, y); });
     c.closePath(); c.fill();
   }
   function ellipseM(fx, fy, rx, ry) {
-    c.beginPath(); c.ellipse(fx * w, fy * h, rx * w, ry * h + rx * w, 0, 0, Math.PI * 2); c.fill();
+    c.beginPath(); c.ellipse(R.x + fx * R.w, R.y + fy * R.h, rx * R.w, ry * R.h + rx * R.w, 0, 0, Math.PI * 2); c.fill();
   }
 }
 function updateMapCaption() {
@@ -1570,6 +1600,20 @@ setupCanvas();
 updateBadges();
 updateMapCaption();
 rafId = requestAnimationFrame(loop);
+
+// The scene + map heights also shift when the question panel reflows (a long story
+// vs. a short one changes the flex layout with no window 'resize' event). Watch the
+// real boxes so the canvases are always sized to match and never render squished.
+if (window.ResizeObserver) {
+  let roPending = false;
+  const ro = new ResizeObserver(() => {
+    if (roPending) return;
+    roPending = true;
+    requestAnimationFrame(() => { roPending = false; setupCanvas(); });
+  });
+  ro.observe(sceneWrap);
+  ro.observe(document.querySelector('.map-wrap'));
+}
 
 // homepage-tile / screenshot hook: ?shot jumps straight into a leg
 if (location.search.indexOf('shot') >= 0) setTimeout(() => startGame('medium'), 80);

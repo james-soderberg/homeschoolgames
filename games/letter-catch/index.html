@@ -267,13 +267,21 @@ const LEVELS = {
   // baseFall = fall speed of word #1; fallStep = +fraction faster per word.
   // needRatio0 = chance a spawned tile is the letter you need right now
   // (high = easy: few wrong letters to dodge). It eases down each word.
-  easy:     { baseFall:[48,80],  baseSpawn:1.05, fallStep:0.040, needRatio0:0.55 },
-  medium:   { baseFall:[64,104], baseSpawn:0.92, fallStep:0.050, needRatio0:0.47 },
-  hard:     { baseFall:[82,134], baseSpawn:0.80, fallStep:0.060, needRatio0:0.40 },
-  einstein: { baseFall:[96,150], baseSpawn:0.72, fallStep:0.060, needRatio0:0.34 }
+  // needMax caps how often a spawned tile can be the needed letter, so the
+  // harder bands ALWAYS keep a healthy share of decoys (wrong letters to dodge)
+  // no matter how the difficulty ramps. Easy has no cap (it may run decoy-light).
+  easy:     { baseFall:[48,80],  baseSpawn:1.05, fallStep:0.040, needRatio0:0.55, needMax:1.00 },
+  medium:   { baseFall:[64,104], baseSpawn:0.92, fallStep:0.050, needRatio0:0.47, needMax:0.60 },
+  hard:     { baseFall:[82,134], baseSpawn:0.80, fallStep:0.060, needRatio0:0.40, needMax:0.55 },
+  einstein: { baseFall:[96,150], baseSpawn:0.72, fallStep:0.060, needRatio0:0.34, needMax:0.50 }
 };
 const MAX_MISTAKES = 3;
 const READ_MIN = 0.6;              // brief guard so an in-motion mouse can't skip a new word instantly
+// The letter you currently need must ALWAYS keep looping back so a word can
+// never become unwinnable. Whenever there is no *reachable* copy of it falling
+// (one still above the basket line), we start this countdown; when it lapses we
+// force-spawn the needed letter. Bounded gap => every word is always solvable.
+const NEEDED_GAP = 0.8;
 const ALPHA = 'abcdefghijklmnopqrstuvwxyz';
 
 // Tricky look-alike / sound-alike letters. When a decoy spawns we often pull
@@ -313,7 +321,7 @@ let level='easy', cfg=LEVELS.easy;
 let word='', clueStr='', typed=0, score=0, mistakes=0, bestStreak=0;
 let tiles=[], basketX=280, basketTargetX=280;
 let running=false, reading=false, readArmed=false, readGuardT=0, readArmX=0;
-let lastTs=0, rafId=null, spawnAcc=0, sinceNeeded=0, shakeT=0, flashT=0;
+let lastTs=0, rafId=null, spawnAcc=0, neededTimer=NEEDED_GAP, shakeT=0, flashT=0;
 let nextId=1;
 
 // difficulty for the CURRENT word - ramps up as `score` (words done) grows
@@ -323,7 +331,7 @@ function diff(){
   return {
     fall: [cfg.baseFall[0]*fallMul, cfg.baseFall[1]*fallMul],
     spawn: cfg.baseSpawn * clamp(1 - 0.016*w, 0.58, 1),
-    needRatio: clamp(cfg.needRatio0 - 0.016*w, 0.24, cfg.needRatio0)
+    needRatio: Math.min(clamp(cfg.needRatio0 - 0.016*w, 0.24, cfg.needRatio0), cfg.needMax)
   };
 }
 
@@ -346,7 +354,7 @@ function newWord(){
   clueStr = HSGSpellWords.clue(word) || ('It has ' + word.length + ' letters');
   typed = 0;
   tiles = [];
-  sinceNeeded = 0;
+  neededTimer = 0.25;   // get the first needed letter falling promptly
   spawnAcc = 0;
   clueText.textContent = clueStr;
   catchHint.textContent = HSGSpellWords.hint(word);
@@ -361,7 +369,7 @@ function newWord(){
 // leave the read-the-clue pause and let the letters begin to fall
 function beginFalling(){
   if (!reading || !readArmed) return;
-  reading = false; spawnAcc = 0; sinceNeeded = 0;
+  reading = false; spawnAcc = 0; neededTimer = 0.25;
 }
 // blank slots that reveal only the letters you've caught in order
 function renderSlots(){
@@ -415,7 +423,7 @@ function spawnTile(forceNeeded){
   const need = word[typed] || 'a';
   const d = diff();
   let ch;
-  if (forceNeeded || Math.random() < d.needRatio){ ch = need; sinceNeeded = 0; }
+  if (forceNeeded || Math.random() < d.needRatio){ ch = need; }
   else {
     // a decoy - biased toward letters that are easy to confuse with the one you
     // need, so it's genuinely tricky to spot the right next letter.
@@ -429,6 +437,17 @@ function spawnTile(forceNeeded){
   }
   const t = TILE();
   tiles.push({ id:nextId++, ch, x:rand(t, W-t), y:-t, vy:rand(d.fall[0],d.fall[1]), size:t });
+}
+
+// Is there a copy of the letter we currently need still falling toward the
+// basket (i.e. above the catch line, so the player can still slide over to it)?
+// A needed tile that has already dropped past the basket is uncatchable and does
+// NOT count - that's the gap that used to let a word stall out.
+function neededReachable(){
+  const need = word[typed];
+  const by = BASKET_Y();
+  for (const t of tiles){ if (t.ch===need && t.y < by) return true; }
+  return false;
 }
 
 // ---- core catch resolution (testable) ----
@@ -495,10 +514,18 @@ function tick(ts){
   }
 
   // spawning (interval shortens a touch as more words are cleared)
-  spawnAcc += dt; sinceNeeded += dt;
+  spawnAcc += dt;
   const interval = diff().spawn;
   if (spawnAcc>=interval){ spawnAcc=0; spawnTile(false); }
-  if (sinceNeeded>1.5 && !tiles.some(t=>t.ch===word[typed])) spawnTile(true);
+  // GUARANTEE the needed letter keeps looping back: while no reachable copy is
+  // falling, count down; when it lapses, force-spawn it. So even if you miss the
+  // one you needed, another is always on the way - the word can't get stuck.
+  if (neededReachable()){
+    neededTimer = NEEDED_GAP;
+  } else {
+    neededTimer -= dt;
+    if (neededTimer <= 0){ spawnTile(true); neededTimer = NEEDED_GAP; }
+  }
 
   // move + catch
   const by=BASKET_Y(), bw=BASKET_W();
