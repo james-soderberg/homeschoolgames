@@ -50,8 +50,13 @@ export async function onRequestPost({ request, env }) {
   } catch (e) { /* throttle is best-effort; never block a legit write on it */ }
 
   try {
+    // Idempotent insert: a retried/duplicate POST (same board+ts+name+score) is a
+    // no-op, so the client's at-least-once retry queue can never double a score.
+    // Single INSERT...WHERE NOT EXISTS statement, so it's atomic under D1's write lock.
     await DB.prepare(
-      'INSERT INTO scores (board, name, score, hinted, ts) VALUES (?1, ?2, ?3, ?4, ?5)'
+      'INSERT INTO scores (board, name, score, hinted, ts) ' +
+      'SELECT ?1, ?2, ?3, ?4, ?5 ' +
+      'WHERE NOT EXISTS (SELECT 1 FROM scores WHERE board=?1 AND ts=?5 AND name=?2 AND score=?3)'
     ).bind(board, name, score, hinted, ts).run();
 
     // keep each board bounded (checkpoints keep everyone; game boards stay lean)

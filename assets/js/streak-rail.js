@@ -196,10 +196,18 @@
   // Queue + POST a score. Resolves { top, rank } on success (and clears it from
   // the queue), null otherwise. Malformed (400) is dropped; network/5xx/429 stay
   // queued for the next flush so the score is never lost.
+  // ts of entries whose POST is currently outstanding. Guards against a board
+  // refresh's flushPending firing a SECOND POST for the same entry while the first
+  // is still in flight - which the server would otherwise store as a duplicate row.
+  var inFlight = {};
   function submitScore(key, entry) {
     entry = { name: formatName(entry.name), score: entry.score, hinted: !!entry.hinted, ts: entry.ts };
     addPending(key, entry);   // queue first, so a failed/cancelled POST still retries later
     if (!remoteEnabled()) return Promise.resolve(null);
+    var flightKey = key + '|' + entry.ts;
+    if (inFlight[flightKey]) return Promise.resolve(null);   // this exact entry is already being POSTed
+    inFlight[flightKey] = true;
+    var clear = function () { delete inFlight[flightKey]; };
     return fetch(API_BASE + '/score', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -209,6 +217,7 @@
     })
       .then(function (r) { return r.text().then(function (t) { var b = null; try { b = JSON.parse(t); } catch (e) {} return { status: r.status, body: b }; }); })
       .then(function (resp) {
+        clear();
         if (resp.status >= 200 && resp.status < 300 && resp.body && Array.isArray(resp.body.top)) {
           removePending(key, entry.ts);
           save(key, mergeWithPending(key, normalizeList(resp.body.top)));
@@ -217,7 +226,7 @@
         if (resp.status === 400) removePending(key, entry.ts);   // malformed - never going to succeed
         return null;                                             // else keep queued for retry
       })
-      .catch(function () { return null; });                      // network error - keep queued
+      .catch(function () { clear(); return null; });             // network error - keep queued
   }
 
   function qualifies(key, score, minStreak) {
