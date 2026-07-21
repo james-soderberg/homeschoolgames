@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="canonical" href="https://homeschoolgames.org/games/food-web/">
+  <meta property="og:url" content="https://homeschoolgames.org/games/food-web/">
+  <meta name="description" content="Eat or Be Eaten — a food-chain survival game. Chase prey below you, flee the predators above you, and grab energy before it decays. A free biology game for kids and homeschoolers.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#2A5C3F">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HomeschoolGames">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Eat or Be Eaten">
+  <meta property="og:description" content="Chase prey, flee predators, and grab energy before it decays. Learn food chains and trophic levels by living them.">
+  <title>Eat or Be Eaten — Food Chain Survival Game | HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .fw-page { max-width: 1400px; margin: 0 auto; padding: 0.6rem 1rem 0.5rem; }
+    .fw-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+    .fw-top h1 { margin: 0; font-size: 1.5rem; }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.4rem 0.85rem; font-weight: 700; font-size: 0.9rem; font-family: var(--font-sans);
+      color: var(--ink); white-space: nowrap;
+    }
+
+    .fw-stage {
+      position: relative; width: 100%; height: min(78vh, 860px); min-height: 400px;
+      border-radius: 16px; overflow: hidden; border: 2.5px solid #223; cursor: none;
+      box-shadow: 0 12px 40px rgba(8,10,20,0.35); user-select: none; touch-action: none;
+      background: #3a8f96;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+    /* overlays */
+    .fw-ov {
+      position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column;
+      align-items: center; justify-content: safe center; overflow-y: auto; text-align: center;
+      padding: 1.4rem 1.25rem; background: rgba(10,22,20,0.82); backdrop-filter: blur(2px); color: #fff;
+      cursor: auto;
+    }
+    .fw-ov.hidden { display: none; }
+    .fw-ov .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.3rem; }
+    .fw-ov h2 { font-family: var(--font-serif); font-size: 2rem; margin: 0 0 0.4rem; color: #fff; }
+    .fw-ov p { color: #e6f3ea; margin: 0 0 1rem; max-width: 40ch; line-height: 1.55; }
+    .fw-ov .why { color: #ffd98a; font-weight: 700; }
+
+    .play-btn {
+      background: var(--gold); color: #201a0a; border: none; border-radius: 12px;
+      padding: 0.85rem 1.8rem; font-size: 1.1rem; font-weight: 800; font-family: var(--font-sans);
+      cursor: pointer; box-shadow: 0 5px 0 #8c7227; transition: transform 0.1s, background 0.15s;
+    }
+    .play-btn:hover { background: #d6b34e; }
+    .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #8c7227; }
+    .play-btn.ghost { background: rgba(255,255,255,0.14); color: #fff; box-shadow: 0 5px 0 rgba(0,0,0,0.3); }
+
+    .diff-row { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; margin: 0.4rem 0 0.4rem; }
+    .diff-btn {
+      background: #fff; border: 2.5px solid var(--border); border-radius: 14px; cursor: pointer;
+      padding: 0.9rem 1.3rem; min-width: 130px; font-family: var(--font-sans); color: var(--ink);
+      transition: transform .12s, border-color .12s;
+    }
+    .diff-btn:hover { transform: translateY(-2px); border-color: var(--gold); }
+    .diff-btn .d-name { font-weight: 800; font-size: 1.1rem; display: block; }
+    .diff-btn .d-desc { font-size: 0.78rem; color: var(--ink-light); }
+
+    /* food-web legend card on the biome intro */
+    .web-card { background: rgba(255,255,255,0.1); border: 1.5px solid rgba(255,255,255,0.25);
+      border-radius: 14px; padding: 0.9rem 1.1rem; margin: 0.3rem auto 1.1rem; max-width: 460px; }
+    .web-row { display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin: 0.35rem 0; flex-wrap: wrap; }
+    .web-row .lab { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;
+      width: 92px; text-align: right; opacity: 0.85; }
+    .web-row.eat .lab { color: #9ff0b4; } .web-row.flee .lab { color: #ff9d8a; } .web-row.skip .lab { color: #ffe08a; }
+    .web-row .emos { font-size: 1.7rem; letter-spacing: 0.15rem; }
+    .web-you { font-size: 2.6rem; margin-bottom: 0.2rem; }
+
+    .fw-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin: 0.5rem 0 0.2rem; line-height: 1.5; }
+    .fw-hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; }
+
+    .final-list { list-style: none; padding: 0; margin: 0.2rem auto 1rem; max-width: 320px; }
+    .final-list li { display: flex; justify-content: space-between; padding: 0.3rem 0.2rem; border-bottom: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; }
+    .final-list li b { color: #ffd98a; }
+
+    .fw-board { width: 100%; max-width: 340px; margin: 0.4rem auto 0.8rem; text-align: left; }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav"><a href="../../subjects/science.html">← Science</a></nav>
+</header>
+
+<div class="fw-page">
+  <div class="fw-top">
+    <h1>🦊 Eat or Be Eaten</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="biomeBadge">🪷 Pond</div>
+      <div class="stat-badge" id="scoreBadge">⚡ 0</div>
+      <div class="stat-badge" id="livesBadge">🐸🐸🐸</div>
+    </div>
+  </div>
+
+  <div class="fw-stage" id="stage">
+    <canvas id="scene"></canvas>
+
+    <!-- Start / difficulty -->
+    <div class="fw-ov" id="startOverlay">
+      <div class="crest">🦊</div>
+      <h2>Eat or Be Eaten</h2>
+      <p>You're a critter loose in a biome. <b>Chase and eat</b> what's below you on the food chain,
+         <b>flee</b> what's above it, and <b>grab energy</b> before it decays. Eat the wrong thing and
+         <i>you're</i> lunch!</p>
+      <div class="diff-row">
+        <button class="diff-btn" data-diff="cub"><span class="d-name">🌱 Cub</span><span class="d-desc">Slower predators · gentle</span></button>
+        <button class="diff-btn" data-diff="wild"><span class="d-name">🔥 Wild</span><span class="d-desc">Fast predators · hungry world</span></button>
+      </div>
+      <p class="fw-hint">Steer with the <kbd>mouse</kbd> / <kbd>finger</kbd>, or <kbd>WASD</kbd> / <kbd>arrows</kbd>.</p>
+    </div>
+
+    <!-- Biome intro card -->
+    <div class="fw-ov hidden" id="biomeOverlay">
+      <div class="crest" id="bioCrest">🪷</div>
+      <h2 id="bioTitle">The Pond</h2>
+      <div class="web-card">
+        <div class="web-you" id="bioYou">🐸</div>
+        <div style="font-weight:800;margin-bottom:.3rem" id="bioYouName">You are a Frog</div>
+        <div class="web-row eat"><span class="lab">Eat</span><span class="emos" id="bioEat"></span></div>
+        <div class="web-row flee"><span class="lab">Flee</span><span class="emos" id="bioFlee"></span></div>
+        <div class="web-row skip"><span class="lab">Can't digest</span><span class="emos" id="bioSkip"></span></div>
+      </div>
+      <button class="play-btn" id="bioGoBtn">Dive in →</button>
+    </div>
+
+    <!-- Game over -->
+    <div class="fw-ov hidden" id="overOverlay">
+      <div class="crest" id="overCrest">💀</div>
+      <h2 id="overTitle">You got eaten!</h2>
+      <p id="overWhy"></p>
+      <ul class="final-list">
+        <li><span>Energy banked</span><b id="fEnergy">0</b></li>
+        <li><span>Biome reached</span><b id="fBiome">Pond</b></li>
+        <li><span>Survived</span><b id="fTime">0s</b></li>
+      </ul>
+      <div class="hsg-board fw-board" id="fwBoard"></div>
+      <button class="play-btn" id="againBtn">Play again →</button>
+    </div>
+  </div>
+
+  <p class="fw-hint">Bigger critters eat smaller ones. Fill the <b>biome bar</b> to move on: Pond → Forest → Savanna → Ocean.</p>
+</div>
+
+<footer class="site-footer"><a href="../../index.html">homeschoolgames.org</a></footer>
+
+<aside class="hsg-rail" id="streakRail"></aside>
+
+<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/canvas-fit.js"></script>
+<script src="../../assets/js/godmode.js"></script>
+<script>
+// ============================================================
+//  EAT OR BE EATEN — a food-chain survival game.
+//  You are a mid-chain critter: eat prey (below you), flee
+//  predators (above you), grab decaying energy motes, and skip
+//  the plants you can't digest. Bank energy to climb through
+//  four biomes: Pond → Forest → Savanna → Ocean.
+// ============================================================
+
+// ---------- biomes (food webs) ----------
+// each: player critter, prey (below → eat), predators (above → flee),
+// plants (can't digest → penalty), scenery + colours, and an energy goal.
+const BIOMES = [
+  { key:'pond', name:'The Pond', crest:'🪷', badge:'🪷 Pond',
+    you:'🐸', youName:'a Frog',
+    prey:[['🦟','mosquito',9],['🪱','worm',11],['🐛','grub',10],['🦗','cricket',10],['🐌','snail',9]],
+    predators:[['🐍','snake'],['🦢','heron'],['🦝','raccoon']],
+    plants:[['🪷','lily pad'],['🌿','algae']],
+    decor:['🪷','🌿','🪷'], top:'#7ad0d6', bot:'#2f8088', goal:80, preds:2, preyN:11 },
+
+  { key:'forest', name:'The Forest', crest:'🌲', badge:'🌲 Forest',
+    you:'🦊', youName:'a Fox',
+    prey:[['🐇','rabbit',13],['🐭','mouse',10],['🐿️','squirrel',12],['🐸','frog',11],['🐦','bird',11]],
+    predators:[['🐺','wolf'],['🦅','hawk'],['🐻','bear']],
+    plants:[['🌿','grass'],['🍄','mushroom'],['🌰','acorn']],
+    decor:['🌲','🍄','🌿','🌲'], top:'#8cc06e', bot:'#3f6f38', goal:110, preds:3, preyN:11 },
+
+  { key:'savanna', name:'The Savanna', crest:'🌾', badge:'🌾 Savanna',
+    you:'🐆', youName:'a Cheetah',
+    prey:[['🦌','gazelle',15],['🐗','warthog',14],['🐇','hare',11],['🐦','bird',10],['🦔','hedgehog',12]],
+    predators:[['🦁','lion'],['🐊','crocodile'],['🦅','vulture']],
+    plants:[['🌾','dry grass'],['🌿','shrub'],['🪵','log']],
+    decor:['🌾','🌿','🪨','🌾'], top:'#ecca77','bot':'#b78a3f', goal:140, preds:3, preyN:10 },
+
+  { key:'ocean', name:'The Open Ocean', crest:'🌊', badge:'🌊 Ocean',
+    you:'🐟', youName:'a Tuna',
+    prey:[['🐠','reef fish',13],['🦐','shrimp',10],['🦑','squid',15],['🦀','crab',12],['🐚','clam',9]],
+    predators:[['🦈','shark'],['🐋','orca'],['🐙','octopus']],
+    plants:[['🌿','seaweed'],['🪸','coral']],
+    decor:['🪸','🌿','🫧','🪸'], top:'#3f95d0', bot:'#0d2f57', goal:170, preds:4, preyN:11 },
+];
+
+const DIFFS = {
+  cub:  { decay: 2.6, predSpeed: 0.78, predAdd: 0, invuln: 1.8, lives: 3 },
+  wild: { decay: 4.2, predSpeed: 1.0,  predAdd: 1, invuln: 1.3, lives: 3 },
+};
+
+// ---------- DOM ----------
+const stage  = document.getElementById('stage');
+const canvas = document.getElementById('scene');
+const ctx    = canvas.getContext('2d');
+const startOverlay = document.getElementById('startOverlay');
+const biomeOverlay = document.getElementById('biomeOverlay');
+const overOverlay  = document.getElementById('overOverlay');
+
+// ---------- state ----------
+let W = 900, H = 600, dpr = 1;
+let state = 'menu';               // menu | intro | play | dead
+let diff = DIFFS.cub;
+let biomeIdx = 0, biome = BIOMES[0];
+let player = null;
+let ents = [];                    // prey / predator / plant / mote
+let particles = [], floaters = [];
+let decor = [];
+let energy = 60, score = 0, biomeBank = 0, lives = 3;
+let survT = 0, sceneT = 0, shake = 0, flash = 0, invuln = 0;
+let rafId = null, lastTs = 0;
+
+const rand = (a, b) => a + Math.random() * (b - a);
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const dist2 = (ax, ay, bx, by) => { const dx = ax - bx, dy = ay - by; return dx*dx + dy*dy; };
+
+// ---------- canvas fit ----------
+const fit = HSGFit.attach(canvas, stage, {
+  maxDPR: 2, minW: 320, minH: 300,
+  onResize({ rect, size }) { ({ W, H, dpr } = size(Math.max(320, rect.width), Math.max(300, rect.height))); clampAll(); }
+});
+function setupCanvas() { fit.trigger(true); }
+function clampAll() {
+  if (player) { player.x = clamp(player.x, player.r, W - player.r); player.y = clamp(player.y, player.r, H - player.r); }
+}
+
+// ---------- leaderboard ----------
+const rail = HSGStreak.init({
+  gameId: 'food-web', gameName: 'Eat or Be Eaten', minStreak: 1,
+  unit: 'points', level: 'all', levelName: 'All Biomes',
+  mount: document.getElementById('streakRail')
+});
+
+// ---------- entities ----------
+function spawnAwayFromPlayer(r) {
+  let x, y, tries = 0;
+  do { x = rand(r, W - r); y = rand(r, H - r); tries++; }
+  while (player && dist2(x, y, player.x, player.y) < 200*200 && tries < 24);
+  return { x, y };
+}
+function makePrey() {
+  const p = biome.prey[(Math.random()*biome.prey.length)|0];
+  const pos = spawnAwayFromPlayer(16);
+  return { kind:'prey', emoji:p[0], name:p[1], gain:p[2], x:pos.x, y:pos.y,
+    vx:rand(-40,40), vy:rand(-40,40), r:15, spd:rand(115,150), wob:rand(0,6) };
+}
+function makePredator() {
+  const p = biome.predators[(Math.random()*biome.predators.length)|0];
+  const pos = spawnAwayFromPlayer(30);
+  return { kind:'predator', emoji:p[0], name:p[1], x:pos.x, y:pos.y,
+    vx:rand(-30,30), vy:rand(-30,30), r:28, spd:rand(150,180) * diff.predSpeed, wob:rand(0,6), alert:0 };
+}
+function makePlant() {
+  const p = biome.plants[(Math.random()*biome.plants.length)|0];
+  const pos = spawnAwayFromPlayer(16);
+  return { kind:'plant', emoji:p[0], name:p[1], x:pos.x, y:pos.y, vx:rand(-8,8), vy:rand(-8,8), r:16 };
+}
+function makeMote() {
+  const pos = spawnAwayFromPlayer(10);
+  return { kind:'mote', x:pos.x, y:pos.y, vx:rand(-12,12), vy:rand(-12,12), r:9, life:rand(5,8), t:0 };
+}
+function count(kind) { let n = 0; for (const e of ents) if (e.kind === kind) n++; return n; }
+
+function buildDecor() {
+  decor = [];
+  const list = biome.decor;
+  for (let i = 0; i < 10; i++) decor.push({ e:list[(Math.random()*list.length)|0], x:rand(30, W-30), y:rand(30, H-30), s:rand(28, 54), a:rand(0.10, 0.22) });
+}
+
+// ---------- start / biome flow ----------
+function startGame(dkey) {
+  diff = DIFFS[dkey] || DIFFS.cub;
+  biomeIdx = 0; score = 0; lives = diff.lives; survT = 0;
+  startOverlay.classList.add('hidden');
+  enterBiome();
+}
+function enterBiome() {
+  biome = BIOMES[biomeIdx];
+  document.body && (document.title = document.title);
+  document.getElementById('bioCrest').textContent = biome.crest;
+  document.getElementById('bioTitle').textContent = biome.name;
+  document.getElementById('bioYou').textContent = biome.you;
+  document.getElementById('bioYouName').textContent = 'You are ' + biome.youName;
+  document.getElementById('bioEat').textContent  = biome.prey.map(p=>p[0]).join(' ');
+  document.getElementById('bioFlee').textContent = biome.predators.map(p=>p[0]).join(' ');
+  document.getElementById('bioSkip').textContent = biome.plants.map(p=>p[0]).join(' ');
+  document.getElementById('biomeBadge').textContent = biome.badge;
+  biomeOverlay.classList.remove('hidden');
+  overOverlay.classList.add('hidden');
+  state = 'intro';
+  // pre-draw the biome behind the card
+  setupCanvas(); buildDecor();
+  if (!rafId) rafId = requestAnimationFrame(loop);
+}
+function beginBiome() {
+  biomeOverlay.classList.add('hidden');
+  biomeBank = 0; energy = Math.max(energy, 55); invuln = 1.2;
+  player = { x: W/2, y: H/2, vx:0, vy:0, r:22 };
+  ents = []; particles = []; floaters = [];
+  const nPred = biome.preds + diff.predAdd;
+  for (let i = 0; i < biome.preyN; i++) ents.push(makePrey());
+  for (let i = 0; i < nPred; i++) ents.push(makePredator());
+  for (let i = 0; i < biome.plants.length + 1; i++) ents.push(makePlant());
+  for (let i = 0; i < 3; i++) ents.push(makeMote());
+  updateBadges();
+  state = 'play';
+  if (window.HSGSound) HSGSound.powerup && HSGSound.powerup();
+}
+
+// ---------- input ----------
+const keys = { up:false, down:false, left:false, right:false };
+let pointer = null;   // {x,y} in logical px, or null
+const KMAP = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right', w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right' };
+document.addEventListener('keydown', e => { if (KMAP[e.key]) { keys[KMAP[e.key]] = true; pointer = null; e.preventDefault(); } });
+document.addEventListener('keyup',   e => { if (KMAP[e.key]) keys[KMAP[e.key]] = false; });
+function stageXY(ev) {
+  const r = canvas.getBoundingClientRect();
+  const cx = (ev.touches ? ev.touches[0].clientX : ev.clientX) - r.left;
+  const cy = (ev.touches ? ev.touches[0].clientY : ev.clientY) - r.top;
+  return { x: cx / r.width * W, y: cy / r.height * H };
+}
+stage.addEventListener('pointermove', e => { if (state === 'play') pointer = stageXY(e); });
+stage.addEventListener('pointerdown', e => { if (state === 'play') { pointer = stageXY(e); e.preventDefault(); } });
+
+// ---------- update ----------
+function update(dt) {
+  sceneT += dt;
+  shake = Math.max(0, shake - dt * 30);
+  flash = Math.max(0, flash - dt * 2.2);
+  if (invuln > 0) invuln -= dt;
+
+  if (state !== 'play') { updateFx(dt); return; }
+  survT += dt;
+
+  // --- player movement (steer toward keys, else toward pointer) ---
+  const MAXV = 232, ACC = 1500;
+  let dx = 0, dy = 0;
+  if (keys.up || keys.down || keys.left || keys.right) {
+    dx = (keys.right?1:0) - (keys.left?1:0); dy = (keys.down?1:0) - (keys.up?1:0);
+  } else if (pointer) {
+    dx = pointer.x - player.x; dy = pointer.y - player.y;
+    if (Math.hypot(dx, dy) < 6) dx = dy = 0;
+  }
+  const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+  player.vx += dx * ACC * dt; player.vy += dy * ACC * dt;
+  // friction + clamp speed
+  const sp = Math.hypot(player.vx, player.vy);
+  if (sp > MAXV) { player.vx = player.vx / sp * MAXV; player.vy = player.vy / sp * MAXV; }
+  player.vx *= (1 - Math.min(1, dt * 3)); player.vy *= (1 - Math.min(1, dt * 3));
+  player.x += player.vx * dt; player.y += player.vy * dt;
+  player.x = clamp(player.x, player.r, W - player.r);
+  player.y = clamp(player.y, player.r, H - player.r);
+  player.r = 20 + Math.min(10, energy / 12);   // grow a touch with energy
+
+  // --- energy decay (metabolism) ---
+  energy -= diff.decay * dt;
+  if (energy <= 0) { energy = 0; loseLife('starve'); return; }
+
+  // --- entity AI + motion ---
+  for (const e of ents) {
+    if (e.kind === 'prey') {
+      const d = Math.hypot(player.x - e.x, player.y - e.y);
+      if (d < 135) { e.vx += (e.x - player.x) / d * e.spd * dt * 4; e.vy += (e.y - player.y) / d * e.spd * dt * 4; }
+      else { e.vx += rand(-30,30) * dt; e.vy += rand(-30,30) * dt; }
+      capSpeed(e, e.spd);
+    } else if (e.kind === 'predator') {
+      const d = Math.hypot(player.x - e.x, player.y - e.y);
+      e.alert = d < 300 ? Math.min(1, e.alert + dt*3) : Math.max(0, e.alert - dt*2);
+      if (d < 300 && invuln <= 0) { e.vx += (player.x - e.x) / d * e.spd * dt * 3.5; e.vy += (player.y - e.y) / d * e.spd * dt * 3.5; }
+      else { e.vx += rand(-24,24) * dt; e.vy += rand(-24,24) * dt; }
+      capSpeed(e, e.spd);
+    } else if (e.kind === 'plant') {
+      capSpeed(e, 22);
+    } else if (e.kind === 'mote') {
+      e.t += dt; capSpeed(e, 26);
+    }
+    e.x += e.vx * dt; e.y += e.vy * dt;
+    // bounce off walls
+    if (e.x < e.r) { e.x = e.r; e.vx = Math.abs(e.vx); }
+    if (e.x > W - e.r) { e.x = W - e.r; e.vx = -Math.abs(e.vx); }
+    if (e.y < e.r) { e.y = e.r; e.vy = Math.abs(e.vy); }
+    if (e.y > H - e.r) { e.y = H - e.r; e.vy = -Math.abs(e.vy); }
+  }
+
+  // --- collisions ---
+  for (let i = ents.length - 1; i >= 0; i--) {
+    const e = ents[i];
+    const hit = dist2(player.x, player.y, e.x, e.y) < (player.r + e.r*0.7) * (player.r + e.r*0.7);
+    if (!hit) continue;
+    if (e.kind === 'prey') {
+      gainEnergy(e.gain, e.x, e.y, '+' + e.gain, '#9ff0b4');
+      ents.splice(i, 1); ents.push(makePrey());
+      if (window.HSGSound) HSGSound.tick && HSGSound.tick();
+    } else if (e.kind === 'mote') {
+      gainEnergy(7, e.x, e.y, '+7 ⚡', '#ffe08a');
+      ents.splice(i, 1);
+      if (window.HSGSound) HSGSound.tick && HSGSound.tick();
+    } else if (e.kind === 'plant') {
+      energy = Math.max(0, energy - 16);
+      floaters.push({ x:e.x, y:e.y, text:"can't digest!", color:'#ff9d8a', t:0 });
+      burst(e.x, e.y, '#7a5', 10);
+      ents.splice(i, 1); ents.push(makePlant());
+      shake = Math.max(shake, 4);
+      if (window.HSGSound) HSGSound.wrong && HSGSound.wrong();
+    } else if (e.kind === 'predator' && invuln <= 0) {
+      loseLife('eaten', e.name);
+      return;
+    }
+  }
+
+  // --- mote lifecycle ---
+  for (let i = ents.length - 1; i >= 0; i--) {
+    const e = ents[i];
+    if (e.kind === 'mote' && e.t >= e.life) ents.splice(i, 1);
+  }
+  if (count('mote') < 3 && Math.random() < dt * 0.9) ents.push(makeMote());
+
+  // --- biome progress ---
+  if (biomeBank >= biome.goal) advanceBiome();
+
+  updateBadges();
+  updateFx(dt);
+}
+function capSpeed(e, mx) { const s = Math.hypot(e.vx, e.vy); if (s > mx) { e.vx = e.vx / s * mx; e.vy = e.vy / s * mx; } }
+
+function gainEnergy(n, x, y, txt, col) {
+  energy = Math.min(100, energy + n);
+  score += n; biomeBank += n;
+  floaters.push({ x, y, text: txt, color: col, t: 0 });
+  burst(x, y, col, 8);
+}
+function burst(x, y, col, n) {
+  for (let i = 0; i < n; i++) { const a = rand(0, 6.28), s = rand(40, 160);
+    particles.push({ x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, r:rand(2,5), life:rand(0.3,0.6), t:0, col }); }
+}
+function updateFx(dt) {
+  for (let i = particles.length - 1; i >= 0; i--) { const p = particles[i]; p.t += dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 120*dt; if (p.t >= p.life) particles.splice(i,1); }
+  for (let i = floaters.length - 1; i >= 0; i--) { const f = floaters[i]; f.t += dt; f.y -= 26*dt; if (f.t >= 1) floaters.splice(i,1); }
+}
+
+function loseLife(reason, who) {
+  lives--;
+  shake = 14; flash = 1; invuln = diff.invuln;
+  if (window.HSGSound) HSGSound.finish && HSGSound.finish(false);
+  if (lives <= 0) { gameOver(reason, who); return; }
+  // survive: refill a little, shove predators away
+  energy = Math.max(energy, 45);
+  player.vx = player.vy = 0;
+  for (const e of ents) if (e.kind === 'predator') {
+    const d = Math.hypot(e.x - player.x, e.y - player.y) || 1;
+    e.vx = (e.x - player.x) / d * 260; e.vy = (e.y - player.y) / d * 260;
+  }
+  floaters.push({ x: player.x, y: player.y - 30, text: reason === 'starve' ? 'starving!' : 'chomp! –1 life', color:'#ff9d8a', t:0 });
+  updateBadges();
+}
+
+function advanceBiome() {
+  if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 40 });
+  if (window.HSGSound) HSGSound.correct && HSGSound.correct();
+  biomeIdx++;
+  if (biomeIdx >= BIOMES.length) { gameOver('win'); return; }
+  state = 'intro';
+  enterBiome();
+}
+
+function gameOver(reason, who) {
+  state = 'dead';
+  const win = reason === 'win';
+  document.getElementById('overCrest').textContent = win ? '🏆' : (reason === 'starve' ? '🍽️' : '💀');
+  document.getElementById('overTitle').textContent = win ? 'You survived the food web!' :
+    (reason === 'starve' ? 'You starved' : 'You got eaten!');
+  const whyEl = document.getElementById('overWhy');
+  if (win) whyEl.innerHTML = 'You banked energy through every biome — pond to ocean. <span class="why">Energy flows up the food chain, and you rode it all the way.</span>';
+  else if (reason === 'starve') whyEl.innerHTML = 'Every critter must keep eating — <span class="why">energy leaks away as heat, so it has to be replaced from the level below.</span>';
+  else whyEl.innerHTML = 'A <b>' + (who || 'predator') + '</b> caught you. <span class="why">It sits above you on the food chain — apex predators eat the levels below them.</span>';
+
+  document.getElementById('fEnergy').textContent = Math.round(score);
+  document.getElementById('fBiome').textContent = biome.name;
+  document.getElementById('fTime').textContent = Math.round(survT) + 's';
+  overOverlay.classList.remove('hidden');
+  if (win && window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 80 });
+  rail.gameOver(Math.round(score), document.getElementById('fwBoard'));
+  updateBadges();
+}
+
+function updateBadges() {
+  document.getElementById('scoreBadge').textContent = '⚡ ' + Math.round(score);
+  document.getElementById('livesBadge').textContent = (window.HSGGod && HSGGod.on) ? '∞' : (biome.you.repeat(Math.max(0, lives)) || '—');
+}
+
+// ---------- render ----------
+function render() {
+  ctx.save();
+  if (shake > 0) ctx.translate(rand(-shake, shake) * 0.4, rand(-shake, shake) * 0.4);
+
+  // background gradient
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, biome.top); g.addColorStop(1, biome.bot);
+  ctx.fillStyle = g; ctx.fillRect(-20, -20, W + 40, H + 40);
+  // scenery
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const d of decor) { ctx.globalAlpha = d.a; ctx.font = d.s + 'px serif'; ctx.fillText(d.e, d.x, d.y + Math.sin(sceneT + d.x) * 3); }
+  ctx.globalAlpha = 1;
+
+  // entities
+  for (const e of ents) {
+    if (e.kind === 'mote') {
+      const k = 1 - e.t / e.life;
+      ctx.globalAlpha = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(sceneT * 6));
+      ctx.fillStyle = 'rgba(255,224,138,' + (0.5 * k + 0.2).toFixed(2) + ')';
+      ctx.beginPath(); ctx.arc(e.x, e.y, e.r * (0.7 + 0.5 * k), 0, 6.28); ctx.fill();
+      ctx.globalAlpha = 1; ctx.font = (e.r*1.7) + 'px serif'; ctx.fillText('⚡', e.x, e.y);
+      continue;
+    }
+    if (e.kind === 'predator' && e.alert > 0.05) {
+      ctx.strokeStyle = 'rgba(230,60,50,' + (0.35 * e.alert).toFixed(2) + ')';
+      ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(e.x, e.y, e.r + 6, 0, 6.28); ctx.stroke();
+    }
+    const wob = Math.sin(sceneT * 5 + e.wob) * 2;
+    ctx.font = (e.r * 1.9) + 'px serif';
+    ctx.fillText(e.emoji, e.x, e.y + wob);
+  }
+
+  // player
+  if (player) {
+    if (invuln > 0 && Math.floor(sceneT * 12) % 2 === 0) ctx.globalAlpha = 0.4;
+    // a little wake ring
+    ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(player.x, player.y, player.r + 4, 0, 6.28); ctx.stroke();
+    ctx.font = (player.r * 2.1) + 'px serif';
+    const ang = Math.atan2(player.vy, player.vx);
+    ctx.save(); ctx.translate(player.x, player.y);
+    if (Math.hypot(player.vx, player.vy) > 20 && (Math.abs(ang) > 1.9)) ctx.scale(-1, 1);   // face travel direction
+    ctx.fillText(biome.you, 0, 2);
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
+  // particles
+  for (const p of particles) { ctx.globalAlpha = Math.max(0, 1 - p.t / p.life); ctx.fillStyle = p.col; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 6.28); ctx.fill(); }
+  ctx.globalAlpha = 1;
+  // floaters
+  ctx.font = '700 15px Inter, system-ui, sans-serif';
+  for (const f of floaters) { ctx.globalAlpha = Math.max(0, 1 - f.t); ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y); }
+  ctx.globalAlpha = 1;
+
+  drawHud();
+
+  if (flash > 0) { ctx.fillStyle = 'rgba(220,60,50,' + (0.4 * flash).toFixed(2) + ')'; ctx.fillRect(0, 0, W, H); }
+  ctx.restore();
+}
+
+function drawHud() {
+  if (state === 'menu') return;
+  // energy bar (top-left)
+  const bw = Math.min(260, W - 120), bx = 16, by = 16;
+  ctx.fillStyle = 'rgba(0,0,0,0.32)'; roundRect(bx-4, by-4, bw+8, 20, 8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; roundRect(bx, by, bw, 12, 6); ctx.fill();
+  const ec = energy > 35 ? '#7ee08a' : (energy > 15 ? '#ffd257' : '#ff6b5a');
+  ctx.fillStyle = ec; roundRect(bx, by, bw * clamp(energy/100,0,1), 12, 6); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.font = '700 11px Inter, system-ui, sans-serif';
+  ctx.fillText('ENERGY', bx, by + 26);
+
+  // biome progress (top-right)
+  const pw = Math.min(220, W - 120), px = W - pw - 16, py = 16;
+  ctx.fillStyle = 'rgba(0,0,0,0.32)'; roundRect(px-4, py-4, pw+8, 20, 8); ctx.fill();
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; roundRect(px, py, pw, 12, 6); ctx.fill();
+  ctx.fillStyle = '#e7c979'; roundRect(px, py, pw * clamp(biomeBank/biome.goal,0,1), 12, 6); ctx.fill();
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'right'; ctx.font = '700 11px Inter, system-ui, sans-serif';
+  ctx.fillText('NEXT BIOME →', px + pw, py + 26);
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+}
+function roundRect(x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+// ---------- loop ----------
+function loop(ts) {
+  rafId = requestAnimationFrame(loop);
+  if (!lastTs) lastTs = ts;
+  let dt = (ts - lastTs) / 1000; lastTs = ts;
+  if (dt > 0.05) dt = 0.05;
+  update(dt);
+  render();
+}
+
+// ---------- wiring ----------
+document.querySelectorAll('.diff-btn').forEach(b => b.addEventListener('click', () => { if (window.HSGSound) HSGSound.tick && HSGSound.tick(); startGame(b.dataset.diff); }));
+document.getElementById('bioGoBtn').addEventListener('click', beginBiome);
+document.getElementById('againBtn').addEventListener('click', () => { biomeIdx = 0; biome = BIOMES[0]; startOverlay.classList.remove('hidden'); overOverlay.classList.add('hidden'); state = 'menu'; updateBadges(); });
+
+// deity mode — type "godmode": invincible + jump straight to any biome
+if (window.HSGGod) HSGGod.watch(() => {
+  HSGGod.enable(); updateBadges();
+  HSGGod.picker({ label: 'Biome', tiers: BIOMES.map((b, i) => ({ v: i, label: b.name })),
+    onJump: i => { biomeIdx = i; if (state === 'menu') { diff = DIFFS.cub; score = 0; lives = 3; } enterBiome(); } });
+});
+
+setupCanvas();
+buildDecor();
+updateBadges();
+rafId = requestAnimationFrame(loop);
+</script>
+
+</body>
+</html>

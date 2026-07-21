@@ -15,6 +15,7 @@ const GAMES = [
   { key:'flag-frenzy',   name:'Around the World', href:'games/flag-frenzy/index.html',  subject:'Flag Identification', emoji:'🚩', blurb:'Race through the flags of the world.',photo:'assets/img/home/shots/flag-frenzy.jpg' },
   { key:'map-quiz',      name:'Map Quiz',         href:'games/map-quiz/index.html',     subject:'Geography', emoji:'🗺️', blurb:'Find every country on the map.',     photo:'assets/img/home/shots/map-quiz.jpg' },
   { key:'element-hunter',name:'Element Hunter',   href:'games/element-hunter/index.html',subject:'Science',  emoji:'🧪', blurb:'Hunt down the periodic table.',      photo:'assets/img/home/shots/element-hunter.jpg' },
+  { key:'food-web',      name:'Eat or Be Eaten',  href:'games/food-web/index.html',     subject:'Biology',   emoji:'🦊', blurb:'Climb the food chain — eat or be eaten.', photo:'assets/img/home/shots/food-web.jpg', badge:'✦ New' },
   { key:'slingshot',     name:'Gravity Slingshot', href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg', badge:'✦ New' },
   { key:'bible-quiz',    name:"Paul's Journey",   href:'games/bible-quiz/index.html',   subject:'Passage Identification', emoji:'📖', blurb:'Test how well you know scripture.',  photo:'assets/img/home/shots/bible-quiz.jpg' },
   { key:'letter-catch',  name:'Letter Catch',     href:'games/letter-catch/index.html', subject:'Spelling',  emoji:'🪣', blurb:'Catch letters to spell the word.',   photo:'assets/img/home/shots/letter-catch.jpg' },
