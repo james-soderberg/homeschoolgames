@@ -61,11 +61,14 @@
     font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;padding:.22rem .5rem;border-radius:3px;
     box-shadow:0 2px 6px rgba(40,25,5,.4);transform:rotate(-3deg);white-space:nowrap;}
 
-  .foot{text-align:center;margin-top:3rem;color:#6c5836;font-weight:600;font-size:.95rem;}
+  /* Vertically center the "buried" line in the gap between the tiles and the Morse row.
+     The clue is pinned to the bottom of the band so it never shifts the sentence off-center. */
+  .buried-band{position:relative;display:flex;align-items:center;justify-content:center;min-height:8rem;}
+  .foot{text-align:center;margin:0;color:#6c5836;font-weight:600;font-size:.95rem;}
   .foot a{color:#6c5836;}
 
   /* a clue pressed into the corkboard - Morse for the buried game */
-  .morse{display:flex;flex-direction:column;align-items:center;gap:.8rem;margin-top:1.6rem;}
+  .morse{display:flex;flex-direction:column;align-items:center;gap:.8rem;margin-top:0;}
   .morse .mrow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:30px;}  /* wide letter spacing so each letter reads separately */
   .morse .mlet{display:flex;align-items:center;gap:6px;}                                          /* tight within a letter */
   .morse .dot{width:8px;height:8px;border-radius:50%;background:rgba(64,40,12,.6);box-shadow:inset 0 1px 1px rgba(0,0,0,.3);}
@@ -73,7 +76,7 @@
 
   /* invisible ink - the same colour as the cork, only readable when the page is
      drag-/select-all-highlighted (⌘/Ctrl+A) */
-  .invisible-clue{text-align:center;margin-top:1rem;font-size:.85rem;font-weight:700;color:#c79a5b;letter-spacing:.02em;}
+  .invisible-clue{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:.85rem;font-weight:700;color:#c79a5b;letter-spacing:.02em;}
   .invisible-clue::selection{background:#3a2a12;color:#ffdf9a;}
   .invisible-clue::-moz-selection{background:#3a2a12;color:#ffdf9a;}
 </style>
@@ -240,8 +243,10 @@
   </div>
 
 
-    <div class="foot">Nineteen games were made, but one stays buried.</div>
-    <div class="invisible-clue">psst… type &ldquo;treasure&rdquo;</div>
+    <div class="buried-band">
+      <div class="foot">Twenty games were made, but one stays buried.</div>
+      <div class="invisible-clue">type &ldquo;treasure&rdquo;</div>
+    </div>
     <div class="morse" id="morse" aria-hidden="true"></div>
   </div>
 <script src="assets/js/home-games.js"></script>
