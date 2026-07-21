@@ -313,6 +313,10 @@ let doneClock = 0, worldSpeed = 7;   // px/sec - a slow, peaceful crawl
 let scroll = 0, snow = [], bandits = [];   // one bandit per car (1-to-1)
 let recent = { idx:-1, kind:null, t:0 };
 let bannerClock = 0;             // intro banner timer
+let hero = null;                 // the lone good guy (moves car to car)
+let heroQueue = [];              // guarded cars awaiting his bullet
+let trainComplete = false;
+const HERO_RUN = 300;            // px/sec along the rooftops
 let layoutMeta = null;
 
 function initWeather(){
@@ -352,6 +356,7 @@ function layoutTrain(){
 function startGame(){
   trainCount = 0; levelIdx = 0; lastSpec = '';
   lives = START_LIVES; score = 0; streak = 0; bestStreak = 0; carsSaved = 0; clicksRight = 0; clicksTotal = 0;
+  hero = null; heroQueue = []; trainComplete = false;
   rail.set(0);
   startOverlay.classList.add('hidden');
   overOverlay.classList.add('hidden');
@@ -368,11 +373,12 @@ function nextTrain(){
   let spec = choice(LEVELS[levelIdx]);
   if (LEVELS[levelIdx].length > 1){ let guard=0; while (spec===lastSpec && guard++<8) spec = choice(LEVELS[levelIdx]); }
   lastSpec = spec;
-  train = S(spec).map(c => ({ w:c.w, pos:c.pos, secured:false, burned:false, fire:0, hero:null }));
+  train = S(spec).map(c => ({ w:c.w, pos:c.pos, secured:false, burned:false, fire:0 }));
   layoutTrain();
   // one bandit per car, each menacing the car it belongs to
   bandits = train.map((c,i) => ({ carIdx:i, phase:rand(0,6.28), spd:rand(0.95,1.15),
-                                  roamSpd:rand(0.4,0.8), roamAmp:rand(34,64), state:'ride', t:0, fleeX:0 }));
+                                  roamSpd:rand(0.4,0.85), roamAmp:rand(55,130), state:'ride', t:0, fleeX:0, riderless:false }));
+  hero = null; heroQueue = []; trainComplete = false;   // the good guy re-enters on the first correct answer
   const present = [];
   train.forEach(c => { if (present.indexOf(c.pos)<0) present.push(c.pos); });
   order = shuffle(present); orderIdx = 0;
@@ -392,11 +398,16 @@ function advancePrompt(){
 function finishTrain(){
   const perfect = train.every(c => c.secured);
   if (perfect){ score += 40; if(window.HSGfx) HSGfx.confetti({ count:24 }); }
-  state = 'done'; doneClock = 0;
+  trainComplete = true;                       // hero boards the engine, THEN we roll on
   promptChip.textContent = perfect ? 'All aboard!' : 'Rolling on';
   promptCount.textContent = '';
   rail.set(score); updateHud();
   if (window.HSGSound) HSGSound.finish(perfect);
+  if (!hero && !heroQueue.length) finishAdvance();   // no good guy out (nothing guarded) -> just go
+}
+function finishAdvance(){
+  if (state !== 'play') return;
+  state = 'done'; doneClock = 0;
 }
 
 function guard(idx){
@@ -409,8 +420,7 @@ function guard(idx){
     streak++; if (streak>bestStreak) bestStreak = streak;
     score += Math.round(20 * Math.min(3, 1 + streak*0.15));
     recent = { idx, kind:'good', t:0 };
-    c.hero = { t:0 };                                   // a good guy climbs aboard and...
-    if (bandits[idx]){ bandits[idx].state = 'defeated'; bandits[idx].t = 0; }   // ...shoots this car's bandit down
+    heroQueue.push(idx);                                // the lone good guy will run here and shoot this bandit
     feedbackEl.textContent = '';
     if (window.HSGSound) HSGSound.correct();
     if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
@@ -447,7 +457,7 @@ function wrongClick(){
 function updatePrompt(){
   if (!curPOS) return;
   promptChip.textContent = LABEL[curPOS];
-  promptCount.textContent = remaining>1 ? ('· find all ' + remaining) : '';
+  promptCount.textContent = remaining>1 ? ('· find ' + remaining) : '';
 }
 function updateHud(){
   trainBadge.textContent = '🚂 Sentence ' + Math.max(1, trainCount) + (levelIdx>=MAX_LEVEL ? ' · Max' : '');
@@ -600,21 +610,30 @@ function banditScale(){ return (layoutMeta ? layoutMeta.carH/70 : 1) * 1.35; }  
 function drawBandits(t){
   if (!layoutMeta) return;
   const s = banditScale();
-  const gy = layoutMeta.baseY + layoutMeta.carH*0.5 + 6;   // low, in front of the wheels
+  const gy = layoutMeta.baseY + layoutMeta.carH*0.5 + 14;   // low, in front of the wheels (a touch lower)
   for (const b of bandits){
     if (b.state === 'gone') continue;
     const car = train[b.carIdx]; if (!car) continue;
     const cx = car.x + car.cw/2;
     const bob = Math.sin(t*3 + b.phase)*1.4;
     const ph = t*b.roamSpd + b.phase;
-    const roamX = cx + Math.sin(ph)*b.roamAmp;                    // ride forward and back around the car
+    const roamX = cx + Math.sin(ph)*b.roamAmp;                    // ride freely forward and back
     const roamDir = Math.cos(ph) >= 0 ? 1 : -1;                   // face the way you're moving
     let x = roamX, dir = roamDir, torch = 0, fall = 0;
-    if (b.state === 'torch')    { x = cx; torch = (b.t < 0.6) ? 1 : 0; }          // ride up to torch, stay mounted
+    if (b.state === 'torch')    { x = cx; torch = (b.t < 0.6) ? 1 : 0; }          // torch the car it belongs to
     else if (b.state === 'defeated'){ fall = clamp((b.t - 0.28)/0.34, 0, 1); }   // rider shot, drops off
-    else if (b.state === 'flee'){ x = b.fleeX; dir = -1; fall = 1; }             // riderless horse bolts
+    else if (b.state === 'flee'){ x = b.fleeX; dir = -1; fall = b.riderless ? 1 : 0; }   // ride off (mounted after torching, riderless if shot)
     drawHorseRider(x, gy + bob, s, t*b.spd + b.phase, torch, dir, fall);
   }
+}
+// where to aim the hero's rifle: the target bandit's actual (roamed) position
+function banditAimPoint(b, t){
+  const s = banditScale();
+  const gy = layoutMeta.baseY + layoutMeta.carH*0.5 + 14;
+  const car = train[b.carIdx]; const cx = car ? car.x + car.cw/2 : W/2;
+  let x = cx + Math.sin(t*b.roamSpd + b.phase)*b.roamAmp;
+  if (b.state === 'torch') x = cx; else if (b.state === 'flee') x = b.fleeX;
+  return { x, y: gy + Math.sin(t*3+b.phase)*1.4 - 22*s };         // rider torso
 }
 function drawBanner(){
   const msg = "Don't let the bandits burn the train!";
@@ -630,30 +649,79 @@ function drawBanner(){
   ctx.restore();
 }
 
-// the good guy who guards a correctly-answered car (climbs on, shoots, stands watch)
-function drawHero(c, t){
-  const h = c.hero; if (!h) return;
-  const S = (c.h/70) * 1.15, cx = c.x + c.cw*0.5, footY = c.y - 1;
-  const pop = clamp(h.t/0.24, 0, 1);
-  ctx.save(); ctx.translate(cx, footY); ctx.scale(S, S); ctx.translate(0, (1-pop)*10);
-  ctx.strokeStyle = '#3a4a2c'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(-4,-11); ctx.moveTo(3,0); ctx.lineTo(4,-11); ctx.stroke();   // legs
-  ctx.fillStyle = '#3f6d8c';                                                                                  // coat (blue = good guy)
-  ctx.beginPath(); ctx.moveTo(-5,-10); ctx.lineTo(5,-10); ctx.lineTo(4,-24); ctx.lineTo(-4,-24); ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#caa27a'; ctx.beginPath(); ctx.arc(0,-28,4.3,0,7); ctx.fill();                            // head
-  ctx.fillStyle = '#e6d8bc'; ctx.beginPath(); ctx.ellipse(0,-32,8,2.3,0,0,7); ctx.fill(); ctx.fillRect(-3.5,-37,7,5); // light hat
-  // rifle aimed down-forward at this car's bandit
-  ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 2.6;
-  ctx.beginPath(); ctx.moveTo(1,-19); ctx.lineTo(17,-12); ctx.stroke();
-  if (h.t > 0.18 && h.t < 0.44){                                                                             // muzzle flash
-    const fl = 6 + 2*Math.sin(t*45);
-    const fg = ctx.createRadialGradient(18,-11,0,18,-11,fl);
-    fg.addColorStop(0,'rgba(255,246,190,0.95)'); fg.addColorStop(1,'rgba(255,180,40,0)');
-    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(18,-11,fl,0,7); ctx.fill();
+// ---- the lone good guy: appears on the first correct answer, then runs car to
+// car shooting each bandit, and finally hops into the locomotive to roll on ----
+function carCenter(i){ const c = train[i]; return c ? c.x + c.cw/2 : W/2; }
+function shootBandit(i){ const b = bandits[i];
+  if (b && b.state!=='defeated' && b.state!=='flee' && b.state!=='gone'){ b.state='defeated'; b.t=0; } }
+function updateHero(dt){
+  if (!layoutMeta) return;
+  if (!hero && heroQueue.length){
+    hero = { x:carCenter(heroQueue[0]), carIdx:-1, target:heroQueue[0], state:'appear', t:0, fired:false, face:1 };
   }
-  ctx.restore();
+  if (!hero) return;
+  hero.t += dt;
+  const step = HERO_RUN*dt;
+  if (hero.state==='appear'){
+    if (hero.t>0.25){ hero.state='shoot'; hero.t=0; hero.fired=false; hero.face=1; }
+  } else if (hero.state==='run'){
+    const tx = carCenter(hero.target); hero.face = tx>=hero.x?1:-1;
+    hero.x += Math.sign(tx-hero.x)*step;
+    if (Math.abs(hero.x-tx) <= step+0.5){ hero.x=tx; hero.state='shoot'; hero.t=0; hero.fired=false; hero.face=1; }
+  } else if (hero.state==='shoot'){
+    if (hero.t>0.14 && !hero.fired){ hero.fired=true; hero.carIdx=hero.target; shootBandit(hero.target); if(window.HSGSound&&HSGSound.tick) HSGSound.tick(); }
+    if (hero.t>0.42){ heroQueue.shift();
+      if (heroQueue.length){ hero.target=heroQueue[0]; hero.state='run'; hero.t=0; }
+      else { hero.state='stand'; hero.t=0; } }
+  } else if (hero.state==='stand'){
+    if (heroQueue.length){ hero.target=heroQueue[0]; hero.state='run'; hero.t=0; }
+    else if (trainComplete){ hero.state='toEngine'; hero.t=0; }
+  } else if (hero.state==='toEngine'){
+    const ex = layoutMeta.engineX + layoutMeta.engineW*0.32; hero.face = ex>=hero.x?1:-1;
+    hero.x += Math.sign(ex-hero.x)*step;
+    if (Math.abs(hero.x-ex) <= step+0.5){ hero.x=ex; hero.state='board'; hero.t=0; }
+  } else if (hero.state==='board'){
+    if (hero.t>0.5){ hero.state='done'; finishAdvance(); }   // hopped into the conductor car -> next sentence
+  }
 }
-function drawHeroes(t){ for (const c of train) if (c.secured && c.hero) drawHero(c, t); }
+function drawHero(t){
+  if (!hero || hero.state==='done' || !layoutMeta) return;
+  const S = (layoutMeta.carH/70)*1.15;
+  const footY = layoutMeta.baseY - layoutMeta.carH + 2;
+  const running = (hero.state==='run' || hero.state==='toEngine');
+  let y = footY, alpha = 1;
+  if (hero.state==='appear'){ y = footY + (1-clamp(hero.t/0.25,0,1))*11; }
+  if (hero.state==='board'){ const d=clamp(hero.t/0.5,0,1); y = footY + d*15; alpha = 1-d; }
+  // if shooting, face + aim toward the target bandit wherever it roamed to
+  const aiming = (hero.state==='shoot' && bandits[hero.target]);
+  const aim = aiming ? banditAimPoint(bandits[hero.target], t) : null;
+  if (aim) hero.face = aim.x >= hero.x ? 1 : -1;
+  // body
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(hero.x, y); ctx.scale(S*(hero.face||1), S);
+  const lg = running ? Math.sin(t*15)*4 : 0;
+  ctx.strokeStyle = '#3a4a2c'; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(-4+lg,-11); ctx.moveTo(3,0); ctx.lineTo(4-lg,-11); ctx.stroke();   // legs
+  ctx.fillStyle = '#3f6d8c';                                                                                       // coat (blue = good guy)
+  ctx.beginPath(); ctx.moveTo(-5,-10); ctx.lineTo(5,-10); ctx.lineTo(4,-24); ctx.lineTo(-4,-24); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#caa27a'; ctx.beginPath(); ctx.arc(0,-28,4.3,0,7); ctx.fill();                                 // head
+  ctx.fillStyle = '#e6d8bc'; ctx.beginPath(); ctx.ellipse(0,-32,8,2.3,0,0,7); ctx.fill(); ctx.fillRect(-3.5,-37,7,5); // light hat
+  if (!aiming){ ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 2.6; ctx.beginPath(); ctx.moveTo(1,-19); ctx.lineTo(17,-12); ctx.stroke(); }  // rifle at rest
+  ctx.restore();
+  // aimed rifle drawn in world coords so it points right at the bandit
+  if (aiming){
+    const sx = hero.x, sy = y - 20*S;
+    const ang = Math.atan2(aim.y - sy, aim.x - sx), len = 19*S;
+    const tx = sx + Math.cos(ang)*len, ty = sy + Math.sin(ang)*len;
+    ctx.strokeStyle = '#3a2a1a'; ctx.lineWidth = 2.6*S; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(sx, sy-2); ctx.lineTo(tx, ty); ctx.stroke();
+    if (hero.t>0.12 && hero.t<0.4){
+      const fl = (6+2*Math.sin(t*45))*S;
+      const fg = ctx.createRadialGradient(tx,ty,0,tx,ty,fl);
+      fg.addColorStop(0,'rgba(255,246,190,0.95)'); fg.addColorStop(1,'rgba(255,180,40,0)');
+      ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(tx,ty,fl,0,7); ctx.fill();
+    }
+  }
+}
 
 // ---- train ----
 function drawTrain(t){
@@ -774,7 +842,7 @@ function loop(ts){
 
   let spd = worldSpeed;
   if (state==='done'){ doneClock += dt; spd = worldSpeed * Math.min(4, 1 + doneClock*4);
-    if (doneClock > 1.15){ state='play'; nextTrain(); updateHud(); } }
+    if (doneClock > 0.8){ state='play'; nextTrain(); updateHud(); } }
   scroll += spd*dt;
 
   if (recent.t < 1) recent.t += dt;
@@ -782,11 +850,14 @@ function loop(ts){
   for (const b of bandits){
     b.t += dt;
     const car = train[b.carIdx];
-    if (b.state === 'torch'){ if (car) car.fire = Math.min(1, car.fire + dt/0.5); if (b.t > 0.7) b.state='ride'; }   // stays mounted, keeps roaming
-    else if (b.state === 'defeated'){ if (b.t > 0.72){ b.state='flee'; b.fleeX = car ? car.x + car.cw/2 : -60; } }
-    else if (b.state === 'flee'){ b.fleeX -= 130*dt; if (b.fleeX < -120) b.state='gone'; }
+    const cx = car ? car.x + car.cw/2 : W/2;
+    const rx = cx + Math.sin(t*b.roamSpd + b.phase)*b.roamAmp;   // current roam position
+    if (b.state === 'torch'){ if (car) car.fire = Math.min(1, car.fire + dt/0.5);
+      if (b.t > 0.65){ b.state='flee'; b.riderless=false; b.fleeX = cx; } }        // burns it, then rides off - still mounted
+    else if (b.state === 'defeated'){ if (b.t > 0.62){ b.state='flee'; b.riderless=true; b.fleeX = rx; } }  // shot: horse bolts riderless
+    else if (b.state === 'flee'){ b.fleeX -= 150*dt; if (b.fleeX < -140) b.state='gone'; }
   }
-  for (const c of train){ if (c.hero) c.hero.t += dt; }
+  updateHero(dt);
 
   ctx.clearRect(0,0,W,H);
   drawSky(); drawMountains();
@@ -795,7 +866,7 @@ function loop(ts){
   drawRails();
   drawTrain(t);
   drawBandits(t);      // foreground, in front of the train
-  drawHeroes(t);       // good guys standing watch on guarded cars
+  drawHero(t);         // the lone good guy
   drawSnow(dt);
 
   if (bannerClock > 0){ bannerClock -= dt; drawBanner(); }
@@ -838,9 +909,9 @@ HSGGod.watch(() => {
 if (location.search.indexOf('shot') >= 0){
   setTimeout(()=>{ startGame(); }, 60);
   setTimeout(()=>{
-    if (train[1]){ train[1].secured=true; train[1].hero={t:0.6}; if(bandits[1]){ bandits[1].state='defeated'; bandits[1].t=0.9; } }   // guarded + good guy
+    if (train[1]){ train[1].secured=true; heroQueue.push(1); }                 // hero runs in and shoots this bandit
     const v = Math.min(2, train.length-1);
-    if (train[v]){ train[v].burned=true; train[v].fire=1; if(bandits[v]){ bandits[v].state='torch'; bandits[v].t=0.3; } }               // being torched
+    if (train[v]){ train[v].burned=true; train[v].fire=1; if(bandits[v]){ bandits[v].state='torch'; bandits[v].t=0.2; } }               // being torched
   }, 120);
 }
 
