@@ -31,18 +31,18 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    body.rl-body { background:#05060d; color:#e7ecff; }
-    .rl-header { background:#080a16; border-bottom:1px solid #1a1f3a; }
-    .rl-header .site-logo { color:#e7ecff; } .rl-header .site-logo span { color:#35e0ff; }
-    .rl-header .site-nav a { color:#8fa0d8; } .rl-header .site-nav a:hover { color:#fff; }
+    body.rl-body { background:#1c140b; color:#f3e9d6; }
+    .rl-header { background:#191108; border-bottom:1px solid #3a2c18; }
+    .rl-header .site-logo { color:#f3e9d6; } .rl-header .site-logo span { color:#e0a53b; }
+    .rl-header .site-nav a { color:#c2a675; } .rl-header .site-nav a:hover { color:#fff; }
 
     .rl-wrap { max-width: 1240px; margin: 0 auto; padding: 1rem 0.9rem 2.4rem; }
     .rl-stage {
       position: relative; width: 100%; max-width: 1220px; margin: 0 auto;
       height: min(84vh, 780px); min-height: 380px;
       border-radius: 16px; overflow: hidden; user-select: none; touch-action: none;
-      border: 2px solid #23294d; box-shadow: 0 0 0 1px #0a0c18, 0 18px 50px rgba(0,0,0,0.6), inset 0 0 60px rgba(0,0,0,0.5);
-      background:#05060d; cursor: pointer;
+      border: 2px solid #4a3822; box-shadow: 0 0 0 1px #0f0a05, 0 18px 50px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.35);
+      background:#1c140b; cursor: pointer;
     }
     #cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 
@@ -52,57 +52,55 @@
     .hud-l { left: 1rem; }
     .hud-r { right: 1rem; text-align: right; }
     .hud .spd { font-weight: 900; font-size: 2.6rem; line-height: 0.9; letter-spacing: -0.02em;
-      color: #fff; text-shadow: 0 0 12px rgba(53,224,255,0.9), 0 0 30px rgba(53,224,255,0.5); font-variant-numeric: tabular-nums; }
-    .hud .unit { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.28em; color: #35e0ff; margin-top: 0.1rem; }
+      color: #fff; text-shadow: 0 2px 5px rgba(0,0,0,0.65); font-variant-numeric: tabular-nums; }
+    .hud .unit { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.28em; color: #ffcf7a; margin-top: 0.1rem; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
     .hud .dist { font-weight: 900; font-size: 1.7rem; line-height: 1; color: #fff;
-      text-shadow: 0 0 12px rgba(255,90,160,0.9), 0 0 26px rgba(255,90,160,0.5); font-variant-numeric: tabular-nums; }
-    .hud .best { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.14em; color: #ff6aa6; margin-top: 0.25rem; }
+      text-shadow: 0 2px 5px rgba(0,0,0,0.65); font-variant-numeric: tabular-nums; }
+    .hud .best { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.14em; color: #ffcf7a; margin-top: 0.25rem; text-shadow: 0 1px 3px rgba(0,0,0,0.6); }
     .hud .combo { position: absolute; top: 4.4rem; left: 50%; transform: translateX(-50%); text-align: center;
-      font-weight: 900; font-size: 1.5rem; color: #ffd23f; text-shadow: 0 0 14px rgba(255,210,63,0.9); opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
+      font-weight: 900; font-size: 1.5rem; color: #ffd98a; text-shadow: 0 2px 6px rgba(0,0,0,0.7); opacity: 0; transition: opacity 0.15s; white-space: nowrap; }
     .hud .combo.on { opacity: 1; }
-    .hud .combo small { display:block; font-size:0.6rem; letter-spacing:0.2em; color:#fff; text-shadow:none; margin-top:0.1rem; }
+    .hud .combo small { display:block; font-size:0.6rem; letter-spacing:0.2em; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.6); margin-top:0.1rem; }
 
     /* floating popups (near-miss / milestone) */
     .fx-float { position: absolute; z-index: 6; pointer-events: none; font-family: var(--font-sans); font-weight: 900;
-      font-size: 1.1rem; color: #ffd23f; text-shadow: 0 0 12px rgba(255,210,63,0.9); animation: fxUp 0.95s ease-out forwards; }
+      font-size: 1.1rem; color: #ffd98a; text-shadow: 0 2px 6px rgba(0,0,0,0.7); animation: fxUp 0.95s ease-out forwards; }
     @keyframes fxUp { 0%{opacity:0; transform:translate(-50%,8px) scale(0.8)} 12%{opacity:1} 100%{opacity:0; transform:translate(-50%,-46px) scale(1.05)} }
 
     /* ---------- overlays ---------- */
     .ov { position: absolute; inset: 0; z-index: 8; display: flex; flex-direction: column; align-items: center; justify-content: safe center;
-      text-align: center; padding: 1.4rem; background: radial-gradient(120% 90% at 50% 30%, rgba(20,10,45,0.72), rgba(5,6,13,0.92));
+      text-align: center; padding: 1.4rem; background: radial-gradient(120% 90% at 50% 30%, rgba(45,28,10,0.74), rgba(16,10,4,0.92));
       backdrop-filter: blur(2px); overflow-y: auto; }
     .ov.hidden { display: none; }
     .rl-logo { font-family: var(--font-sans); font-weight: 900; letter-spacing: 0.06em; line-height: 0.9;
       font-size: clamp(2.6rem, 11vw, 5rem);
-      background: linear-gradient(180deg, #fff 8%, #ff5aa6 52%, #b02f8a 100%);
+      background: linear-gradient(180deg, #fff6df 8%, #f2a94c 52%, #c56a24 100%);
       -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
-      filter: drop-shadow(0 0 18px rgba(255,90,166,0.55)); margin-bottom: 0.15rem; position: relative; }
-    .rl-logo::after { content: 'REDLINE'; position: absolute; inset: 0; -webkit-text-fill-color: transparent;
-      background: none; color: transparent; text-shadow: 0 0 26px rgba(53,224,255,0.35); z-index: -1; }
+      filter: drop-shadow(0 3px 10px rgba(0,0,0,0.5)); margin-bottom: 0.15rem; position: relative; }
     .rl-tag { font-family: var(--font-sans); font-weight: 800; letter-spacing: 0.32em; text-transform: uppercase;
-      font-size: 0.72rem; color: #35e0ff; margin-bottom: 1rem; }
+      font-size: 0.72rem; color: #e0a53b; margin-bottom: 1rem; }
     .rl-racer { font-family: var(--font-serif); font-size: 1.35rem; color: #fff; margin-bottom: 0.2rem; }
-    .rl-racer b { color: #ffd23f; }
-    .ov p { color: #b9c4ec; max-width: 34ch; margin: 0.2rem auto 1.1rem; font-size: 0.95rem; line-height: 1.5; }
+    .rl-racer b { color: #ffce7a; }
+    .ov p { color: #ddcaa8; max-width: 34ch; margin: 0.2rem auto 1.1rem; font-size: 0.95rem; line-height: 1.5; }
     .keys { display: inline-flex; gap: 0.35rem; margin: 0 0.15rem; }
     .key { display: inline-flex; align-items: center; justify-content: center; min-width: 1.7rem; height: 1.7rem; padding: 0 0.4rem;
-      border-radius: 6px; background: #12162e; border: 1px solid #2b335e; color: #cdd6ff; font-weight: 800; font-size: 0.85rem;
-      box-shadow: 0 2px 0 #05060d; }
-    .rl-btn { pointer-events: auto; background: linear-gradient(180deg, #ff5aa6, #d61f74); color: #fff; border: none; border-radius: 12px;
+      border-radius: 6px; background: #2b2013; border: 1px solid #4d3a20; color: #eaddc2; font-weight: 800; font-size: 0.85rem;
+      box-shadow: 0 2px 0 #140d05; }
+    .rl-btn { pointer-events: auto; background: linear-gradient(180deg, #f2a94c, #d2791f); color: #241503; border: none; border-radius: 12px;
       padding: 0.85rem 2.2rem; font-size: 1.15rem; font-weight: 900; font-family: var(--font-sans); letter-spacing: 0.04em;
-      cursor: pointer; transition: transform 0.1s, box-shadow 0.15s; box-shadow: 0 6px 0 #8c1550, 0 10px 26px rgba(214,31,116,0.5); }
+      cursor: pointer; transition: transform 0.1s, box-shadow 0.15s; box-shadow: 0 6px 0 #8c531a, 0 10px 26px rgba(210,121,31,0.45); }
     .rl-btn:hover { transform: translateY(-1px); }
-    .rl-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #8c1550; }
+    .rl-btn:active { transform: translateY(5px); box-shadow: 0 1px 0 #8c531a; }
 
     .over-title { font-family: var(--font-sans); font-weight: 900; font-size: clamp(2rem, 8vw, 3.2rem); letter-spacing: 0.02em;
-      color: #fff; text-shadow: 0 0 20px rgba(255,70,90,0.8); margin-bottom: 0.1rem; }
-    .over-sub { color: #b9c4ec; font-size: 0.9rem; margin-bottom: 1rem; }
+      color: #fff; text-shadow: 0 3px 12px rgba(0,0,0,0.6); margin-bottom: 0.1rem; }
+    .over-sub { color: #ddcaa8; font-size: 0.9rem; margin-bottom: 1rem; }
     .over-stats { display: flex; gap: 1.6rem; justify-content: center; margin-bottom: 1.1rem; flex-wrap: wrap; }
     .over-stats .st b { display: block; font-family: var(--font-sans); font-weight: 900; font-size: 1.9rem; line-height: 1; color: #fff; }
-    .over-stats .st.hl b { color: #ffd23f; text-shadow: 0 0 14px rgba(255,210,63,0.8); }
-    .over-stats .st span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #8fa0d8; margin-top: 0.3rem; display: block; }
+    .over-stats .st.hl b { color: #ffce7a; text-shadow: 0 2px 8px rgba(0,0,0,0.55); }
+    .over-stats .st span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #c2a675; margin-top: 0.3rem; display: block; }
     #rlBoard { width: 100%; max-width: 340px; margin: 0.4rem auto 1.1rem; text-align: left; }
-    .rl-secret { font-size: 0.66rem; color: #5b6796; margin-top: 0.7rem; letter-spacing: 0.05em; }
+    .rl-secret { font-size: 0.66rem; color: #97815c; margin-top: 0.7rem; letter-spacing: 0.05em; }
     .rl-mobile { display:none; }
     @media (hover: none) and (pointer: coarse) { .rl-mobile { display:block; } .rl-deskonly { display:none; } }
   </style>
@@ -129,7 +127,7 @@
     <!-- TITLE -->
     <div class="ov" id="titleOv">
       <div class="rl-logo">REDLINE</div>
-      <div class="rl-tag">Night Highway</div>
+      <div class="rl-tag">Desert Highway</div>
       <div class="rl-racer">How far can you <b>go</b>?</div>
       <p class="rl-deskonly">Weave through traffic and go as far as you can. The faster you go, the more it pays.
         <br><span class="keys"><span class="key">←</span><span class="key">→</span></span> steer &nbsp;·&nbsp;
@@ -177,19 +175,20 @@
 
   // ---- road / world constants ----
   var NLANES = 6;                 // 0..2 oncoming (left), 3..5 same-direction (right)
-  var CAM = 3.0, HORIZ = 0.32, ROADW = 0.5, PLAYER_D = 0.42, DUNIT = 0.5;
+  var CAM = 3.0, HORIZ = 0.36, ROADW = 0.56, PLAYER_D = 0.42, DUNIT = 0.5;
   var cx = 0, horizonY = 0, roadHalfBot = 0;
   function laneOff(i) { return -1 + (i + 0.5) * (2 / NLANES); }
   function project(d) { var p = d / (d + CAM); return { y: H - (H - horizonY) * p, s: 1 - p }; }
 
-  // ---- palette ----
+  // ---- palette (sun-baked desert asphalt; low contrast so the road never strobes) ----
   var C = {
-    roadA: '#26263a', roadB: '#20202f',
-    rumbleA: '#ececf6', rumbleB: '#ff466a',
-    lane: 'rgba(240,242,255,0.92)', center: '#ffd23f',
-    post: '#35e0ff', edge: 'rgba(53,224,255,0.8)'
+    roadA: '#575147', roadB: '#4f4a41',   // two near-identical asphalt tones
+    rumbleA: '#e7dcc4', rumbleB: '#b56a4a',  // muted cream / clay, gentle alternation
+    lane: 'rgba(244,236,214,0.82)', center: '#e8b93f',
+    post: '#b08a54', postTop: '#e6a94a'      // weathered roadside marker + reflector
   };
-  var TRAFFIC = ['#3a7bd5', '#e0b33a', '#43c06a', '#c94fd0', '#e06a3a', '#d0d6e2', '#5a5fe0', '#e0507a'];
+  // natural car paints (no neon)
+  var TRAFFIC = ['#b5462f', '#4171a0', '#c8a23e', '#4f8a55', '#c3c6cb', '#8a6a42', '#95546e', '#d68a3e'];
 
   // ---- treasure-hunt mode (opened from Word Racer's secret "treasure" road) ----
   var HUNT_MODE = /[?&]hunt\b/.test(location.search);   // ?hunt -> checkpoint run
@@ -205,20 +204,21 @@
   var spawnT = 0, lastRAF = 0, shake = 0, particles = [], milestoneAt = 1000, crashFx = null, flash = 0;
   var keys = {};
 
-  // ---- stars / skyline (rebuilt on resize) ----
-  var stars = [], skyline = [];
+  // ---- distant desert buttes + soft clouds (rebuilt on resize) ----
+  var mesas = [], clouds = [];
   function buildSky() {
-    stars = [];
-    for (var i = 0; i < 90; i++) stars.push({ x: Math.random() * W, y: Math.random() * horizonY, r: Math.random() * 1.3 + 0.2, a: Math.random() * 0.6 + 0.2 });
-    skyline = [];
-    var x = -20;
-    while (x < W + 20) {
-      var bw = ri(18, 46), bh = ri(24, Math.max(30, horizonY * 0.6));
-      var wins = [];
-      for (var wy = 6; wy < bh - 4; wy += 7) for (var wx = 4; wx < bw - 4; wx += 7) if (Math.random() < 0.4) wins.push([wx, wy]);
-      skyline.push({ x: x, w: bw, h: bh, wins: wins });
-      x += bw + ri(2, 10);
+    // layered mesas/buttes along the horizon - flat-topped trapezoids, warm rock tones
+    mesas = [];
+    var x = -40;
+    while (x < W + 40) {
+      var bw = ri(70, 190), bh = ri(Math.round(horizonY * 0.16), Math.round(Math.max(24, horizonY * 0.46)));
+      var far = Math.random() < 0.5;              // two depth bands for a little layering
+      mesas.push({ x: x, w: bw, h: far ? bh * 0.7 : bh, far: far });
+      x += bw * rnd(0.55, 0.9);                   // overlap them into a ridge line
     }
+    // a few soft clouds drifting high up
+    clouds = [];
+    for (var i = 0; i < 5; i++) clouds.push({ x: Math.random() * W, y: rnd(horizonY * 0.12, horizonY * 0.5), w: rnd(60, 150), h: rnd(10, 20) });
   }
 
   function resize() {
@@ -238,49 +238,57 @@
 
   // ================= drawing =================
   function drawSky() {
+    // late-afternoon desert sky: soft blue up top, warming to amber at the horizon
     var g = ctx.createLinearGradient(0, 0, 0, horizonY + 40);
-    g.addColorStop(0, '#05060f'); g.addColorStop(0.55, '#160f38'); g.addColorStop(1, '#3a1c5e');
+    g.addColorStop(0, '#7fb0d6'); g.addColorStop(0.5, '#e8c58c'); g.addColorStop(1, '#eea459');
     ctx.fillStyle = g; ctx.fillRect(0, 0, W, horizonY + 40);
-    // stars
-    for (var i = 0; i < stars.length; i++) { var st = stars[i]; ctx.globalAlpha = st.a; ctx.fillStyle = '#dfe6ff'; ctx.fillRect(st.x, st.y, st.r, st.r); }
-    ctx.globalAlpha = 1;
-    // synthwave sun
-    var sr = H * 0.17, sunY = horizonY - sr * 0.15;
-    ctx.save(); ctx.beginPath(); ctx.arc(cx, sunY, sr, 0, Math.PI * 2); ctx.clip();
-    var sg = ctx.createLinearGradient(0, sunY - sr, 0, sunY + sr);
-    sg.addColorStop(0, '#ffe28a'); sg.addColorStop(0.5, '#ff8a3a'); sg.addColorStop(1, '#ff2f7a');
-    ctx.fillStyle = sg; ctx.fillRect(cx - sr, sunY - sr, sr * 2, sr * 2);
-    ctx.fillStyle = '#160f38';
-    for (var k = 0; k < 7; k++) { var yy = sunY + sr * 0.12 + k * (sr * 0.13); ctx.fillRect(cx - sr, yy, sr * 2, Math.max(1.5, 2 + k * 0.7)); }
-    ctx.restore();
-    // skyline silhouette
-    var par = -player.off * 14;
-    for (var b = 0; b < skyline.length; b++) {
-      var s = skyline[b], bx = s.x + par;
-      ctx.fillStyle = '#0a0a1e'; ctx.fillRect(bx, horizonY - s.h, s.w, s.h);
-      ctx.fillStyle = 'rgba(255,220,140,0.55)';
-      for (var w = 0; w < s.wins.length; w++) ctx.fillRect(bx + s.wins[w][0], horizonY - s.h + s.wins[w][1], 3, 3);
+    // low sun with a soft halo (no stripes, no flashing)
+    var sr = H * 0.11, sunY = horizonY - sr * 0.35;
+    var halo = ctx.createRadialGradient(cx, sunY, sr * 0.4, cx, sunY, sr * 2.8);
+    halo.addColorStop(0, 'rgba(255,240,205,0.85)'); halo.addColorStop(1, 'rgba(255,240,205,0)');
+    ctx.fillStyle = halo; ctx.beginPath(); ctx.arc(cx, sunY, sr * 2.8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#fff4d6'; ctx.beginPath(); ctx.arc(cx, sunY, sr, 0, Math.PI * 2); ctx.fill();
+    // soft clouds
+    ctx.fillStyle = 'rgba(255,250,240,0.5)';
+    for (var i = 0; i < clouds.length; i++) { var cl = clouds[i];
+      ctx.beginPath(); ctx.ellipse(cl.x, cl.y, cl.w * 0.5, cl.h * 0.5, 0, 0, Math.PI * 2); ctx.fill(); }
+    // distant buttes/mesas (slight parallax with steering), warm rock silhouettes
+    var par = -player.off * 10;
+    for (var b = 0; b < mesas.length; b++) {
+      var m = mesas[b], bx = m.x + par * (m.far ? 0.6 : 1);
+      ctx.fillStyle = m.far ? '#b98a63' : '#a4703f';
+      // flat-topped trapezoid butte
+      ctx.beginPath();
+      ctx.moveTo(bx, horizonY);
+      ctx.lineTo(bx + m.w * 0.14, horizonY - m.h);
+      ctx.lineTo(bx + m.w * 0.86, horizonY - m.h);
+      ctx.lineTo(bx + m.w, horizonY);
+      ctx.closePath(); ctx.fill();
     }
-    // horizon glow
-    var hg = ctx.createLinearGradient(0, horizonY - 24, 0, horizonY + 24);
-    hg.addColorStop(0, 'rgba(255,90,166,0)'); hg.addColorStop(0.5, 'rgba(255,90,166,0.5)'); hg.addColorStop(1, 'rgba(255,90,166,0)');
-    ctx.fillStyle = hg; ctx.fillRect(0, horizonY - 24, W, 48);
-    // ground
+    // haze band softening where the mesas meet the sand
+    var hz = ctx.createLinearGradient(0, horizonY - 18, 0, horizonY + 10);
+    hz.addColorStop(0, 'rgba(238,190,130,0)'); hz.addColorStop(1, 'rgba(238,190,130,0.55)');
+    ctx.fillStyle = hz; ctx.fillRect(0, horizonY - 18, W, 28);
+    // sand ground
     var gg = ctx.createLinearGradient(0, horizonY, 0, H);
-    gg.addColorStop(0, '#0b0f22'); gg.addColorStop(1, '#080a16');
+    gg.addColorStop(0, '#c9a06a'); gg.addColorStop(1, '#8a6338');
     ctx.fillStyle = gg; ctx.fillRect(0, horizonY, W, H - horizonY);
   }
 
   function drawRoad() {
-    var STRIPE = 4, DASH = 3;
+    var STRIPE = 6, DASH = 3;   // longer surface bands = slower, calmer banding
+    // soft sandy shoulder under the whole road strip
     for (var y = horizonY; y < H; y += 2) {
       var p = (H - y) / (H - horizonY); if (p <= 0) continue;
       var s = 1 - p, d = CAM * p / (1 - p), hw = roadHalfBot * s;
       var wz = d + roadDist;
       var onA = (Math.floor(wz / STRIPE) % 2 === 0);
-      // road surface
+      // dirt shoulder just outside the rumble
+      var sh = Math.max(3, hw * 0.12);
+      ctx.fillStyle = '#a67c48'; ctx.fillRect(cx - hw - sh, y, sh, 2); ctx.fillRect(cx + hw, y, sh, 2);
+      // road surface (two nearly-identical tones - conveys motion without strobing)
       ctx.fillStyle = onA ? C.roadA : C.roadB; ctx.fillRect(cx - hw, y, hw * 2, 2);
-      // rumble strips
+      // rumble strips (gentle cream/clay)
       var rw = Math.max(2, hw * 0.05); ctx.fillStyle = onA ? C.rumbleA : C.rumbleB;
       ctx.fillRect(cx - hw, y, rw, 2); ctx.fillRect(cx + hw - rw, y, rw, 2);
       // lane markings
@@ -296,16 +304,22 @@
     }
   }
 
+  // weathered wooden marker posts with a small amber reflector - no glow/strobe
   function drawPosts() {
     var SP = 7, start = Math.floor(roadDist / SP) + 1;
     for (var m = start; m < start + 12; m++) {
       var d = m * SP - roadDist; if (d < 0.25 || d > 60) continue;
-      var pr = project(d), hw = roadHalfBot * pr.s, ph = Math.max(3, pr.s * 26);
-      var pw = Math.max(2, pr.s * 6);
-      ctx.save(); ctx.shadowColor = C.post; ctx.shadowBlur = 10 * pr.s + 2; ctx.fillStyle = C.post;
-      ctx.fillRect(cx - hw - pw * 1.6, pr.y - ph, pw, ph);
-      ctx.fillRect(cx + hw + pw * 0.6, pr.y - ph, pw, ph);
-      ctx.restore();
+      var pr = project(d), hw = roadHalfBot * pr.s, ph = Math.max(3, pr.s * 24);
+      var pw = Math.max(2, pr.s * 5);
+      var lx = cx - hw - pw * 2.0, rx = cx + hw + pw * 1.0;
+      ctx.fillStyle = C.post;
+      ctx.fillRect(lx, pr.y - ph, pw, ph);
+      ctx.fillRect(rx, pr.y - ph, pw, ph);
+      // reflector near the top
+      var rh = Math.max(1.5, ph * 0.16);
+      ctx.fillStyle = C.postTop;
+      ctx.fillRect(lx, pr.y - ph, pw, rh);
+      ctx.fillRect(rx, pr.y - ph, pw, rh);
     }
   }
 
@@ -343,7 +357,7 @@
   // banking hard into lane changes.
   function drawPlayer() {
     var pr = project(PLAYER_D), scale = pr.s;
-    var w = roadHalfBot * scale * (2 / NLANES) * 0.92;
+    var w = roadHalfBot * scale * (2 / NLANES) * 0.66;   // smaller bike = more room to weave
     var x = cx + player.off * roadHalfBot * scale, baseY = pr.y;
     var H = w * 2.0;
     var lean = clamp((laneOff(player.lane) - player.off) * 3.2, -1, 1);
@@ -354,11 +368,8 @@
     var pvy = Y(0.4);
     ctx.translate(x, pvy); ctx.rotate(lean * 0.34); ctx.translate(-x, -pvy);
 
-    // neon underglow + contact shadow
-    var ug = ctx.createRadialGradient(x, Y(0.02), 1, x, Y(0.02), w * 0.95);
-    ug.addColorStop(0, 'rgba(53,224,255,0.5)'); ug.addColorStop(1, 'rgba(53,224,255,0)');
-    ctx.fillStyle = ug; ctx.beginPath(); ctx.ellipse(x, Y(0.02), w * 0.95, H * 0.09, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'; ctx.beginPath(); ctx.ellipse(x, Y(0.005), w * 0.44, H * 0.04, 0, 0, Math.PI * 2); ctx.fill();
+    // soft contact shadow on the tarmac (no neon underglow)
+    ctx.fillStyle = 'rgba(0,0,0,0.4)'; ctx.beginPath(); ctx.ellipse(x, Y(0.01), w * 0.7, H * 0.06, 0, 0, Math.PI * 2); ctx.fill();
 
     // twin exhaust cans
     ctx.fillStyle = '#b9c2d0';
@@ -395,7 +406,7 @@
     ctx.quadraticCurveTo(x - w * 0.29, Y(0.78), x - w * 0.2, Y(0.9));
     ctx.lineTo(x + w * 0.2, Y(0.9));
     ctx.quadraticCurveTo(x + w * 0.29, Y(0.78), x + w * 0.2, Y(0.56)); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(53,224,255,0.7)'; ctx.fillRect(x - w * 0.016, Y(0.88), w * 0.032, H * 0.28); // spine light
+    ctx.fillStyle = 'rgba(226,190,120,0.5)'; ctx.fillRect(x - w * 0.016, Y(0.88), w * 0.032, H * 0.28); // subtle jacket seam
     // hunched shoulders
     ctx.fillStyle = '#2a2a38'; rr(x - w * 0.28, Y(0.87), w * 0.56, H * 0.09, w * 0.06); ctx.fill();
     // arms forward to the clip-ons (elbows out)
@@ -464,8 +475,8 @@
   }
 
   function light(x, y, r, core, glow) {
-    ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = r * 2.4;
-    ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y, Math.max(1.2, r * 0.32), 0, Math.PI * 2); ctx.fill();
+    ctx.save(); ctx.shadowColor = glow; ctx.shadowBlur = r * 0.9;   // soft, not a bloom
+    ctx.fillStyle = core; ctx.beginPath(); ctx.arc(x, y, Math.max(1, r * 0.26), 0, Math.PI * 2); ctx.fill();
     ctx.restore();
   }
   function rr(x, y, w, h, r) { r = Math.min(r, w / 2, h / 2); ctx.beginPath();
@@ -478,15 +489,14 @@
     return 'rgb(' + r + ',' + g + ',' + b + ')';
   }
 
+  // Speed cue: a calm darkening at the screen edges that eases in with speed - no
+  // flickering radial streaks (the old version regenerated random lines every frame).
   function drawSpeedLines() {
-    if (v < 90) return;
-    var a = clamp((v - 90) / 90, 0, 0.5);
-    ctx.strokeStyle = 'rgba(255,255,255,' + a + ')'; ctx.lineWidth = 1.5;
-    for (var i = 0; i < 10; i++) {
-      var ang = (i / 10) * Math.PI * 2 + roadDist * 0.3, r0 = 30, r1 = 30 + rnd(40, 120);
-      ctx.beginPath(); ctx.moveTo(cx + Math.cos(ang) * r0, horizonY + Math.sin(ang) * r0 * 0.6);
-      ctx.lineTo(cx + Math.cos(ang) * r1, horizonY + Math.sin(ang) * r1 * 0.6); ctx.stroke();
-    }
+    if (v < 100) return;
+    var a = clamp((v - 100) / 90, 0, 0.32);
+    var vg = ctx.createRadialGradient(cx, H * 0.6, Math.min(W, H) * 0.32, cx, H * 0.6, Math.max(W, H) * 0.7);
+    vg.addColorStop(0, 'rgba(0,0,0,0)'); vg.addColorStop(1, 'rgba(30,18,6,' + a + ')');
+    ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
   }
 
   function draw() {
@@ -500,7 +510,7 @@
     for (var i = 0; i < sorted.length; i++) {
       var c = sorted[i]; if (c.d < -1.2) continue;
       var pr = project(Math.max(0.02, c.d)), hw = roadHalfBot * pr.s;
-      var w = hw * (2 / NLANES) * 0.86, x = cx + c.off * hw;
+      var w = hw * (2 / NLANES) * 0.62, x = cx + c.off * hw;   // smaller cars = roomier road
       drawCar(x, pr.y, w, c.color, c.dir < 0 ? 'onc' : 'rear');
     }
     if (crashFx) {
@@ -528,7 +538,8 @@
     }
     ctx.globalAlpha = 1;
     drawSpeedLines();
-    if (flash > 0) { ctx.globalAlpha = clamp(flash, 0, 1); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
+    // crash feedback: a soft warm dust bloom (not a jarring white strobe)
+    if (flash > 0) { ctx.globalAlpha = clamp(flash * 0.55, 0, 0.6); ctx.fillStyle = '#f4e0bd'; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; }
     ctx.restore();
   }
 
@@ -591,7 +602,7 @@
     if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; $('combo').classList.remove('on'); } }
 
     // milestones - one per mile
-    if (distance >= milestoneAt) { floatFx((milestoneAt / 5280) + ' mi!', cx, H * 0.4, '#35e0ff'); if (window.HSGSound) HSGSound.powerup(); milestoneAt += 5280; }
+    if (distance >= milestoneAt) { floatFx((milestoneAt / 5280) + ' mi!', cx, H * 0.4, '#ffe0a0'); if (window.HSGSound) HSGSound.powerup(); milestoneAt += 5280; }
 
     updateEngine();
     updateHUD();
@@ -608,10 +619,10 @@
 
   function crash(c) {
     if (window.HSGGod && HSGGod.on) return;   // deity mode: invincible - phase through, keep driving
-    state = 'over'; shake = 24; flash = 0.75;
+    state = 'over'; shake = 20; flash = 0.5;
     var pr = project(PLAYER_D), scale = pr.s;
     var px = cx + player.off * roadHalfBot * scale, py = pr.y;
-    var carX = cx + c.off * roadHalfBot * scale, carW = roadHalfBot * scale * (2 / NLANES) * 0.86;
+    var carX = cx + c.off * roadHalfBot * scale, carW = roadHalfBot * scale * (2 / NLANES) * 0.62;
     var side = carX < px ? -1 : 1;
     // pull the struck car out of traffic and hand it to the crash animation
     var idx = cars.indexOf(c); if (idx >= 0) cars.splice(idx, 1);
@@ -679,7 +690,7 @@
   // leaderboard (same board, so it counts) and surface the next clue.
   function reachCheckpoint() {
     checkpointDone = true;
-    state = 'over'; flash = 0.6;
+    state = 'over'; flash = 0.4;
     stopEngine();
     if (window.HSGSound) { if (HSGSound.powerup) HSGSound.powerup(); if (HSGSound.finish) HSGSound.finish(true); }
     var finalM = Math.round(distance);
