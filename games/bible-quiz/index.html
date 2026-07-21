@@ -73,11 +73,10 @@
       margin: 0; text-align: center; font-family: var(--font-serif);
       font-size: 1.02rem; color: var(--ink); flex: 0 0 auto;
     }
-    /* keep the map a landscape rectangle so the Mediterranean is never squished,
-       centred in whatever vertical space the panel has */
+    /* the route rail is vertical, so let the map fill the whole tall panel */
     .map-wrap {
-      flex: 0 0 auto; aspect-ratio: 16 / 9; margin: auto 0; position: relative;
-      border-radius: 10px; overflow: hidden; border: 1.5px solid #b9d4e6; background: #a6d2ea;
+      flex: 1 1 auto; min-height: 0; position: relative;
+      border-radius: 10px; overflow: hidden; border: 1.5px solid #b9d4e6; background: #dbecf7;
     }
     #mapCanvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
     .map-cap {
@@ -200,14 +199,14 @@
     /* On phones/short screens, stop fitting to the viewport - stack and allow scroll. */
     /* narrow OR short windows: stop fitting to the viewport - scroll instead, and
        give the scene a real height so the start menu never gets crushed */
-    @media (max-width: 760px), (max-height: 780px) {
+    @media (max-width: 760px), (max-height: 900px) {
       html, body { height: auto; }
       body { display: block; overflow: auto; }
       .voy-page { display: block; padding-bottom: 2rem; }
       .stage { flex-direction: column; }
-      .scene-wrap { height: 56vh; min-height: 380px; }
+      .scene-wrap { height: 54vh; min-height: 380px; max-height: 560px; }
       .map-panel { flex: none; width: auto; }
-      .map-wrap { aspect-ratio: 16 / 9; height: auto; width: 100%; max-width: 440px; margin: 0.1rem auto 0; }
+      .map-wrap { flex: none; height: 360px; width: 100%; max-width: 460px; margin: 0.1rem auto 0; }
       .qpanel { margin-top: 0.7rem; }
     }
     @media (max-width: 480px) {
@@ -871,110 +870,108 @@ function roundRect(x, y, w, h, r) {
 }
 
 // ============================================================
-// Side map - Paul's real route across the Mediterranean
+// Side map - Paul's voyage as a vertical route rail (Antioch -> Rome).
+// It fills the tall panel and is easy to read; the travelled path fills
+// in solid gold, port by port, so it's obvious how far the voyage has come.
 // ============================================================
-const MAP_LON0 = 10.5, MAP_LON1 = 38.0, MAP_LAT0 = 31.0, MAP_LAT1 = 43.5;
-// The Mediterranean spans ~27.5deg lon x 12.5deg lat; corrected for latitude the
-// route wants roughly a 1.75:1 landscape box. Fit the largest such box inside the
-// canvas and centre it, so the geography keeps its true shape at any panel size.
-const MAP_AR = ((MAP_LON1 - MAP_LON0) * Math.cos(37 * Math.PI / 180)) / (MAP_LAT1 - MAP_LAT0);
-function mapRect() {
-  const outer = 6;
-  let w = Math.max(1, mapW - outer * 2), h = Math.max(1, mapH - outer * 2);
-  if (w / h > MAP_AR) w = h * MAP_AR; else h = w / MAP_AR;
-  return { x: (mapW - w) / 2, y: (mapH - h) / 2, w, h };
-}
+const ROUTE_SUB = ['Departure', 'Acts 13', 'Acts 16', 'Acts 17', 'Acts 19', 'Acts 27-28', 'Acts 28'];
 function mapRoundRect(c, x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
   c.beginPath(); c.moveTo(x + r, y);
   c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
   c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
 }
-function mapProj(p) {
-  const R = mapRect(), ip = R.w * 0.075;
-  return {
-    x: R.x + ip + ((p.lon - MAP_LON0) / (MAP_LON1 - MAP_LON0)) * (R.w - 2 * ip),
-    y: R.y + ip + ((MAP_LAT1 - p.lat) / (MAP_LAT1 - MAP_LAT0)) * (R.h - 2 * ip),
-  };
+function mapLayout() {
+  const padTop = Math.max(24, mapH * 0.07), padBot = Math.max(24, mapH * 0.07);
+  const railX = 26, labelX = 44, n = MAP_POINTS.length;
+  const top = padTop, bottom = mapH - padBot;
+  return { railX, labelX, top, bottom, span: bottom - top, n };
 }
-// where the ship is on the map right now, and how many ports are behind us
-function mapShipState() {
+function nodePos(i) {
+  const L = mapLayout();
+  const t = L.n <= 1 ? 0 : i / (L.n - 1);
+  return { x: L.railX, y: L.top + t * L.span };
+}
+// where the ship sits on the rail right now, and how many ports are behind us
+function shipOnRail() {
   const atPort = (state === 'landing' || state === 'done');
-  const from = MAP_POINTS[Math.min(legIndex, 6)];
-  const to = MAP_POINTS[Math.min(legIndex + 1, 6)];
+  const fromI = Math.min(legIndex, MAP_POINTS.length - 1);
+  const toI = Math.min(legIndex + 1, MAP_POINTS.length - 1);
   const t = atPort ? 1 : clamp01(legCorrect / CORRECT_TO_LAND);
-  const A = mapProj(from), B = mapProj(to);
+  const A = nodePos(fromI), B = nodePos(toI);
   return { x: A.x + (B.x - A.x) * t, y: A.y + (B.y - A.y) * t, reached: atPort ? legIndex + 1 : legIndex };
+}
+function drawMapBoat(c, x, y) {
+  c.save(); c.translate(x, y);
+  c.beginPath(); c.arc(0, 0, 10, 0, Math.PI * 2); c.fillStyle = 'rgba(185,67,58,0.18)'; c.fill();
+  c.fillStyle = '#8a4a24';                                   // hull
+  c.beginPath(); c.moveTo(-7, 1); c.lineTo(7, 1); c.lineTo(4.5, 6); c.lineTo(-4.5, 6); c.closePath(); c.fill();
+  c.strokeStyle = '#5b3a1e'; c.lineWidth = 1.2;              // mast
+  c.beginPath(); c.moveTo(0, -8.5); c.lineTo(0, 1); c.stroke();
+  c.fillStyle = '#fbf3df';                                   // sail
+  c.beginPath(); c.moveTo(0.6, -8); c.lineTo(0.6, 0.3); c.lineTo(6.2, 0.3); c.closePath(); c.fill();
+  c.restore();
 }
 function drawMiniMap() {
   const c = mapCtx;
   c.clearRect(0, 0, mapW, mapH);
-  const R = mapRect();
-  c.save();
-  mapRoundRect(c, R.x, R.y, R.w, R.h, 9); c.clip();
-  // sea
-  const sg = c.createLinearGradient(0, R.y, 0, R.y + R.h);
-  sg.addColorStop(0, '#bfe0f2'); sg.addColorStop(1, '#a6d2ea');
-  c.fillStyle = sg; c.fillRect(R.x, R.y, R.w, R.h);
-  // stylized landmasses, positioned to sit behind the real city dots
-  c.fillStyle = '#dcc79a';
-  // North Africa band along the bottom
-  c.beginPath(); c.moveTo(R.x, R.y + R.h); c.lineTo(R.x, R.y + R.h * 0.82);
-  c.quadraticCurveTo(R.x + R.w * 0.5, R.y + R.h * 0.72, R.x + R.w, R.y + R.h * 0.8);
-  c.lineTo(R.x + R.w, R.y + R.h); c.closePath(); c.fill();
-  // Italy (around Rome, top-left)
-  blob([[0.0,0.02],[0.16,0.0],[0.2,0.18],[0.12,0.4],[0.16,0.55],[0.06,0.6],[0.04,0.36],[0.0,0.2]]);
-  // Greece (around Philippi/Athens, top-centre)
-  blob([[0.34,0.0],[0.6,0.0],[0.58,0.28],[0.52,0.42],[0.46,0.34],[0.42,0.5],[0.36,0.34],[0.4,0.2]]);
-  // Asia Minor + Syria (right side, around Ephesus → Antioch)
-  blob([[0.62,0.18],[1.0,0.12],[1.0,0.72],[0.78,0.66],[0.66,0.5],[0.6,0.34]]);
-  // islands
-  c.fillStyle = '#d2bd8e';
-  ellipseM(0.12, 0.66, 0.04, 0.02);   // Sicily
-  ellipseM(0.46, 0.74, 0.07, 0.022);  // Crete
-  ellipseM(0.86, 0.62, 0.05, 0.03);   // Cyprus
-  const sh = mapShipState();
-  // full route, faint dashed
-  c.strokeStyle = 'rgba(40,74,99,0.35)'; c.lineWidth = 1.5; c.setLineDash([4, 4]);
+  // soft sea background
+  const bg = c.createLinearGradient(0, 0, 0, mapH);
+  bg.addColorStop(0, '#eef7fd'); bg.addColorStop(1, '#d3e7f4');
+  c.fillStyle = bg; c.fillRect(0, 0, mapW, mapH);
+
+  const L = mapLayout();
+  const sh = shipOnRail();
+  const nodes = MAP_POINTS.map((p, i) => ({ name: p.name, sub: ROUTE_SUB[i] || '', pos: nodePos(i) }));
+  const nextI = Math.min(sh.reached + 1, nodes.length - 1);
+
+  // full route behind everything - faint dotted line
+  c.strokeStyle = 'rgba(60,100,132,0.4)'; c.lineWidth = 3; c.lineCap = 'round';
+  c.setLineDash([1, 8]);
   c.beginPath();
-  MAP_POINTS.forEach((p, i) => { const q = mapProj(p); i ? c.lineTo(q.x, q.y) : c.moveTo(q.x, q.y); });
+  nodes.forEach((nd, i) => i ? c.lineTo(nd.pos.x, nd.pos.y) : c.moveTo(nd.pos.x, nd.pos.y));
   c.stroke(); c.setLineDash([]);
-  // travelled portion, solid gold up to the ship
-  c.strokeStyle = '#d99a2b'; c.lineWidth = 3; c.lineJoin = 'round';
+
+  // travelled path - solid gold, Antioch through the last port reached, then to the ship
+  c.strokeStyle = '#d99a2b'; c.lineWidth = 5.5; c.lineJoin = 'round'; c.lineCap = 'round';
   c.beginPath();
-  const start = mapProj(MAP_POINTS[0]); c.moveTo(start.x, start.y);
-  for (let i = 1; i <= sh.reached && i < MAP_POINTS.length; i++) { const q = mapProj(MAP_POINTS[i]); c.lineTo(q.x, q.y); }
+  c.moveTo(nodes[0].pos.x, nodes[0].pos.y);
+  for (let i = 1; i <= sh.reached && i < nodes.length; i++) c.lineTo(nodes[i].pos.x, nodes[i].pos.y);
   c.lineTo(sh.x, sh.y);
   c.stroke();
-  // port dots + labels
-  c.font = '700 10px Inter, system-ui, sans-serif';
-  MAP_POINTS.forEach((p, i) => {
-    const q = mapProj(p);
-    const done = i <= sh.reached;
-    c.beginPath(); c.arc(q.x, q.y, 3.6, 0, Math.PI * 2);
-    c.fillStyle = done ? '#d99a2b' : '#fff';
-    c.fill(); c.strokeStyle = '#234a63'; c.lineWidth = 1.2; c.stroke();
-    c.fillStyle = 'rgba(20,44,66,0.92)';
-    const right = q.x > R.x + R.w * 0.66;
-    c.textAlign = right ? 'right' : 'left';
-    c.fillText(p.name, right ? q.x - 6 : q.x + 6, q.y + 3);
-  });
-  // the ship marker (pulsing)
-  c.beginPath(); c.arc(sh.x, sh.y, 5.5 + Math.sin(sceneTime * 4) * 1.2, 0, Math.PI * 2);
-  c.fillStyle = '#b9433a'; c.fill(); c.strokeStyle = '#fff'; c.lineWidth = 2; c.stroke();
-  c.restore();
-  // frame the map card
-  c.strokeStyle = 'rgba(35,74,99,0.55)'; c.lineWidth = 1.5;
-  mapRoundRect(c, R.x + 0.75, R.y + 0.75, R.w - 1.5, R.h - 1.5, 9); c.stroke();
 
-  function blob(pts) {
-    c.beginPath();
-    pts.forEach((p, i) => { const x = R.x + p[0] * R.w, y = R.y + p[1] * R.h; i ? c.lineTo(x, y) : c.moveTo(x, y); });
-    c.closePath(); c.fill();
-  }
-  function ellipseM(fx, fy, rx, ry) {
-    c.beginPath(); c.ellipse(R.x + fx * R.w, R.y + fy * R.h, rx * R.w, ry * R.h + rx * R.w, 0, 0, Math.PI * 2); c.fill();
-  }
+  // port stations + labels
+  nodes.forEach((nd, i) => {
+    const done = i <= sh.reached;
+    const isNext = !done && i === nextI && state !== 'done';
+    const q = nd.pos;
+    if (isNext) {                                            // pulsing halo on the next port
+      c.beginPath(); c.arc(q.x, q.y, 8 + Math.sin(sceneTime * 4) * 1.8, 0, Math.PI * 2);
+      c.fillStyle = 'rgba(217,154,43,0.18)'; c.fill();
+    }
+    c.beginPath(); c.arc(q.x, q.y, 6, 0, Math.PI * 2);
+    c.fillStyle = done ? '#d99a2b' : '#fff';
+    c.fill(); c.lineWidth = 2.4;
+    c.strokeStyle = done ? '#b77e1c' : (isNext ? '#d99a2b' : '#9fbdd0'); c.stroke();
+    if (done) {                                             // checkmark on visited ports
+      c.strokeStyle = '#fff'; c.lineWidth = 1.9; c.lineCap = 'round'; c.lineJoin = 'round';
+      c.beginPath(); c.moveTo(q.x - 2.7, q.y + 0.2); c.lineTo(q.x - 0.7, q.y + 2.4); c.lineTo(q.x + 3, q.y - 2.4); c.stroke();
+    }
+    c.textAlign = 'left';
+    c.font = '800 13px Inter, system-ui, sans-serif';
+    c.fillStyle = done ? '#123a5c' : (isNext ? '#996410' : '#5f7d92');
+    c.fillText(nd.name, L.labelX, q.y - 1);
+    c.font = '600 9.5px Inter, system-ui, sans-serif';
+    c.fillStyle = 'rgba(70,100,120,0.85)';
+    c.fillText(nd.sub, L.labelX, q.y + 10);
+  });
+
+  // the ship - clearly marks how far the voyage has come
+  drawMapBoat(c, sh.x, sh.y);
+
+  // frame
+  c.strokeStyle = 'rgba(35,74,99,0.5)'; c.lineWidth = 1.5;
+  mapRoundRect(c, 0.75, 0.75, mapW - 1.5, mapH - 1.5, 9); c.stroke();
 }
 function updateMapCaption() {
   if (state === 'menu') { mapCapEl.textContent = 'Antioch, ready to set sail'; return; }
