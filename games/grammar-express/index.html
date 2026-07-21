@@ -907,7 +907,7 @@ HSGGod.watch(() => {
 
 // homepage-tile capture hook: start, guard a couple, and stage a bandit raid
 if (location.search.indexOf('shot') >= 0){
-  setTimeout(()=>{ startGame(); }, 60);
+  setTimeout(()=>{ startGame(); bannerClock = 0; }, 60);                        // skip the intro banner for captures
   setTimeout(()=>{
     if (train[1]){ train[1].secured=true; heroQueue.push(1); }                 // hero runs in and shoots this bandit
     const v = Math.min(2, train.length-1);

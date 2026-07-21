@@ -2,7 +2,6 @@
 const GAMES = [
   { key:'who-said-it',   name:'Who Said It?',     href:'games/who-said-it/index.html',  subject:'History',   emoji:'🎙️', blurb:'Guess who spoke the famous words.',  photo:'assets/img/home/shots/who-said-it.jpg', featured:true, badge:'★ Most Popular' },
   { key:'who-painted-it',name:'Who Painted It?',  href:'games/who-painted-it/index.html', subject:'Art',      emoji:'🎨', blurb:'Name the artist behind the masterpiece.', photo:'assets/img/home/shots/who-painted-it.jpg', badge:'✦ New' },
-  { key:'grammar-express',name:'Grammar Express', href:'games/grammar-express/index.html', subject:'Grammar', emoji:'🚂', blurb:'Guard the train by naming each part of speech.', photo:'assets/img/home/shots/grammar-express.jpg', badge:'✦ New' },
   { key:'circa',         name:'Circa',           href:'games/circa/index.html',        subject:'History',   emoji:'🏛️', blurb:'Put history in order, card by card.', photo:'assets/img/home/shots/circa.jpg' },
   { key:'dragon-siege',  name:'Dragon Siege',     href:'games/dragon-siege/index.html', subject:'Typing',    emoji:'🐉', blurb:'Type fast to defend the keep.',      photo:'assets/img/home/shots/dragon-siege.jpg' },
   { key:'type-invaders', name:'Independence Day',    href:'games/type-invaders/index.html',subject:'Typing',    emoji:'🛸', blurb:'Type to blast aliens off the White House.', photo:'assets/img/home/shots/type-invaders.jpg' },
@@ -20,4 +19,5 @@ const GAMES = [
   { key:'slingshot',     name:'Gravity Slingshot', href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg', badge:'✦ New' },
   { key:'bible-quiz',    name:"Paul's Journey",   href:'games/bible-quiz/index.html',   subject:'Passage Identification', emoji:'📖', blurb:'Test how well you know scripture.',  photo:'assets/img/home/shots/bible-quiz.jpg' },
   { key:'letter-catch',  name:'Letter Catch',     href:'games/letter-catch/index.html', subject:'Spelling',  emoji:'🪣', blurb:'Catch letters to spell the word.',   photo:'assets/img/home/shots/letter-catch.jpg' },
+  { key:'grammar-express',name:'Grammar Express', href:'games/grammar-express/index.html', subject:'Grammar', emoji:'🚂', blurb:'Guard the train by naming each part of speech.', photo:'assets/img/home/shots/grammar-express.jpg', badge:'✦ New' },
 ];
