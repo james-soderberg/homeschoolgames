@@ -230,7 +230,7 @@
     .ans.reveal .v, .ans.reveal .k { color: var(--green); }
 
     .chase-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin-top: 0.5rem; }
-    .control-row { display: flex; justify-content: center; margin-top: 0.3rem; }
+    .control-row { display: flex; gap: 0.6rem; justify-content: center; margin-top: 0.3rem; }
     .reset-link {
       background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer;
       font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem;
@@ -332,7 +332,7 @@
     <h1>Around the World in 80 Days<span class="sub">Flag Frenzy · a Phileas Fogg adventure</span></h1>
     <div class="stat-group">
       <div class="stat-badge" id="scoreBadge">🔥 0 in a row</div>
-      <div class="stat-badge" id="bestBadge">Best 0</div>
+      <div class="stat-badge" id="accBadge">🎯 —</div>
     </div>
   </div>
 
@@ -359,18 +359,19 @@
       <p class="chase-hint">Tap an answer or press <b>A · B · C · D</b>. Each correct flag sails you on and builds your <b>streak</b>; a wrong one triggers a <b>mishap</b> and lets Detective Fix close in. Circle the globe as many times as you can before he catches you!</p>
 
       <div class="control-row">
+        <button class="reset-link" id="quitBtn" type="button">Quit &amp; save score</button>
         <button class="reset-link" onclick="startGame()">Start over</button>
       </div>
 
       <!-- Caught by Fix - covers the whole game column so it always fits -->
       <div class="ov hidden" id="caughtOverlay">
-        <div class="crest">🕵️</div>
-        <h2>Detective Fix nabs you!</h2>
-        <p>Your voyage ends here. Your best streak is logged in the Record Book.</p>
+        <div class="crest" id="ovCrest">🕵️</div>
+        <h2 id="ovTitle">Detective Fix nabs you!</h2>
+        <p id="ovText">Your voyage ends here. Your accuracy is logged in the Record Book.</p>
         <div class="final-stats">
-          <div class="fs"><b id="cStreak">0</b><span>Best streak</span></div>
-          <div class="fs"><b id="cLap">1</b><span>Lap reached</span></div>
-          <div class="fs"><b id="cCountries">0</b><span>Countries</span></div>
+          <div class="fs"><b id="cPct">0%</b><span>Accuracy</span></div>
+          <div class="fs"><b id="cCorrect">0</b><span>Correct</span></div>
+          <div class="fs"><b id="cGuesses">0</b><span>Guesses</span></div>
         </div>
         <div class="name-entry hidden" id="nameEntry">
           <span class="ne-label" id="neLabel">🏅 New high streak! Add your name:</span>
@@ -388,7 +389,7 @@
     </div><!-- /.game-col -->
 
     <aside class="rail" id="rail">
-      <div class="rail-title">🏅 Best Streaks</div>
+      <div class="rail-title">🎯 Best Accuracy</div>
       <ol class="rail-board" id="railBoard"></ol>
     </aside>
   </div><!-- /.play-area -->
@@ -509,7 +510,8 @@ const CONT_COLOR = { Africa:'#7A5C00', Americas:'#2A5C3F', Asia:'#8B2020', Europ
 // gain back the ground one mistake costs. Correct-gain and miss-cost are decoupled so
 // each can be tuned independently. Later laps start Fix closer / faster (the *For fns).
 const PACE = { step: 7.7, fixStart: -25, fixCreep: 2.6, fixSurge: 6, fixGain: 4.85 };
-const BOARD_KEY = 'atw_streak_board';   // local top-10 best streaks
+const BOARD_KEY = 'atw_accuracy_board'; // local top-10 by accuracy (min 8 guesses)
+const MIN_GUESSES = 8;                  // fewest guesses a run needs to make the board
 const NAME_KEY  = 'atw_name';
 function fixStartFor(l) { return Math.min(-5, PACE.fixStart + (l - 1) * 3.5); } // Fix resets ~3.5 closer each lap (catches into view), floored 5 behind
 function closeFor(l)    { return Math.min(PACE.step - 0.6, PACE.fixGain + (l - 1) * 0.3); } // Fix's gain on a CORRECT answer
@@ -530,7 +532,7 @@ let lap = 1;                  // which time around the globe
 
 let progress = 0;             // 0..100 Fogg's position on the current lap
 let fixPos = -22;             // 0..100 Detective Fix's position (trails Fogg)
-let correctCount = 0, streak = 0, bestStreak = 0, hintUsed = false;
+let correctCount = 0, totalCount = 0, streak = 0, bestStreak = 0, hintUsed = false;
 let visited = new Set([0]);
 
 let queue = [], current = null, answered = false;
@@ -566,7 +568,9 @@ function shuffle(arr) {
 }
 function getBoard() { try { const a = JSON.parse(localStorage.getItem(BOARD_KEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
 function saveBoard(b) { try { localStorage.setItem(BOARD_KEY, JSON.stringify(b)); } catch (e) {} }
-function bestStreakEver() { const b = getBoard(); return b.length ? b[0].streak : 0; }
+// Rank key: accuracy first, more guesses breaks ties (a steadier, longer run wins).
+function scoreKey(pct, total) { return pct * 1000 + Math.min(total, 999); }
+function bestPctEver() { const b = getBoard(); return b.length ? b[0].pct : 0; }
 function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
 function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
 
@@ -715,7 +719,7 @@ function drawHUD() {
   ctx.font = '800 26px Georgia, serif'; ctx.fillStyle = '#b9472f';
   ctx.fillText(String(streak), sx + 12, sy + 19);
   ctx.textAlign = 'right'; ctx.font = '700 11px sans-serif'; ctx.fillStyle = '#5a4318';
-  ctx.fillText('best ' + bestStreakEver(), sx + sw - 12, sy + 31);
+  ctx.fillText(correctCount + '/' + totalCount + ' right', sx + sw - 12, sy + 31);
 
   // Lap, top-center
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
@@ -873,6 +877,7 @@ function answer(idx) {
   answered = true;
   btns.forEach(b => b.disabled = true);
   const isCorrect = (btn.dataset.val === current.country);
+  totalCount++;
 
   document.getElementById('revealName').textContent =
     current.country + ' · ' + current.continent;   // SVG flag is the hero; emoji flag rendered as letters on Windows
@@ -903,14 +908,20 @@ function answer(idx) {
     if (window.HSGSound) HSGSound.wrong();
     if (window.HSGfx) HSGfx.flash('rgba(150,40,40,0.26)');
     updateBadges();
-    if (fixPos >= progress) { revealT = 99; setTimeout(() => { if (state === 'run') caught(); }, 850); return; }
+    if (fixPos >= progress) { revealT = 99; setTimeout(() => { if (state === 'run') endRun(false); }, 850); return; }
   }
   revealT = isCorrect ? 0.9 : 1.7;   // linger on a miss to read the answer + mishap
 }
 
 function updateBadges() {
   document.getElementById('scoreBadge').textContent = '🔥 ' + streak + ' in a row';
-  document.getElementById('bestBadge').textContent = 'Best ' + Math.max(bestStreak, bestStreakEver());
+  const acc = document.getElementById('accBadge');
+  if (totalCount === 0) {
+    acc.textContent = '🎯 —';
+  } else {
+    const pct = Math.round(correctCount / totalCount * 100);
+    acc.textContent = '🎯 ' + pct + '% · ' + totalCount + (totalCount === 1 ? ' guess' : ' guesses');
+  }
 }
 
 // ============================================================
@@ -920,7 +931,7 @@ function startGame() {
   state = 'run'; lap = 1;
   progress = 0; fixPos = fixStartFor(1);
   dispProgress = 0; dispFix = fixPos;
-  correctCount = 0; streak = 0; bestStreak = 0; hintUsed = false;
+  correctCount = 0; totalCount = 0; streak = 0; bestStreak = 0; hintUsed = false;
   visited = new Set([0]);
   queue = []; answered = false; surgeT = 0; stumbleT = 0; mishapT = 0; arriveT = 0; lapHold = 0;
   pendingScore = null;
@@ -952,19 +963,41 @@ function finishLap() {
   nextQuestion();
 }
 
-function caught() {
+// End the run - either Detective Fix caught you (quit=false) or you bowed
+// out early via the Quit button (quit=true). Either way the run's accuracy
+// is logged, provided you made at least MIN_GUESSES guesses.
+function endRun(quit) {
+  if (state === 'caught') return;   // already ended
   state = 'caught';
-  shake = 10;
-  document.getElementById('cStreak').textContent = bestStreak;
-  document.getElementById('cLap').textContent = lap;
-  document.getElementById('cCountries').textContent = correctCount;
+  shake = quit ? 0 : 10;
+
+  const total = totalCount, correct = correctCount;
+  const pct = total ? Math.round(correct / total * 100) : 0;
+
+  document.getElementById('ovCrest').textContent = quit ? '🎩' : '🕵️';
+  document.getElementById('ovTitle').textContent = quit ? 'Voyage logged' : 'Detective Fix nabs you!';
+  document.getElementById('cPct').textContent = pct + '%';
+  document.getElementById('cCorrect').textContent = correct;
+  document.getElementById('cGuesses').textContent = total;
 
   const board = getBoard();
-  const qualifies = bestStreak > 0 && (board.length < 10 || bestStreak > board[board.length - 1].streak);
+  const eligible = total >= MIN_GUESSES;
+  const key = scoreKey(pct, total);
+  const worst = board.length ? board[board.length - 1] : null;
+  const qualifies = eligible && (board.length < 10 || key > scoreKey(worst.pct, worst.total));
   const ne = document.getElementById('nameEntry');
-  if (qualifies) {
-    pendingScore = { streak: bestStreak, lap: lap };
-    const rank = board.filter(e => e.streak > bestStreak).length + 1;   // where this run lands
+  const ovText = document.getElementById('ovText');
+
+  if (!eligible) {
+    ovText.textContent = 'Make at least ' + MIN_GUESSES + ' guesses to log a score - you made ' + total + '.';
+    pendingScore = null;
+    ne.classList.add('hidden');
+  } else if (qualifies) {
+    ovText.textContent = quit
+      ? 'You bowed out at ' + pct + '% over ' + total + ' guesses.'
+      : 'Your accuracy is logged in the Record Book.';
+    pendingScore = { pct: pct, correct: correct, total: total };
+    const rank = board.filter(e => scoreKey(e.pct, e.total) > key).length + 1;   // where this run lands
     const medal = { 1:'🥇', 2:'🥈', 3:'🥉' }[rank] || '🏅';
     const ord = rank + (['th','st','nd','rd'][(rank % 100 - 20) % 10] || ['th','st','nd','rd'][rank % 100] || 'th');
     document.getElementById('neLabel').textContent = `${medal} You took ${ord} place! Add your name:`;
@@ -973,6 +1006,7 @@ function caught() {
     inp.value = lastName();
     setTimeout(() => inp.focus(), 60);
   } else {
+    ovText.textContent = 'You scored ' + pct + '% over ' + total + ' guesses. Not quite a record this time.';
     pendingScore = null;
     ne.classList.add('hidden');
   }
@@ -986,11 +1020,11 @@ function saveName() {
   const inp = document.getElementById('nameInput');
   const name = ((inp.value || '').trim() || 'Traveller').slice(0, 12);
   setLastName(name);
-  const entry = { name: name, streak: pendingScore.streak, lap: pendingScore.lap };
+  const entry = { name: name, pct: pendingScore.pct, correct: pendingScore.correct, total: pendingScore.total };
   if (hintUsed) entry.hinted = true;
   const board = getBoard();
   board.push(entry);
-  board.sort((a, b) => b.streak - a.streak);
+  board.sort((a, b) => scoreKey(b.pct, b.total) - scoreKey(a.pct, a.total));
   saveBoard(board.slice(0, 10));
   pendingScore = null;
   document.getElementById('nameEntry').classList.add('hidden');
@@ -1010,13 +1044,13 @@ function renderRail(highlight) {
     return;
   }
   board.forEach((e, i) => {
-    const me = highlight && e.name === highlight.name && e.streak === highlight.streak && e.lap === highlight.lap;
+    const me = highlight && e.name === highlight.name && e.pct === highlight.pct && e.total === highlight.total;
     const row = document.createElement('li');
     row.className = 'rail-row' + (me ? ' me' : '');
     const rank = document.createElement('span'); rank.className = 'rail-rank'; rank.textContent = (i + 1);
     const nm = document.createElement('span'); nm.className = 'rail-name'; nm.textContent = e.name;
     if (e.hinted) nm.insertAdjacentHTML('beforeend', '<span style="color:#E0531B;font-weight:800"> *</span>');
-    const st = document.createElement('span'); st.className = 'rail-streak'; st.textContent = '🔥 ' + e.streak;
+    const st = document.createElement('span'); st.className = 'rail-streak'; st.textContent = e.pct + '% · ' + e.total + 'g';
     row.appendChild(rank); row.appendChild(nm); row.appendChild(st);
     el.appendChild(row);
   });
@@ -1036,6 +1070,11 @@ document.getElementById('hintBtn').addEventListener('click', () => {
   document.getElementById('hintBtn').hidden = true;
   hintUsed = true;   // mark the run as hint-assisted (asterisk on the leaderboard)
   if (window.HSGSound) HSGSound.tick();
+});
+document.getElementById('quitBtn').addEventListener('click', () => {
+  if (state !== 'run' && state !== 'lap') return;   // nothing to quit from a finished run
+  if (window.HSGSound) HSGSound.tick();
+  endRun(true);
 });
 document.getElementById('caughtAgainBtn').addEventListener('click', again);
 document.getElementById('saveNameBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); saveName(); });
