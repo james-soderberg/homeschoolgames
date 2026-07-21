@@ -4,7 +4,14 @@ import { validBoard, clampScore, sanitizeName, json } from './_util.js';
 
 const RATE_LIMIT = 10;      // max writes ...
 const RATE_WINDOW = 10000;  // ... per 10s per IP
-const KEEP_PER_BOARD = 50;  // prune each board to this depth
+const KEEP_PER_BOARD = 50;  // prune each board to this depth (game leaderboards stay lean)
+const KEEP_CHECKPOINT = 100000;  // checkpoints keep EVERY arrival - position is a permanent head start
+
+// Rows kept per board. Checkpoint boards (hsg_lb_checkpoint-*) never drop a
+// pioneer, so nobody loses the arrival position their future head start depends on.
+function keepFor(board) {
+  return /^hsg_lb_checkpoint-/.test(board) ? KEEP_CHECKPOINT : KEEP_PER_BOARD;
+}
 
 const TOP_SQL =
   'SELECT name, score, hinted, ts FROM scores WHERE board=?1 ORDER BY score DESC, ts ASC LIMIT 10';
@@ -47,11 +54,12 @@ export async function onRequestPost({ request, env }) {
       'INSERT INTO scores (board, name, score, hinted, ts) VALUES (?1, ?2, ?3, ?4, ?5)'
     ).bind(board, name, score, hinted, ts).run();
 
-    // keep each board bounded
+    // keep each board bounded (checkpoints keep everyone; game boards stay lean)
+    const keep = keepFor(board);
     await DB.prepare(
       'DELETE FROM scores WHERE board=?1 AND id NOT IN ' +
       '(SELECT id FROM scores WHERE board=?1 ORDER BY score DESC, ts ASC LIMIT ?2)'
-    ).bind(board, KEEP_PER_BOARD).run();
+    ).bind(board, keep).run();
 
     const rankRow = await DB.prepare(
       'SELECT COUNT(*) AS c FROM scores WHERE board=?1 AND (score > ?2 OR (score = ?2 AND ts < ?3))'
@@ -59,7 +67,7 @@ export async function onRequestPost({ request, env }) {
     const rank = (rankRow ? rankRow.c : 0) + 1;
 
     const { results } = await DB.prepare(TOP_SQL).bind(board).all();
-    return json({ top: results || [], rank: rank <= KEEP_PER_BOARD ? rank : null });
+    return json({ top: results || [], rank: rank <= keep ? rank : null });
   } catch (e) {
     return json({ error: 'db error' }, 500);
   }
