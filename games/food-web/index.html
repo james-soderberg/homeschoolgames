@@ -110,9 +110,10 @@
         <span>🦅<small>Hawk</small></span>
       </div>
       <p>You're the fox. <b>Hunt rabbits to survive</b> — but the rabbits keep the grass in check, and
-         the grass feeds the rabbits. <b>Eat too many</b> and the herd vanishes and <i>you</i> starve.
-         <b>Eat too few</b> and the rabbits strip the meadow bare and crash. Hold the whole web in
-         <b>balance</b> — the longer it thrives, the higher your score. And <b>flee the hawk 🦅.</b></p>
+         the grass feeds the rabbits. <b>Eat too many</b> and the herd vanishes and <i>you</i> starve;
+         <b>eat too few</b> and the rabbits strip the meadow bare and crash. Hold the web in <b>balance
+         and last as long as you can</b> — it keeps getting harder: <b>droughts, more hawks, disease.</b>
+         And <b>flee the hawk 🦅.</b></p>
       <div class="diff-row">
         <button class="diff-btn" data-biome="meadow"><span class="d-name">🌾 Meadow</span><span class="d-desc">Gentle · forgiving swings</span></button>
         <button class="diff-btn" data-biome="savanna"><span class="d-name">🌍 Savanna</span><span class="d-desc">Fast booms & busts</span></button>
@@ -125,8 +126,7 @@
       <h2 id="overTitle">The web unraveled</h2>
       <p id="overWhy"></p>
       <ul class="final-list">
-        <li><span>Balance score</span><b id="fScore">0</b></li>
-        <li><span>Web survived</span><b id="fTime">0s</b></li>
+        <li><span>⏱ You survived</span><b id="fTime">0:00</b></li>
         <li><span>Peak herd</span><b id="fHerd">0</b></li>
       </ul>
       <div class="hsg-board fw-board" id="fwBoard"></div>
@@ -160,18 +160,21 @@ const BIOMES = {
   meadow: {
     name:'The Meadow', badge:'🌾 Meadow', top:'#a9d873', bot:'#5c9140',
     plant:'🌿', herb:'🐇', herbName:'rabbits', you:'🦊', youName:'fox', apex:'🦅', apexName:'hawk',
-    grassK:72, grassRate:17, grassBase:1.3,
-    herbDecay:4.4, herbRepro:120, herbCost:60, herbChild:52, herbStartE:60, herbEat:22, herbStart:10, herbCap:46, herbSpeed:92, herbFlee:110,
-    foxDecay:4.0, foxEat:38, apexN:1, apexSpeed:150, apexAggro:290, hawkCd:2.2,
+    grassK:72, grassRate:16, grassBase:1.3,
+    herbDecay:4.6, herbRepro:120, herbCost:60, herbChild:52, herbStartE:60, herbEat:22, herbStart:10, herbCap:46, herbSpeed:92, herbFlee:110,
+    foxDecay:4.2, foxEat:38, apexN:1, apexSpeed:150, apexAggro:290, hawkCd:4.0,
   },
   savanna: {
     name:'The Savanna', badge:'🌍 Savanna', top:'#e8c877', bot:'#b0873f',
     plant:'🌾', herb:'🦌', herbName:'gazelles', you:'🐆', youName:'cheetah', apex:'🦁', apexName:'lion',
-    grassK:72, grassRate:17, grassBase:1.3,
-    herbDecay:4.4, herbRepro:120, herbCost:60, herbChild:52, herbStartE:60, herbEat:22, herbStart:10, herbCap:46, herbSpeed:118, herbFlee:130,
-    foxDecay:4.8, foxEat:38, apexN:1, apexSpeed:184, apexAggro:340, hawkCd:1.8,
+    grassK:72, grassRate:16, grassBase:1.3,
+    herbDecay:4.9, herbRepro:120, herbCost:60, herbChild:52, herbStartE:60, herbEat:22, herbStart:10, herbCap:46, herbSpeed:118, herbFlee:130,
+    foxDecay:5.0, foxEat:38, apexN:1, apexSpeed:186, apexAggro:340, hawkCd:3.2,
   },
 };
+// difficulty escalates with survival time (per second): grass grows slower, and
+// both the herbivores' and your metabolism speed up — the web gets harder to hold.
+const RAMP = { grass: 0.0011, decay: 0.0009, fox: 0.0010 };
 
 // ---------- DOM ----------
 const stage  = document.getElementById('stage');
@@ -188,6 +191,7 @@ let grass = [], herbs = [], preds = [];
 let player = null, particles = [], floaters = [];
 let energy = 70, lives = 3, score = 0, survT = 0;
 let grassCredit = 0, peakHerd = 0;
+let droughtMul = 1, droughtEnd = 0, skit = 0, evt = {};   // escalation state
 let health = 1, healthySince = 0;
 let hist = [], histT = 0;         // population history for the graph
 let sceneT = 0, shake = 0, flash = 0, invuln = 0;
@@ -244,6 +248,7 @@ function startGame(bk) {
   setupCanvas();
   grass = []; herbs = []; preds = []; particles = []; floaters = [];
   energy = 72; lives = 3; score = 0; survT = 0; peakHerd = 0; grassCredit = 0;
+  droughtMul = 1; droughtEnd = 0; skit = 0; evt = {};
   health = 1; healthySince = 0; hist = []; histT = 0; invuln = 1.4; toast = null; lastToast = {};
   for (let i = 0; i < Math.round(B.grassK * 0.7); i++) spawnGrass();
   for (let i = 0; i < B.herbStart; i++) spawnHerb();
@@ -286,23 +291,29 @@ function update(dt) {
   for (let i = floaters.length-1; i>=0; i--) { const f=floaters[i]; f.t+=dt; f.y-=24*dt; if (f.t>=1) floaters.splice(i,1); }
   if (toast) { toast.t += dt; if (toast.t > 4.2) toast = null; }
   if (state !== 'play') return;
-  survT += dt;
+  survT += dt; score = survT;
+  runEvents();
+  const pr = survT;
+  const grassRateEff = B.grassRate * droughtMul * clamp(1 - pr*RAMP.grass, 0.4, 1);
+  const herbDecayEff = B.herbDecay * (1 + pr*RAMP.decay);
+  const herbFleeEff  = B.herbFlee + skit;
+  const foxDecayEff  = B.foxDecay * (1 + pr*RAMP.fox);
 
-  // --- GRASS: logistic regrowth toward carrying capacity K ---
+  // --- GRASS: logistic regrowth toward carrying capacity K (slower over time) ---
   const G = grass.length, K = B.grassK;
-  grassCredit += (B.grassRate * (G / K) * (1 - G / K) + B.grassBase) * dt;
+  grassCredit += (grassRateEff * (G / K) * (1 - G / K) + B.grassBase) * dt;
   while (grassCredit >= 1) { grassCredit -= 1; if (grass.length < K * 1.15) spawnGrass(); }
 
   // --- HERBIVORES: seek grass, eat, breed, starve, flee ---
   for (let i = herbs.length - 1; i >= 0; i--) {
     const h = herbs[i];
-    h.e -= B.herbDecay * dt;
+    h.e -= herbDecayEff * dt;
     if (h.e <= 0) { burst(h.x, h.y, '#caa', 6); floaters.push({x:h.x,y:h.y,text:'✕',color:'#d9b',t:0}); herbs.splice(i,1); continue; }
     // flee predators (you + hawk) if close
     let fx = 0, fy = 0, fleeing = false;
     const pd = Math.hypot(player.x - h.x, player.y - h.y);
-    if (pd < B.herbFlee) { fx += (h.x - player.x)/pd; fy += (h.y - player.y)/pd; fleeing = true; }
-    for (const p of preds) { const d = Math.hypot(p.x - h.x, p.y - h.y); if (d < B.herbFlee) { fx += (h.x-p.x)/d; fy += (h.y-p.y)/d; fleeing = true; } }
+    if (pd < herbFleeEff) { fx += (h.x - player.x)/pd; fy += (h.y - player.y)/pd; fleeing = true; }
+    for (const p of preds) { const d = Math.hypot(p.x - h.x, p.y - h.y); if (d < herbFleeEff) { fx += (h.x-p.x)/d; fy += (h.y-p.y)/d; fleeing = true; } }
     if (fleeing) { const fl = Math.hypot(fx,fy)||1; h.vx += fx/fl*B.herbSpeed*dt*6; h.vy += fy/fl*B.herbSpeed*dt*6; }
     else {
       // seek nearest grass tuft
@@ -361,8 +372,8 @@ function update(dt) {
     }
   }
 
-  // player metabolism
-  energy -= B.foxDecay * dt;
+  // player metabolism (speeds up over time)
+  energy -= foxDecayEff * dt;
   if (energy <= 0) { energy = 0; gameOver(herbs.length < 3 ? 'starve-crash' : 'starve'); return; }
 
   // --- ecosystem health & scoring ---
@@ -371,7 +382,6 @@ function update(dt) {
   const gh = clamp((gf - 0.08) / 0.22, 0, 1) * clamp((1.25 - gf) / 0.35, 0, 1);   // healthy grass band
   const rh = clamp((rf - 1) / 4, 0, 1) * clamp((B.herbCap - rf) / 14, 0.2, 1);     // healthy herd band
   health = Math.min(gh, rh);
-  score += (0.4 + 1.6 * health) * dt * 10;
   if (health > 0.55) { healthySince += dt; } else healthySince = 0;
 
   // --- teaching toasts driven by what's happening ---
@@ -386,6 +396,23 @@ function update(dt) {
   updateBadges();
 }
 function cap1(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+
+// New threats and pressures appear as the run goes on — the "more variables" ramp.
+function runEvents() {
+  if (droughtEnd && survT > droughtEnd) { droughtMul = 1; droughtEnd = 0; }
+  if (!evt.drought && survT >= 55) { evt.drought = true; droughtMul = 0.68; droughtEnd = survT + 22;
+    say('e-drought', '☀️ A dry spell — the ' + B.plant + ' grows slower. Ride out the lean season.', '#ffd257'); }
+  if (!evt.hawk2 && survT >= 100) { evt.hawk2 = true; spawnPred();
+    say('e-h2', '🦅 A second ' + B.apexName + ' moves in — more danger overhead!', '#ff9d8a'); shake = Math.max(shake, 6); }
+  if (!evt.skit && survT >= 145) { evt.skit = true; skit = 42;
+    say('e-skit', '🐇 The ' + B.herbName + ' have grown wary — harder to catch now.', '#ffd257'); }
+  if (!evt.disease && survT >= 185) { evt.disease = true;
+    const k = Math.floor(herbs.length * 0.3);
+    for (let i = 0; i < k && herbs.length; i++) { const j = (Math.random()*herbs.length)|0; burst(herbs[j].x, herbs[j].y, '#caa', 6); herbs.splice(j, 1); }
+    say('e-dis', '🦠 Disease sweeps the herd — a sudden crash. Let them recover!', '#ff9d8a'); shake = Math.max(shake, 10); }
+  if (!evt.hawk3 && survT >= 265) { evt.hawk3 = true; spawnPred();
+    say('e-h3', '🦅 The skies fill with ' + B.apexName + 's — how long can you last?', '#ff9d8a'); shake = Math.max(shake, 8); }
+}
 
 function loseLife(reason) {
   lives--; shake = 14; flash = 1; invuln = 1.6;
@@ -405,16 +432,16 @@ function gameOver(reason) {
   else if (reason === 'starve-crash') { crest='📉'; title='Trophic collapse'; why = 'The '+B.herbName+' you hunt crashed, and with no prey left, you starved. <span class="why">A predator can\'t outlast its own food supply — hunt sustainably.</span>'; }
   else { crest='🍽️'; title='You starved'; why = 'You didn\'t eat enough to keep going. <span class="why">Even a top predator has to feed — but leave enough of the herd to bounce back.</span>'; }
   el('overCrest').textContent = crest; el('overTitle').textContent = title; el('overWhy').innerHTML = why;
-  el('fScore').textContent = Math.round(score);
-  el('fTime').textContent = Math.round(survT) + 's';
+  el('fTime').textContent = fmtTime(survT);
   el('fHerd').textContent = peakHerd;
   overOverlay.classList.remove('hidden');
-  rail.gameOver(Math.round(score), document.getElementById('fwBoard'));
+  rail.gameOver(Math.round(survT), document.getElementById('fwBoard'));
   updateBadges();
 }
 
+function fmtTime(s) { s = Math.max(0, Math.floor(s)); const m = Math.floor(s/60); return m + ':' + String(s%60).padStart(2,'0'); }
 function updateBadges() {
-  document.getElementById('scoreBadge').textContent = '🌍 ' + Math.round(score);
+  document.getElementById('scoreBadge').textContent = '⏱ ' + fmtTime(survT);
   document.getElementById('livesBadge').textContent = (window.HSGGod && HSGGod.on) ? '∞' : (B.you.repeat(Math.max(0, lives)) || '—');
 }
 
