@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="canonical" href="https://homeschoolgames.org/games/who-painted-it/">
+<meta name="description" content="Look at a famous painting and name the artist who made it. A free art history game for kids and homeschoolers, featuring the great masters.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#C4A040">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/site.webmanifest">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="HomeschoolGames">
+<meta property="og:title" content="Who Painted It?">
+<meta property="og:description" content="Look at a famous painting and name the artist who made it. A free art history game featuring the great masters.">
+<title>Who Painted It? - Free Art History Game | HomeschoolGames</title>
+<link rel="stylesheet" href="../../assets/css/site.css">
+<link rel="stylesheet" href="../../assets/css/streak-rail.css">
+<style>
+  .wpi-page { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  .wpi-top { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+  .wpi-top h1 { margin:0; font-size:1.7rem; }
+  .stat-badge { background: var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .95rem; font-weight:700; font-size:.9rem; font-family:var(--font-sans); color:var(--ink); white-space:nowrap; }
+  .stat-badge b { color: var(--gold); }
+  .top-right { display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+  .auto-toggle { display:inline-flex; align-items:center; gap:.45rem; cursor:pointer;
+    background: var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .85rem; font-weight:700; font-size:.82rem; font-family:var(--font-sans);
+    color:var(--ink-light); white-space:nowrap; transition:background .15s, color .15s, border-color .15s; }
+  .auto-toggle:hover { background:#efe7d6; }
+  .auto-toggle .dot { width:.7rem; height:.7rem; border-radius:50%; background:#c2b69c;
+    box-shadow:inset 0 0 0 2px var(--cream-dark); transition:background .15s; }
+  .auto-toggle[aria-checked="true"] { color:var(--ink); border-color:var(--gold); background:#fbf3df; }
+  .auto-toggle[aria-checked="true"] .dot { background:var(--gold); }
+  .quit-btn { cursor:pointer; background:#fff; border:1.5px solid var(--border); border-radius:99px;
+    padding:.4rem .9rem; font-weight:700; font-size:.82rem; font-family:var(--font-sans);
+    color:var(--ink-light); white-space:nowrap; transition:border-color .15s, color .15s; }
+  .quit-btn:hover { border-color:#c0392b; color:#c0392b; }
+
+  /* three columns: leaderboard + quiz + gallery */
+  .wpi-layout { display:flex; gap:1.5rem; align-items:flex-start; }
+  .board-col { flex:0 0 250px; }
+  .quiz-col { flex:1 1 auto; min-width:0; }
+  .gallery-col { flex:0 0 320px; }
+  .board-panel, .gallery-panel { background:#fff; border:2px solid var(--border); border-radius:16px; box-shadow:0 4px 16px rgba(26,23,20,.1); overflow:hidden; }
+  .board-panel { position:sticky; top:1rem; }
+  .board-panel .board-head { padding:.9rem 1rem .75rem; border-bottom:1.5px solid var(--border); }
+  .board-panel .board-head h2 { margin:0; font-size:1.1rem; font-family:var(--font-serif); }
+  .board-panel .board-head p { margin:.15rem 0 0; font-family:var(--font-sans); font-size:.72rem; color:var(--ink-light); }
+  .board-panel .hsg-board { padding:.5rem .75rem .85rem; }
+  .board-panel .hsg-board-head { display:none; }
+
+  .quiz-card { background:#fff; border:2px solid var(--border); border-radius:16px; box-shadow:0 4px 16px rgba(26,23,20,.1); padding:1.2rem 1.2rem 1.4rem; }
+  .frame { width:100%; max-width:520px; margin:0 auto .8rem; border-radius:8px; overflow:hidden;
+    border:10px solid #6b4f2a; box-shadow:0 6px 20px rgba(26,23,20,.28), inset 0 0 0 2px #b8935a; background:#2a2320; }
+  .frame.win { border-color:var(--gold); }
+  .frame.miss { border-color:var(--red); }
+  .frame img { width:100%; max-height:400px; object-fit:contain; display:block; background:#1c1712; }
+  .art-title { text-align:center; font-family:var(--font-serif); font-size:1.35rem; margin:.1rem 0 .1rem; color:var(--ink); }
+  .art-sub { text-align:center; font-family:var(--font-sans); font-size:.82rem; color:var(--ink-light); min-height:1.1em; margin-bottom:.3rem; }
+  .hint-btn { display:block; margin:.2rem auto .5rem; background:var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
+    color:var(--ink-light); font-family:var(--font-sans); font-weight:700; font-size:.8rem; padding:.32rem .9rem; cursor:pointer; }
+  .hint-btn:hover { background:#efe7d6; color:var(--ink); }
+  .hint-btn[hidden] { display:none; }
+  .ask { text-align:center; font-family:var(--font-sans); font-weight:800; letter-spacing:.03em; text-transform:uppercase; font-size:.8rem; color:var(--ink-light); margin:.3rem 0 .6rem; }
+  .option-grid { display:grid; grid-template-columns:1fr 1fr; gap:.6rem; }
+  .option-btn { display:flex; align-items:center; gap:.6rem; background:#fff; border:1.5px solid var(--border); border-radius:11px;
+    padding:.7rem .8rem; font-family:var(--font-sans); font-weight:700; font-size:.95rem; color:var(--ink); cursor:pointer; text-align:left; transition:border-color .12s, background .12s; }
+  .option-btn:hover:not(:disabled) { border-color:var(--gold); background:#fbf3df; }
+  .option-btn .k { flex:0 0 auto; width:22px; height:22px; border-radius:6px; background:var(--cream-dark); border:1px solid var(--border);
+    display:grid; place-items:center; font-size:.75rem; font-weight:800; color:var(--ink-light); }
+  .option-btn.correct, .option-btn.reveal-correct { border-color:var(--green); background:#f0faf3; }
+  .option-btn.correct .k, .option-btn.reveal-correct .k { color:var(--green); }
+  .option-btn.wrong { border-color:var(--red); background:#faf0f0; }
+  .option-btn:disabled { cursor:default; }
+  .feedback { text-align:center; font-family:var(--font-sans); font-weight:800; font-size:1rem; margin-top:.7rem; min-height:1.2em; }
+  .reveal-line { text-align:center; font-family:var(--font-sans); font-size:.85rem; color:var(--ink-light); margin-top:.25rem; min-height:1em; }
+  .next-btn { display:block; margin:.7rem auto 0; background:var(--gold); border:none; border-radius:99px; color:#3a2c05;
+    font-family:var(--font-sans); font-weight:800; font-size:.95rem; padding:.55rem 1.4rem; cursor:pointer; }
+
+  .gallery-panel .g-head { padding:.9rem 1rem .75rem; border-bottom:1.5px solid var(--border); display:flex; align-items:baseline; justify-content:space-between; gap:.5rem; }
+  .gallery-panel .g-head h2 { margin:0; font-size:1.1rem; font-family:var(--font-serif); }
+  .g-count { font-family:var(--font-sans); font-weight:700; font-size:.9rem; color:var(--ink-light); }
+  .g-count b { color:var(--gold); }
+  .g-bar { height:6px; background:var(--cream-dark); }
+  .g-bar > i { display:block; height:100%; width:0; background:var(--gold); transition:width .5s ease; }
+  .g-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; padding:10px; }
+  .g-cell { border-radius:7px; overflow:hidden; border:2px solid var(--border); background:#efe7d6; aspect-ratio:1/1; position:relative; }
+  .g-cell.locked::after { content:''; position:absolute; inset:0; background:#353143; }
+  .g-cell img { width:100%; height:100%; object-fit:cover; display:block; }
+  .g-cell.missed { border-color:var(--red); }
+  .g-cell.missed::after { content:'✗'; position:absolute; inset:0; display:grid; place-items:center; font-size:1.2rem; font-weight:700; color:#d98a8a; background:#3a2a2a; }
+  .g-cell.justwon { animation: gpop .5s cubic-bezier(.34,1.56,.64,1); border-color:var(--gold); box-shadow:0 0 0 3px rgba(201,162,74,.4); }
+  @keyframes gpop { 0%{transform:scale(.6)} 100%{transform:scale(1)} }
+  .g-note { font-family:var(--font-sans); font-size:.8rem; color:var(--ink-light); text-align:center; padding:.3rem 1rem .9rem; }
+
+  /* start overlay */
+  .ov { position:fixed; inset:0; background:rgba(26,23,20,.72); display:grid; place-items:center; z-index:60; padding:1rem; }
+  .ov.hidden { display:none; }
+  .ov-card { background:#fff; border-radius:18px; max-width:440px; width:100%; padding:1.8rem 1.6rem; text-align:center; box-shadow:0 12px 40px rgba(26,23,20,.35); }
+  .ov-card .crest { font-size:2.6rem; }
+  .ov-card h2 { margin:.2rem 0 .5rem; font-family:var(--font-serif); font-size:1.7rem; }
+  .ov-card p { font-family:var(--font-sans); font-size:.92rem; color:var(--ink-light); line-height:1.55; margin:.4rem 0; }
+  .go-btn { margin-top:1rem; background:var(--gold); border:none; border-radius:99px; color:#3a2c05; font-family:var(--font-sans); font-weight:800; font-size:1rem; padding:.65rem 1.6rem; cursor:pointer; }
+  .credit { font-size:.72rem; color:var(--ink-light); text-align:center; margin-top:1rem; }
+  .credit a { color:inherit; }
+
+  @media (max-width: 900px){
+    .wpi-layout { flex-direction:column; align-items:stretch; }
+    .board-col, .gallery-col { flex:none; width:100%; }
+    .board-panel { position:static; }
+    .g-grid { grid-template-columns:repeat(8,1fr); }
+  }
+  @media (max-width: 520px){ .option-grid{ grid-template-columns:1fr; } .g-grid{ grid-template-columns:repeat(5,1fr); } }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav"><a href="../../index.html" id="allGamesLink">← All Games</a></nav>
+</header>
+
+<div class="wpi-page">
+  <div class="wpi-top">
+    <h1>Who Painted It?</h1>
+    <div class="top-right">
+      <button class="auto-toggle" id="autoToggle" type="button" role="switch" aria-checked="false"
+        title="When on, the game moves to the next painting on its own after you answer.">
+        <span class="dot"></span><span id="autoLabel">Auto-advance: Off</span>
+      </button>
+      <div class="stat-badge">Gallery <b id="scoreStat">0</b> / <span id="scoreGoal">20</span></div>
+      <button class="quit-btn" id="quitBtn" type="button" title="End the game (only a finished run of 20 is scored)">Quit</button>
+    </div>
+  </div>
+
+  <div class="wpi-layout">
+    <!-- leaderboard (always visible) -->
+    <div class="board-col">
+      <div class="board-panel">
+        <div class="board-head"><h2>🏆 Master Curators</h2><p>Best score out of 20</p></div>
+        <div id="wpiSideBoard"></div>
+      </div>
+    </div>
+
+    <!-- quiz -->
+    <div class="quiz-col">
+      <div class="quiz-card">
+        <div class="frame" id="frame"><img id="painting" alt="Painting"></div>
+        <p class="art-title" id="artTitle"></p>
+        <p class="art-sub" id="artSub"></p>
+        <button class="hint-btn" id="hintBtn" type="button">💡 Reveal hint</button>
+        <div class="ask">Who painted this?</div>
+        <div class="option-grid" id="optionGrid"></div>
+        <div class="feedback" id="feedback"></div>
+        <div class="reveal-line" id="revealLine"></div>
+        <button class="next-btn" id="nextBtn" style="display:none">Next Painting →</button>
+      </div>
+      <p class="credit">Paintings are public-domain images of famous works from
+        <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>.</p>
+    </div>
+
+    <!-- gallery of correctly-named works -->
+    <div class="gallery-col">
+      <div class="gallery-panel">
+        <div class="g-head"><h2>🖼️ Your Gallery</h2><span class="g-count"><b id="gCount">0</b> / <span id="gTotal">20</span></span></div>
+        <div class="g-bar"><i id="gBar"></i></div>
+        <div class="g-grid" id="gGrid"></div>
+        <div class="g-note" id="gNote">Name the artist to hang the painting.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- start -->
+<div class="ov" id="startOverlay">
+  <div class="ov-card">
+    <div class="crest">🎨</div>
+    <h2>Who Painted It?</h2>
+    <p>You will see <b>20 famous paintings</b>, one at a time, with the painting's name. Pick the <b>artist</b> who made it from four choices.</p>
+    <p>A right answer hangs the work in your gallery. A perfect score is <b>20 / 20</b> with no misses and no hints.</p>
+    <button class="go-btn" id="beginBtn">Start the tour →</button>
+  </div>
+</div>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/artquiz-paintings.js"></script>
+<script>
+// ============================================================
+// WHO PAINTED IT? - see a famous painting + its name, choose the
+// artist. A fixed run of RUN paintings; score = correct - hints,
+// so a flawless 20/20 with no hints is the best possible.
+// ============================================================
+const RUN = 20;
+const KEYS = ['A','B','C','D'];
+const AUTO_OK = 3200, AUTO_NO = 4200, DELAY_END = 1500;
+let autoAdvance = false;
+try { autoAdvance = localStorage.getItem('wpi_autoadvance') === '1'; } catch(e){}
+
+const slug = n => n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+const imgFor = p => '../../assets/img/artquiz/' + p.s + '.jpg';
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+
+const ART = (window.ARTQUIZ || []).slice();
+const ARTISTS = [...new Set(ART.map(p=>p.a))];
+const eraOf = {}; ART.forEach(p=>{ if(!eraOf[p.a]) eraOf[p.a]=p.e; });
+const brokenImg = new Set();
+let pool = shuffle(ART);
+let used = new Set();
+let answered = false, current = null, advanceTimer = null;
+let roundIndex = 0, correctCount = 0, hintCount = 0, hintThisRound = false;
+
+function loadImg(p){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>{ brokenImg.add(p.s); res(false); }; im.src=imgFor(p); }); }
+
+async function pickPainting(){
+  for(let guard=0; guard<ART.length+5; guard++){
+    if(!pool.length) pool = shuffle(ART.filter(p=>!used.has(p.s) && !brokenImg.has(p.s)));
+    if(!pool.length) pool = shuffle(ART.filter(p=>!brokenImg.has(p.s)));
+    const cand = pool.pop();
+    if(!cand || used.has(cand.s) || brokenImg.has(cand.s)) continue;
+    if(await loadImg(cand)) return cand;
+  }
+  return ART.find(p=>!brokenImg.has(p.s)) || ART[0];
+}
+
+// 4 artists: the painter + 3 distractors, preferring the same era so it is not
+// won by elimination; falls back to any artist if an era is thin.
+function buildOptions(p){
+  const same = ARTISTS.filter(a=>a!==p.a && eraOf[a]===p.e);
+  let picks = shuffle(same).slice(0,3);
+  if(picks.length<3){ const rest = shuffle(ARTISTS.filter(a=>a!==p.a && !picks.includes(a))); while(picks.length<3 && rest.length) picks.push(rest.pop()); }
+  return shuffle([p.a, ...picks]);
+}
+
+// ---------- gallery ----------
+function buildGallery(){
+  const grid = document.getElementById('gGrid'); let html='';
+  for(let i=0;i<RUN;i++) html += '<div class="g-cell locked"></div>';
+  grid.innerHTML = html;
+  document.getElementById('gTotal').textContent = RUN;
+  document.getElementById('scoreGoal').textContent = RUN;
+  updateGalleryCount();
+}
+function updateGalleryCount(){
+  document.getElementById('gCount').textContent = correctCount;
+  document.getElementById('scoreStat').textContent = correctCount;
+  document.getElementById('gBar').style.width = (roundIndex/RUN*100)+'%';
+  const left = RUN - roundIndex, note = document.getElementById('gNote');
+  if(roundIndex===0) note.textContent='Name the artist to hang the painting.';
+  else if(left<=0) note.textContent='🖼️ The tour is complete!';
+  else note.textContent = left + ' painting' + (left>1?'s':'') + ' to go.';
+}
+function markCell(idx, p, correct){
+  const cell = document.querySelectorAll('.g-cell')[idx]; if(!cell) return;
+  cell.classList.remove('locked');
+  if(correct){
+    cell.innerHTML = '<img src="'+imgFor(p)+'" alt="'+p.t+' by '+p.a+'">';
+    cell.classList.add('justwon'); setTimeout(()=>cell.classList.remove('justwon'),700);
+  } else { cell.classList.add('missed'); }
+  updateGalleryCount();
+}
+
+// ---------- round flow ----------
+async function nextCard(){
+  clearTimeout(advanceTimer);
+  answered = false; hintThisRound = false;
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('revealLine').textContent = '';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('frame').className = 'frame';
+  document.getElementById('artSub').textContent = '';
+  document.getElementById('hintBtn').hidden = false;
+
+  current = await pickPainting();
+  document.getElementById('painting').src = imgFor(current);
+  document.getElementById('artTitle').textContent = current.t;
+
+  const options = buildOptions(current);
+  const grid = document.getElementById('optionGrid'); grid.innerHTML='';
+  options.forEach((who,i)=>{
+    const btn = document.createElement('button');
+    btn.className='option-btn'; btn.dataset.idx=i; btn.dataset.who=who;
+    btn.innerHTML='<span class="k">'+KEYS[i]+'</span><span></span>';
+    btn.lastChild.textContent = who;
+    btn.addEventListener('click', ()=>handleAnswer(who, btn));
+    grid.appendChild(btn);
+  });
+}
+
+function handleAnswer(chosen, btn){
+  if(answered) return; answered = true;
+  const btns = [...document.querySelectorAll('.option-btn')];
+  btns.forEach(b=>b.disabled=true);
+  const correct = chosen === current.a;
+  used.add(current.s);
+  if(correct) correctCount++;
+  markCell(roundIndex, current, correct);
+  roundIndex++;
+
+  if(correct){
+    btn.classList.add('correct');
+    document.getElementById('frame').classList.add('win');
+    document.getElementById('feedback').innerHTML = '<span style="color:var(--green)">✓ Correct!</span>';
+    if(window.HSGSound) HSGSound.correct();
+    if(window.HSGfx && HSGfx.confetti) HSGfx.confetti({count:16});
+  } else {
+    btn.classList.add('wrong');
+    btns.forEach(b=>{ if(b.dataset.who===current.a) b.classList.add('reveal-correct'); });
+    document.getElementById('frame').classList.add('miss');
+    document.getElementById('feedback').innerHTML = '<span style="color:var(--red)">✗ Not quite</span>';
+    if(window.HSGSound) HSGSound.wrong();
+    if(window.HSGfx) HSGfx.flash('rgba(150,40,40,0.25)');
+  }
+  document.getElementById('revealLine').innerHTML = 'It was <b>'+current.a+'</b> · '+current.e+', '+current.y;
+  document.getElementById('hintBtn').hidden = true;
+
+  if(roundIndex >= RUN){ setTimeout(endGame, DELAY_END); return; }
+  document.getElementById('nextBtn').style.display='inline-block';
+  if(autoAdvance) advanceTimer = setTimeout(()=>{ if(answered) nextCard(); }, correct?AUTO_OK:AUTO_NO);
+}
+
+function endGame(){
+  const score = Math.max(0, correctCount - hintCount);
+  const hinted = hintCount > 0, perfect = score >= RUN;
+  const panel = { gameId:'who-painted-it', gameName:'Who Painted It?', level:'best', levelName:'Best Score',
+                  minStreak:1, unit:'art20', score:score, hinted:hinted, onSaved:()=>renderSideBoard() };
+  if(window.HSGfx && HSGfx.showSummary){
+    HSGfx.showSummary({
+      title: perfect ? '🎨 Master curator! '+RUN+' / '+RUN : '🖼️ Gallery tour complete!',
+      correct:score, total:RUN,
+      stats:[ {num:score, label:'Score / '+RUN, cls:'best'}, {num:correctCount, label:'Correct'}, {num:hintCount, label:'Hints used'} ],
+      onPlayAgain:resetGame,
+      extraHTML:'<div id="wpiBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+      onMount:()=>{ if(window.HSGStreak) HSGStreak.endPanel('#wpiBoard', panel); } });
+  } else { resetGame(); }
+}
+function resetGame(){
+  used = new Set(); roundIndex = 0; correctCount = 0; hintCount = 0; hintThisRound = false;
+  pool = shuffle(ART.filter(p=>!brokenImg.has(p.s)));
+  buildGallery(); nextCard();
+}
+
+// The leaderboard stays on the left the whole time.
+function renderSideBoard(){
+  if(window.HSGStreak && HSGStreak.renderBoardInto)
+    HSGStreak.renderBoardInto('#wpiSideBoard', { gameId:'who-painted-it', level:'best', unit:'art20', minStreak:1 });
+}
+
+document.getElementById('hintBtn').addEventListener('click', ()=>{
+  document.getElementById('artSub').textContent = 'Style: ' + current.e + '  ·  painted ' + current.y;
+  document.getElementById('hintBtn').hidden = true;
+  if(!hintThisRound){ hintThisRound = true; hintCount++; }   // each hint costs a point
+});
+document.getElementById('nextBtn').addEventListener('click', ()=>{ if(answered) nextCard(); });
+document.addEventListener('keydown', e=>{
+  if((e.key==='Enter'||e.key===' ') && answered){ e.preventDefault(); nextCard(); return; }
+  if(answered) return;
+  const i=['a','b','c','d'].indexOf(e.key.toLowerCase());
+  if(i<0) return;
+  const b=document.querySelector('.option-btn[data-idx="'+i+'"]');
+  if(b && !b.disabled) b.click();
+});
+
+// auto-advance toggle
+const autoToggle = document.getElementById('autoToggle');
+function renderAutoToggle(){
+  autoToggle.setAttribute('aria-checked', autoAdvance ? 'true':'false');
+  document.getElementById('autoLabel').textContent = 'Auto-advance: ' + (autoAdvance ? 'On':'Off');
+}
+autoToggle.addEventListener('click', ()=>{
+  autoAdvance = !autoAdvance;
+  try { localStorage.setItem('wpi_autoadvance', autoAdvance ? '1':'0'); } catch(e){}
+  renderAutoToggle();
+  if(window.HSGSound) HSGSound.tick();
+  if(autoAdvance && answered){ clearTimeout(advanceTimer); advanceTimer=setTimeout(()=>{ if(answered) nextCard(); }, AUTO_OK); }
+  else if(!autoAdvance){ clearTimeout(advanceTimer); }
+});
+renderAutoToggle();
+
+// quit: only a finished run of 20 is scored, so quitting early just leaves.
+let leaving = false;
+function leaveGame(dest){ if(leaving) return; leaving=true; clearTimeout(advanceTimer); answered=true; if(dest) window.location.href=dest; }
+document.getElementById('quitBtn').addEventListener('click', ()=>leaveGame('../../index.html'));
+const allGamesLink = document.getElementById('allGamesLink');
+if(allGamesLink) allGamesLink.addEventListener('click', e=>{ e.preventDefault(); leaveGame(allGamesLink.href); });
+
+document.getElementById('beginBtn').addEventListener('click', ()=>{
+  if(window.HSGSound) HSGSound.tick();
+  document.getElementById('startOverlay').classList.add('hidden');
+  resetGame();
+});
+
+renderSideBoard();
+buildGallery();
+</script>
+</body>
+</html>
