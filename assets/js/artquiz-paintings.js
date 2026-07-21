@@ -31,9 +31,13 @@ window.ARTQUIZ = [
   {"t":"Tiger in a Tropical Storm","a":"Henri Rousseau","y":1891,"e":"Post-Impressionism","s":"tiger-in-a-tropical-storm"},
   {"t":"The Scream","a":"Edvard Munch","y":1893,"e":"Modern","s":"the-scream"},
   {"t":"The Kiss","a":"Gustav Klimt","y":1908,"e":"Modern","s":"the-kiss"},
+  {"t":"The Old Guitarist","a":"Pablo Picasso","y":1904,"e":"Modern","s":"the-old-guitarist"},
+  {"t":"The Persistence of Memory","a":"Salvador Dalí","y":1931,"e":"Modern","s":"the-persistence-of-memory"},
+  {"t":"The Son of Man","a":"René Magritte","y":1964,"e":"Modern","s":"the-son-of-man"},
   {"t":"Composition with Red, Blue and Yellow","a":"Piet Mondrian","y":1930,"e":"Modern","s":"composition-with-red-blue-and-yellow"},
   {"t":"American Gothic","a":"Grant Wood","y":1930,"e":"Modern","s":"american-gothic"},
   {"t":"Nighthawks","a":"Edward Hopper","y":1942,"e":"Modern","s":"nighthawks"},
+  {"t":"Christina's World","a":"Andrew Wyeth","y":1948,"e":"Modern","s":"christina-s-world"},
   {"t":"The Calling of Saint Matthew","a":"Caravaggio","y":1600,"e":"Baroque","s":"the-calling-of-saint-matthew"},
   {"t":"Young Hare","a":"Albrecht Dürer","y":1502,"e":"Renaissance","s":"young-hare"},
   {"t":"View of Toledo","a":"El Greco","y":1600,"e":"Renaissance","s":"view-of-toledo"},
@@ -42,5 +46,9 @@ window.ARTQUIZ = [
   {"t":"Napoleon Crossing the Alps","a":"Jacques-Louis David","y":1801,"e":"Neoclassicism","s":"napoleon-crossing-the-alps"},
   {"t":"The Parasol","a":"Francisco Goya","y":1777,"e":"Romanticism","s":"the-parasol"},
   {"t":"The Boating Party","a":"Mary Cassatt","y":1894,"e":"Impressionism","s":"the-boating-party"},
-  {"t":"Carnation, Lily, Lily, Rose","a":"John Singer Sargent","y":1886,"e":"Realism","s":"carnation-lily-lily-rose"}
+  {"t":"Carnation, Lily, Lily, Rose","a":"John Singer Sargent","y":1886,"e":"Realism","s":"carnation-lily-lily-rose"},
+  {"t":"Self-Portrait with Thorn Necklace","a":"Frida Kahlo","y":1940,"e":"Modern","s":"self-portrait-with-thorn-necklace"},
+  {"t":"Woman with a Hat","a":"Henri Matisse","y":1905,"e":"Modern","s":"woman-with-a-hat"},
+  {"t":"Composition VII","a":"Wassily Kandinsky","y":1913,"e":"Modern","s":"composition-vii"},
+  {"t":"Campbell's Soup Cans","a":"Andy Warhol","y":1962,"e":"Modern","s":"campbell-s-soup-cans"}
 ];
