@@ -246,7 +246,11 @@
         setTimeout(function () { location.href = '../../' + s.open; }, 850);   // launch the hidden game
       } else {
         form.classList.remove('right'); void form.offsetWidth; form.classList.add('wrong');
-        var fb2 = $('fb'); fb2.textContent = 'That word turns nothing.'; fb2.className = 'fb bad';
+        var fb2 = $('fb');
+        fb2.textContent = (n === 1 && norm(input.value) === 'tommwk')
+          ? 'Haha as if I would make it that simple.'
+          : 'That word turns nothing.';
+        fb2.className = 'fb bad';
         if (window.HSGSound) HSGSound.wrong();
       }
     });
