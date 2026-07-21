@@ -5,7 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slide Puzzle (a secret game)</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
+    #spBoardWin, #spBoardFail { width:100%; max-width:340px; margin:.3rem auto 1rem; text-align:left; }
     body.sp-body { background:#0c0a07; color:#e9e2d2; }
     .sp-header { background:#0f0c08; border-bottom:1px solid #241d12; }
     .sp-header .site-logo { color:#e9e2d2; } .sp-header .site-logo span { color:#c8a24a; }
@@ -110,6 +112,7 @@
       <div class="win-time" id="winTime">0:00</div>
       <div class="win-time-label">your time</div>
       <p>Well solved, hunter. The picture is whole again — and so is your trail.</p>
+      <div class="hsg-endpanel" id="spBoardWin"></div>
       <button class="sp-btn" id="nextClueBtn">Reveal your next clue →</button>
       <button class="sp-btn ghost" id="winAgainBtn">Play again</button>
     </div>
@@ -121,6 +124,7 @@
       <div class="win-time" id="slowTime">2:14</div>
       <div class="win-time-label">your time</div>
       <p>You solved it, but not fast enough. Get under <b>2:00</b> to reveal the next clue.</p>
+      <div class="hsg-endpanel" id="spBoardFail"></div>
       <button class="sp-btn" id="retryBtn">Try again ▸</button>
     </div>
   </div>
@@ -135,6 +139,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/hunt.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
 // SLIDE PUZZLE — a treasure-hunt trial. Rebuild the scrambled
@@ -150,6 +155,14 @@ const SHUFFLE_MOVES = 400;   // random legal slides from solved (guarantees solv
 const board = document.getElementById('board');
 const $ = (id) => document.getElementById(id);
 const BEST_KEY = 'hsg_slidepuzzle_best';
+// High-score replay (opened with ?hs from the checkpoint): drop the 2:00 clue gate;
+// any solve just banks its time to the Fastest Solves board.
+const HIGH_SCORE = /[?&]hs\b/.test(location.search);
+if (HIGH_SCORE) {
+  const nb = $('nextClueBtn'); if (nb) nb.style.display = 'none';   // clue already earned - pure high-score now
+  const wp = document.querySelector('#winOv p'); if (wp) wp.textContent = 'The map is whole again. Beat your time and climb the Fastest Solves board!';
+  const sp = document.querySelector('#startOv p'); if (sp) sp.textContent = 'Rebuild the scrambled map as fast as you can - your time goes on the leaderboard.';
+}
 
 let arr = [];        // arr[pos] = tile value at that board position (N*N-1 = the gap)
 let blank = N * N - 1;
@@ -250,8 +263,9 @@ function keyMove(dir) {
 function fmt(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 function updateHUD() {
   $('moveBadge').textContent = moves + (moves === 1 ? ' move' : ' moves');
-  const tb = $('timeBadge'); tb.textContent = '⏱ ' + fmt(elapsed) + ' / 2:00';
-  tb.classList.toggle('low', elapsed >= TIME_LIMIT - 15);   // urgent as 2:00 nears / passes
+  const tb = $('timeBadge');
+  tb.textContent = '⏱ ' + fmt(elapsed) + (HIGH_SCORE ? '' : ' / 2:00');
+  tb.classList.toggle('low', !HIGH_SCORE && elapsed >= TIME_LIMIT - 15);   // urgent as 2:00 nears / passes (trial only)
   const best = getBest();
   $('bestBadge').textContent = best ? 'Best ' + fmt(best) : '';
 }
@@ -278,17 +292,29 @@ function win() {
   const best = getBest();
   if (!best || solveSec < best) setBest(solveSec);   // track fastest solve, fast or slow
   updateHUD();
-  if (solveSec < TIME_LIMIT) {
-    // under 2:00 → reveal the next clue
+  if (HIGH_SCORE || solveSec < TIME_LIMIT) {
+    // under 2:00 (or replaying a cleared puzzle) → the win card + high-score board
     $('winTime').textContent = fmt(solveSec);
     $('winOv').classList.remove('hidden');
+    bankTime('#spBoardWin', solveSec);
     if (window.HSGSound) { if (HSGSound.correct) HSGSound.correct(); if (HSGSound.finish) HSGSound.finish(true); }
   } else {
     // solved, but over 2:00 → good practice, no clue yet
     $('slowTime').textContent = fmt(solveSec);
     $('failOv').classList.remove('hidden');
+    bankTime('#spBoardFail', solveSec);
     if (window.HSGSound && HSGSound.tick) HSGSound.tick();
   }
+}
+// Every completed solve (fast or slow) posts to the global "Fastest Solves" board in
+// D1 via streak-rail; a top-10 time can enter a name inline. Time is lower-is-better,
+// so encodeTime() inverts it into the score the soltime board sorts high-first.
+function bankTime(sel, solveSec) {
+  if (!window.HSGStreak) return;
+  HSGStreak.endPanel(sel, {
+    gameId: 'slide-puzzle', gameName: 'Slide Puzzle', unit: 'soltime',
+    score: HSGStreak.encodeTime(solveSec), minStreak: 1
+  });
 }
 // solving the puzzle clears the hunt trial → hand off to the next clue's token URL
 function goNextClue() {

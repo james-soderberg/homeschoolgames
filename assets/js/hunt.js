@@ -65,6 +65,19 @@
     text: 'Every trial passed, every buried game unearthed. The last clue dissolves and the map is finally yours. You are a true explorer.'
   };
 
+  // The buried games, in trail order. The `?hs` (high-score) flag on each url drops
+  // that game's trial (no cap / time-gate / clue hand-off) and runs it as a free-play
+  // HIGH-SCORE mode, banking to a board specific to the secret game. The checkpoint
+  // page lists these so a player can go back and chase a high score any time. `url` is
+  // root-relative (prefix from a sub-page); `?arcade` puts Independence Day in its
+  // secret auto-fire arcade, which is where its high-score board lives.
+  var SECRET_GAMES = [
+    { game: 'flappy',       icon: '🐉', name: 'Flappy Dragonling',        blurb: 'Fly as far as you can.',            url: 'games/secret-flap/index.html?hs' },
+    { game: 'typeinvaders', icon: '🕹', name: 'Independence Day · Arcade', blurb: 'Hold the capital, wave after wave.', url: 'games/type-invaders/index.html?arcade&hs' },
+    { game: 'redline',      icon: '🏁', name: 'Redline',                  blurb: 'Go the distance, mile after mile.', url: 'games/redline/index.html?hs' },
+    { game: 'slidepuzzle',  icon: '🧩', name: 'Slide Puzzle',             blurb: 'Rebuild the map, fast as you can.', url: 'games/slide-puzzle/index.html?hs' }
+  ];
+
   // ---- state --------------------------------------------------------------
   function step() { try { return parseInt(localStorage.getItem(STEP_KEY)) || 0; } catch (e) { return 0; } }
   function setStep(n) { try { localStorage.setItem(STEP_KEY, String(n)); } catch (e) {} }
@@ -153,7 +166,7 @@
   }
 
   window.HSGHunt = {
-    STEPS: STEPS, TREASURE: TREASURE,
+    STEPS: STEPS, TREASURE: TREASURE, SECRET_GAMES: SECRET_GAMES,
     step: step, done: done, current: current, reach: reach,
     setStep: function (n) { setStep(n); }, nextIndexAfter: nextIndexAfter,
     tokenFor: tokenFor, indexForToken: indexForToken, nextTokenAfter: nextTokenAfter,

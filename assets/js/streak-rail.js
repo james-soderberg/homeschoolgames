@@ -40,6 +40,13 @@
   var LABELS = ['STREAK', 'STREAK', 'HEATING UP', 'ON FIRE!', 'BLAZING!', 'INFERNO!'];
   var CONFETTI_COLORS = ['#E0531B', '#E0A53B', '#2E8FE0', '#2A5C3F', '#D62828', '#C4A040'];
 
+  // Inverted-score base for lower-is-better TIME boards (see the `soltime` unit): a
+  // solve is stored as TIME_BASE - seconds so a faster time is a bigger number and
+  // sorts first. 100000s (~27h) dwarfs any real solve, so the score stays a safe
+  // positive integer well under the server's cap.
+  var TIME_BASE = 100000;
+  function fmtClock(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
   // Per-metric presentation. `streak` is the default fire streak; every other unit
   // is a "highest value" metric and drives the rail widget with its own icon/label
   // (rIcon / rLabel) instead of the fire-streak escalation.
@@ -78,7 +85,19 @@
     mapscore: { head: '🗺️ Map Masters',
               score: function (n) { var c = Math.floor(n / 1000), w = 999 - (n % 1000), t = c + w, p = t ? Math.round(100 * c / t) : 100; return c + '/' + t + ' · ' + p + '%'; },
               of: function (n) { var c = Math.floor(n / 1000), w = 999 - (n % 1000), t = c + w, p = t ? Math.round(100 * c / t) : 100; return c + '/' + t + ' correct · ' + p + '%!'; },
-              claim: 'map', rIcon: '🎯', rLabel: 'FOUND' }
+              claim: 'map', rIcon: '🎯', rLabel: 'FOUND' },
+    // Slide Puzzle solve time - LOWER is better. Stored inverted (TIME_BASE - seconds)
+    // so faster solves rank first on the high-first board; display decodes to m:ss.
+    soltime: { head: '🧩 Fastest Solves',
+              score: function (n) { return fmtClock(TIME_BASE - n); },
+              of:    function (n) { return 'Solved in ' + fmtClock(TIME_BASE - n) + '!'; },
+              claim: 'solve', rIcon: '🧩', rLabel: 'TIME' },
+    // Independence Day arcade - furthest wave held, tiebroken by hits: wave*1e5 + kills
+    // (a deeper wave always outranks; equal waves sort by more kills). Higher is better.
+    wave:   { head: '🕹 Furthest Waves',
+              score: function (n) { return 'Wave ' + Math.floor(n / 100000) + ' · ' + (n % 100000) + ' hits'; },
+              of:    function (n) { return 'Wave ' + Math.floor(n / 100000) + '!'; },
+              claim: 'stand', rIcon: '🕹', rLabel: 'WAVE' }
   };
   function unitOf(u) { return UNITS[u] || UNITS.streak; }
 
@@ -704,6 +723,8 @@
     renderBoardInto: renderBoardInto,
     qualifies: function (gameId, level, score, minStreak) { return qualifies(levelKey(gameId, level), score, minStreak); },
     bestScore: function (gameId, level) { var l = load(levelKey(gameId, level)); return l.length ? l[0].score : 0; },
+    // Turn a raw solve time (seconds) into the inverted score a `soltime` board expects.
+    encodeTime: function (seconds) { return TIME_BASE - Math.max(0, Math.floor(seconds)); },
     formatName: formatName,
     lastName: lastName
   };

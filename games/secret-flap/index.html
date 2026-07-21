@@ -122,7 +122,7 @@
       <div class="ov" id="startOverlay">
         <div class="crest">🐲</div>
         <h2>Flappy Dragonling</h2>
-        <p><b>Welcome, treasure hunter!</b> Reach a score of <b>15 or better</b> to uncover the next clue. Good luck!</p>
+        <p id="startBlurb"><b>Welcome, treasure hunter!</b> Reach a score of <b>15 or better</b> to uncover the next clue. Good luck!</p>
         <p style="font-size:.85rem;opacity:.85;margin-top:-.5rem">Tap, click, or press <b>Space</b> to flap through the towers.</p>
         <button class="play-btn" id="startBtn">Take Flight 🐲</button>
       </div>
@@ -188,6 +188,13 @@ let bird, pipes, spawnX, score, scroll, groundScroll, sceneTime, shake;
 let lastTs = 0, rafId = null;
 // treasure-hunt trial: clear this score and the game erupts, opening the next clue
 const WIN_SCORE = (window.HSGHunt && HSGHunt.STEPS[0] && HSGHunt.STEPS[0].goal) || 15;
+// High-score replay (opened with ?hs from the checkpoint): the score cap is gone -
+// a free-play run (no erupt-at-15, no clue hand-off) banking to the Top-10 board.
+const HIGH_SCORE = /[?&]hs\b/.test(location.search);
+if (HIGH_SCORE) {
+  const _sb = document.getElementById('startBlurb');
+  if (_sb) _sb.innerHTML = 'You’ve already cleared this trial — now <b>fly for a high score</b>. No finish line, just how far you can go!';
+}
 let winT = 0, boom = [], finishedWin = false;
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -345,7 +352,7 @@ function update(dt) {
       p.x -= sp * dt;
       if (!p.passed && p.x + PIPE_W < bx) {
         p.passed = true; score++; updateBadges();
-        if (score >= WIN_SCORE) { triggerWin(); break; }   // trial cleared - erupt & fly to the clue
+        if (!HIGH_SCORE && score >= WIN_SCORE) { triggerWin(); break; }   // trial only: erupt at 15 & fly to the clue
         if (window.HSGSound) HSGSound.correct();   // just a soft point chime - no streak banners
       }
       // collision (circle vs the two tower rects)
