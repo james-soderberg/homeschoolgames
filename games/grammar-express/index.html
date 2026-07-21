@@ -224,7 +224,10 @@ function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=randi(0
 
 // ---------- Parts of speech (labels only; no per-word colors) ----------
 const LABEL = { art:'Article', adj:'Adjective', noun:'Noun', pron:'Pronoun', verb:'Verb',
-                adv:'Adverb', prep:'Preposition', conj:'Conjunction', intj:'Interjection' };
+                adv:'Adverb', prep:'Preposition', conj:'Conjunction', intj:'Interjection',
+                // finer categories, unlocked on the advanced ramp
+                nounC:'Common Noun', nounP:'Proper Noun', verbA:'Action Verb', verbL:'Linking Verb',
+                conjC:'Coordinating Conjunction', conjS:'Subordinating Conjunction', ger:'Gerund', part:'Participle' };
 
 // ---------- Difficulty ramp: ordered levels, simple -> hardest ----------
 function S(str){ return str.trim().split(/\s+/).map(t=>{ const i=t.lastIndexOf('|'); return { w:t.slice(0,i), pos:t.slice(i+1) }; }); }
@@ -266,9 +269,53 @@ const LEVELS = [
     'Oh|intj the|art weary|adj travelers|noun sighed|verb and|conj gratefully|adv boarded|verb the|art warm|adj train|noun',
     'The|art tired|adj soldiers|noun guard|verb the|art narrow|adj bridge|noun tonight|adv',
     'The|art loyal|adj guard|noun watched|verb the|art iron|adj gate|noun closely|adv',
-    'Hooray|intj the|art brave|adj crew|noun cheered|verb loudly|adv when|conj the|art train|noun arrived|verb safely|adv' ]
+    'Hooray|intj the|art brave|adj crew|noun cheered|verb loudly|adv when|conj the|art train|noun arrived|verb safely|adv' ],
+  // 8: homographs - familiar words used as an unexpected part of speech (word-memory fails you here)
+  [ 'The|art tired|adj soldiers|noun train|verb hard|adv',
+    'A|art light|adj snow|noun covered|verb the|art quiet|adj valley|noun',
+    'The|art hungry|adj bears|noun fish|verb the|art icy|adj river|noun',
+    'The|art strong|adj workers|noun water|verb the|art young|adj fields|noun',
+    'The|art eager|adj sailors|noun ship|verb the|art heavy|adj crates|noun',
+    'The|art old|adj rangers|noun guard|verb the|art narrow|adj pass|noun' ],
+  // 9: proper vs common nouns
+  [ 'Sarah|nounP guided|verb the|art weary|adj crew|nounC safely|adv',
+    'Brave|adj John|nounP crossed|verb the|art frozen|adj river|nounC',
+    'The|art tired|adj captain|nounC trusted|verb London|nounP completely|adv',
+    'Old|adj Boston|nounP watched|verb the|art distant|adj storm|nounC',
+    'The|art loyal|adj guard|nounC protected|verb Sarah|nounP bravely|adv' ],
+  // 10: action vs linking verbs (linking verbs take a predicate adjective)
+  [ 'The|art old|adj captain|noun seemed|verbL nervous|adj',
+    'The|art frightened|adj horses|noun grew|verbL calm|adj slowly|adv',
+    'The|art tired|adj workers|noun built|verbA a|art sturdy|adj bridge|noun',
+    'The|art wide|adj river|noun became|verbL a|art fierce|adj torrent|noun',
+    'The|art brave|adj scout|noun felt|verbL afraid|adj',
+    'The|art loyal|adj soldiers|noun marched|verbA forward|adv bravely|adv' ],
+  // 11: coordinating vs subordinating conjunctions (compound + complex sentences)
+  [ 'The|art heavy|adj train|noun slowed|verbA because|conjS the|art old|adj bridge|noun groaned|verbA',
+    'The|art scouts|noun advanced|verbA but|conjC the|art enemy|noun quietly|adv retreated|verbA',
+    'The|art guard|noun waited|verbA until|conjS the|art fierce|adj storm|noun passed|verbA',
+    'The|art horses|noun bolted|verbA and|conjC the|art loaded|adj wagon|noun overturned|verbA',
+    'The|art crew|noun rested|verbA while|conjS the|art weary|adj captain|noun steered|verbA' ],
+  // 12: gerunds (verb+ing as a noun) vs participles (verb form as an adjective)
+  [ 'Running|ger exhausted|verbA the|art weary|adj horses|noun',
+    'The|art running|part water|noun quickly|adv froze|verbA',
+    'The|art broken|part lantern|noun flickered|verbA weakly|adv',
+    'Swimming|ger strengthened|verbA the|art young|adj soldiers|noun',
+    'The|art frightened|part crew|noun watched|verbA the|art burning|part bridge|noun',
+    'Escaping|ger seemed|verbL impossible|adj' ],
+  // 13: everything at once - fine categories throughout, dense homographs, multi-clause
+  [ 'Sarah|nounP trained|verbA the|art horses|nounC while|conjS the|art light|adj snow|nounC fell|verbA silently|adv',
+    'The|art exhausted|part crew|nounC rested|verbA but|conjC Boston|nounP still|adv seemed|verbL distant|adj',
+    'Running|ger tired|verbA the|art horses|nounC so|conjC the|art weary|adj riders|nounC camped|verbA',
+    'The|art burning|part bridge|nounC collapsed|verbA because|conjS the|art fierce|adj fire|nounC spread|verbA quickly|adv',
+    'Swimming|ger strengthened|verbA the|art tired|adj recruits|nounC yet|conjC the|art icy|adj river|nounC remained|verbL dangerous|adj' ]
 ];
 const MAX_LEVEL = LEVELS.length - 1;
+// Levels 0-7 advance one per train; the advanced tiers (8-13) take two trains
+// each so the climb stays gradual, then it holds at the hardest.
+function levelForTrain(n){ return n < 8 ? n : Math.min(MAX_LEVEL, 8 + Math.floor((n - 8) / 2)); }
+function trainForLevel(l){ return l < 8 ? l : 8 + 2 * (l - 8); }
+function tierTag(l){ return l >= 13 ? ' · Professor' : l >= 11 ? ' · Expert' : l >= 8 ? ' · Advanced' : ''; }
 const START_LIVES = 3;
 
 // ---------- DOM ----------
@@ -368,10 +415,12 @@ function startGame(){
 }
 
 function nextTrain(){
-  levelIdx = Math.min(trainCount, MAX_LEVEL);   // each train steps up one level, then holds at the hardest
+  levelIdx = levelForTrain(trainCount);
   trainCount++;
-  let spec = choice(LEVELS[levelIdx]);
-  if (LEVELS[levelIdx].length > 1){ let guard=0; while (spec===lastSpec && guard++<8) spec = choice(LEVELS[levelIdx]); }
+  // At the ceiling, draw from the two hardest tiers together for more variety.
+  var pool = levelIdx >= MAX_LEVEL ? LEVELS[MAX_LEVEL].concat(LEVELS[MAX_LEVEL-1]) : LEVELS[levelIdx];
+  let spec = choice(pool);
+  if (pool.length > 1){ let guard=0; while (spec===lastSpec && guard++<8) spec = choice(pool); }
   lastSpec = spec;
   train = S(spec).map(c => ({ w:c.w, pos:c.pos, secured:false, burned:false, fire:0 }));
   layoutTrain();
@@ -457,10 +506,11 @@ function wrongClick(){
 function updatePrompt(){
   if (!curPOS) return;
   promptChip.textContent = LABEL[curPOS];
+  promptChip.style.fontSize = LABEL[curPOS].length > 13 ? '1.02rem' : '';   // long fine-category labels
   promptCount.textContent = remaining>1 ? ('· find ' + remaining) : '';
 }
 function updateHud(){
-  trainBadge.textContent = '🚂 Sentence ' + Math.max(1, trainCount) + (levelIdx>=MAX_LEVEL ? ' · Max' : '');
+  trainBadge.textContent = '🚂 Sentence ' + Math.max(1, trainCount) + tierTag(levelIdx);
   scoreBadge.textContent = '⭐ ' + score;
   if (window.HSGGod && HSGGod.on){ heartsBadge.innerHTML = '∞'; return; }
   let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives ? '❤️' : '<span class="spent">🤍</span>';
@@ -901,7 +951,7 @@ HSGGod.watch(() => {
   HSGGod.picker({
     label:'Sentence level',
     levels: LEVELS.length,
-    onJump: n => { trainCount = clamp((n|0)-1, 0, MAX_LEVEL); if(state==='menu') startGame(); else nextTrain(); updateHud(); }
+    onJump: n => { trainCount = trainForLevel(clamp((n|0)-1, 0, MAX_LEVEL)); if(state==='menu') startGame(); else nextTrain(); updateHud(); }
   });
 });
 
