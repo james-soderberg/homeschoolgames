@@ -323,17 +323,17 @@ function initWeather(){
 function baseGeom(){
   const carH = clamp(Math.round(H*0.135), 46, 76);
   const carW = Math.round(carH*1.5);          // uniform, train-like proportions
-  return { carH, carW, gap: Math.round(carW*0.12), engineW: Math.round(carW*1.15), cabW: Math.round(carW*0.72) };
+  return { carH, carW, gap: Math.round(carW*0.12), engineW: Math.round(carW*1.15) };
 }
 function layoutTrain(){
   const g = baseGeom();
   const n = train.length;
-  let total = g.cabW + g.gap + n*g.carW + (n-1)*g.gap + g.gap + g.engineW;
+  let total = n*g.carW + (n-1)*g.gap + g.gap + g.engineW;
   const avail = W - 24;
   const scale = Math.min(1, avail/total);
   const carW = g.carW*scale, carH = g.carH*scale, gap = g.gap*scale;
   const baseY = Math.round(H*0.62);
-  let x = (W - total*scale)/2 + g.cabW*scale + gap;   // leave room for the caboose at the far left
+  let x = (W - total*scale)/2;
   for (let i=0;i<n;i++){
     train[i].x = x; train[i].cw = carW; train[i].h = carH; train[i].y = baseY - carH;
     // shrink the word font until it fits the plate
@@ -344,8 +344,7 @@ function layoutTrain(){
     train[i].fs = fs;
     x += carW + gap;
   }
-  layoutMeta = { scale, carW, carH, gap, baseY, engineX:x, engineW:g.engineW*scale, cabW:g.cabW*scale,
-                 cabX:(W - total*scale)/2 };
+  layoutMeta = { scale, carW, carH, gap, baseY, engineX:x, engineW:g.engineW*scale };
 }
 
 // ---------- Round flow ----------
@@ -487,21 +486,22 @@ function drawSky(){
   g.addColorStop(0,'#54687f'); g.addColorStop(0.55,'#8499ad'); g.addColorStop(1,'#c1d1dd');
   ctx.fillStyle = g; ctx.fillRect(0,0,W,H*0.66);
 }
+// all backdrop shapes are indexed by WORLD position and translated by `shift`,
+// so they drift smoothly left instead of re-randomizing (and glitching) each frame.
+function frac(v){ return v - Math.floor(v); }
 function drawMountains(){
-  const off = (scroll*0.06) % 520;
+  const seg = 110;
   for (let layer=0; layer<2; layer++){
+    const shift = scroll*(0.04 + layer*0.03);   // far ridge slowest
     const baseY = H*0.5 + layer*24, amp = 66 - layer*20, col = layer? '#a3b4c5':'#8397ad';
-    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-off-520, baseY);
-    for (let x=-off-520; x<=W+520; x+=110){
-      ctx.lineTo(x+55, baseY - amp*(0.5+0.5*Math.sin((x+layer*140)*0.009)));
-      ctx.lineTo(x+110, baseY);
-    }
-    ctx.lineTo(W+520, H); ctx.lineTo(-off-520, H); ctx.closePath(); ctx.fill();
+    const start = Math.floor((shift - seg)/seg), end = Math.ceil((shift + W + seg)/seg);
+    const peakAt = (k)=> baseY - amp*(0.5 + 0.5*Math.sin((k*seg + layer*140)*0.009));
+    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(start*seg - shift, baseY);
+    for (let k=start; k<=end; k++){ const sx = k*seg - shift; ctx.lineTo(sx+seg/2, peakAt(k)); ctx.lineTo(sx+seg, baseY); }
+    ctx.lineTo(end*seg - shift, H); ctx.lineTo(start*seg - shift, H); ctx.closePath(); ctx.fill();
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    for (let x=-off-520; x<=W+520; x+=110){
-      const peak = baseY - amp*(0.5+0.5*Math.sin((x+layer*140)*0.009));
-      ctx.beginPath(); ctx.moveTo(x+38, peak+16); ctx.lineTo(x+55, peak); ctx.lineTo(x+72, peak+16); ctx.closePath(); ctx.fill();
-    }
+    for (let k=start; k<=end; k++){ const sx = k*seg - shift, p = peakAt(k);
+      ctx.beginPath(); ctx.moveTo(sx+seg/2-15, p+16); ctx.lineTo(sx+seg/2, p); ctx.lineTo(sx+seg/2+15, p+16); ctx.closePath(); ctx.fill(); }
   }
 }
 function pine(x, baseY, h){
@@ -518,10 +518,11 @@ function pine(x, baseY, h){
   }
 }
 function drawTreeBand(y, spacing, h, speed, seed){
-  const off = (scroll*speed) % spacing;
-  for (let x=-off-spacing; x<=W+spacing; x+=spacing){
-    const j = ((Math.sin((x+seed)*12.9898)*43758.5453) % 1 + 1) % 1;
-    pine(x + j*spacing*0.4, y, h*(0.8+0.4*j));
+  const shift = scroll*speed;
+  const start = Math.floor((shift - spacing)/spacing), end = Math.ceil((shift + W + spacing)/spacing);
+  for (let k=start; k<=end; k++){
+    const j = frac(Math.abs(Math.sin((k+seed)*127.13)*43758.5453));   // stable per tree
+    pine(k*spacing - shift + j*spacing*0.4, y, h*(0.8+0.4*j));
   }
 }
 function drawGround(){
@@ -542,44 +543,60 @@ function drawRails(){
   ctx.strokeStyle = '#8593a0'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(0,y+1); ctx.lineTo(W,y+1); ctx.stroke();
 }
 
-// ---- horse + bandit rider ----
-function drawHorseRider(x, groundY, s, t, rise, torch){
-  ctx.save(); ctx.translate(x, groundY); ctx.scale(s, s);
-  const gA = Math.sin(t*7)*5, gB = Math.sin(t*7+Math.PI)*5;
-  // horse (brown)
-  ctx.strokeStyle = '#4a3423'; ctx.fillStyle = '#5a3f2a'; ctx.lineWidth = 4; ctx.lineCap='round';
-  ctx.beginPath(); ctx.moveTo(-10,0); ctx.lineTo(-10+gA,15); ctx.moveTo(10,0); ctx.lineTo(10+gB,15);
-  ctx.moveTo(-4,0); ctx.lineTo(-4+gB,15); ctx.moveTo(16,0); ctx.lineTo(16+gA,15); ctx.stroke();
-  ctx.beginPath(); ctx.ellipse(3,-9,17,9,0,0,7); ctx.fill();                 // body
-  ctx.beginPath(); ctx.moveTo(17,-12); ctx.quadraticCurveTo(27,-16,26,-24); ctx.lineTo(30,-24); ctx.quadraticCurveTo(33,-14,24,-8); ctx.closePath(); ctx.fill(); // neck+head
-  ctx.beginPath(); ctx.moveTo(29,-24); ctx.lineTo(31,-29); ctx.lineTo(33,-23); ctx.closePath(); ctx.fill(); // ear
-  ctx.beginPath(); ctx.moveTo(-14,-11); ctx.quadraticCurveTo(-24,-8,-22,2); ctx.quadraticCurveTo(-17,-4,-12,-6); ctx.closePath(); ctx.fill(); // tail
-  // rider (dark coat, hat, bandana). rise 0 = seated, 1 = standing tall (boarding a car)
-  const ry = -18 - rise*16;
-  ctx.fillStyle = '#2a2d38';
-  ctx.beginPath(); ctx.moveTo(-2, ry+10); ctx.lineTo(9, ry+10); ctx.lineTo(7, ry-6); ctx.lineTo(0, ry-6); ctx.closePath(); ctx.fill(); // torso
-  ctx.beginPath(); ctx.arc(3.5, ry-11, 5, 0, 7); ctx.fill();                 // head
-  ctx.fillStyle = '#8a2b2b'; ctx.fillRect(1, ry-11, 6, 3);                   // bandana
-  ctx.fillStyle = '#20222c'; ctx.beginPath(); ctx.ellipse(3.5, ry-15, 8, 2.5, 0, 0, 7); ctx.fill(); // hat brim
-  ctx.fillRect(0, ry-20, 7, 5);                                             // hat crown
-  // arm + torch when torching
+// ---- horse + bandit rider (side view, galloping) ----
+function horseLeg(hx, hy, swing, len, col){
+  ctx.strokeStyle = col; ctx.lineWidth = 3.4; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(hx+swing*0.45, hy+len*0.5); ctx.lineTo(hx+swing, hy+len); ctx.stroke();
+}
+function drawHorseRider(x, groundY, s, t, rise, torch, dir){
+  dir = dir || 1;
+  ctx.save(); ctx.translate(x, groundY-2); ctx.scale(s*dir, s);
+  const t2 = t*14;                                   // legs twice as fast
+  const fS = Math.sin(t2)*7, bS = Math.sin(t2+Math.PI)*7;
+  const HIP = -16, LEN = 17, dark = '#3a2818', midC = '#5a3f28', body = '#6b4a30';
+  // far legs first (lighter, behind body)
+  horseLeg(15, HIP, fS*0.8, LEN, midC);
+  horseLeg(-13, HIP, bS*0.8, LEN, midC);
+  // body
+  ctx.fillStyle = body;
+  ctx.beginPath(); ctx.ellipse(0,-20,24,9,0,0,7); ctx.fill();
+  ctx.beginPath(); ctx.arc(-16,-20,11,0,7); ctx.fill();          // haunch
+  ctx.beginPath(); ctx.arc(15,-21,9,0,7); ctx.fill();            // shoulder
+  // neck + head (muzzle reaches forward-down like a running horse)
+  ctx.beginPath(); ctx.moveTo(9,-26); ctx.lineTo(20,-27); ctx.lineTo(31,-42); ctx.lineTo(24,-44); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(24,-44); ctx.lineTo(33,-45); ctx.lineTo(41,-35); ctx.lineTo(36,-32); ctx.lineTo(27,-40); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(26,-44); ctx.lineTo(27,-49); ctx.lineTo(30,-44); ctx.closePath(); ctx.fill();   // ear
+  ctx.strokeStyle = dark; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(12,-27); ctx.lineTo(29,-43); ctx.stroke();   // mane
+  ctx.lineWidth = 3.4; ctx.beginPath(); ctx.moveTo(-24,-22); ctx.quadraticCurveTo(-35,-15,-33,-1); ctx.stroke();       // tail
+  ctx.lineWidth = 2.2; ctx.beginPath(); ctx.moveTo(-23,-20); ctx.quadraticCurveTo(-30,-13,-28,-2); ctx.stroke();
+  // rider astride
+  const ry = -30 - rise*16;
+  ctx.fillStyle = '#2b2f3a';
+  ctx.beginPath(); ctx.moveTo(-2,-22); ctx.lineTo(9,-24); ctx.lineTo(9,-16); ctx.lineTo(-2,-15); ctx.closePath(); ctx.fill();   // thigh over saddle
+  ctx.beginPath(); ctx.moveTo(-1,ry+11); ctx.lineTo(9,ry+11); ctx.lineTo(7,ry-3); ctx.lineTo(1,ry-3); ctx.closePath(); ctx.fill(); // torso
+  ctx.fillStyle = '#caa27a'; ctx.beginPath(); ctx.arc(4.5,ry-8,4,0,7); ctx.fill();     // face
+  ctx.fillStyle = '#8a2b2b'; ctx.fillRect(1.5,ry-8,6,2.6);                             // bandana
+  ctx.fillStyle = '#20222c'; ctx.beginPath(); ctx.ellipse(4.5,ry-12,8,2.4,0,0,7); ctx.fill(); ctx.fillRect(1,ry-17,7,5); // hat
+  ctx.strokeStyle = '#2b2f3a'; ctx.lineWidth = 3; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(7,ry+1); ctx.lineTo(19,ry+4); ctx.stroke();              // rein arm to the neck
   if (torch > 0){
-    ctx.strokeStyle = '#2a2d38'; ctx.lineWidth = 3;
-    ctx.beginPath(); ctx.moveTo(6, ry-4); ctx.lineTo(15, ry-16); ctx.stroke();
-    ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(15,ry-16); ctx.lineTo(19,ry-22); ctx.stroke();
-    const fl = 5 + 3*Math.sin(t*20);
-    const fg = ctx.createRadialGradient(19,ry-26,0,19,ry-26,fl+4);
+    ctx.strokeStyle = '#2b2f3a'; ctx.beginPath(); ctx.moveTo(6,ry-1); ctx.lineTo(15,ry-15); ctx.stroke();
+    ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(15,ry-15); ctx.lineTo(19,ry-21); ctx.stroke();
+    const fl = 5 + 3*Math.sin(t*22);
+    const fg = ctx.createRadialGradient(19,ry-25,0,19,ry-25,fl+4);
     fg.addColorStop(0,'rgba(255,240,150,0.95)'); fg.addColorStop(0.5,'rgba(240,150,40,0.9)'); fg.addColorStop(1,'rgba(200,60,30,0)');
-    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(19,ry-26,fl+4,0,7); ctx.fill();
+    ctx.fillStyle = fg; ctx.beginPath(); ctx.arc(19,ry-25,fl+4,0,7); ctx.fill();
   }
+  // near legs (darker, in front of body) - opposite phase for a gallop
+  horseLeg(12, HIP, bS, LEN, dark);
+  horseLeg(-16, HIP, fS, LEN, dark);
   ctx.restore();
 }
 function drawAmbientBandits(t){
   const gy = layoutMeta ? layoutMeta.baseY : H*0.62;
   for (const b of bandits){
-    // slow drift; the pack keeps pace and paces the train
-    b.x += Math.sin(t*0.6 + b.phase)*0.2;
-    drawHorseRider(b.x, gy + 20 + b.lane*4, 0.62 + b.lane*0.05, t*b.sp + b.phase, 0, 0);
+    b.x += Math.sin(t*0.6 + b.phase)*0.15;          // slight drift, pacing the train
+    drawHorseRider(b.x, gy + 20 + b.lane*4, 0.72 + b.lane*0.06, t*b.sp + b.phase, 0, 0, 1);
   }
 }
 function drawRaids(t){
@@ -588,20 +605,19 @@ function drawRaids(t){
     const car = train[r.carIdx]; if (!car) continue;
     const cx = car.x + car.cw/2;
     // phases: ride-in (0-0.9) | board (0.9-1.25) | torch (1.25-1.9) | ride-out (1.9-2.8)
-    let x, rise=0, torch=0, sc=0.9;
-    if (r.t < 0.9){ x = lerp(r.fromX, cx, r.t/0.9); }
+    let x, rise=0, torch=0, dir=1, sc=0.95;
+    if (r.t < 0.9){ x = lerp(r.fromX, cx, r.t/0.9); dir = (cx>=r.fromX?1:-1); }
     else if (r.t < 1.25){ x = cx; rise = (r.t-0.9)/0.35; }
     else if (r.t < 1.9){ x = cx; rise = 1; torch = 1; if (car.fire < 1) car.fire = Math.min(1, car.fire + 0.06); }
-    else { x = lerp(cx, cx - (W*0.6), (r.t-1.9)/0.9); rise = Math.max(0, 1-(r.t-1.9)/0.35); car.fire = 1; }
-    drawHorseRider(x, gy + 20, sc, t*1.4 + r.carIdx, rise, torch);
+    else { x = lerp(cx, cx - W*0.7, (r.t-1.9)/0.9); rise = Math.max(0, 1-(r.t-1.9)/0.35); car.fire = 1; dir = -1; }
+    drawHorseRider(x, gy + 20, sc, t*1.4 + r.carIdx, rise, torch, dir);
   }
 }
 
 // ---- train ----
 function drawTrain(t){
   if (!layoutMeta) return;
-  const { baseY, engineX, engineW, cabX, cabW } = layoutMeta;
-  drawCaboose(cabX, baseY, cabW, layoutMeta.carH, t);
+  const { baseY, engineX, engineW } = layoutMeta;
   for (let i=0;i<train.length;i++) drawCar(train[i], t, i);
   // couplers
   ctx.strokeStyle = '#2f3a44'; ctx.lineWidth = 3;
@@ -669,16 +685,6 @@ function drawCar(c, t, i){
     ctx.restore();
   }
   ctx.restore();
-}
-function drawCaboose(x, baseY, w, h, t){
-  const y = baseY - h, spin = scroll*0.08;
-  drawWheels(x+w*0.5, baseY+5, 2, w*0.4, spin);
-  ctx.fillStyle = '#232c34'; ctx.fillRect(x+3, y+h-2, w-6, 5);
-  const g = ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,'#b0413a'); g.addColorStop(1,'#8a2f2a');
-  ctx.fillStyle = g; roundRect(x, y, w, h, 5); ctx.fill();
-  ctx.fillStyle = '#7a2622'; roundRect(x+w*0.3, y-h*0.34, w*0.4, h*0.34+3, 3); ctx.fill();   // cupola
-  ctx.fillStyle = 'rgba(255,240,200,0.85)'; ctx.fillRect(x+w*0.4, y-h*0.24, w*0.2, h*0.16);
-  ctx.fillStyle = 'rgba(255,240,200,0.85)'; ctx.fillRect(x+w*0.14, y+h*0.34, w*0.22, h*0.28);
 }
 function drawEngine(x, baseY, ew, ch, t){
   const y = baseY - ch - 4, spin = scroll*0.08;
