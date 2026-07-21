@@ -49,11 +49,15 @@
       image: 'assets/img/hunt/four-stereogram.png',
       trial: 'Rebuild the scrambled map before the clock runs out.' },
 
-    // PLACEHOLDER - revealed once the slide puzzle is solved. Swap in the real
-    // next clue (word/game/goal or a directive) when it's ready.
-    { token: 'k8v3xq', placeholder: true,
-      riddle: 'The map is whole again, and the trail runs on. The next stretch is still being carved…',
-      trial: 'Coming soon.' }
+    // CHECKPOINT ONE - reached the moment the slide puzzle is solved. A real,
+    // revisitable milestone: players land here, claim a spot on the arrival
+    // leaderboard (ranked by who reached it first), and can return any time by
+    // typing "checkpoint one" on the home page. The rest of the trail past here
+    // is still being carved; arrival position earns a future head start.
+    { token: 'k8v3xq', checkpoint: 1, board: 'hsg_lb_checkpoint-1',
+      title: 'Checkpoint One',
+      riddle: 'The map is whole again — and the first checkpoint is yours.',
+      trial: 'Reach the first checkpoint.' }
   ];
 
   var TREASURE = {

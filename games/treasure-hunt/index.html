@@ -96,6 +96,44 @@
     .th-confetti { position:fixed; inset:0; pointer-events:none; z-index:60; overflow:hidden; }
     .th-confetti i { position:absolute; top:-14px; width:9px; height:14px; border-radius:2px; animation:conf 1.6s linear forwards; }
     @keyframes conf { to { transform:translateY(103vh) rotate(680deg); } }
+
+    /* ---------- checkpoint ---------- */
+    .checkpoint { text-align:center; }
+    .checkpoint .crest { font-size:3rem; line-height:1; }
+    .checkpoint h2 { font-family:var(--font-serif); font-size:1.95rem; margin:.5rem 0 .6rem; line-height:1.2;
+      background:linear-gradient(180deg,#f3e2b4,#c8a24a 60%,#8a6a26); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+    .cp-lead { color:#cfc2a2; font-family:var(--font-serif); font-size:1.12rem; line-height:1.55; max-width:40ch; margin:0 auto 1.6rem; }
+    .cp-you { font-family:var(--font-sans); font-size:.95rem; color:#e7c979; font-weight:700; margin:0 auto 1.5rem; line-height:1.5; }
+    .cp-you b { color:#f4ecd7; }
+
+    /* claim form */
+    .cp-claim { display:flex; gap:.5rem; max-width:400px; margin:0 auto 1.6rem; }
+    .cp-claim input { flex:1 1 auto; min-width:0; background:rgba(255,252,244,.06); border:none; border-bottom:2px solid #4a3f24;
+      color:#f4ecd7; font-family:var(--font-serif); font-size:1.2rem; text-align:center; padding:.5rem .4rem; outline:none; transition:border-color .2s; }
+    .cp-claim input:focus { border-bottom-color:var(--gold); }
+    .cp-claim input::placeholder { color:#6a5a3a; font-style:italic; font-size:.9rem; }
+    .cp-claim button { flex:0 0 auto; border:none; cursor:pointer; border-radius:8px; padding:0 1.1rem; font-family:var(--font-sans);
+      font-weight:800; font-size:.92rem; color:#1a1207; background:linear-gradient(180deg,var(--gold-lt),var(--gold)); box-shadow:0 4px 0 #7a5c1f; }
+    .cp-claim button:active { transform:translateY(3px); box-shadow:0 1px 0 #7a5c1f; }
+
+    /* arrival leaderboard */
+    .cp-board { max-width:440px; margin:0 auto 1.8rem; text-align:left; }
+    .cp-board h3 { font-family:var(--font-sans); font-size:.66rem; font-weight:800; letter-spacing:.2em; text-transform:uppercase;
+      color:#8a7526; text-align:center; margin:0 0 .85rem; }
+    .cp-cols { display:flex; align-items:center; gap:.7rem; padding:0 .8rem .4rem; font-family:var(--font-sans);
+      font-size:.6rem; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:#5f5540; }
+    .cp-cols .cp-rank, .cp-cols .cp-name, .cp-cols .cp-date { color:#5f5540; }
+    .cp-list { list-style:none; margin:0; padding:0; }
+    .cp-row { display:flex; align-items:center; gap:.7rem; padding:.55rem .8rem; border-radius:9px;
+      border:1px solid #241d12; margin-bottom:.4rem; background:#130f08; }
+    .cp-row.me { border-color:var(--gold); background:#1c1509; box-shadow:0 0 0 1px rgba(200,162,74,.35); }
+    .cp-rank { flex:0 0 1.9rem; text-align:center; font-family:var(--font-serif); font-weight:800; font-size:1.15rem; color:var(--gold-lt); }
+    .cp-name { flex:1 1 auto; font-family:var(--font-sans); font-weight:700; font-size:.98rem; color:#f0e6cf; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cp-date { flex:0 0 auto; font-family:var(--font-sans); font-size:.78rem; color:#9a8a63; font-variant-numeric:tabular-nums; }
+    .cp-empty { text-align:center; color:#8a7a55; font-family:var(--font-serif); font-style:italic; font-size:.95rem; padding:.9rem 0; }
+
+    .cp-return { font-family:var(--font-sans); font-size:.92rem; color:#a08a5e; line-height:1.6; max-width:36ch; margin:0 auto; }
+    .cp-return b { color:var(--gold-lt); }
   </style>
 </head>
 <body class="th-body">
@@ -154,6 +192,7 @@
 
   function renderClue() {
     var s = effCurrent(), n = effStep() + 1;
+    if (s.checkpoint) { renderCheckpoint(s); return; }   // a real, revisitable milestone
     if (s.placeholder) {   // trail not yet carved past here - show a gentle "coming soon"
       $('content').innerHTML =
         '<div class="th-tag">Clue ' + n + ' of ' + N + '</div>' +
@@ -215,6 +254,144 @@
     while (m.scrollWidth > avail && size > 7) { size -= 1; m.style.fontSize = size + 'px'; }
   }
   window.addEventListener('resize', function () { if (document.querySelector('.riddle.mono')) fitMono(); });
+
+  // ---------- checkpoint: a real milestone with a shared "who got here first" board ----------
+  // Ranking is by ARRIVAL time: every arrival posts a constant score, so the
+  // leaderboard's ts-ascending tiebreak orders players by who reached it earliest.
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function fmtDate(ts) {
+    var d = new Date(Number(ts)); if (isNaN(d.getTime())) return '';
+    return MON[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  }
+  function remoteOK() { return typeof fetch === 'function' && /^https?:$/.test(location.protocol); }
+  function fmtName(raw) {
+    if (window.HSGStreak && HSGStreak.formatName) return HSGStreak.formatName(raw);
+    var s = (raw == null ? '' : String(raw)).replace(/\s+/g, ' ').trim();
+    return s ? s.slice(0, 18) : 'Anonymous';
+  }
+
+  // this player's own arrival record for a checkpoint: { name, ts, synced, pos }
+  function meKey(cp) { return 'hsg_cp' + cp + '_me'; }
+  function loadMe(cp) { try { return JSON.parse(localStorage.getItem(meKey(cp))) || null; } catch (e) { return null; } }
+  function saveMe(cp, m) { try { localStorage.setItem(meKey(cp), JSON.stringify(m)); } catch (e) {} }
+
+  function postArrival(board, name, ts) {
+    if (!remoteOK()) return Promise.resolve(null);
+    return fetch('/api/score', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ board: board, name: name, score: 1, hinted: 0, ts: ts })
+    }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+  function fetchArrivals(board) {
+    if (!remoteOK()) return Promise.resolve(null);
+    return fetch('/api/top?board=' + encodeURIComponent(board))
+      .then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+  }
+
+  function renderCheckpoint(s) {
+    var me = loadMe(s.checkpoint);
+    $('content').innerHTML =
+      '<div class="checkpoint">' +
+        '<div class="crest">🚩</div>' +
+        '<div class="th-tag">' + esc(s.title || ('Checkpoint ' + s.checkpoint)) + '</div>' +
+        '<h2>Congratulations — you’ve reached the first checkpoint!</h2>' +
+        '<p class="cp-lead">The rest of the treasure hunt is still being developed. When it opens, ' +
+          'you’ll receive a head start based on your position on this leaderboard.</p>' +
+        '<div id="cpClaim"></div>' +
+        '<div class="cp-board" id="cpBoard">' +
+          '<h3>Checkpoint One · who got here first</h3>' +
+          '<div class="cp-empty">Loading the leaderboard…</div>' +
+        '</div>' +
+        '<p class="cp-return">To return to this checkpoint any time, just type ' +
+          '<b>checkpoint one</b> on the home page.</p>' +
+      '</div>';
+    if (window.HSGSound && HSGSound.finish && !me) HSGSound.finish(true);
+    if (!me) confetti();
+    drawClaim(s, me);
+    refreshBoard(s, me);
+  }
+
+  // the name-claim form (first arrival) or the "you claimed your spot" status line
+  function drawClaim(s, me) {
+    var wrap = $('cpClaim'); if (!wrap) return;
+    if (me) {
+      wrap.innerHTML = '<div class="cp-you">You claimed your place as <b>' + esc(me.name) +
+        '</b> on ' + esc(fmtDate(me.ts)) + '.</div>';
+      return;
+    }
+    var prefill = (window.HSGStreak && HSGStreak.lastName && HSGStreak.lastName()) || '';
+    wrap.innerHTML =
+      '<form class="cp-claim" id="cpForm" autocomplete="off">' +
+        '<input id="cpName" type="text" maxlength="24" placeholder="Enter your name to claim your spot" ' +
+          'value="' + esc(prefill) + '" autocorrect="off" spellcheck="false" aria-label="Your name">' +
+        '<button type="submit">Claim my place</button>' +
+      '</form>';
+    var form = $('cpForm'), input = $('cpName');
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var name = fmtName(input.value);
+      var m = { name: name, ts: Date.now(), synced: false };
+      saveMe(s.checkpoint, m);
+      try { localStorage.setItem('hsg_player_name', input.value.trim()); } catch (e2) {}  // share name with other games
+      if (window.HSGSound && HSGSound.correct) HSGSound.correct();
+      confetti();
+      drawClaim(s, m);           // swap the form for the status line
+      postArrival(s.board, m.name, m.ts).then(function (res) {
+        if (res && Array.isArray(res.top)) { m.synced = true; if (res.rank) m.pos = res.rank; saveMe(s.checkpoint, m); }
+        refreshBoard(s, m);
+      });
+      refreshBoard(s, m);        // optimistic paint while the POST is in flight
+    });
+    setTimeout(function () { try { input.focus(); } catch (e) {} }, 40);
+  }
+
+  function refreshBoard(s, me) {
+    // retry a lost arrival post so a dropped POST never costs the player their spot
+    if (me && !me.synced && remoteOK()) {
+      postArrival(s.board, me.name, me.ts).then(function (res) {
+        if (res && Array.isArray(res.top)) { me.synced = true; if (res.rank) me.pos = res.rank; saveMe(s.checkpoint, me); drawBoard(s, me, res.top); }
+      });
+    }
+    drawBoard(s, me, null);      // instant paint from what we already know
+    fetchArrivals(s.board).then(function (list) { drawBoard(s, me, list); });
+  }
+
+  function drawBoard(s, me, serverList) {
+    var el = $('cpBoard'); if (!el) return;
+    var rows = Array.isArray(serverList)
+      ? serverList.filter(function (e) { return e && typeof e.name === 'string'; })
+          .map(function (e) { return { name: e.name, ts: Number(e.ts) || 0 }; })
+      : [];
+    // make sure the player sees themselves even before the server reflects the write
+    if (me && !rows.some(function (r) { return r.ts === me.ts; })) rows.push({ name: me.name, ts: me.ts });
+    rows.sort(function (a, b) { return a.ts - b.ts; });   // earliest arrival first
+    rows = rows.slice(0, 10);
+
+    var head = '<h3>Checkpoint One · who got here first</h3>';
+    if (!rows.length) {
+      el.innerHTML = head + '<div class="cp-empty">Be the first to reach this checkpoint.</div>';
+      return;
+    }
+    var mePos = (me && me.pos) ? me.pos : -1;
+    var lis = rows.map(function (r, i) {
+      var isMe = me && r.ts === me.ts;
+      if (isMe && mePos < 0) mePos = i + 1;
+      return '<li class="cp-row' + (isMe ? ' me' : '') + '">' +
+          '<span class="cp-rank">' + (i + 1) + '</span>' +
+          '<span class="cp-name">' + esc(r.name) + '</span>' +
+          '<span class="cp-date">' + esc(fmtDate(r.ts)) + '</span>' +
+        '</li>';
+    }).join('');
+    el.innerHTML = head +
+      '<div class="cp-cols"><span class="cp-rank">#</span><span class="cp-name">Pioneer</span><span class="cp-date">Arrived</span></div>' +
+      '<ol class="cp-list">' + lis + '</ol>';
+
+    if (me && mePos > 0) {
+      var you = document.querySelector('.cp-you');
+      if (you) you.innerHTML = 'You’re checkpoint pioneer <b>#' + mePos +
+        '</b> — claimed on ' + esc(fmtDate(me.ts)) + '.';
+    }
+  }
 
   function renderTreasure() {
     $('content').innerHTML =
