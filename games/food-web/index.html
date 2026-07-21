@@ -5,15 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="canonical" href="https://homeschoolgames.org/games/food-web/">
   <meta property="og:url" content="https://homeschoolgames.org/games/food-web/">
-  <meta name="description" content="Keep the web alive — a living food-chain game. Hunt to survive, but keep the herd and the grass in balance or the whole ecosystem crashes. A free biology game for kids and homeschoolers about carrying capacity, predator-prey cycles, and balance.">
+  <meta name="description" content="Keep the habitat alive, a living food-chain game. Hunt to survive, but keep the herd and the grass in balance or the whole habitat crashes. A free biology game for kids and homeschoolers about carrying capacity, predator-prey cycles, and balance.">
   <meta name="robots" content="index, follow">
   <meta name="theme-color" content="#2A5C3F">
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="HomeschoolGames">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="Keep the Web Alive">
-  <meta property="og:description" content="Hunt to survive — but keep the herd and the grass balanced, or the ecosystem collapses. Learn predator-prey cycles and carrying capacity by living them.">
-  <title>Keep the Web Alive — Ecosystem Balance Game | HomeschoolGames</title>
+  <meta property="og:title" content="Keep the Habitat Alive">
+  <meta property="og:description" content="Hunt to survive, but keep the herd and the grass balanced, or the habitat collapses. Learn predator-prey cycles and carrying capacity by living them.">
+  <title>Keep the Habitat Alive, an Ecosystem Balance Game | HomeschoolGames</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -89,7 +89,7 @@
 
 <div class="fw-page">
   <div class="fw-top">
-    <h1>🦊 Keep the Web Alive</h1>
+    <h1>🦊 Keep the Habitat Alive</h1>
     <div class="stat-group">
       <div class="stat-badge" id="biomeBadge">🌾 Meadow</div>
       <div class="stat-badge" id="scoreBadge">🌍 0</div>
@@ -102,18 +102,18 @@
 
     <div class="fw-ov" id="startOverlay">
       <div class="crest">🦊</div>
-      <h2>Keep the Web Alive</h2>
+      <h2>Keep the Habitat Alive</h2>
       <div class="chain">
         <span>🌿<small>Grass</small></span><span class="arw">→</span>
         <span>🐇<small>Rabbits</small></span><span class="arw">→</span>
         <span>🦊<small>You</small></span><span class="arw">→</span>
         <span>🦅<small>Hawk</small></span>
       </div>
-      <p>You're the fox. <b>Hunt rabbits to survive</b> — but the rabbits keep the grass in check, and
-         the grass feeds the rabbits. <b>Eat too many</b> and the herd vanishes and <i>you</i> starve;
-         <b>eat too few</b> and the rabbits strip the meadow bare and crash. Hold the web in <b>balance
-         and last as long as you can</b> — it keeps getting harder: <b>droughts, more hawks, disease.</b>
-         And <b>flee the hawk 🦅.</b></p>
+      <p>You are the fox. <b>Hunt rabbits to survive.</b> The rabbits keep the grass in check, and
+         the grass feeds the rabbits. <b>Eat too many</b> and the herd vanishes and <i>you</i> starve.
+         <b>Eat too few</b> and the rabbits strip the meadow bare and crash. Keep the habitat in
+         <b>balance and last as long as you can.</b> It gets harder over time, with <b>droughts, more
+         hawks, and disease.</b> And <b>flee the hawk 🦅.</b></p>
       <div class="diff-row">
         <button class="diff-btn" data-biome="meadow"><span class="d-name">🌾 Meadow</span><span class="d-desc">Gentle · forgiving swings</span></button>
         <button class="diff-btn" data-biome="savanna"><span class="d-name">🌍 Savanna</span><span class="d-desc">Fast booms & busts</span></button>
@@ -123,7 +123,7 @@
 
     <div class="fw-ov hidden" id="overOverlay">
       <div class="crest" id="overCrest">💀</div>
-      <h2 id="overTitle">The web unraveled</h2>
+      <h2 id="overTitle">The habitat collapsed</h2>
       <p id="overWhy"></p>
       <ul class="final-list">
         <li><span>⏱ You survived</span><b id="fTime">0:00</b></li>
@@ -134,7 +134,7 @@
     </div>
   </div>
 
-  <p class="fw-hint">The <b>graph</b> shows grass 🌿 and rabbits 🐇 rising and falling — a predator-prey cycle. Keep both off the floor.</p>
+  <p class="fw-hint">The <b>graph</b> shows grass 🌿 and rabbits 🐇 rising and falling, a predator-prey cycle. Keep both off the floor.</p>
 </div>
 
 <footer class="site-footer"><a href="../../index.html">homeschoolgames.org</a></footer>
@@ -148,12 +148,12 @@
 <script src="../../assets/js/godmode.js"></script>
 <script>
 // ============================================================
-//  KEEP THE WEB ALIVE — a living predator-prey simulation.
+//  KEEP THE HABITAT ALIVE. A living predator-prey simulation.
 //  Grass grows (logistic). Rabbits eat grass, breed, and starve.
-//  You (fox) eat rabbits to live, but must keep the herd balanced:
-//  overhunt → herd crashes → you starve; underhunt → rabbits strip
-//  the grass → the herd crashes anyway. There is a carrying-capacity
-//  sweet spot. Flee the hawk. Score = time the web stays balanced.
+//  You (the fox) eat rabbits to live, but must keep the herd balanced.
+//  Overhunt and the herd crashes and you starve. Underhunt and the
+//  rabbits strip the grass and the herd crashes anyway. There is a
+//  carrying-capacity sweet spot. Flee the hawk. Score is survival time.
 // ============================================================
 
 const BIOMES = {
@@ -173,7 +173,7 @@ const BIOMES = {
   },
 };
 // difficulty escalates with survival time (per second): grass grows slower, and
-// both the herbivores' and your metabolism speed up — the web gets harder to hold.
+// both the herbivores' and your metabolism speed up, so the habitat gets harder to hold.
 const RAMP = { grass: 0.0011, decay: 0.0009, fox: 0.0010 };
 
 // ---------- DOM ----------
@@ -211,7 +211,7 @@ function setupCanvas() { fit.trigger(true); }
 
 // ---------- leaderboard ----------
 const rail = HSGStreak.init({
-  gameId: 'food-web', gameName: 'Keep the Web Alive', minStreak: 1,
+  gameId: 'food-web', gameName: 'Keep the Habitat Alive', minStreak: 1,
   unit: 'points', level: 'all', levelName: 'All Biomes',
   mount: document.getElementById('streakRail')
 });
@@ -323,7 +323,7 @@ function update(dt) {
           for (let j=0;j<grass.length;j++) if (grass[j]===g) { grass.splice(j,1); break; }
           h.e = Math.min(140, h.e + B.herbEat);
         }
-      } else { h.vx += rand(-30,30)*dt; h.vy += rand(-30,30)*dt; }   // no grass — wander & starve
+      } else { h.vx += rand(-30,30)*dt; h.vy += rand(-30,30)*dt; }   // no grass, so wander and starve
     }
     cap(h, B.herbSpeed * (fleeing ? 1.25 : 1));
     h.x += h.vx*dt; h.y += h.vy*dt; bounce(h);
@@ -344,7 +344,7 @@ function update(dt) {
     else { const r = nearest(p.x, p.y, herbs, 999); if (r) { tx = r.x; ty = r.y; } else { tx = p.x + rand(-40,40); ty = p.y + rand(-40,40); } }
     const d = Math.hypot(tx-p.x, ty-p.y)||1; p.vx += (tx-p.x)/d*p.spd*dt*3.5; p.vy += (ty-p.y)/d*p.spd*dt*3.5;
     cap(p, p.spd); p.x += p.vx*dt; p.y += p.vy*dt; bounce(p);
-    // hawk also culls rabbits (a second regulator) — cooldown so it doesn't decimate the herd
+    // hawk also culls rabbits (a second regulator), with a cooldown so it doesn't over-cull
     p.eatCd -= dt;
     if (p.eatCd <= 0) for (let i = herbs.length-1; i>=0; i--) { const h = herbs[i]; if (d2(p.x,p.y,h.x,h.y) < (p.r+h.r*0.7)*(p.r+h.r*0.7)) { herbs.splice(i,1); burst(h.x,h.y,'#e8b',6); p.eatCd = B.hawkCd; break; } }
     // hawk catches you
@@ -377,18 +377,21 @@ function update(dt) {
   if (energy <= 0) { energy = 0; gameOver(herbs.length < 3 ? 'starve-crash' : 'starve'); return; }
 
   // --- ecosystem health & scoring ---
-  const gf = clamp(grass.length / B.grassK, 0, 1.3);
+  // balance PEAKS when grass sits near half full and the herd is near its ideal size,
+  // and falls toward empty as either strays too far in EITHER direction.
+  const gf = grass.length / B.grassK;
   const rf = herbs.length;
-  const gh = clamp((gf - 0.08) / 0.22, 0, 1) * clamp((1.25 - gf) / 0.35, 0, 1);   // healthy grass band
-  const rh = clamp((rf - 1) / 4, 0, 1) * clamp((B.herbCap - rf) / 14, 0.2, 1);     // healthy herd band
-  health = Math.min(gh, rh);
-  if (health > 0.55) { healthySince += dt; } else healthySince = 0;
+  const herdIdeal = B.herbCap * 0.3;
+  const gBal = clamp(1 - Math.abs(gf - 0.5) / 0.42, 0, 1);
+  const rBal = clamp(1 - Math.abs(rf - herdIdeal) / herdIdeal, 0, 1);
+  health = Math.min(gBal, rBal);
+  if (health > 0.6) { healthySince += dt; } else healthySince = 0;
 
   // --- teaching toasts driven by what's happening ---
-  if (grass.length <= 2 && rf > 6) say('overgraze', '🌿 Overgrazed! The '+B.herbName+' stripped the field bare — now they\'ll starve.', '#ff9d8a');
-  else if (rf >= B.herbCap - 4) say('boom', '🐇 '+cap1(B.herbName)+' are booming — they\'ll eat the '+B.plant+' faster than it grows!', '#ffd257');
-  else if (rf <= 2) say('crash', '⚠ The herd crashed. Ease off — let them recover, or you\'ll starve too.', '#ff9d8a');
-  else if (healthySince > 16) { say('balance', '✅ Balanced! A healthy web self-regulates — this is carrying capacity.', '#9ff0b4'); healthySince = 0; }
+  if (grass.length <= 2 && rf > 6) say('overgraze', '🌿 Overgrazed. The '+B.herbName+' stripped the field bare and now they will starve.', '#ff9d8a');
+  else if (rf >= B.herbCap - 4) say('boom', '🐇 '+cap1(B.herbName)+' are booming. They will eat the '+B.plant+' faster than it grows.', '#ffd257');
+  else if (rf <= 2) say('crash', '⚠ The herd crashed. Ease off and let them recover, or you will starve too.', '#ff9d8a');
+  else if (healthySince > 16) { say('balance', '✅ Balanced. This is the carrying capacity, the size the habitat can support.', '#9ff0b4'); healthySince = 0; }
 
   // --- history sample for the graph ---
   histT += dt; if (histT >= 0.35) { histT = 0; hist.push({ g: grass.length / B.grassK, r: herbs.length / B.herbCap }); if (hist.length > 90) hist.shift(); }
@@ -397,21 +400,21 @@ function update(dt) {
 }
 function cap1(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
 
-// New threats and pressures appear as the run goes on — the "more variables" ramp.
+// New threats and pressures appear as the run goes on (the "more variables" ramp).
 function runEvents() {
   if (droughtEnd && survT > droughtEnd) { droughtMul = 1; droughtEnd = 0; }
   if (!evt.drought && survT >= 55) { evt.drought = true; droughtMul = 0.68; droughtEnd = survT + 22;
-    say('e-drought', '☀️ A dry spell — the ' + B.plant + ' grows slower. Ride out the lean season.', '#ffd257'); }
+    say('e-drought', '☀️ A dry spell. The ' + B.plant + ' grows slower for a while.', '#ffd257'); }
   if (!evt.hawk2 && survT >= 100) { evt.hawk2 = true; spawnPred();
-    say('e-h2', '🦅 A second ' + B.apexName + ' moves in — more danger overhead!', '#ff9d8a'); shake = Math.max(shake, 6); }
+    say('e-h2', '🦅 A second ' + B.apexName + ' moves in. More danger overhead.', '#ff9d8a'); shake = Math.max(shake, 6); }
   if (!evt.skit && survT >= 145) { evt.skit = true; skit = 42;
-    say('e-skit', '🐇 The ' + B.herbName + ' have grown wary — harder to catch now.', '#ffd257'); }
+    say('e-skit', '🐇 The ' + B.herbName + ' have grown wary. They are harder to catch now.', '#ffd257'); }
   if (!evt.disease && survT >= 185) { evt.disease = true;
     const k = Math.floor(herbs.length * 0.3);
     for (let i = 0; i < k && herbs.length; i++) { const j = (Math.random()*herbs.length)|0; burst(herbs[j].x, herbs[j].y, '#caa', 6); herbs.splice(j, 1); }
-    say('e-dis', '🦠 Disease sweeps the herd — a sudden crash. Let them recover!', '#ff9d8a'); shake = Math.max(shake, 10); }
+    say('e-dis', '🦠 Disease sweeps the herd. Let them recover.', '#ff9d8a'); shake = Math.max(shake, 10); }
   if (!evt.hawk3 && survT >= 265) { evt.hawk3 = true; spawnPred();
-    say('e-h3', '🦅 The skies fill with ' + B.apexName + 's — how long can you last?', '#ff9d8a'); shake = Math.max(shake, 8); }
+    say('e-h3', '🦅 More ' + B.apexName + 's arrive. Keep going.', '#ff9d8a'); shake = Math.max(shake, 8); }
 }
 
 function loseLife(reason) {
@@ -427,10 +430,10 @@ function loseLife(reason) {
 function gameOver(reason) {
   state = 'dead';
   const el = id => document.getElementById(id);
-  let crest = '💀', title = 'The web unraveled', why;
-  if (reason === 'hawk') { crest='🦅'; title='The hawk caught you'; why = 'You were eaten by the '+B.apexName+' — <span class="why">flee what sits above you on the food chain.</span>'; }
-  else if (reason === 'starve-crash') { crest='📉'; title='Trophic collapse'; why = 'The '+B.herbName+' you hunt crashed, and with no prey left, you starved. <span class="why">A predator can\'t outlast its own food supply — hunt sustainably.</span>'; }
-  else { crest='🍽️'; title='You starved'; why = 'You didn\'t eat enough to keep going. <span class="why">Even a top predator has to feed — but leave enough of the herd to bounce back.</span>'; }
+  let crest = '💀', title = 'The habitat collapsed', why;
+  if (reason === 'hawk') { crest='🦅'; title='The hawk caught you'; why = 'The '+B.apexName+' ate you. <span class="why">Flee what sits above you on the food chain.</span>'; }
+  else if (reason === 'starve-crash') { crest='📉'; title='Food chain collapse'; why = 'The '+B.herbName+' you hunt crashed, and with no prey left you starved. <span class="why">A predator cannot outlast its own food supply. Hunt sustainably.</span>'; }
+  else { crest='🍽️'; title='You starved'; why = 'You did not eat enough to keep going. <span class="why">Even a top predator has to feed. Just leave enough of the herd to bounce back.</span>'; }
   el('overCrest').textContent = crest; el('overTitle').textContent = title; el('overWhy').innerHTML = why;
   el('fTime').textContent = fmtTime(survT);
   el('fHerd').textContent = peakHerd;
@@ -442,7 +445,7 @@ function gameOver(reason) {
 function fmtTime(s) { s = Math.max(0, Math.floor(s)); const m = Math.floor(s/60); return m + ':' + String(s%60).padStart(2,'0'); }
 function updateBadges() {
   document.getElementById('scoreBadge').textContent = '⏱ ' + fmtTime(survT);
-  document.getElementById('livesBadge').textContent = (window.HSGGod && HSGGod.on) ? '∞' : (B.you.repeat(Math.max(0, lives)) || '—');
+  document.getElementById('livesBadge').textContent = (window.HSGGod && HSGGod.on) ? '∞' : (B.you.repeat(Math.max(0, lives)) || '');
 }
 
 // ---------- render ----------
@@ -493,7 +496,7 @@ function drawHud() {
   if (state === 'menu') return;
   const bw = Math.min(230, W*0.32);
   bar(16, 16, bw, energy/100, energy>35?'#ff9d5a':(energy>15?'#ffd257':'#ff6b5a'), 'YOUR ENERGY');
-  bar(W - Math.min(230,W*0.32) - 16, 16, Math.min(230,W*0.32), health, health>0.5?'#7ee08a':(health>0.25?'#ffd257':'#ff6b5a'), 'WEB BALANCE →');
+  bar(W - Math.min(230,W*0.32) - 16, 16, Math.min(230,W*0.32), health, health>0.5?'#7ee08a':(health>0.25?'#ffd257':'#ff6b5a'), 'HABITAT BALANCE');
 
   // live population graph (bottom-left)
   const gw = Math.min(300, W - 40), gh = 78, gx = 16, gy = H - gh - 14;
