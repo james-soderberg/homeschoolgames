@@ -18,7 +18,6 @@ window.ARTQUIZ = [
   {"t":"Whistler's Mother","a":"James McNeill Whistler","y":1871,"e":"Realism","s":"whistler-s-mother"},
   {"t":"The Gulf Stream","a":"Winslow Homer","y":1899,"e":"Realism","s":"the-gulf-stream"},
   {"t":"Impression, Sunrise","a":"Claude Monet","y":1872,"e":"Impressionism","s":"impression-sunrise"},
-  {"t":"Haystacks","a":"Claude Monet","y":1890,"e":"Impressionism","s":"haystacks"},
   {"t":"Water Lilies","a":"Claude Monet","y":1916,"e":"Impressionism","s":"water-lilies"},
   {"t":"Bal du moulin de la Galette","a":"Pierre-Auguste Renoir","y":1876,"e":"Impressionism","s":"bal-du-moulin-de-la-galette"},
   {"t":"Luncheon of the Boating Party","a":"Pierre-Auguste Renoir","y":1881,"e":"Impressionism","s":"luncheon-of-the-boating-party"},
@@ -27,8 +26,6 @@ window.ARTQUIZ = [
   {"t":"The Starry Night","a":"Vincent van Gogh","y":1889,"e":"Post-Impressionism","s":"the-starry-night"},
   {"t":"Sunflowers","a":"Vincent van Gogh","y":1888,"e":"Post-Impressionism","s":"sunflowers"},
   {"t":"Café Terrace at Night","a":"Vincent van Gogh","y":1888,"e":"Post-Impressionism","s":"cafe-terrace-at-night"},
-  {"t":"The Bedroom","a":"Vincent van Gogh","y":1888,"e":"Post-Impressionism","s":"the-bedroom"},
-  {"t":"Irises","a":"Vincent van Gogh","y":1889,"e":"Post-Impressionism","s":"irises"},
   {"t":"A Sunday on La Grande Jatte","a":"Georges Seurat","y":1886,"e":"Post-Impressionism","s":"a-sunday-on-la-grande-jatte"},
   {"t":"The Card Players","a":"Paul Cézanne","y":1895,"e":"Post-Impressionism","s":"the-card-players"},
   {"t":"Tiger in a Tropical Storm","a":"Henri Rousseau","y":1891,"e":"Post-Impressionism","s":"tiger-in-a-tropical-storm"},
@@ -36,5 +33,14 @@ window.ARTQUIZ = [
   {"t":"The Kiss","a":"Gustav Klimt","y":1908,"e":"Modern","s":"the-kiss"},
   {"t":"Composition with Red, Blue and Yellow","a":"Piet Mondrian","y":1930,"e":"Modern","s":"composition-with-red-blue-and-yellow"},
   {"t":"American Gothic","a":"Grant Wood","y":1930,"e":"Modern","s":"american-gothic"},
-  {"t":"Nighthawks","a":"Edward Hopper","y":1942,"e":"Modern","s":"nighthawks"}
+  {"t":"Nighthawks","a":"Edward Hopper","y":1942,"e":"Modern","s":"nighthawks"},
+  {"t":"The Calling of Saint Matthew","a":"Caravaggio","y":1600,"e":"Baroque","s":"the-calling-of-saint-matthew"},
+  {"t":"Young Hare","a":"Albrecht Dürer","y":1502,"e":"Renaissance","s":"young-hare"},
+  {"t":"View of Toledo","a":"El Greco","y":1600,"e":"Renaissance","s":"view-of-toledo"},
+  {"t":"The Hunters in the Snow","a":"Pieter Bruegel the Elder","y":1565,"e":"Renaissance","s":"the-hunters-in-the-snow"},
+  {"t":"The Ambassadors","a":"Hans Holbein the Younger","y":1533,"e":"Renaissance","s":"the-ambassadors"},
+  {"t":"Napoleon Crossing the Alps","a":"Jacques-Louis David","y":1801,"e":"Neoclassicism","s":"napoleon-crossing-the-alps"},
+  {"t":"The Parasol","a":"Francisco Goya","y":1777,"e":"Romanticism","s":"the-parasol"},
+  {"t":"The Boating Party","a":"Mary Cassatt","y":1894,"e":"Impressionism","s":"the-boating-party"},
+  {"t":"Carnation, Lily, Lily, Rose","a":"John Singer Sargent","y":1886,"e":"Realism","s":"carnation-lily-lily-rose"}
 ];
