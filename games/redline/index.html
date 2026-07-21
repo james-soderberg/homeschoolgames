@@ -192,7 +192,7 @@
 
   // ---- treasure-hunt mode (opened from Word Racer's secret "treasure" road) ----
   var HUNT_MODE = /[?&]hunt\b/.test(location.search);   // ?hunt -> checkpoint run
-  var GOAL_FEET = 10 * 5280;                            // the checkpoint: ten miles
+  var GOAL_FEET = 15 * 5280;                            // the checkpoint: fifteen miles
   var checkpointDone = false;
   function milesStr(feet) { return (feet / 5280).toFixed(2); }
 
@@ -573,7 +573,7 @@
 
     roadDist += v * dt * DUNIT;
     distance += v * dt * 3.0;   // feet (shown as miles)
-    // treasure-hunt checkpoint: reach ten miles, bank the run, reveal the next clue
+    // treasure-hunt checkpoint: reach fifteen miles, bank the run, reveal the next clue
     if (HUNT_MODE && !checkpointDone && distance >= GOAL_FEET) { reachCheckpoint(); return; }
 
     // steering - glide toward the target lane
@@ -658,7 +658,7 @@
   // ================= HUD / overlays =================
   function updateHUD() {
     $('spd').textContent = Math.round(v * 1.5);
-    $('dist').textContent = HUNT_MODE ? (milesStr(distance) + ' / 10 mi') : (milesStr(distance) + ' mi');
+    $('dist').textContent = HUNT_MODE ? (milesStr(distance) + ' / 15 mi') : (milesStr(distance) + ' mi');
     $('hudBest').textContent = best ? 'BEST ' + milesStr(best) + ' mi' : '';
   }
   function floatFx(txt, x, y, color) {
@@ -686,7 +686,7 @@
     });
   }
 
-  // Treasure-hunt checkpoint: the player has driven ten miles. Bank the run to the
+  // Treasure-hunt checkpoint: the player has driven fifteen miles. Bank the run to the
   // leaderboard (same board, so it counts) and surface the next clue.
   function reachCheckpoint() {
     checkpointDone = true;
@@ -696,7 +696,7 @@
     var finalM = Math.round(distance);
     if (finalM > best) { best = finalM; saveBest(); }
     $('overTitle').textContent = 'CHECKPOINT REACHED';
-    $('overSub').textContent = 'Ten miles down. Your next clue awaits, treasure hunter.';
+    $('overSub').textContent = 'Fifteen miles down. Your next clue awaits, treasure hunter.';
     $('overDist').textContent = milesStr(finalM);
     $('overSpeed').textContent = Math.round(topV * 1.5);
     $('overMiss').textContent = nearMisses;
@@ -708,7 +708,7 @@
     $('huntNextBtn').classList.remove('hidden');   // funnel the player onward to the next clue
   }
 
-  // Clearing the ten-mile checkpoint clears the hunt's Redline trial → hand off to
+  // Clearing the fifteen-mile checkpoint clears the hunt's Redline trial → hand off to
   // the next clue's token URL (the treasure page), exactly like the other games.
   function goNextClue() {
     var c = (window.HSGHunt && HSGHunt.nextTokenAfter) ? HSGHunt.nextTokenAfter('redline') : '';
@@ -771,12 +771,12 @@
     var q = function (sel) { return tov.querySelector(sel); };
     if (q('.rl-tag')) q('.rl-tag').textContent = 'Treasure Checkpoint';
     if (q('.rl-racer')) q('.rl-racer').innerHTML = 'Welcome, <b>treasure hunter</b>.';
-    if (q('.rl-deskonly')) q('.rl-deskonly').innerHTML = "You've come a long way. To reach your next checkpoint you need to go <b>ten miles</b> in this game. Good luck." +
+    if (q('.rl-deskonly')) q('.rl-deskonly').innerHTML = "You've come a long way. To reach your next checkpoint you need to go <b>fifteen miles</b> in this game. Good luck." +
       '<br><span class="keys"><span class="key">←</span><span class="key">→</span></span> steer &nbsp;·&nbsp; ' +
       '<span class="keys"><span class="key">↑</span><span class="key">↓</span></span> throttle / brake';
-    if (q('.rl-mobile')) q('.rl-mobile').innerHTML = "You've come a long way. Drive <b>ten miles</b> to reach your next checkpoint. Tap left / right to steer. Good luck!";
+    if (q('.rl-mobile')) q('.rl-mobile').innerHTML = "You've come a long way. Drive <b>fifteen miles</b> to reach your next checkpoint. Tap left / right to steer. Good luck!";
     if (q('#startBtn')) $('startBtn').textContent = 'BEGIN THE RUN ▸';
-    if (q('.rl-secret')) q('.rl-secret').textContent = 'checkpoint · ten miles';
+    if (q('.rl-secret')) q('.rl-secret').textContent = 'checkpoint · fifteen miles';
   }
   // deity mode - type "godmode": invincible, crashes can't end the run
   if (window.HSGGod) HSGGod.watch(function () {

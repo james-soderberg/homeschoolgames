@@ -146,7 +146,7 @@
       backdrop-filter: blur(2px); color: #fdf7ec;
     }
     .bf-overlay.hidden { display: none; }
-    /* treasure-hunt easter-egg clue on the game-over card (revealed at length 40+) */
+    /* treasure-hunt easter-egg clue on the game-over card (revealed at length 50+) */
     .ls-hunt-clue { width: 100%; max-width: 430px; margin: 0.6rem auto 1.1rem; padding: 1.15rem 1.3rem;
       text-align: center; background: rgba(255,209,102,0.18); border: 3px solid #e7c979; border-radius: 16px;
       box-shadow: 0 0 22px 3px rgba(231,201,121,0.4), 0 8px 26px rgba(0,0,0,0.4);
@@ -592,8 +592,8 @@ function gameOver(reason){
   endWordClue.textContent = clueStr || '';
   endWords.textContent = wordsDone;
   endBest.textContent = best;
-  // treasure-hunt easter egg: a length of 40+ (any level) reveals a hidden clue
-  document.getElementById('lsHuntClue').classList.toggle('hidden', finalLen < 40);
+  // treasure-hunt easter egg: a length of 50+ (any level) reveals a hidden clue
+  document.getElementById('lsHuntClue').classList.toggle('hidden', finalLen < 50);
   endOverlay.classList.remove('hidden');
   HSGSound.finish(false);
   // bank the snake's length + show placement/name entry inline on the end card

@@ -37,11 +37,11 @@
     { token: 'q4x8pt', word: 'independence', open: 'games/type-invaders/index.html?arcade', game: 'typeinvaders', goal: 15,
       accept: ['independence'], mono: true,
       riddle: 'S E G C N N I E R D M N O E D P E E E D R N F I',
-      hint: 'No hint here, but one is hidden. Slither to a length of 40 or better in Letter Snake, and its game-over screen will reveal the trick.',
+      hint: 'No hint here, but one is hidden. Slither to a length of 50 or better in Letter Snake, and its game-over screen will reveal the trick.',
       trial: 'Then hold the capital to Wave 15 in the arcade.' },
 
     { token: 'z3n6wd', directive: true, open: 'games/word-racer/index.html', goText: 'Go to Word Racer →',
-      game: 'redline', goal: 10,
+      game: 'redline', goal: 15,
       riddle: 'Go to Word Racer and type treasure repeatedly.' },
 
     { token: 'p9m4tq', word: 'four', open: 'games/slide-puzzle/index.html', game: 'slidepuzzle', goal: 1,
