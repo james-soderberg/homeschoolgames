@@ -907,7 +907,9 @@ HSGGod.watch(() => {
 
 // homepage-tile capture hook: start, guard a couple, and stage a bandit raid
 if (location.search.indexOf('shot') >= 0){
-  setTimeout(()=>{ startGame(); bannerClock = 0; }, 60);                        // fresh train, no guesses, no banner
+  setTimeout(()=>{ startGame(); bannerClock = 0;                               // fresh train, no guesses, no banner
+    bandits.forEach((b,i)=>{ b.roamAmp = 0; b.phase = i*1.9; });               // pin one under each car so they stay staggered for the tile
+  }, 60);
 }
 
 initWeather();
