@@ -111,7 +111,7 @@
       <h2>Map Restored!</h2>
       <div class="win-time" id="winTime">0:00</div>
       <div class="win-time-label">your time</div>
-      <p>Well solved, hunter. The picture is whole again — and so is your trail.</p>
+      <p>Well solved, hunter. The picture is whole again, and so is your trail.</p>
       <div class="hsg-endpanel" id="spBoardWin"></div>
       <button class="sp-btn" id="nextClueBtn">Reveal your next clue →</button>
       <button class="sp-btn ghost" id="winAgainBtn">Play again</button>
@@ -142,7 +142,7 @@
 <script src="../../assets/js/streak-rail.js"></script>
 <script>
 // ============================================================
-// SLIDE PUZZLE — a treasure-hunt trial. Rebuild the scrambled
+// SLIDE PUZZLE - a treasure-hunt trial. Rebuild the scrambled
 // homescreen before the clock runs out; solving hands off to the
 // next clue. Reached from the journal by typing "quatro".
 // ============================================================
@@ -207,7 +207,7 @@ function render() {
 function isSolved() { for (let p = 0; p < arr.length; p++) if (arr[p] !== p) return false; return true; }
 
 // Standard 15-puzzle solvability test (inversion parity + blank row). Our shuffle
-// only ever makes legal slides from the solved board, so this is ALWAYS true —
+// only ever makes legal slides from the solved board, so this is ALWAYS true,
 // it's a guard so a bad shuffle could never hand the player an impossible board.
 function isSolvable(a) {
   const seq = a.filter((v) => v !== BLANK);          // tiles in board order, blank removed
