@@ -79,9 +79,11 @@
   .option-btn.wrong { border-color:var(--red); background:#faf0f0; }
   .option-btn:disabled { cursor:default; }
   .feedback { text-align:center; font-family:var(--font-sans); font-weight:800; font-size:1rem; margin-top:.7rem; min-height:1.2em; }
-  .reveal-line { text-align:center; font-family:var(--font-sans); font-size:.85rem; color:var(--ink-light); margin-top:.25rem; min-height:1em; }
-  .next-btn { display:block; margin:.7rem auto 0; background:var(--gold); border:none; border-radius:99px; color:#3a2c05;
-    font-family:var(--font-sans); font-weight:800; font-size:.95rem; padding:.55rem 1.4rem; cursor:pointer; }
+  .reveal-line { text-align:center; font-family:var(--font-sans); font-size:.88rem; color:var(--ink); font-weight:700; margin-top:.25rem; min-height:1em; }
+  .artist-bio { text-align:center; font-family:var(--font-sans); font-size:.82rem; color:var(--ink-light); line-height:1.45; max-width:470px; margin:.35rem auto 0; min-height:1em; }
+  .next-wrap { display:flex; justify-content:center; margin-top:.8rem; }
+  .next-btn { background:var(--gold); border:none; border-radius:99px; color:#3a2c05;
+    font-family:var(--font-sans); font-weight:800; font-size:.95rem; padding:.6rem 1.6rem; cursor:pointer; }
 
   .gallery-panel .g-head { padding:.9rem 1rem .75rem; border-bottom:1.5px solid var(--border); display:flex; align-items:baseline; justify-content:space-between; gap:.5rem; }
   .gallery-panel .g-head h2 { margin:0; font-size:1.1rem; font-family:var(--font-serif); }
@@ -159,7 +161,8 @@
         <div class="option-grid" id="optionGrid"></div>
         <div class="feedback" id="feedback"></div>
         <div class="reveal-line" id="revealLine"></div>
-        <button class="next-btn" id="nextBtn" style="display:none">Next Painting →</button>
+        <div class="artist-bio" id="artistBio"></div>
+        <div class="next-wrap"><button class="next-btn" id="nextBtn" style="display:none">Next Painting →</button></div>
       </div>
       <p class="credit">Paintings are public-domain images of famous works from
         <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>.</p>
@@ -174,17 +177,6 @@
         <div class="g-note" id="gNote">Name the artist to hang the painting.</div>
       </div>
     </div>
-  </div>
-</div>
-
-<!-- start -->
-<div class="ov" id="startOverlay">
-  <div class="ov-card">
-    <div class="crest">🎨</div>
-    <h2>Who Painted It?</h2>
-    <p>You will see <b>20 famous paintings</b>, one at a time, with the painting's name. Pick the <b>artist</b> who made it from four choices.</p>
-    <p>A right answer hangs the work in your gallery. A perfect score is <b>20 / 20</b> with no misses and no hints.</p>
-    <button class="go-btn" id="beginBtn">Start the tour →</button>
   </div>
 </div>
 
@@ -211,6 +203,54 @@ function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.flo
 const ART = (window.ARTQUIZ || []).slice();
 const ARTISTS = [...new Set(ART.map(p=>p.a))];
 const eraOf = {}; ART.forEach(p=>{ if(!eraOf[p.a]) eraOf[p.a]=p.e; });
+
+// One-sentence life bio per artist, shown in the reveal and reused every time.
+const BIOS = {
+  'Leonardo da Vinci':"An Italian Renaissance genius who was also a scientist and inventor, filling notebooks with ideas centuries ahead of his time.",
+  'Raphael':"An Italian Renaissance master famous for his calm, harmonious paintings, who died young at just 37.",
+  'Jan van Eyck':"An early Flemish master who helped pioneer oil painting, capturing dazzling detail in the 1400s.",
+  'Rembrandt':"A Dutch Golden Age master famed for his dramatic light and honest self-portraits, though he died poor.",
+  'Johannes Vermeer':"A Dutch painter of quiet home scenes who worked slowly and left only about 35 known paintings.",
+  'Diego Velázquez':"The leading painter of Spain's Golden Age and court artist to King Philip IV.",
+  'Jean-Honoré Fragonard':"A French Rococo painter known for playful, romantic scenes of the aristocracy before the Revolution.",
+  'Caspar David Friedrich':"A German Romantic painter who filled his landscapes with lonely figures and a sense of the divine in nature.",
+  'John Constable':"An English Romantic painter who lovingly captured the rural countryside of his native Suffolk.",
+  'J. M. W. Turner':"An English Romantic painter nicknamed 'the painter of light' for his glowing, stormy seascapes.",
+  'Katsushika Hokusai':"A Japanese artist and printmaker who kept reinventing his style well into his 80s.",
+  'Jean-François Millet':"A French painter who portrayed peasant farmers with dignity, inspiring later artists like Van Gogh.",
+  'James McNeill Whistler':"An American-born painter who worked in Europe and treated his paintings almost like music.",
+  'Winslow Homer':"An American painter, largely self-taught, celebrated for his powerful scenes of the sea.",
+  'Claude Monet':"A French painter who founded Impressionism and painted the same scenes over and over to catch the changing light.",
+  'Pierre-Auguste Renoir':"A French Impressionist who loved painting cheerful gatherings and kept working despite crippling arthritis.",
+  'Edgar Degas':"A French Impressionist best known for his paintings and sculptures of ballet dancers.",
+  'Édouard Manet':"A French painter whose bold, modern scenes helped bridge Realism and Impressionism.",
+  'Vincent van Gogh':"A Dutch Post-Impressionist who sold almost nothing in his lifetime but became one of the most beloved artists ever.",
+  'Georges Seurat':"A French painter who invented Pointillism, building pictures from thousands of tiny dots of color.",
+  'Paul Cézanne':"A French Post-Impressionist whose blocky, structured style paved the way for modern art.",
+  'Henri Rousseau':"A self-taught French painter who conjured dreamlike jungles he had never actually seen.",
+  'Edvard Munch':"A Norwegian painter who poured his anxiety and emotion into haunting, expressive images.",
+  'Gustav Klimt':"An Austrian painter famous for shimmering, gold-leaf portraits of the Vienna elite.",
+  'Piet Mondrian':"A Dutch painter who reduced art to grids of straight black lines and primary colors.",
+  'Grant Wood':"An American painter from Iowa who celebrated the rural Midwest in a crisp, folk-inspired style.",
+  'Edward Hopper':"An American painter who captured the quiet loneliness of modern city life.",
+  'Caravaggio':"A hot-tempered Italian Baroque master who transformed painting with intense light and shadow.",
+  'Albrecht Dürer':"A German Renaissance master and printmaker whose detailed engravings spread his fame across Europe.",
+  'El Greco':"A Greek-born painter who settled in Spain, known for his elongated figures and spiritual intensity.",
+  'Pieter Bruegel the Elder':"A Flemish master who painted lively scenes of everyday peasant life and sweeping landscapes.",
+  'Hans Holbein the Younger':"A German painter who became court portraitist to England's King Henry VIII.",
+  'Jacques-Louis David':"A French painter who led the Neoclassical style and became Napoleon's official artist.",
+  'Francisco Goya':"A Spanish royal portraitist whose later work grew dark and haunting after he went deaf.",
+  'Mary Cassatt':"An American Impressionist who worked in Paris and often painted tender scenes of mothers and children.",
+  'John Singer Sargent':"An American portrait painter, the most sought-after of his day, known for his dazzling brushwork.",
+  'Pablo Picasso':"A wildly inventive Spanish artist who co-founded Cubism and reinvented modern art many times over.",
+  'Salvador Dalí':"A flamboyant Spanish Surrealist known for dreamlike images and his famous curled mustache.",
+  'René Magritte':"A Belgian Surrealist who turned everyday objects into witty, mind-bending puzzles.",
+  'Frida Kahlo':"A Mexican painter who turned her physical pain and life story into bold, personal self-portraits.",
+  'Andrew Wyeth':"An American realist who spent his life painting the rural people and land of Pennsylvania and Maine.",
+  'Henri Matisse':"A French leader of the Fauves who used wild, joyful color and made paper cut-outs in old age.",
+  'Wassily Kandinsky':"A Russian painter widely credited with creating some of the first purely abstract art.",
+  'Andy Warhol':"An American Pop Art icon who turned soup cans and celebrities into famous silkscreen prints.",
+};
 const brokenImg = new Set();
 let pool = shuffle(ART);
 let used = new Set();
@@ -273,6 +313,7 @@ async function nextCard(){
   answered = false; hintThisRound = false;
   document.getElementById('feedback').textContent = '';
   document.getElementById('revealLine').textContent = '';
+  document.getElementById('artistBio').textContent = '';
   document.getElementById('nextBtn').style.display = 'none';
   document.getElementById('frame').className = 'frame';
   document.getElementById('artSub').textContent = '';
@@ -319,6 +360,7 @@ function handleAnswer(chosen, btn){
     if(window.HSGfx) HSGfx.flash('rgba(150,40,40,0.25)');
   }
   document.getElementById('revealLine').innerHTML = 'It was <b>'+current.a+'</b> · '+current.e+', '+current.y;
+  document.getElementById('artistBio').textContent = BIOS[current.a] || '';
   document.getElementById('hintBtn').hidden = true;
 
   if(roundIndex >= RUN){ setTimeout(endGame, DELAY_END); return; }
@@ -391,14 +433,8 @@ document.getElementById('quitBtn').addEventListener('click', ()=>leaveGame('../.
 const allGamesLink = document.getElementById('allGamesLink');
 if(allGamesLink) allGamesLink.addEventListener('click', e=>{ e.preventDefault(); leaveGame(allGamesLink.href); });
 
-document.getElementById('beginBtn').addEventListener('click', ()=>{
-  if(window.HSGSound) HSGSound.tick();
-  document.getElementById('startOverlay').classList.add('hidden');
-  resetGame();
-});
-
 renderSideBoard();
-buildGallery();
+resetGame();   // no start page; the game is self-explanatory, so begin right away
 </script>
 </body>
 </html>
