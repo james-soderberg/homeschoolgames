@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="canonical" href="https://homeschoolgames.org/games/grammar-express/">
+  <meta property="og:url" content="https://homeschoolgames.org/games/grammar-express/">
+  <meta name="description" content="Guard the Grammar Express from the wolves by naming every word's part of speech. A free grammar game for kids and homeschoolers: nouns, verbs, adjectives, adverbs, articles, prepositions, pronouns, conjunctions and interjections, in real sentences.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#2f4a63">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="HomeschoolGames">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:title" content="Grammar Express">
+  <meta property="og:description" content="Guard the train from the wolves by naming every word's part of speech. A free grammar game for kids and homeschoolers.">
+  <meta property="og:image" content="https://homeschoolgames.org/assets/img/og/grammar-express.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Grammar Express, a free grammar game">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Grammar Express">
+  <meta name="twitter:description" content="Guard the train from the wolves by naming every word's part of speech. A free grammar game for kids and homeschoolers.">
+  <meta name="twitter:image" content="https://homeschoolgames.org/assets/img/og/grammar-express.jpg">
+  <title>Grammar Express: Free Parts-of-Speech Game | HomeschoolGames</title>
+  <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <style>
+    .ge-page { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+    .game-layout-wide { max-width: min(2200px, 98vw); gap: 1rem; }
+    @media (min-width: 1001px) {
+      .game-layout-wide { justify-content: center; }
+      .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
+    }
+
+    .ge-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+    .ge-top h1 { margin: 0; font-size: 1.8rem; }
+    .stat-group { display: flex; gap: 0.5rem; align-items: center; }
+    .stat-badge {
+      background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
+      padding: 0.4rem 0.9rem; font-weight: 700; font-size: 0.9rem; font-family: var(--font-sans);
+      color: var(--ink); white-space: nowrap;
+    }
+    .hearts { letter-spacing: 0.05em; line-height: 1; }
+    .hearts .spent { filter: grayscale(1) opacity(0.4); }
+
+    /* prompt banner */
+    .ge-prompt { display: flex; align-items: center; justify-content: center; gap: 0.7rem; margin: 0.25rem 0 0.55rem; min-height: 52px; flex-wrap: wrap; }
+    .ge-prompt .lead { font-family: var(--font-serif); font-size: 1.1rem; color: var(--ink-light); font-weight: 600; }
+    .ge-chip {
+      display: inline-flex; align-items: center; gap: 0.4rem; font-family: var(--font-sans); font-weight: 800;
+      font-size: 1.35rem; color: #fff; padding: 0.2rem 0.95rem; border-radius: 10px; line-height: 1.2;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.22); text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+    }
+    .ge-count { font-family: var(--font-sans); font-weight: 700; color: var(--ink-light); font-size: 0.95rem; }
+    .ge-timer { width: 200px; max-width: 46vw; height: 7px; border-radius: 99px; background: rgba(60,50,35,0.18); overflow: hidden; }
+    .ge-timer > i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg,#e0a53b,#d0463b); transition: width 0.12s linear; }
+    .ge-timer.hidden { visibility: hidden; }
+
+    /* stage */
+    .ge-stage {
+      position: relative; width: 100%; height: min(60vh, 540px); min-height: 360px;
+      border-radius: 16px; overflow: hidden; border: 2.5px solid #24303f;
+      box-shadow: 0 10px 30px rgba(20,28,40,0.35); user-select: none; touch-action: manipulation;
+      background: #b9cfe0;
+    }
+    #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
+
+    .ge-overlay {
+      position: absolute; inset: 0; z-index: 12; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center; padding: 1.5rem;
+      background: rgba(18,26,38,0.85); backdrop-filter: blur(2px); color: #fdf7ec;
+    }
+    .ge-overlay.hidden { display: none; }
+    .ge-overlay h2 { font-family: var(--font-serif); color: #fff; font-size: 2.1rem; margin: 0 0 0.3rem; }
+    .ge-overlay p { color: #e7ddcf; margin: 0 0 1.1rem; max-width: 44ch; font-size: 0.98rem; line-height: 1.5; }
+    .ge-crest { font-size: 3rem; line-height: 1; margin-bottom: 0.3rem; }
+
+    .tier-row { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 420px; }
+    .tier-btn {
+      display: flex; align-items: center; gap: 0.75rem; text-align: left;
+      background: rgba(255,253,244,0.96); border: 2.5px solid var(--border); border-radius: 12px;
+      padding: 0.7rem 0.95rem; cursor: pointer; font-family: var(--font-sans); color: var(--ink);
+      transition: transform 0.12s, border-color 0.12s, background 0.12s;
+    }
+    .tier-btn:hover { transform: translateY(-2px); border-color: var(--gold); background: #fff; }
+    .tier-btn .t-icon { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
+    .tier-btn .t-name { font-weight: 800; font-size: 1.1rem; }
+    .tier-btn .t-desc { font-size: 0.76rem; color: var(--ink-light); }
+
+    .play-btn {
+      background: var(--gold); color: var(--ink); border: none; border-radius: 99px; padding: 0.8rem 2rem;
+      font-family: var(--font-sans); font-size: 1.05rem; font-weight: 800; cursor: pointer;
+      box-shadow: 0 5px 0 #a07f2c; transition: transform 0.1s, box-shadow 0.1s, background 0.15s;
+    }
+    .play-btn:hover { background: #d0ab48; }
+    .play-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #a07f2c; }
+    .play-btn.secondary { background: transparent; color: #fdf7ec; border: 2px solid rgba(253,247,236,0.5); box-shadow: none; font-size: 0.95rem; padding: 0.55rem 1.4rem; }
+    .play-btn.secondary:hover { background: rgba(253,247,236,0.12); }
+    .overlay-actions { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
+    .final-stats { display: flex; gap: 1.4rem; margin-bottom: 1.1rem; }
+    .final-stats .fs { display: flex; flex-direction: column; align-items: center; }
+    .final-stats .fs b { font-family: var(--font-serif); font-size: 2.1rem; line-height: 1; color: var(--gold-light); }
+    .final-stats .fs span { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.09em; color: #cdc2b4; margin-top: 0.25rem; }
+
+    .ge-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.3rem 0.6rem; margin: 0.6rem 0 0; }
+    .ge-legend .lg { display: inline-flex; align-items: center; gap: 0.32rem; font-size: 0.74rem; color: var(--ink-light); font-family: var(--font-sans); }
+    .ge-legend .sw { width: 0.7rem; height: 0.7rem; border-radius: 3px; display: inline-block; }
+
+    .ge-feedback { text-align: center; min-height: 1.6rem; margin: 0.6rem 0 0.1rem; font-weight: 700; font-size: 1.0rem; }
+    .ge-feedback .sub { display: block; font-weight: 500; font-size: 0.84rem; color: var(--ink-light); margin-top: 0.08rem; }
+    .ge-hint { text-align: center; font-size: 0.83rem; color: var(--ink-light); margin: 0.15rem 0 0; line-height: 1.5; }
+    .control-row { display: flex; justify-content: center; margin-top: 0.5rem; }
+    .reset-link { background: none; border: none; color: var(--ink-light); font-size: 0.85rem; cursor: pointer; font-family: var(--font-sans); text-decoration: underline; padding: 0.3rem 0.5rem; }
+    .reset-link:hover { color: var(--ink); }
+
+    @media (max-width: 600px) { .ge-stage { height: 52vh; min-height: 300px; } .ge-chip { font-size: 1.15rem; } }
+  </style>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "VideoGame",
+        "name": "Grammar Express",
+        "url": "https://homeschoolgames.org/games/grammar-express/",
+        "description": "Guard the Grammar Express from the wolves by naming every word's part of speech. A free grammar game for kids and homeschoolers: nouns, verbs, adjectives, adverbs, articles, prepositions, pronouns, conjunctions and interjections, in real sentences.",
+        "image": "https://homeschoolgames.org/assets/img/og/grammar-express.jpg",
+        "genre": "Grammar",
+        "gamePlatform": "Web browser",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (web browser)",
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "audience": { "@type": "EducationalAudience", "educationalRole": "student" },
+        "publisher": { "@id": "https://homeschoolgames.org/#org" },
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD", "availability": "https://schema.org/InStock" }
+      },
+      {
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://homeschoolgames.org/" },
+          { "@type": "ListItem", "position": 2, "name": "Grammar Games", "item": "https://homeschoolgames.org/subjects/spelling" },
+          { "@type": "ListItem", "position": 3, "name": "Grammar Express", "item": "https://homeschoolgames.org/games/grammar-express/" }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="site-logo">Homeschool<span>Games</span></a>
+  <nav class="site-nav">
+    <a href="../../index.html" id="allGamesLink">← All Games</a>
+  </nav>
+</header>
+
+<div class="game-layout game-layout-wide">
+<div class="ge-page game-main">
+
+  <div class="ge-top">
+    <h1>Grammar Express</h1>
+    <div class="stat-group">
+      <div class="stat-badge" id="tierBadge">🌲 Cadet</div>
+      <div class="stat-badge" id="scoreBadge">⭐ 0</div>
+      <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️</div>
+    </div>
+  </div>
+
+  <div class="ge-prompt">
+    <span class="lead">Guard the</span>
+    <span class="ge-chip" id="promptChip">Noun</span>
+    <span class="ge-count" id="promptCount"></span>
+    <span class="ge-timer hidden" id="promptTimer"><i></i></span>
+  </div>
+
+  <div class="ge-stage" id="stage">
+    <canvas id="scene"></canvas>
+
+    <!-- Start / tier picker -->
+    <div class="ge-overlay" id="startOverlay">
+      <div class="ge-crest">🚂</div>
+      <h2>Grammar Express</h2>
+      <p>The night train is running the snowbound pass, and a wolf pack is closing in. Each car carries one word of a sentence. The signal calls a part of speech - click the car whose word matches to reinforce it before the wolves take it. Guard every car and the train reaches the station.</p>
+      <div class="tier-row" id="tierRow"></div>
+    </div>
+
+    <!-- Game over -->
+    <div class="ge-overlay hidden" id="overOverlay">
+      <div class="ge-crest" id="overCrest">🚂</div>
+      <h2 id="overTitle">The wolves won this run</h2>
+      <div class="final-stats">
+        <div class="fs"><b id="fsScore">0</b><span>Score</span></div>
+        <div class="fs"><b id="fsCars">0</b><span>Cars Saved</span></div>
+        <div class="fs"><b id="fsAcc">0%</b><span>Accuracy</span></div>
+      </div>
+      <div class="hsg-board" id="geBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
+      <div class="overlay-actions">
+        <button class="play-btn" id="againBtn">Ride Again 🚂</button>
+        <button class="play-btn secondary" id="changeTierBtn">Change Level</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ge-legend" id="legend"></div>
+  <div class="ge-feedback" id="feedback"></div>
+  <p class="ge-hint">Click the car whose word is the called part of speech. A wrong click lets the wolves burn the word you should have guarded.</p>
+  <div class="control-row"><button class="reset-link" id="quitBtn">Quit &amp; Choose Level</button></div>
+
+</div><!-- /.ge-page -->
+  <aside class="hsg-rail" id="streakRail"></aside>
+</div>
+
+<footer class="site-footer">
+  <a href="../../index.html">homeschoolgames.org</a>
+</footer>
+
+<script src="../../assets/js/sfx.js"></script>
+<script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
+<script src="../../assets/js/godmode.js"></script>
+<script>
+// ============================================================
+//  GRAMMAR EXPRESS - a sentence rides through a snowy pass as an
+//  N-car train (one word per car). The signal calls a part of
+//  speech; click the matching car to guard it before the wolves
+//  take it. Parse the whole train, one part of speech at a time.
+// ============================================================
+
+// ---------- Utils ----------
+const rand   = (a,b)=> a + Math.random()*(b-a);
+const randi  = (a,b)=> Math.floor(rand(a,b+1));
+const choice = a => a[Math.floor(Math.random()*a.length)];
+const clamp  = (v,a,b)=> Math.max(a, Math.min(b, v));
+const lerp   = (a,b,t)=> a + (b-a)*t;
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){ const j=randi(0,i); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+// ---------- Parts of speech ----------
+const POS = {
+  art:  { label:'Article',      color:'#39b0ad' },
+  adj:  { label:'Adjective',    color:'#3f9d5a' },
+  noun: { label:'Noun',         color:'#2f6db3' },
+  pron: { label:'Pronoun',      color:'#e08fb0' },
+  verb: { label:'Verb',         color:'#d0463b' },
+  adv:  { label:'Adverb',       color:'#8b6fc9' },
+  prep: { label:'Preposition',  color:'#e0a53b' },
+  conj: { label:'Conjunction',  color:'#b07a46' },
+  intj: { label:'Interjection', color:'#c9518c' }
+};
+// pedagogical display order for the legend
+const POS_ORDER = ['art','adj','noun','pron','verb','adv','prep','conj','intj'];
+
+// ---------- Sentence bank (word|pos tokens) ----------
+function S(str){
+  return str.trim().split(/\s+/).map(t=>{ const i=t.lastIndexOf('|'); return { w:t.slice(0,i), pos:t.slice(i+1) }; });
+}
+const BANK = {
+  cadet: [
+    'The|art brave|adj knight|noun saved|verb the|art king|noun',
+    'The|art young|adj girl|noun read|verb a|art book|noun',
+    'A|art hungry|adj bear|noun found|verb sweet|adj honey|noun',
+    'The|art tall|adj man|noun built|verb a|art house|noun',
+    'The|art little|adj bird|noun sang|verb a|art song|noun',
+    'A|art gray|adj wolf|noun watched|verb the|art train|noun',
+    'The|art brave|adj girl|noun climbed|verb a|art mountain|noun',
+    'The|art old|adj farmer|noun grew|verb yellow|adj corn|noun',
+    'A|art clever|adj fox|noun crossed|verb the|art river|noun',
+    'The|art strong|adj horse|noun pulled|verb a|art cart|noun'
+  ],
+  brakeman: [
+    'The|art quick|adj brown|adj fox|noun jumped|verb into|prep the|art air|noun',
+    'She|pron quietly|adv walked|verb into|prep the|art dark|adj forest|noun',
+    'The|art old|adj train|noun rolled|verb slowly|adv down|prep the|art track|noun',
+    'He|pron carefully|adv placed|verb a|art lantern|noun on|prep the|art shelf|noun',
+    'A|art tired|adj traveler|noun rested|verb beside|prep the|art warm|adj fire|noun',
+    'The|art hungry|adj wolves|noun ran|verb across|prep the|art frozen|adj river|noun',
+    'We|pron happily|adv rode|verb through|prep the|art snowy|adj valley|noun',
+    'The|art curious|adj child|noun looked|verb under|prep the|art wooden|adj bridge|noun',
+    'They|pron slowly|adv climbed|verb over|prep the|art icy|adj hill|noun',
+    'A|art small|adj rabbit|noun hid|verb behind|prep the|art tall|adj tree|noun'
+  ],
+  engineer: [
+    'The|art brave|adj conductor|noun and|conj the|art loyal|adj crew|noun defended|verb the|art train|noun',
+    'The|art snow|noun fell|verb gently|adv but|conj the|art strong|adj engine|noun pushed|verb forward|adv',
+    'Wolves|noun howled|verb loudly|adv and|conj quickly|adv chased|verb the|art speeding|adj train|noun',
+    'The|art tired|adj passengers|noun slept|verb while|conj the|art train|noun crossed|verb a|art long|adj bridge|noun',
+    'He|pron grabbed|verb a|art lantern|noun and|conj bravely|adv faced|verb the|art hungry|adj pack|noun',
+    'The|art frightened|adj deer|noun leaped|verb away|adv but|conj the|art wolves|noun followed|verb closely|adv',
+    'The|art engineer|noun worked|verb hard|adv and|conj the|art train|noun reached|verb the|art station|noun',
+    'Snow|noun covered|verb the|art quiet|adj town|noun while|conj warm|adj lights|noun glowed|verb softly|adv'
+  ],
+  legend: [
+    'Wow|intj the|art fearless|adj crew|noun fought|verb hard|adv and|conj finally|adv reached|verb the|art station|noun',
+    'The|art old|adj dog|noun ran|verb fast|adv but|conj the|art clever|adj fox|noun easily|adv escaped|verb',
+    'Oh|intj the|art weary|adj travelers|noun sighed|verb and|conj gratefully|adv boarded|verb the|art warm|adj train|noun',
+    'The|art tired|adj soldiers|noun guard|verb the|art narrow|adj bridge|noun tonight|adv',
+    'The|art loyal|adj guard|noun watched|verb the|art iron|adj gate|noun closely|adv',
+    'Hooray|intj the|art brave|adj crew|noun cheered|verb loudly|adv when|conj the|art train|noun arrived|verb safely|adv'
+  ]
+};
+
+// ---------- Tiers ----------
+const TIERS = {
+  cadet:    { label:'Cadet',    icon:'🌲', desc:'Short sentences · nouns, verbs, adjectives, articles', bank:'cadet',    time:0 },
+  brakeman: { label:'Brakeman', icon:'🚦', desc:'Adds adverbs, prepositions & pronouns',                 bank:'brakeman', time:11 },
+  engineer: { label:'Engineer', icon:'🔧', desc:'Longer sentences · adds conjunctions, faster wolves',   bank:'engineer', time:8.5 },
+  legend:   { label:'Legend',   icon:'👑', desc:'Complex sentences · interjections & context words',      bank:'legend',   time:7 }
+};
+const TIER_ORDER = ['cadet','brakeman','engineer','legend'];
+const START_LIVES = 3;
+
+// ---------- DOM ----------
+const stage      = document.getElementById('stage');
+const canvas     = document.getElementById('scene');
+const ctx        = canvas.getContext('2d');
+const tierBadge  = document.getElementById('tierBadge');
+const scoreBadge = document.getElementById('scoreBadge');
+const heartsBadge= document.getElementById('heartsBadge');
+const promptChip = document.getElementById('promptChip');
+const promptCount= document.getElementById('promptCount');
+const promptTimer= document.getElementById('promptTimer');
+const startOverlay = document.getElementById('startOverlay');
+const overOverlay  = document.getElementById('overOverlay');
+const feedbackEl = document.getElementById('feedback');
+
+// ---------- Canvas ----------
+let W=900, H=520, dpr=1;
+function setupCanvas(){
+  const r = stage.getBoundingClientRect();
+  W = Math.max(360, r.width); H = r.height;
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  if (train.length) layoutTrain();
+}
+window.addEventListener('resize', setupCanvas);
+
+// ---------- State ----------
+const rail = HSGStreak.init({
+  gameId:'grammar-express', gameName:'Grammar Express', minStreak:1, unit:'points',
+  level:'cadet', levelName:'Cadet',
+  mount: document.getElementById('streakRail')
+});
+
+let state = 'menu';              // menu | play | done | over
+let tierKey = 'cadet', tier = TIERS.cadet;
+let train = [];                  // [{ w, pos, secured, burned, x,y,w,h, fire }]
+let order = [], orderIdx = 0;    // shuffled list of POS categories present
+let curPOS = null, remaining = 0;
+let lives = START_LIVES, score = 0, streak = 0, bestStreak = 0;
+let carsSaved = 0, clicksRight = 0, clicksTotal = 0;
+let promptClock = 0, promptTotal = 0;
+let doneClock = 0, speedBoost = 1;
+let recent = { idx:-1, kind:null, t:0 };   // last-touched car for a brief flash
+
+// parallax + weather
+let scroll = 0, snow = [], wolves = [];
+function initWeather(){
+  snow = [];
+  for (let i=0;i<70;i++) snow.push({ x:Math.random()*W, y:Math.random()*H, r:rand(0.8,2.4), s:rand(8,26), d:rand(-6,6) });
+}
+
+// ---------- Train layout (train is anchored; the world scrolls) ----------
+function layoutTrain(){
+  const baseFont = 17, padX = 15, gap = 9*sc(), engineW = 78*sc();
+  ctx.font = '700 '+baseFont+'px system-ui, sans-serif';
+  let widths = train.map(c => clamp(ctx.measureText(c.w).width + padX*2, 56, 168));
+  let total = widths.reduce((a,b)=>a+b,0) + gap*(train.length-1) + engineW + gap;
+  const avail = W - 26;
+  const scale = Math.min(1, avail/total);
+  const carH = Math.round(clamp(70*scale, 44, 74));
+  const baseY = Math.round(H*0.60);
+  let x = Math.round((W - total*scale)/2);
+  for (let i=0;i<train.length;i++){
+    const w = Math.round(widths[i]*scale);
+    train[i].x = x; train[i].cw = w; train[i].h = carH; train[i].y = baseY - carH;
+    train[i].fs = clamp(baseFont*scale, 10.5, 17);
+    x += w + gap*scale;
+  }
+  layoutMeta = { scale, carH, baseY, engineX:x, engineW:engineW*scale, gap:gap*scale };
+}
+let layoutMeta = null;
+function sc(){ return 1; }   // layout uses its own scale; placeholder for gap base
+
+// ---------- Round flow ----------
+function startGame(key){
+  tierKey = key; tier = TIERS[key];
+  lives = START_LIVES; score = 0; streak = 0; bestStreak = 0; carsSaved = 0; clicksRight = 0; clicksTotal = 0;
+  rail.setLevel(key, tier.label);
+  rail.set(0);
+  startOverlay.classList.add('hidden');
+  overOverlay.classList.add('hidden');
+  feedbackEl.textContent = '';
+  state = 'play';
+  nextTrain();
+  updateHud();
+}
+
+let bankQueue = [];
+function nextTrain(){
+  if (!bankQueue.length) bankQueue = shuffle(BANK[tier.bank]);
+  const spec = bankQueue.pop();
+  train = S(spec).map(c => ({ w:c.w, pos:c.pos, secured:false, burned:false, fire:0 }));
+  layoutTrain();
+  // wolves: one lopes in per unsecured car, capped for calm
+  wolves = [];
+  const n = Math.min(train.length, 6);
+  for (let i=0;i<n;i++) wolves.push({ x:rand(-40,W), phase:rand(0,6.28), sp:rand(0.6,1.0), lane:rand(0,1) });
+  // prompt order = the distinct categories present, shuffled
+  const present = [];
+  train.forEach(c => { if (present.indexOf(c.pos)<0) present.push(c.pos); });
+  order = shuffle(present); orderIdx = 0;
+  speedBoost = 1;
+  startPrompt();
+}
+
+function startPrompt(){
+  curPOS = order[orderIdx];
+  remaining = train.filter(c => c.pos===curPOS && !c.secured && !c.burned).length;
+  promptTotal = tier.time ? (tier.time + 1.6*remaining) : 0;
+  promptClock = promptTotal;
+  updatePrompt();
+}
+
+function advancePrompt(){
+  orderIdx++;
+  if (orderIdx >= order.length){ finishTrain(); return; }
+  startPrompt();
+}
+
+function finishTrain(){
+  const perfect = train.every(c => c.secured);
+  if (perfect){ score += 40; if(window.HSGfx) HSGfx.confetti({ count:26 }); }
+  state = 'done'; doneClock = 0;
+  promptTimer.classList.add('hidden');
+  promptChip.textContent = perfect ? 'All aboard!' : 'Rolling on';
+  promptChip.style.background = perfect ? '#2f8f4e' : '#6d7b8a';
+  promptCount.textContent = '';
+  rail.set(score); updateHud();
+  if (window.HSGSound) HSGSound.finish(perfect);
+}
+
+function guard(idx){
+  if (state!=='play') return;
+  const c = train[idx];
+  if (!c || c.secured || c.burned) return;
+  clicksTotal++;
+  if (c.pos === curPOS){
+    c.secured = true; carsSaved++; clicksRight++; remaining--;
+    streak++; if (streak>bestStreak) bestStreak = streak;
+    const speed = promptTotal ? clamp(promptClock/promptTotal, 0, 1) : 0.6;
+    const pts = Math.round((18 + 12*speed) * Math.min(3, 1 + streak*0.16));
+    score += pts;
+    recent = { idx, kind:'good', t:0 };
+    if (window.HSGSound) HSGSound.correct();
+    if (window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
+    rail.set(score); updateHud();
+    if (remaining <= 0) setTimeout(advancePrompt, 180);
+    else updatePrompt();
+  } else {
+    // wrong: the wolves take a word you should have guarded
+    wrongClick();
+  }
+}
+
+// burn one still-needed target car for the current prompt (the wrong-click penalty)
+function wrongClick(){
+  const targets = train.filter(c => c.pos===curPOS && !c.secured && !c.burned);
+  if (!targets.length) return;   // prompt already cleared (mid-handoff) - ignore stray clicks
+  streak = 0;
+  const victim = targets[0];
+  victim.burned = true; victim.fire = 0.001;
+  recent = { idx: train.indexOf(victim), kind:'burn', t:0 };
+  if (!(window.HSGGod && HSGGod.on)) lives--;
+  if (window.HSGSound) HSGSound.wrong();
+  if (window.HSGfx && HSGfx.shake) HSGfx.shake();
+  const remA = train.filter(c => c.pos===curPOS && !c.secured && !c.burned).length;
+  remaining = remA;
+  feedbackEl.innerHTML = 'The wolves struck! <span class="sub">A <b>' + POS[curPOS].label +
+    '</b> was lost. Guard the right car next time.</span>';
+  updateHud();
+  if (lives <= 0){ gameOver(); return; }
+  if (remaining <= 0) setTimeout(advancePrompt, 200); else updatePrompt();
+}
+
+function timeout(){
+  // the pack overtakes a car you didn't reach in time
+  const targets = train.filter(c => c.pos===curPOS && !c.secured && !c.burned);
+  if (!targets.length){ advancePrompt(); return; }
+  streak = 0;
+  const victim = targets[0]; victim.burned = true; victim.fire = 0.001; remaining--;
+  recent = { idx: train.indexOf(victim), kind:'burn', t:0 };
+  if (!(window.HSGGod && HSGGod.on)) lives--;
+  if (window.HSGSound) HSGSound.wrong();
+  feedbackEl.innerHTML = 'Out of time! <span class="sub">The wolves took a <b>' + POS[curPOS].label + '</b>.</span>';
+  updateHud();
+  if (lives <= 0){ gameOver(); return; }
+  const remA = train.filter(c => c.pos===curPOS && !c.secured && !c.burned).length;
+  remaining = remA;
+  if (remaining <= 0) setTimeout(advancePrompt, 200);
+  else { promptTotal = tier.time + 1.6*remaining; promptClock = promptTotal; updatePrompt(); }
+}
+
+// ---------- HUD ----------
+function updatePrompt(){
+  if (!curPOS) return;
+  const meta = POS[curPOS];
+  promptChip.textContent = meta.label;
+  promptChip.style.background = meta.color;
+  promptCount.textContent = remaining>1 ? ('· ' + remaining + ' cars') : (remaining===1 ? '· 1 car' : '');
+  if (promptTotal>0){ promptTimer.classList.remove('hidden'); }
+  else promptTimer.classList.add('hidden');
+}
+function updateHud(){
+  tierBadge.textContent = tier.icon + ' ' + tier.label;
+  scoreBadge.textContent = '⭐ ' + score;
+  if (window.HSGGod && HSGGod.on){ heartsBadge.innerHTML = '∞'; return; }
+  let h=''; for (let i=0;i<START_LIVES;i++) h += i<lives ? '❤️' : '<span class="spent">🤍</span>';
+  heartsBadge.innerHTML = h;
+}
+
+function gameOver(){
+  state = 'over';
+  promptTimer.classList.add('hidden');
+  document.getElementById('fsScore').textContent = score;
+  document.getElementById('fsCars').textContent = carsSaved;
+  document.getElementById('fsAcc').textContent = (clicksTotal ? Math.round(clicksRight/clicksTotal*100) : 0) + '%';
+  document.getElementById('overTitle').textContent = carsSaved>=20 ? 'Master Conductor!' : 'The wolves won this run';
+  if (window.HSGSound) HSGSound.finish(false);
+  overOverlay.classList.remove('hidden');
+  rail.gameOver(score, document.getElementById('geBoard'));
+}
+
+function quitToMenu(){
+  if (state==='play' || state==='done'){ if (score>0 || clicksTotal>0) rail.gameOver(score); }
+  state = 'menu';
+  overOverlay.classList.add('hidden');
+  startOverlay.classList.remove('hidden');
+  promptTimer.classList.add('hidden');
+  feedbackEl.textContent = '';
+  promptChip.textContent = 'Noun'; promptChip.style.background = POS.noun.color; promptCount.textContent = '';
+}
+
+// ============================================================
+//  Rendering - a calm snowy pass, drawn in layers
+// ============================================================
+function drawSky(){
+  const g = ctx.createLinearGradient(0,0,0,H*0.66);
+  g.addColorStop(0,'#5b6f88'); g.addColorStop(0.55,'#8aa0b6'); g.addColorStop(1,'#c3d3df');
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H*0.66);
+}
+function drawMountains(){
+  const off = (scroll*0.12) % (W+400);
+  for (let layer=0; layer<2; layer++){
+    const baseY = H*0.5 + layer*26, amp = 70 - layer*22, col = layer? '#9fb2c4':'#7d92aa';
+    ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(-off, baseY);
+    for (let x=-off; x<=W+off+400; x+=90){
+      ctx.lineTo(x+45, baseY - amp*(0.5+0.5*Math.sin((x+layer*120)*0.01)));
+      ctx.lineTo(x+90, baseY);
+    }
+    ctx.lineTo(W+400, H); ctx.lineTo(-off, H); ctx.closePath(); ctx.fill();
+    // snow caps
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath(); ctx.moveTo(-off, baseY);
+    for (let x=-off; x<=W+off+400; x+=90){
+      const peak = baseY - amp*(0.5+0.5*Math.sin((x+layer*120)*0.01));
+      ctx.moveTo(x+30, peak+16); ctx.lineTo(x+45, peak); ctx.lineTo(x+60, peak+16); ctx.closePath();
+    }
+    ctx.fill();
+  }
+}
+function pine(x, baseY, h){
+  const w = h*0.62;
+  ctx.fillStyle = '#2f4a3a';
+  for (let k=0;k<3;k++){
+    const ty = baseY - h*(0.28*k), th = h*(0.55 - 0.08*k), tw = w*(1 - 0.22*k);
+    ctx.beginPath(); ctx.moveTo(x, ty-th); ctx.lineTo(x-tw/2, ty); ctx.lineTo(x+tw/2, ty); ctx.closePath(); ctx.fill();
+  }
+  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  for (let k=0;k<3;k++){
+    const ty = baseY - h*(0.28*k), tw = w*(1 - 0.22*k);
+    ctx.beginPath(); ctx.moveTo(x, ty-h*(0.55-0.08*k)); ctx.lineTo(x-tw*0.22, ty-h*(0.32-0.05*k)); ctx.lineTo(x+tw*0.10, ty-h*(0.36-0.05*k)); ctx.closePath(); ctx.fill();
+  }
+}
+function drawTreeBand(y, spacing, h, speed, seed){
+  const off = (scroll*speed) % spacing;
+  for (let x=-off-spacing; x<=W+spacing; x+=spacing){
+    const jitter = ((Math.sin((x+seed)*12.9898)*43758.5453) % 1);
+    pine(x + jitter*spacing*0.4, y, h*(0.8+0.4*Math.abs(jitter)));
+  }
+}
+function drawGround(){
+  const g = ctx.createLinearGradient(0,H*0.6,0,H);
+  g.addColorStop(0,'#eaf1f6'); g.addColorStop(1,'#cdd9e2');
+  ctx.fillStyle = g; ctx.fillRect(0,H*0.6,W,H*0.4);
+  // gentle snow undulation
+  ctx.fillStyle = 'rgba(255,255,255,0.6)';
+  ctx.beginPath(); ctx.moveTo(0,H*0.66);
+  for (let x=0;x<=W;x+=40) ctx.lineTo(x, H*0.66 + 8*Math.sin((x+scroll*0.4)*0.02));
+  ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
+}
+function drawRails(){
+  const y = layoutMeta ? layoutMeta.baseY : H*0.6;
+  ctx.strokeStyle = '#5c6b78'; ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(0,y+3); ctx.lineTo(W,y+3); ctx.stroke();
+  // ties scrolling to sell motion
+  const off = (scroll*1.0) % 34;
+  ctx.fillStyle = 'rgba(70,55,40,0.55)';
+  for (let x=-off; x<W; x+=34) ctx.fillRect(x, y+3, 16, 6);
+  ctx.strokeStyle = '#7d8a96'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(0,y+1); ctx.lineTo(W,y+1); ctx.stroke();
+}
+
+function drawWolf(x, y, s, t){
+  ctx.save(); ctx.translate(x,y); ctx.scale(s,s);
+  const legA = Math.sin(t*8)*4, legB = Math.sin(t*8+Math.PI)*4;
+  ctx.fillStyle = '#2b2f38'; ctx.strokeStyle = '#2b2f38'; ctx.lineWidth = 3; ctx.lineCap='round';
+  // legs
+  ctx.beginPath(); ctx.moveTo(-8,0); ctx.lineTo(-8+legA,12); ctx.moveTo(8,0); ctx.lineTo(8+legB,12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-3,0); ctx.lineTo(-3+legB,12); ctx.moveTo(13,0); ctx.lineTo(13+legA,12); ctx.stroke();
+  // body
+  ctx.beginPath(); ctx.ellipse(2,-4,14,7,0,0,7); ctx.fill();
+  // head + snout
+  ctx.beginPath(); ctx.moveTo(14,-8); ctx.lineTo(24,-6); ctx.lineTo(23,-2); ctx.lineTo(13,-1); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(14,-12); ctx.lineTo(17,-8); ctx.lineTo(12,-8); ctx.closePath(); ctx.fill(); // ear
+  // tail
+  ctx.beginPath(); ctx.moveTo(-12,-6); ctx.quadraticCurveTo(-22,-10,-20,-2); ctx.quadraticCurveTo(-16,-4,-12,-2); ctx.closePath(); ctx.fill();
+  // eye glow
+  ctx.fillStyle = '#ffd45e'; ctx.beginPath(); ctx.arc(20,-6,1.3,0,7); ctx.fill();
+  ctx.restore();
+}
+function drawWolves(t){
+  const y = layoutMeta ? layoutMeta.baseY : H*0.6;
+  const unsec = train.filter(c=>!c.secured).length;
+  const show = Math.min(wolves.length, Math.max(0, Math.min(unsec, 6)));
+  // menace grows a touch as the prompt timer runs low
+  const press = promptTotal ? (1 - clamp(promptClock/promptTotal,0,1)) : 0.3;
+  for (let i=0;i<show;i++){
+    const wv = wolves[i];
+    const bob = Math.sin(t*3 + wv.phase)*2;
+    drawWolf(wv.x, y + 12 + wv.lane*10 + bob, 0.9 + wv.lane*0.25, t*wv.sp + wv.phase);
+  }
+}
+
+function drawTrain(t){
+  if (!layoutMeta) return;
+  const { baseY, engineX, engineW } = layoutMeta;
+  // cars
+  for (let i=0;i<train.length;i++){
+    const c = train[i];
+    drawCar(c, t, i);
+  }
+  // couple line
+  ctx.strokeStyle = '#3a4551'; ctx.lineWidth = 3;
+  if (train.length){
+    const last = train[train.length-1];
+    ctx.beginPath(); ctx.moveTo(last.x+last.cw, baseY-8); ctx.lineTo(engineX, baseY-8); ctx.stroke();
+  }
+  // locomotive at the right (front)
+  drawEngine(engineX, baseY, engineW, layoutMeta.carH, t);
+}
+
+function drawCar(c, t, i){
+  const { x, y, h } = c, w = c.cw;
+  ctx.save();
+  // wheels
+  ctx.fillStyle = '#31404c';
+  const wy = y+h+5;
+  [x+w*0.26, x+w*0.74].forEach(cx=>{ ctx.beginPath(); ctx.arc(cx,wy,5,0,7); ctx.fill(); });
+  ctx.fillStyle = '#26313b'; ctx.fillRect(x+4, y+h-3, w-8, 5);
+  // body
+  const secured = c.secured, col = secured ? POS[c.pos].color : '#6f5b43';
+  let bodyTop = secured ? shade(col,1.18) : '#8a7458';
+  let bodyBot = secured ? shade(col,0.82) : '#6f5b43';
+  const g = ctx.createLinearGradient(0,y,0,y+h); g.addColorStop(0,bodyTop); g.addColorStop(1,bodyBot);
+  ctx.fillStyle = g; roundRect(x, y, w, h, 6); ctx.fill();
+  // roof
+  ctx.fillStyle = secured ? shade(col,0.7) : '#5a4835'; roundRect(x-2, y-6, w+4, 9, 4); ctx.fill();
+  // plate for the word
+  const pad = Math.max(6, w*0.08);
+  ctx.fillStyle = 'rgba(253,250,242,0.94)'; roundRect(x+pad, y+h*0.28, w-pad*2, h*0.44, 5); ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.12)'; ctx.lineWidth=1; ctx.stroke();
+  // word
+  ctx.fillStyle = c.burned ? '#3a3330' : '#241d16';
+  ctx.font = '700 '+c.fs+'px system-ui, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(c.w, x+w/2, y+h*0.5+1);
+  // secured flag + check
+  if (secured){
+    ctx.fillStyle = POS[c.pos].color; roundRect(x+w/2-9, y-16, 18, 12, 2); ctx.fill();
+    ctx.strokeStyle = '#fff'; ctx.lineWidth=2; ctx.beginPath();
+    ctx.moveTo(x+w/2-4,y-10); ctx.lineTo(x+w/2-1,y-7); ctx.lineTo(x+w/2+5,y-13); ctx.stroke();
+  }
+  // recent-touch flash
+  if (recent.idx===i && recent.t<0.5){
+    ctx.strokeStyle = recent.kind==='good' ? 'rgba(60,180,90,'+(1-recent.t*2)+')' : 'rgba(210,70,50,'+(1-recent.t*2)+')';
+    ctx.lineWidth = 3; roundRect(x-2,y-2,w+4,h+4,7); ctx.stroke();
+  }
+  // burning overlay
+  if (c.burned){
+    ctx.globalAlpha = 0.9;
+    for (let f=0; f<5; f++){
+      const fx = x + (f+0.5)/5*w, fh = (10+6*Math.sin(t*9+f*1.7))*(0.7+0.3*Math.sin(t*5+f));
+      const fg = ctx.createLinearGradient(0,y-fh,0,y+4);
+      fg.addColorStop(0,'rgba(255,220,90,0)'); fg.addColorStop(0.5,'rgba(240,150,40,0.9)'); fg.addColorStop(1,'rgba(200,60,30,0.95)');
+      ctx.fillStyle = fg; ctx.beginPath();
+      ctx.moveTo(fx-5, y+2); ctx.quadraticCurveTo(fx-4, y-fh*0.5, fx, y-fh); ctx.quadraticCurveTo(fx+4, y-fh*0.5, fx+5, y+2); ctx.closePath(); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // char the body
+    ctx.fillStyle = 'rgba(30,22,18,0.4)'; roundRect(x, y, w, h, 6); ctx.fill();
+    // ember smoke
+    ctx.fillStyle = 'rgba(80,80,80,0.18)'; ctx.beginPath(); ctx.arc(x+w/2, y-18-6*Math.sin(t*2), 10, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawEngine(x, baseY, ew, ch, t){
+  const y = baseY - ch - 4;
+  ctx.save();
+  // wheels
+  ctx.fillStyle = '#26313b';
+  [x+ew*0.3, x+ew*0.62, x+ew*0.9].forEach(cx=>{ ctx.beginPath(); ctx.arc(cx,baseY+5,6,0,7); ctx.fill(); });
+  // body + cab
+  const g = ctx.createLinearGradient(0,y,0,baseY); g.addColorStop(0,'#3a5064'); g.addColorStop(1,'#26343f');
+  ctx.fillStyle = g; roundRect(x, y+6, ew, ch+2, 6); ctx.fill();
+  ctx.fillStyle = '#2b3a47'; roundRect(x-2, y-8, ew*0.5, ch*0.6+8, 5); ctx.fill();   // cab
+  // boiler front
+  ctx.fillStyle = '#31424f'; roundRect(x+ew*0.5, y+2, ew*0.5, ch, 8); ctx.fill();
+  // chimney + lamp
+  ctx.fillStyle = '#202b34'; ctx.fillRect(x+ew*0.86, y-16, 9, 18);
+  ctx.fillStyle = '#ffe08a'; ctx.beginPath(); ctx.arc(x+ew*0.98, y+ch*0.55, 5, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,224,138,0.25)'; ctx.beginPath(); ctx.arc(x+ew*0.98, y+ch*0.55, 11, 0, 7); ctx.fill();
+  // smoke drifting back (left)
+  for (let p=0;p<4;p++){
+    const px = x+ew*0.9 - (scroll*0.0 + p*16) - ((t*40)%16), py = y-18 - p*10 - 4*Math.sin(t*2+p);
+    ctx.fillStyle = 'rgba(220,220,225,'+(0.22-p*0.045)+')';
+    ctx.beginPath(); ctx.arc(px, py, 7+p*3, 0, 7); ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawSnow(dt){
+  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  for (const f of snow){
+    f.y += f.s*dt; f.x += (f.d - 14)*dt*0.6;   // slight leftward drift (train moves right)
+    if (f.y > H){ f.y = -4; f.x = Math.random()*W; }
+    if (f.x < -6) f.x = W+4;
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+  }
+}
+
+function shade(hex, f){
+  const n = parseInt(hex.slice(1),16);
+  let r=(n>>16)&255, g=(n>>8)&255, b=n&255;
+  r=clamp(Math.round(r*f),0,255); g=clamp(Math.round(g*f),0,255); b=clamp(Math.round(b*f),0,255);
+  return 'rgb('+r+','+g+','+b+')';
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+// ============================================================
+//  Loop
+// ============================================================
+let prevTs = 0;
+function loop(ts){
+  const dt = Math.min(0.05, (ts - prevTs)/1000 || 0); prevTs = ts;
+
+  // world speed: rolls along, surges when a train is cleared
+  let spd = 46;
+  if (state==='done'){ doneClock += dt; speedBoost = Math.min(4, speedBoost + dt*6); spd *= speedBoost;
+    if (doneClock > 1.1){ state='play'; nextTrain(); updateHud(); } }
+  scroll += spd*dt;
+
+  // prompt timer
+  if (state==='play' && promptTotal>0){
+    promptClock -= dt;
+    promptTimer.querySelector('i').style.width = clamp(promptClock/promptTotal,0,1)*100 + '%';
+    if (promptClock <= 0){ promptClock = 0; timeout(); }
+  }
+  // fire + flash timers
+  if (recent.t < 1) recent.t += dt;
+  train.forEach(c=>{ if (c.burned) c.fire += dt; });
+
+  // draw
+  ctx.clearRect(0,0,W,H);
+  drawSky(); drawMountains();
+  drawTreeBand(H*0.60, 120, 90, 0.35, 3.1);
+  drawGround();
+  drawTreeBand(H*0.72, 190, 150, 0.8, 7.7);   // nearer, bigger pines
+  drawRails();
+  drawWolves(ts/1000);
+  drawTrain(ts/1000);
+  drawSnow(dt);
+
+  requestAnimationFrame(loop);
+}
+
+// ============================================================
+//  Input
+// ============================================================
+function hitCar(px, py){
+  for (let i=0;i<train.length;i++){
+    const c = train[i];
+    if (px>=c.x-3 && px<=c.x+c.cw+3 && py>=c.y-18 && py<=c.y+c.h+10) return i;
+  }
+  return -1;
+}
+canvas.addEventListener('pointerdown', (e)=>{
+  if (state!=='play') return;
+  const r = canvas.getBoundingClientRect();
+  const idx = hitCar(e.clientX-r.left, e.clientY-r.top);
+  if (idx>=0){ if(window.HSGSound) HSGSound.tick(); guard(idx); }
+});
+
+// tier buttons + legend
+const tierRow = document.getElementById('tierRow');
+TIER_ORDER.forEach(k=>{
+  const t = TIERS[k];
+  const b = document.createElement('button'); b.className='tier-btn';
+  b.innerHTML = '<span class="t-icon">'+t.icon+'</span><span><span class="t-name">'+t.label+'</span><br><span class="t-desc">'+t.desc+'</span></span>';
+  b.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(k); });
+  tierRow.appendChild(b);
+});
+const legendEl = document.getElementById('legend');
+POS_ORDER.forEach(k=>{
+  const s = document.createElement('span'); s.className='lg';
+  s.innerHTML = '<span class="sw" style="background:'+POS[k].color+'"></span>'+POS[k].label;
+  legendEl.appendChild(s);
+});
+document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(tierKey); });
+document.getElementById('changeTierBtn').addEventListener('click', quitToMenu);
+document.getElementById('quitBtn').addEventListener('click', quitToMenu);
+
+// deity mode - type "godmode": unlimited hearts + jump to any difficulty
+HSGGod.watch(() => {
+  HSGGod.enable(); updateHud();
+  HSGGod.picker({
+    label:'Difficulty',
+    tiers: TIER_ORDER.map(k=>({ v:k, label:TIERS[k].icon+' '+TIERS[k].label })),
+    onJump: k => startGame(k)
+  });
+});
+
+// homepage-tile capture hook
+if (location.search.indexOf('shot') >= 0){
+  setTimeout(()=>{ startGame('brakeman');
+    // pre-secure a couple cars so the tile shows the color-coding
+    setTimeout(()=>{ if(train[0]){train[0].secured=true;} if(train[3]){train[3].secured=true;} }, 40);
+  }, 60);
+}
+
+initWeather();
+setupCanvas();
+updateHud();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
