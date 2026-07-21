@@ -312,6 +312,7 @@ let carsSaved = 0, clicksRight = 0, clicksTotal = 0;
 let doneClock = 0, worldSpeed = 7;   // px/sec - a slow, peaceful crawl
 let scroll = 0, snow = [], bandits = [];   // one bandit per car (1-to-1)
 let recent = { idx:-1, kind:null, t:0 };
+let bannerClock = 0;             // intro banner timer
 let layoutMeta = null;
 
 function initWeather(){
@@ -356,6 +357,7 @@ function startGame(){
   overOverlay.classList.add('hidden');
   feedbackEl.textContent = '';
   state = 'play';
+  bannerClock = 3.4;               // "Don't let the bandits burn the train!"
   nextTrain();
   updateHud();
 }
@@ -369,7 +371,8 @@ function nextTrain(){
   train = S(spec).map(c => ({ w:c.w, pos:c.pos, secured:false, burned:false, fire:0, hero:null }));
   layoutTrain();
   // one bandit per car, each menacing the car it belongs to
-  bandits = train.map((c,i) => ({ carIdx:i, phase:rand(0,6.28), spd:rand(0.95,1.15), state:'ride', t:0, fleeX:0 }));
+  bandits = train.map((c,i) => ({ carIdx:i, phase:rand(0,6.28), spd:rand(0.95,1.15),
+                                  roamSpd:rand(0.4,0.8), roamAmp:rand(34,64), state:'ride', t:0, fleeX:0 }));
   const present = [];
   train.forEach(c => { if (present.indexOf(c.pos)<0) present.push(c.pos); });
   order = shuffle(present); orderIdx = 0;
@@ -603,12 +606,28 @@ function drawBandits(t){
     const car = train[b.carIdx]; if (!car) continue;
     const cx = car.x + car.cw/2;
     const bob = Math.sin(t*3 + b.phase)*1.4;
-    let x = cx, dir = 1, torch = 0, fall = 0;
-    if (b.state === 'torch')    { torch = (b.t < 0.6) ? 1 : 0; }
+    const ph = t*b.roamSpd + b.phase;
+    const roamX = cx + Math.sin(ph)*b.roamAmp;                    // ride forward and back around the car
+    const roamDir = Math.cos(ph) >= 0 ? 1 : -1;                   // face the way you're moving
+    let x = roamX, dir = roamDir, torch = 0, fall = 0;
+    if (b.state === 'torch')    { x = cx; torch = (b.t < 0.6) ? 1 : 0; }          // ride up to torch, stay mounted
     else if (b.state === 'defeated'){ fall = clamp((b.t - 0.28)/0.34, 0, 1); }   // rider shot, drops off
     else if (b.state === 'flee'){ x = b.fleeX; dir = -1; fall = 1; }             // riderless horse bolts
     drawHorseRider(x, gy + bob, s, t*b.spd + b.phase, torch, dir, fall);
   }
+}
+function drawBanner(){
+  const msg = "Don't let the bandits burn the train!";
+  const a = clamp(bannerClock/0.9, 0, 1);                         // fade out at the end
+  let fs = clamp(W*0.05, 26, 54);
+  ctx.font = '800 ' + fs + 'px system-ui, sans-serif';
+  while (ctx.measureText(msg).width > W*0.92 && fs > 16){ fs -= 1; ctx.font = '800 ' + fs + 'px system-ui, sans-serif'; }
+  ctx.save(); ctx.globalAlpha = a; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const y = H*0.3;
+  ctx.lineJoin = 'round'; ctx.lineWidth = fs*0.16; ctx.strokeStyle = 'rgba(18,26,38,0.9)';
+  ctx.strokeText(msg, W/2, y);
+  ctx.fillStyle = '#ffffff'; ctx.fillText(msg, W/2, y);
+  ctx.restore();
 }
 
 // the good guy who guards a correctly-answered car (climbs on, shoots, stands watch)
@@ -763,7 +782,7 @@ function loop(ts){
   for (const b of bandits){
     b.t += dt;
     const car = train[b.carIdx];
-    if (b.state === 'torch'){ if (car) car.fire = Math.min(1, car.fire + dt/0.5); if (b.t > 0.65){ b.state='flee'; b.fleeX = car ? car.x + car.cw/2 : -60; } }
+    if (b.state === 'torch'){ if (car) car.fire = Math.min(1, car.fire + dt/0.5); if (b.t > 0.7) b.state='ride'; }   // stays mounted, keeps roaming
     else if (b.state === 'defeated'){ if (b.t > 0.72){ b.state='flee'; b.fleeX = car ? car.x + car.cw/2 : -60; } }
     else if (b.state === 'flee'){ b.fleeX -= 130*dt; if (b.fleeX < -120) b.state='gone'; }
   }
@@ -778,6 +797,8 @@ function loop(ts){
   drawBandits(t);      // foreground, in front of the train
   drawHeroes(t);       // good guys standing watch on guarded cars
   drawSnow(dt);
+
+  if (bannerClock > 0){ bannerClock -= dt; drawBanner(); }
 
   requestAnimationFrame(loop);
 }
