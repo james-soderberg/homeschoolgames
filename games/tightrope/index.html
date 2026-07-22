@@ -378,7 +378,8 @@ function tolsFor(){
   return { bal: lerp(0.060, 0.020, t), save: lerp(0.125, 0.046, t) };
 }
 const START_LIVES = 3;
-const MIN_LEVEL = 5;   // reach at least here to make the leaderboard
+const MIN_LEVEL = 5;    // reach at least here for the "great climb!" praise
+const MIN_ROUNDS = 4;   // survive at least this many crossings to make the leaderboard
 
 // ---------- DOM ----------
 const stage      = document.getElementById('stage');
@@ -421,17 +422,29 @@ let level=1, lives=START_LIVES, rounds=0, successes=0;   // level = crossing you
 let outcome=null, resultT=0, wobbleAmp=0, tipDir=1, fallY=0, fellFx=false, advanced=false, revealed=false;
 let fallSev=0, struggleT=0;   // fall dynamics scale with how far off the guess was
 let dragging=false, running=false, rafId=null, lastTs=0, sceneT=0;
+let bannerT=0;                // seconds remaining on the "next difficulty" banner
+const BANNER_DUR=2.0;         // how long the banner stays up
 
-// Single "highest level reached" board on a fresh key (level:'climb'), so the old
-// per-tier streak boards are retired rather than mixed in with the new metric.
+// The climb slides smoothly between four value pools; these thresholds mark where
+// one pool hands off to the next, so a banner can announce each step up in difficulty.
+function difficultyTier(L){
+  if(L<=5)  return 0;   // whole numbers & friendly halves/quarters
+  if(L<=12) return 1;   // fractions, decimals, percents on 0-1
+  if(L<=18) return 2;   // improper/mixed numbers & asymmetric scales
+  return 3;             // irrationals & brutal off-kilter scales
+}
+function showBanner(){ bannerT=BANNER_DUR; }
+
+// Single "rounds survived" board on a fresh key (level:'survived'), so the old
+// per-difficulty streak boards are retired rather than mixed in with the new metric.
 const rail = HSGStreak.init({
-  gameId:'tightrope', gameName:'Tightrope', unit:'level', minStreak:MIN_LEVEL,
-  level:'climb', levelName:'',
+  gameId:'tightrope', gameName:'Tightrope', unit:'rounds', minStreak:MIN_ROUNDS,
+  level:'survived', levelName:'',
   mount: document.getElementById('streakRail')
 });
-// start-screen "scores to beat": the one highest-levels board
+// start-screen "scores to beat": the one rounds-survived board
 if (window.HSGStreak && HSGStreak.renderBoardInto) HSGStreak.renderBoardInto('#trLevelBoards', {
-  gameId:'tightrope', level:'climb', unit:'level', minStreak:MIN_LEVEL, allowClear:false
+  gameId:'tightrope', level:'survived', unit:'rounds', minStreak:MIN_ROUNDS, allowClear:false
 });
 
 // ---------- Scenery ----------
@@ -633,6 +646,29 @@ function draw(){
   drawMarker();
   drawEndLabels();
   drawWalker();
+  drawBanner();
+}
+// A gold ribbon that slides in across the sky to announce a step up in difficulty.
+function drawBanner(){
+  if(bannerT<=0) return;
+  const t = 1 - bannerT/BANNER_DUR;                                  // 0 -> 1 over its life
+  const a = clamp(t<0.18 ? t/0.18 : (t>0.8 ? (1-t)/0.2 : 1), 0, 1);  // fade in, hold, fade out
+  const msg='Entering next difficulty level.';
+  const fs = clamp(W/26, 14, 22);
+  ctx.save();
+  ctx.globalAlpha = a;
+  ctx.font = '800 '+fs+'px Inter, system-ui, sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  const bw = Math.min(W*0.94, ctx.measureText(msg).width + fs*2.4);
+  const bh = fs*2.1;
+  const cx = W/2;
+  const cy = H*0.19 + (1-a)* -8;              // drifts down a touch as it appears
+  ctx.fillStyle='#c4a040';                    // gold ribbon
+  ctx.strokeStyle='#e9d9a8'; ctx.lineWidth=2.5;
+  roundRect(cx-bw/2, cy-bh/2, bw, bh, bh*0.32); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#2a2f38';                    // ink text
+  ctx.fillText(msg, cx, cy+1);
+  ctx.restore();
 }
 // benchmark landmarks appear on reveal so kids see where the value sits relative
 // to friendly reference points - but stay hidden while aiming (no cheating).
@@ -656,6 +692,7 @@ function tick(ts){
   if(!running){ return; }
   if(!lastTs) lastTs=ts; let dt=(ts-lastTs)/1000; lastTs=ts; if(dt>0.05) dt=0.05;
   sceneT += dt;
+  if(bannerT>0){ bannerT=Math.max(0, bannerT-dt); }
   if(state==='result'){
     resultT += dt;
     if(outcome==='fall'){
@@ -701,8 +738,11 @@ function commit(){
   balanceBtn.classList.add('hidden');
 
   if(success){
+    const prevTier = difficultyTier(level);
     successes++;
-    level++; rail.set(level);   // cleared it - climb one level (rail tracks the session best)
+    level++; rail.set(successes);   // cleared it - one more round survived (rail tracks the session best)
+    if(difficultyTier(level) > prevTier) showBanner();   // crossed into a harder value pool
+
     // On the mark → rock steady (no shake). In the "save" band → a real wobble
     // that grows toward the fall threshold, then visibly corrects.
     if(e <= T.bal){ wobbleAmp = Math.pow(e/T.bal, 2) * 0.12; }        // solidly balanced: barely a flicker
@@ -739,8 +779,8 @@ function advance(){
 // ---------- Lifecycle ----------
 function startGame(startLevel){
   level = Math.max(1, startLevel||1);
-  lives=START_LIVES; rounds=0; successes=0;
-  rail.reset(); rail.set(level);
+  lives=START_LIVES; rounds=0; successes=0; bannerT=0;
+  rail.reset(); rail.set(successes);
   setupCanvas(); updateHud();
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden');
   running=true; lastTs=0; state='aim';
@@ -760,10 +800,10 @@ function gameOver(){
   overOverlay.classList.remove('hidden');
   if(window.HSGSound) HSGSound.finish(level>=MIN_LEVEL);
   if(window.HSGfx && level>=12) HSGfx.confetti({count:60, big:true});
-  rail.gameOver(level, document.getElementById('trBoard'));   // bank the level reached + inline name entry
+  rail.gameOver(successes, document.getElementById('trBoard'));   // bank rounds survived + inline name entry
 }
 function quitToMenu(){
-  if(successes>0) rail.gameOver(level);   // bank the level reached on the way out
+  if(successes>0) rail.gameOver(successes);   // bank rounds survived on the way out
   running=false; state='menu'; if(rafId) cancelAnimationFrame(rafId);
   balanceBtn.classList.add('hidden'); overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
   ctx.clearRect(0,0,W,H); drawSky();

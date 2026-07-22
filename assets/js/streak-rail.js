@@ -102,7 +102,12 @@
     level:  { head: '🎪 Highest Climbers',
               score: function (n) { return 'Level ' + n; },
               of:    function (n) { return 'Level ' + n + '!'; },
-              claim: 'climb', rIcon: '🎪', rLabel: 'LEVEL' }
+              claim: 'climb', rIcon: '🎪', rLabel: 'LEVEL' },
+    // Endless survival games (e.g. Tightrope) - how many rounds you stayed on, higher is better.
+    rounds: { head: '🎪 Most Rounds Survived',
+              score: function (n) { return n + (n === 1 ? ' round' : ' rounds'); },
+              of:    function (n) { return 'Survived ' + n + (n === 1 ? ' round' : ' rounds') + '!'; },
+              claim: 'run', rIcon: '🎪', rLabel: 'ROUNDS' }
   };
   function unitOf(u) { return UNITS[u] || UNITS.streak; }
 

@@ -21,7 +21,7 @@ const GAMES = [
   { key:'food-web',      name:'Keep the Habitat Alive', href:'games/food-web/index.html', subject:'Biology',   emoji:'🦊', blurb:'Hunt to survive, but keep the whole habitat in balance.', photo:'assets/img/home/shots/food-web.jpg', badge:'✦ New', lb:'points' },
   { key:'bible-quiz',    name:"Paul's Journey",   href:'games/bible-quiz/index.html',   subject:'Passage Identification', emoji:'📖', blurb:'Test how well you know scripture.',  photo:'assets/img/home/shots/bible-quiz.jpg', lb:'streak' },
   { key:'letter-catch',  name:'Letter Catch',     href:'games/letter-catch/index.html', subject:'Spelling',  emoji:'🪣', blurb:'Catch letters to spell the word.',   photo:'assets/img/home/shots/letter-catch.jpg', lb:'streak' },
-  { key:'tightrope',     name:'Tightrope',        href:'games/tightrope/index.html',    subject:'Math',      emoji:'🎪', blurb:'Balance a value on the number line.', photo:'assets/img/home/shots/tightrope.jpg', lb:'streak' },
+  { key:'tightrope',     name:'Tightrope',        href:'games/tightrope/index.html',    subject:'Math',      emoji:'🎪', blurb:'Balance a value on the number line.', photo:'assets/img/home/shots/tightrope.jpg', lb:'rounds' },
 ];
 
 // Board key <-> game/level helpers for the homepage rail. Board keys look like
@@ -31,6 +31,9 @@ const GAMES = [
 const LB_BY_ID = {};
 GAMES.forEach(function (g) { if (g.lb) LB_BY_ID[g.key] = g; });
 const LB_SKIP_LEVELS = { arcade: true };   // secret levels on otherwise-public games
+// Games consolidated to a single board: only their one canonical board counts on the
+// rail; retired per-difficulty boards (tightrope now scales automatically) are dropped.
+const LB_ONLY_LEVEL = { tightrope: 'survived' };
 
 // Nicer labels for common level keys; anything else is Title-Cased.
 const LB_LEVEL_LABELS = {
@@ -51,6 +54,11 @@ function lbResolve(board) {
   var level = sep < 0 ? '' : rest.slice(sep + 2);
   var game = LB_BY_ID[id];
   if (!game || LB_SKIP_LEVELS[level]) return null;
+  // Consolidated games: keep only the one canonical board, and show no level chip.
+  if (LB_ONLY_LEVEL.hasOwnProperty(id)) {
+    if (level !== LB_ONLY_LEVEL[id]) return null;
+    return { game: game, level: level, levelLabel: '' };
+  }
   var label = LB_LEVEL_LABELS.hasOwnProperty(level) ? LB_LEVEL_LABELS[level] : lbTitleCase(level);
   return { game: game, level: level, levelLabel: label };
 }
