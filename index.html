@@ -36,20 +36,27 @@
     background:#c79a5b;
     background-image:radial-gradient(rgba(90,60,25,.22) 1.3px,transparent 1.4px),radial-gradient(rgba(120,85,40,.16) 1.2px,transparent 1.3px);
     background-size:9px 9px,13px 13px;background-position:0 0,4px 6px;}
-  .wrap{max-width:min(1520px,96vw);margin:0 auto;padding:2.6rem 1.5rem 4rem;}
+  .wrap{max-width:min(1780px,96vw);margin:0 auto;padding:2.6rem 1.5rem 4rem;}
 
-  /* games grid + right-side running-leaderboard rail */
+  /* games grid stays centred on screen; a smaller running-leaderboard rail sits to the
+     right. an invisible left spacer mirrors the rail's width so the grid is truly centred. */
   .home-cols{display:flex;gap:2rem;justify-content:center;align-items:flex-start;}
+  .home-cols::before{content:"";flex:0 0 190px;}
   .home-main{flex:0 1 1180px;min-width:0;}
-  .home-rail{flex:0 0 288px;position:sticky;top:1rem;align-self:flex-start;}
+  .home-rail{flex:0 0 190px;position:sticky;top:1rem;align-self:flex-start;}
   /* sidebar: cards stack in a column, each sized to its own rows (no equal-height stretch) */
   .home-rail .lb-rail{display:flex;flex-direction:column;gap:0.9rem;align-items:stretch;}
   .home-rail .lb-rail-title{width:100%;}
   .home-rail .lb-card{width:100%;max-width:none;}
   .lb-empty{font-size:.82rem;color:#6c5836;font-weight:600;text-align:center;opacity:.8;}
+  /* pinned Treasure Hunt checkpoint board (always shown, on top of the rail) */
+  .home-rail #cpPinned{margin-bottom:0.9rem;}
+  .home-rail .lb-card-pin{border:1.5px solid var(--gold,#C4A040);box-shadow:0 3px 12px rgba(180,140,40,.20);}
+  .lb-empty.cp-none{color:#9b9b9b;opacity:1;font-weight:600;padding:.35rem .2rem;}
   /* between phone and ~1400px the rail drops under the games as a wrapping card grid */
   @media (max-width:1400px){
     .home-cols{flex-direction:column;align-items:center;}
+    .home-cols::before{display:none;}
     .home-main{flex-basis:auto;width:100%;}
     .home-rail{position:static;flex-basis:auto;width:100%;max-width:860px;margin-top:2.4rem;}
     /* stacked under the grid: wrap into a card grid, top-aligned so a 1-row card
@@ -321,15 +328,48 @@
       });
       const MAX_CARDS=12;
       const shown=order.slice(0,MAX_CARDS);
-      if(!shown.length){ rail.innerHTML='<div class="lb-rail"><div class="lb-rail-title">🏆 Live Leaderboards</div><p class="lb-empty">No scores yet. Be the first!</p></div>'; return; }
+      const live=document.getElementById('lbLive'); if(!live) return;
+      if(!shown.length){ live.innerHTML='<p class="lb-empty">No scores yet. Be the first!</p>'; return; }
       const topBoard=shown[0];
       const fresh=(prevOrder && prevOrder!==topBoard) ? topBoard : '';   // board newly at the front
       const cards=shown.map(b=>{
         const g=byBoard[b].info.game, lvl=byBoard[b].info.levelLabel;
         return cardHTML(g,lvl,byBoard[b].rows.slice(0,5), b===fresh);
       }).join('');
-      rail.innerHTML=`<div class="lb-rail"><div class="lb-rail-title">🏆 Live Leaderboards</div>${cards}</div>`;
+      live.innerHTML=cards;
       prevOrder=topBoard;
+    }
+    // ---- pinned Treasure Hunt "Checkpoint One" board (always on top; empty until reached) ----
+    const CP_BOARD='hsg_lb_checkpoint-1';
+    function renderPin(rows){
+      const host=document.getElementById('cpPinned'); if(!host) return;
+      let inner;
+      if(rows && rows.length){
+        inner='<ol class="lb-card-list">'+rows.slice(0,6).map((e,i)=>{
+          const rank=i+1;
+          return '<li class="lb-card-row"><span class="lb-card-rank">'+(MEDAL[rank]||rank)+'</span>'+
+            '<span class="lb-card-name">'+esc(e.name)+'</span>'+
+            '<span class="lb-card-score">🚩</span></li>';
+        }).join('')+'</ol>';
+      } else {
+        inner='<p class="lb-empty cp-none">No one has reached Checkpoint One.</p>';
+      }
+      host.innerHTML=
+        '<div class="lb-card lb-card-pin">'+
+          '<div class="lb-card-head"><span class="lb-card-emoji">🗺️</span>'+
+          '<span class="lb-card-titles"><span class="lb-card-game">Treasure Hunt</span>'+
+          '<span class="lb-card-level">Checkpoint One</span></span></div>'+
+          inner+
+        '</div>';
+    }
+    function pollPin(){
+      if(!remote) return;
+      fetch('/api/top?board='+encodeURIComponent(CP_BOARD)).then(r=>r.ok?r.json():null).then(list=>{
+        const rows=Array.isArray(list)
+          ? list.filter(e=>e&&typeof e.name==='string').map(e=>({name:e.name,ts:Number(e.ts)||0})).sort((a,b)=>a.ts-b.ts)
+          : [];
+        renderPin(rows);
+      }).catch(()=>{});
     }
     function poll(){
       if(!remote) return;
@@ -337,9 +377,16 @@
         if(Array.isArray(list)) render(list);
       }).catch(()=>{});
     }
-    rail.innerHTML='<div class="lb-rail"><div class="lb-rail-title">🏆 Live Leaderboards</div><p class="lb-empty">Loading…</p></div>';
-    poll();
-    if(remote) setInterval(poll,REFRESH_MS);
+    // scaffolding: pinned checkpoint board on top, the live boards below
+    rail.innerHTML=
+      '<div class="lb-rail">'+
+        '<div id="cpPinned"></div>'+
+        '<div class="lb-rail-title">🏆 Live Leaderboards</div>'+
+        '<div id="lbLive"><p class="lb-empty">Loading…</p></div>'+
+      '</div>';
+    renderPin(null);            // show the checkpoint card right away (empty until it loads)
+    poll(); pollPin();
+    if(remote) setInterval(function(){ poll(); pollPin(); }, REFRESH_MS);
   })();
 
   const board=document.getElementById('board');
