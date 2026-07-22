@@ -364,6 +364,7 @@
           <span class="r-icon">💀</span><span class="r-name">Impossible</span>
         </button>
       </div>
+      <div id="dsLevelBoards" style="width:100%;max-width:340px;margin:1.1rem auto 0;"></div>
     </div>
 
     <!-- Game over overlay -->
@@ -661,6 +662,11 @@ const rail = HSGStreak.init({
   gameId:'dragon-siege', gameName:'Dragon Siege', minStreak:3,
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
+});
+// start-screen "scores to beat" - one collapsible board per realm
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#dsLevelBoards', {
+  gameId:'dragon-siege', unit:'streak', minStreak:3,
+  levels:[{key:'easy',label:'Easy',icon:'🛡️'},{key:'medium',label:'Medium',icon:'⚔️'},{key:'hard',label:'Hard',icon:'🐲'},{key:'impossible',label:'Impossible',icon:'💀'}]
 });
 
 // ---------- Geometry helpers ----------

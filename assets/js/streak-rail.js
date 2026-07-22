@@ -725,11 +725,60 @@
     withFreshBoard(key, paint);    // then the live global board
   }
 
+  // ---- start-screen "targets to beat": one collapsible board per difficulty ----
+  // opts: { gameId, unit, minStreak, levels:[{key,label,icon}], title }. Each row
+  // shows the level's current #1; clicking it expands that level's full Top-10.
+  function levelBoards(elOrSel, opts) {
+    var targets = resolveAll(elOrSel);
+    if (!targets.length) return;
+    var levels = opts.levels || [];
+    var unit = opts.unit, min = opts.minStreak || 1, gameId = opts.gameId;
+    var u = unitOf(unit);
+    var openKey = null;   // which level is expanded (persists across repaints)
+    function rowHTML(lv) {
+      var key = levelKey(gameId, lv.key || '');
+      var list = load(key), top = list.length ? list[0] : null;
+      var open = (lv.key || '') === openKey;
+      var summary = top
+        ? '<span class="lbv-top-name">' + esc(top.name) + '</span><span class="lbv-top-score">' + u.score(top.score) + '</span>'
+        : '<span class="lbv-top-empty">be the first</span>';
+      var body = open ? '<div class="lbv-body">' + boardHTML(key, { unit: unit, minStreak: min, allowClear: false }) + '</div>' : '';
+      return '<div class="lbv-lv' + (open ? ' open' : '') + '" data-lv="' + esc(lv.key || '') + '">' +
+        '<button type="button" class="lbv-head">' +
+          '<span class="lbv-name">' + (lv.icon ? esc(lv.icon) + ' ' : '') + esc(lv.label) + '</span>' +
+          '<span class="lbv-top">' + summary + '</span>' +
+          '<span class="lbv-caret">' + (open ? '▴' : '▾') + '</span>' +
+        '</button>' + body + '</div>';
+    }
+    function paint() {
+      targets.forEach(function (host) {
+        host.classList.add('lbv');
+        host.innerHTML = '<div class="lbv-title">' + esc(opts.title || '🏆 Leaderboards — scores to beat') + '</div>' +
+          '<div class="lbv-list">' + levels.map(rowHTML).join('') + '</div>';
+        host.querySelectorAll('.lbv-head').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var k = btn.parentNode.getAttribute('data-lv');
+            openKey = (openKey === k) ? null : k;
+            paint();
+          });
+        });
+      });
+    }
+    paint();   // instant from cache
+    // refresh each level's global board, repaint as each lands
+    levels.forEach(function (lv) { withFreshBoard(levelKey(gameId, lv.key || ''), paint); });
+  }
+
   window.HSGStreak = {
     init: function (opts) { return new Rail(opts); },
     record: record,
     endPanel: endPanel,
     renderBoardInto: renderBoardInto,
+    levelBoards: levelBoards,
+    // Format a raw score with a unit's display rule (e.g. 'miles' -> '6.40 mi').
+    formatScore: function (unit, n) { return unitOf(unit).score(n); },
+    // Human heading for a unit (e.g. 'wpm' -> '🏆 Fastest Racers').
+    unitHead: function (unit) { return unitOf(unit).head; },
     qualifies: function (gameId, level, score, minStreak) { return qualifies(levelKey(gameId, level), score, minStreak); },
     bestScore: function (gameId, level) { var l = load(levelKey(gameId, level)); return l.length ? l[0].score : 0; },
     // Turn a raw solve time (seconds) into the inverted score a `soltime` board expects.

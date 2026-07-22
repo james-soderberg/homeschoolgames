@@ -341,6 +341,7 @@
         <button class="realm-btn" data-realm="hard"><span class="r-icon">👨‍🚀</span><span><span class="r-name">Hard</span><span class="r-desc">The Constitution · fast</span></span></button>
         <button class="realm-btn" data-realm="impossible"><span class="r-icon">👽</span><span><span class="r-name">Impossible</span><span class="r-desc">The Constitution · relentless</span></span></button>
       </div>
+      <div id="tiLevelBoards" style="width:100%;max-width:360px;margin:1.1rem auto 0;"></div>
     </div>
 
     <!-- Treasure-hunt arcade intro (shown when arrived via ?arcade) -->
@@ -2121,6 +2122,11 @@ const rail = HSGStreak.init({
   gameId:'type-invaders', gameName:'Independence Day', minStreak:3,
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
+});
+// start-screen "streaks to beat" - one collapsible board per realm (arcade is secret, so it's left out)
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#tiLevelBoards', {
+  gameId:'type-invaders', unit:'streak', minStreak:3,
+  levels:[{key:'easy',label:'Easy',icon:'🛰️'},{key:'medium',label:'Medium',icon:'🚀'},{key:'hard',label:'Hard',icon:'👨‍🚀'},{key:'impossible',label:'Impossible',icon:'👽'}]
 });
 
 function startGame(key, isArcade){

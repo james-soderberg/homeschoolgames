@@ -234,6 +234,7 @@
         <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Hard</span><span class="l-desc">High school+</span></span></button>
         <button class="level-btn" data-level="einstein"><span class="l-icon">🧠</span><span><span class="l-name">Einstein</span><span class="l-desc">Spelling-bee level</span></span></button>
       </div>
+      <div id="lcLevelBoards" style="width:100%;max-width:320px;margin:1.1rem auto 0;"></div>
     </div>
   </div>
 
@@ -337,6 +338,11 @@ function diff(){
 
 const rail = HSGStreak.init({ gameId:'letter-catch', gameName:'Letter Catch', minStreak:2,
   mount: document.getElementById('streakRail') });
+// start-screen "scores to beat" - one collapsible board per level
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#lcLevelBoards', {
+  gameId:'letter-catch', unit:'streak', minStreak:2,
+  levels:[{key:'easy',label:'Easy',icon:'🐤'},{key:'medium',label:'Medium',icon:'🦊'},{key:'hard',label:'Hard',icon:'🦉'},{key:'einstein',label:'Einstein',icon:'🧠'}]
+});
 
 // basket / tiles scale to the (big) board but stay readable.
 // the basket hugs the letter size (~1.5 tiles wide) so you catch one at a time.

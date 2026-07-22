@@ -304,6 +304,7 @@
           <button class="pace-btn" data-level="hard">Hard<span class="p-sub">Adult</span></button>
           <button class="pace-btn" data-level="solomon">Solomon<span class="p-sub">Expert</span></button>
         </div>
+        <div id="bqLevelBoards" style="width:100%;max-width:340px;margin:1.1rem auto 0;"></div>
       </div>
     </div>
 
@@ -561,6 +562,11 @@ const sceneWrap = document.getElementById('sceneWrap');
 const canvas = document.getElementById('scene');
 const ctx = canvas.getContext('2d');
 const startOverlay = document.getElementById('startOverlay');
+// start-screen "streaks to beat" - one collapsible board per level
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#bqLevelBoards', {
+  gameId:'bible-quiz', unit:'streak', minStreak:3,
+  levels:[{key:'easy',label:'Easy'},{key:'medium',label:'Medium'},{key:'hard',label:'Hard'},{key:'solomon',label:'Solomon'}]
+});
 const answersEl = document.getElementById('answers');
 const qtextEl = document.getElementById('qtext');
 const mapCanvas = document.getElementById('mapCanvas');

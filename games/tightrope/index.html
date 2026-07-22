@@ -231,6 +231,7 @@
       <h2>Tightrope</h2>
       <p>A value appears. Slide the walker to where it sits on the line. Let go: close means they balance, off means they teeter. The line is only labeled at the ends, so you have to <em>feel</em> the size.</p>
       <div class="tier-row" id="tierRow"></div>
+      <div id="trLevelBoards" style="width:100%;max-width:340px;margin:1.1rem auto 0;"></div>
     </div>
 
     <!-- Game over -->
@@ -428,6 +429,11 @@ const rail = HSGStreak.init({
   gameId:'tightrope', gameName:'Tightrope', minStreak:3,
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
+});
+// start-screen "scores to beat" - one collapsible board per tier
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#trLevelBoards', {
+  gameId:'tightrope', unit:'streak', minStreak:3,
+  levels:[{key:'easy',label:'Easy',icon:'🌱'},{key:'medium',label:'Medium',icon:'✏️'},{key:'hard',label:'Hard',icon:'🔥'},{key:'einstein',label:'Einstein',icon:'🧠'}]
 });
 
 // ---------- Scenery ----------

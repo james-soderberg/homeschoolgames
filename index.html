@@ -29,13 +29,31 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/css/streak-rail.css">
 <style>
   *{box-sizing:border-box;}
   body{margin:0;font-family:'Outfit',system-ui,sans-serif;color:#2b2922;
     background:#c79a5b;
     background-image:radial-gradient(rgba(90,60,25,.22) 1.3px,transparent 1.4px),radial-gradient(rgba(120,85,40,.16) 1.2px,transparent 1.3px);
     background-size:9px 9px,13px 13px;background-position:0 0,4px 6px;}
-  .wrap{max-width:1180px;margin:0 auto;padding:2.6rem 1.5rem 4rem;}
+  .wrap{max-width:min(1520px,96vw);margin:0 auto;padding:2.6rem 1.5rem 4rem;}
+
+  /* games grid + right-side running-leaderboard rail */
+  .home-cols{display:flex;gap:2rem;justify-content:center;align-items:flex-start;}
+  .home-main{flex:0 1 1180px;min-width:0;}
+  .home-rail{flex:0 0 288px;position:sticky;top:1rem;align-self:flex-start;}
+  .home-rail .lb-rail{display:flex;flex-wrap:wrap;gap:0.9rem;justify-content:center;}
+  .home-rail .lb-rail-title{flex-basis:100%;}
+  .home-rail .lb-card{flex:1 1 240px;max-width:288px;}
+  .lb-empty{font-size:.82rem;color:#6c5836;font-weight:600;text-align:center;opacity:.8;}
+  /* between phone and ~1400px the rail drops under the games as a wrapping card grid */
+  @media (max-width:1400px){
+    .home-cols{flex-direction:column;align-items:center;}
+    .home-main{flex-basis:auto;width:100%;}
+    .home-rail{position:static;flex-basis:auto;width:100%;max-width:860px;margin-top:2.4rem;}
+  }
+  /* on phones the running leaderboard is just clutter - hide it entirely */
+  @media (max-width:760px){ .home-rail{display:none;} }
 
   .banner{margin:0 auto 2.8rem;max-width:560px;background:#fffdf5;padding:1.2rem 1.5rem;text-align:center;
     transform:rotate(-1.2deg);box-shadow:0 8px 18px rgba(40,25,5,.3);position:relative;}
@@ -220,6 +238,8 @@
     <div class="banner">
       <h1>Homeschool<span>Games</span></h1>
     </div>
+    <div class="home-cols">
+    <div class="home-main">
     <div class="grid" id="board">
     <a href="games/who-said-it/index.html" class="pin"><div class="badge">★ Most Popular</div><img class="pic" width="512" height="512" src="assets/img/home/shots/who-said-it.jpg" alt="Who Said It? - free history game" loading="lazy"><div class="cap">Who Said It?</div><div class="sub">History</div></a>
     <a href="games/circa/index.html" class="pin"><img class="pic" width="512" height="512" src="assets/img/home/shots/circa.jpg" alt="Circa - free history game" loading="lazy"><div class="cap">Circa</div><div class="sub">History</div></a>
@@ -240,7 +260,10 @@
     <a href="games/bible-quiz/index.html" class="pin"><img class="pic" width="512" height="512" src="assets/img/home/shots/bible-quiz.jpg" alt="Paul&#x27;s Journey - free passage identification game" loading="lazy"><div class="cap">Paul&#x27;s Journey</div><div class="sub">Passage Identification</div></a>
     <a href="games/letter-catch/index.html" class="pin"><img class="pic" width="512" height="512" src="assets/img/home/shots/letter-catch.jpg" alt="Letter Catch - free spelling game" loading="lazy"><div class="cap">Letter Catch</div><div class="sub">Spelling</div></a>
     <a href="games/tightrope/index.html" class="pin"><img class="pic" width="512" height="512" src="assets/img/home/shots/tightrope.jpg" alt="Tightrope - free math game" loading="lazy"><div class="cap">Tightrope</div><div class="sub">Math</div></a>
-  </div>
+  </div><!-- /.grid -->
+    </div><!-- /.home-main -->
+    <aside class="home-rail" id="lbRail" aria-label="Live leaderboards"></aside>
+    </div><!-- /.home-cols -->
 
 
     <div class="buried-band">
@@ -250,7 +273,69 @@
     <div class="morse" id="morse" aria-hidden="true"></div>
   </div>
 <script src="assets/js/home-games.js"></script>
+<script src="assets/js/streak-rail.js"></script>
 <script>
+  // ---- right-side running leaderboard: recently-active boards, newest first ----
+  // Pulls /api/recent, groups rows by board, maps each to its game via lbResolve()
+  // (secret games are skipped), and renders a mini top-5 card per board. Re-polls so
+  // it stays "live"; a board that jumps to the front briefly highlights.
+  (function(){
+    const rail=document.getElementById('lbRail');
+    if(!rail || typeof lbResolve!=='function') return;
+    const REFRESH_MS=45000;
+    const remote=(typeof fetch==='function' && /^https?:$/.test(location.protocol));
+    const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const MEDAL={1:'🥇',2:'🥈',3:'🥉'};
+    let prevOrder='';
+
+    function fmt(unit,score){
+      try{ return (window.HSGStreak&&HSGStreak.formatScore)?HSGStreak.formatScore(unit,score):String(score); }
+      catch(e){ return String(score); }
+    }
+    function cardHTML(g,levelLabel,rows,fresh){
+      const list=rows.map((e,i)=>{
+        const rank=i+1;
+        return `<li class="lb-card-row"><span class="lb-card-rank">${MEDAL[rank]||rank}</span>`+
+          `<span class="lb-card-name">${esc(e.name)}</span>`+
+          `<span class="lb-card-score">${esc(fmt(g.lb,e.score))}</span></li>`;
+      }).join('');
+      return `<div class="lb-card${fresh?' fresh':''}">`+
+        `<div class="lb-card-head"><span class="lb-card-emoji">${g.emoji||'🎮'}</span>`+
+        `<span class="lb-card-titles"><span class="lb-card-game">${esc(g.name)}</span>`+
+        (levelLabel?`<span class="lb-card-level">${esc(levelLabel)}</span>`:'')+
+        `</span></div><ol class="lb-card-list">${list}</ol></div>`;
+    }
+    function render(list){
+      // group rows by board, preserving the server's recency order
+      const order=[]; const byBoard={};
+      list.forEach(r=>{
+        const info=lbResolve(r.board); if(!info) return;      // skip secret / unknown boards
+        if(!byBoard[r.board]){ byBoard[r.board]={info:info,rows:[]}; order.push(r.board); }
+        byBoard[r.board].rows.push(r);
+      });
+      const MAX_CARDS=12;
+      const shown=order.slice(0,MAX_CARDS);
+      if(!shown.length){ rail.innerHTML='<div class="lb-rail"><div class="lb-rail-title">🏆 Live Leaderboards</div><p class="lb-empty">No scores yet. Be the first!</p></div>'; return; }
+      const topBoard=shown[0];
+      const fresh=(prevOrder && prevOrder!==topBoard) ? topBoard : '';   // board newly at the front
+      const cards=shown.map(b=>{
+        const g=byBoard[b].info.game, lvl=byBoard[b].info.levelLabel;
+        return cardHTML(g,lvl,byBoard[b].rows.slice(0,5), b===fresh);
+      }).join('');
+      rail.innerHTML=`<div class="lb-rail"><div class="lb-rail-title">🏆 Live Leaderboards</div>${cards}</div>`;
+      prevOrder=topBoard;
+    }
+    function poll(){
+      if(!remote) return;
+      fetch('/api/recent?boards=30&rows=5').then(r=>r.ok?r.json():null).then(list=>{
+        if(Array.isArray(list)) render(list);
+      }).catch(()=>{});
+    }
+    rail.innerHTML='<div class="lb-rail"><div class="lb-rail-title">🏆 Live Leaderboards</div><p class="lb-empty">Loading…</p></div>';
+    poll();
+    if(remote) setInterval(poll,REFRESH_MS);
+  })();
+
   const board=document.getElementById('board');
   // Static pins are pre-rendered in the HTML for crawlers; only build from
   // JS if they're somehow missing (keeps the grid working either way).
