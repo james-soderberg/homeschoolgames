@@ -78,6 +78,9 @@
     // Who Painted It - score out of 20 (higher is better)
     art20:  { head: '🏆 Master Curators',        score: function (n) { return n + ' / 20'; },
               of: function (n) { return n + ' / 20!'; },                           claim: 'game', rIcon: '🎨', rLabel: 'SCORE' },
+    // Flag Frenzy - score out of 24 (higher is better)
+    flags:  { head: '🏆 Flag Champions',        score: function (n) { return n + ' / 24'; },
+              of: function (n) { return n + ' / 24!'; },                           claim: 'game', rIcon: '🚩', rLabel: 'SCORE' },
     // Map Quiz accuracy - a single integer encodes BOTH correct and wrong:
     //   score = correct*1000 + (999 - min(wrong,999))
     // so it sorts by most-correct first, then by fewest-wrong (best accuracy).
