@@ -404,7 +404,7 @@ const SPEED_MIN = 145, SPEED_MAX = 560;
 const MAX_FLIGHT = 13;   // seconds before "lost in space"
 const TRAIL_MAX = 70;
 const FIXED_H = 1 / 120; // physics runs at a fixed step, so flight matches the preview exactly
-const FLIGHT_RATE = 0.55; // play the flight back slower than real time (same path, nicer to watch)
+const FLIGHT_RATE = 0.4125; // play the flight back slower than real time (same path, nicer to watch) — 25% slower than the old 0.55, purely visual
 
 // Everything plays inside a fixed design space; the canvas just scales it to fit,
 // so every baked level behaves identically on any screen.
