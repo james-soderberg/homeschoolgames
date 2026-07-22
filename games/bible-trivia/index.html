@@ -293,6 +293,7 @@
         <button class="pace-btn" data-pace="hard">Hard<span class="p-sub">Adult</span></button>
         <button class="pace-btn" data-pace="solomon">Solomon<span class="p-sub">Expert</span></button>
       </div>
+      <div id="btLevelBoards" style="width:100%;max-width:360px;margin:1.2rem auto 0;"></div>
     </div>
 
     <!-- Level intro overlay (story for the upcoming stage) -->
@@ -2133,6 +2134,11 @@ HSGGod.watch(() => {
 // ---------------- Wiring ----------------
 document.querySelectorAll('.pace-btn').forEach(b => {
   b.addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); startJourney(b.dataset.pace); });
+});
+// scores-to-beat board on the start screen, one collapsible board per difficulty
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#btLevelBoards', {
+  gameId:'bible-trivia', unit:'streak', minStreak:3, title:'🏆 Scores to beat',
+  levels:[{key:'easy',label:'Easy',icon:'📖'},{key:'medium',label:'Medium',icon:'📜'},{key:'hard',label:'Hard',icon:'⚔️'},{key:'solomon',label:'Solomon',icon:'👑'}]
 });
 document.getElementById('introBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); beginLevel(); });
 document.getElementById('clearBtn').addEventListener('click', () => { if (window.HSGSound) HSGSound.tick(); continueJourney(); });
