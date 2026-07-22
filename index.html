@@ -45,9 +45,12 @@
   .home-main{flex:0 1 1180px;min-width:0;}
   .home-rail{flex:0 0 190px;position:sticky;top:1rem;align-self:flex-start;}
   /* sidebar: cards stack in a column, each sized to its own rows (no equal-height stretch) */
-  .home-rail .lb-rail{display:flex;flex-direction:column;gap:0.9rem;align-items:stretch;}
+  .home-rail .lb-rail{display:flex;flex-direction:column;gap:1.15rem;align-items:stretch;}
   .home-rail .lb-rail-title{width:100%;}
   .home-rail .lb-card{width:100%;max-width:none;}
+  /* a little breathing room between each game card and between its entries */
+  .home-rail .lb-card{padding:0.7rem 0.85rem 0.8rem;}
+  .home-rail .lb-card-row{padding:0.3rem 0;}
   .lb-empty{font-size:.82rem;color:#6c5836;font-weight:600;text-align:center;opacity:.8;}
   /* pinned Treasure Hunt checkpoint board (always shown, on top of the rail) */
   .home-rail #cpPinned{margin-bottom:0.9rem;}
@@ -274,16 +277,15 @@
     <a href="games/letter-catch/index.html" class="pin"><img class="pic" width="512" height="512" src="assets/img/home/shots/letter-catch.jpg" alt="Letter Catch - free spelling game" loading="lazy"><div class="cap">Letter Catch</div><div class="sub">Spelling</div></a>
     <a href="games/tightrope/index.html" class="pin"><img class="pic" width="512" height="512" src="assets/img/home/shots/tightrope.jpg" alt="Tightrope - free math game" loading="lazy"><div class="cap">Tightrope</div><div class="sub">Math</div></a>
   </div><!-- /.grid -->
-    </div><!-- /.home-main -->
-    <aside class="home-rail" id="lbRail" aria-label="Live leaderboards"></aside>
-    </div><!-- /.home-cols -->
-
-
+    <!-- kept inside .home-main so they sit right below the grid, never pushed down by the leaderboard rail -->
     <div class="buried-band">
       <div class="foot">Twenty games were made, but one stays buried.</div>
       <div class="invisible-clue">type &ldquo;treasure&rdquo;</div>
     </div>
     <div class="morse" id="morse" aria-hidden="true"></div>
+    </div><!-- /.home-main -->
+    <aside class="home-rail" id="lbRail" aria-label="Live leaderboards"></aside>
+    </div><!-- /.home-cols -->
   </div>
 <script src="assets/js/home-games.js"></script>
 <script src="assets/js/streak-rail.js"></script>
