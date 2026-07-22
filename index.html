@@ -42,15 +42,21 @@
   .home-cols{display:flex;gap:2rem;justify-content:center;align-items:flex-start;}
   .home-main{flex:0 1 1180px;min-width:0;}
   .home-rail{flex:0 0 288px;position:sticky;top:1rem;align-self:flex-start;}
-  .home-rail .lb-rail{display:flex;flex-wrap:wrap;gap:0.9rem;justify-content:center;}
-  .home-rail .lb-rail-title{flex-basis:100%;}
-  .home-rail .lb-card{flex:1 1 240px;max-width:288px;}
+  /* sidebar: cards stack in a column, each sized to its own rows (no equal-height stretch) */
+  .home-rail .lb-rail{display:flex;flex-direction:column;gap:0.9rem;align-items:stretch;}
+  .home-rail .lb-rail-title{width:100%;}
+  .home-rail .lb-card{width:100%;max-width:none;}
   .lb-empty{font-size:.82rem;color:#6c5836;font-weight:600;text-align:center;opacity:.8;}
   /* between phone and ~1400px the rail drops under the games as a wrapping card grid */
   @media (max-width:1400px){
     .home-cols{flex-direction:column;align-items:center;}
     .home-main{flex-basis:auto;width:100%;}
     .home-rail{position:static;flex-basis:auto;width:100%;max-width:860px;margin-top:2.4rem;}
+    /* stacked under the grid: wrap into a card grid, top-aligned so a 1-row card
+       stays short next to a 5-row one */
+    .home-rail .lb-rail{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+    .home-rail .lb-rail-title{flex-basis:100%;}
+    .home-rail .lb-card{flex:0 1 250px;width:auto;max-width:288px;align-self:flex-start;}
   }
   /* on phones the running leaderboard is just clutter - hide it entirely */
   @media (max-width:760px){ .home-rail{display:none;} }
