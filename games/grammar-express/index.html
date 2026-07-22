@@ -63,7 +63,7 @@
       position: relative; width: 100%; height: min(60vh, 540px); min-height: 360px;
       border-radius: 16px; overflow: hidden; border: 2.5px solid #24303f;
       box-shadow: 0 10px 30px rgba(20,28,40,0.35); user-select: none; touch-action: manipulation;
-      background: #b9cfe0;
+      background: #e6d3a8;
     }
     #scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: pointer; }
 
@@ -173,6 +173,7 @@
       <div class="overlay-actions">
         <button class="play-btn" id="startBtn">All aboard! 🚂</button>
       </div>
+      <div id="geStartBoard" style="width:100%;max-width:340px;margin:1.3rem auto 0;text-align:left"></div>
     </div>
 
     <!-- Game over -->
@@ -259,11 +260,11 @@ const LEVELS = [
   // 5: introduce the pronoun
   [ 'She|pron quietly|adv walked|verb into|prep the|art forest|noun',
     'He|pron carefully|adv placed|verb a|art lantern|noun on|prep the|art shelf|noun',
-    'They|pron climbed|verb over|prep the|art icy|adj hill|noun',
-    'We|pron rode|verb through|prep the|art snowy|adj valley|noun' ],
+    'They|pron climbed|verb over|prep the|art rocky|adj hill|noun',
+    'We|pron rode|verb through|prep the|art dusty|adj valley|noun' ],
   // 6: introduce the conjunction, longer
   [ 'The|art brave|adj conductor|noun and|conj the|art loyal|adj crew|noun defended|verb the|art train|noun',
-    'The|art snow|noun fell|verb gently|adv but|conj the|art engine|noun pushed|verb forward|adv',
+    'The|art dust|noun swirled|verb wildly|adv but|conj the|art engine|noun pushed|verb forward|adv',
     'He|pron grabbed|verb a|art lantern|noun and|conj bravely|adv faced|verb the|art pack|noun',
     'The|art tired|adj passengers|noun slept|verb while|conj the|art train|noun crossed|verb the|art bridge|noun' ],
   // 7: hardest - interjections, context words, long
@@ -274,14 +275,14 @@ const LEVELS = [
     'Hooray|intj the|art brave|adj crew|noun cheered|verb loudly|adv when|conj the|art train|noun arrived|verb safely|adv' ],
   // 8: homographs - familiar words used as an unexpected part of speech (word-memory fails you here)
   [ 'The|art tired|adj soldiers|noun train|verb hard|adv',
-    'A|art light|adj snow|noun covered|verb the|art quiet|adj valley|noun',
-    'The|art hungry|adj bears|noun fish|verb the|art icy|adj river|noun',
+    'A|art thin|adj dust|noun covered|verb the|art quiet|adj valley|noun',
+    'The|art hungry|adj coyotes|noun roam|verb the|art dry|adj canyon|noun',
     'The|art strong|adj workers|noun water|verb the|art young|adj fields|noun',
     'The|art eager|adj sailors|noun ship|verb the|art heavy|adj crates|noun',
     'The|art old|adj rangers|noun guard|verb the|art narrow|adj pass|noun' ],
   // 9: proper vs common nouns
   [ 'Sarah|nounP guided|verb the|art weary|adj crew|nounC safely|adv',
-    'Brave|adj John|nounP crossed|verb the|art frozen|adj river|nounC',
+    'Brave|adj John|nounP crossed|verb the|art dusty|adj plain|nounC',
     'The|art tired|adj captain|nounC trusted|verb London|nounP completely|adv',
     'Old|adj Boston|nounP watched|verb the|art distant|adj storm|nounC',
     'The|art loyal|adj guard|nounC protected|verb Sarah|nounP bravely|adv' ],
@@ -306,11 +307,11 @@ const LEVELS = [
     'The|art frightened|part crew|noun watched|verbA the|art burning|part bridge|noun',
     'Escaping|ger seemed|verbL impossible|adj' ],
   // 13: everything at once - fine categories throughout, dense homographs, multi-clause
-  [ 'Sarah|nounP trained|verbA the|art horses|nounC while|conjS the|art light|adj snow|nounC fell|verbA silently|adv',
+  [ 'Sarah|nounP trained|verbA the|art horses|nounC while|conjS the|art dry|adj wind|nounC blew|verbA silently|adv',
     'The|art exhausted|part crew|nounC rested|verbA but|conjC Boston|nounP still|adv seemed|verbL distant|adj',
     'Running|ger tired|verbA the|art horses|nounC so|conjC the|art weary|adj riders|nounC camped|verbA',
     'The|art burning|part bridge|nounC collapsed|verbA because|conjS the|art fierce|adj fire|nounC spread|verbA quickly|adv',
-    'Swimming|ger strengthened|verbA the|art tired|adj recruits|nounC yet|conjC the|art icy|adj river|nounC remained|verbL dangerous|adj' ]
+    'Swimming|ger strengthened|verbA the|art tired|adj recruits|nounC yet|conjC the|art wide|adj river|nounC remained|verbL dangerous|adj' ]
 ];
 const MAX_LEVEL = LEVELS.length - 1;
 // Levels 0-7 advance one per train; the advanced tiers (8-13) take two trains
@@ -539,11 +540,11 @@ function quitToMenu(){
 }
 
 // ============================================================
-//  Rendering - a calm, slow snowy pass
+//  Rendering - a calm, slow desert pass
 // ============================================================
 function drawSky(){
   const g = ctx.createLinearGradient(0,0,0,H*0.66);
-  g.addColorStop(0,'#54687f'); g.addColorStop(0.55,'#8499ad'); g.addColorStop(1,'#c1d1dd');
+  g.addColorStop(0,'#6ea9d6'); g.addColorStop(0.55,'#aacadb'); g.addColorStop(1,'#ecd6a4');
   ctx.fillStyle = g; ctx.fillRect(0,0,W,H*0.66);
 }
 // all backdrop shapes are indexed by WORLD position and translated by `shift`,
@@ -553,43 +554,43 @@ function drawMountains(){
   const seg = 110;
   for (let layer=0; layer<2; layer++){
     const shift = scroll*(0.04 + layer*0.03);   // far ridge slowest
-    const baseY = H*0.5 + layer*24, amp = 66 - layer*20, col = layer? '#a3b4c5':'#8397ad';
+    const baseY = H*0.5 + layer*24, amp = 66 - layer*20, col = layer? '#c9945f':'#b0703f';
     const start = Math.floor((shift - seg)/seg), end = Math.ceil((shift + W + seg)/seg);
     const peakAt = (k)=> baseY - amp*(0.5 + 0.5*Math.sin((k*seg + layer*140)*0.009));
     ctx.fillStyle = col; ctx.beginPath(); ctx.moveTo(start*seg - shift, baseY);
     for (let k=start; k<=end; k++){ const sx = k*seg - shift; ctx.lineTo(sx+seg/2, peakAt(k)); ctx.lineTo(sx+seg, baseY); }
     ctx.lineTo(end*seg - shift, H); ctx.lineTo(start*seg - shift, H); ctx.closePath(); ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillStyle = 'rgba(240,214,164,0.30)';   // warm sunlit rock face, not snow
     for (let k=start; k<=end; k++){ const sx = k*seg - shift, p = peakAt(k);
-      ctx.beginPath(); ctx.moveTo(sx+seg/2-15, p+16); ctx.lineTo(sx+seg/2, p); ctx.lineTo(sx+seg/2+15, p+16); ctx.closePath(); ctx.fill(); }
+      ctx.beginPath(); ctx.moveTo(sx+seg/2, p); ctx.lineTo(sx+seg/2+16, p+20); ctx.lineTo(sx+seg/2, p+20); ctx.closePath(); ctx.fill(); }
   }
 }
-function pine(x, baseY, h){
-  const w = h*0.6;
-  ctx.fillStyle = '#2f4a3a';
-  for (let k=0;k<3;k++){
-    const ty = baseY - h*(0.28*k), th = h*(0.55 - 0.08*k), tw = w*(1 - 0.22*k);
-    ctx.beginPath(); ctx.moveTo(x, ty-th); ctx.lineTo(x-tw/2, ty); ctx.lineTo(x+tw/2, ty); ctx.closePath(); ctx.fill();
-  }
-  ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  for (let k=0;k<3;k++){
-    const ty = baseY - h*(0.28*k), tw = w*(1 - 0.22*k);
-    ctx.beginPath(); ctx.moveTo(x, ty-h*(0.55-0.08*k)); ctx.lineTo(x-tw*0.22, ty-h*(0.32-0.05*k)); ctx.lineTo(x+tw*0.08, ty-h*(0.36-0.05*k)); ctx.closePath(); ctx.fill();
-  }
+function cactus(x, baseY, h){
+  const w = Math.max(7, h*0.18), r = w/2, top = baseY - h;
+  ctx.fillStyle = '#5a8b49';
+  roundRect(x - w/2, top, w, h, r); ctx.fill();                              // trunk
+  // right arm: reaches out, then turns up
+  const rY = baseY - h*0.58, reach = h*0.24, rise = h*0.30;
+  roundRect(x + w/2 - r, rY - w/2, reach + w, w, r); ctx.fill();
+  roundRect(x + w/2 + reach - w/2, rY - rise, w, rise + w, r); ctx.fill();
+  // left arm: lower and shorter
+  const lY = baseY - h*0.42, reachL = h*0.20, riseL = h*0.24;
+  roundRect(x - w/2 - reachL, lY - w/2, reachL + w, w, r); ctx.fill();
+  roundRect(x - w/2 - reachL, lY - riseL, w, riseL + w, r); ctx.fill();
 }
 function drawTreeBand(y, spacing, h, speed, seed){
   const shift = scroll*speed;
   const start = Math.floor((shift - spacing)/spacing), end = Math.ceil((shift + W + spacing)/spacing);
   for (let k=start; k<=end; k++){
-    const j = frac(Math.abs(Math.sin((k+seed)*127.13)*43758.5453));   // stable per tree
-    pine(k*spacing - shift + j*spacing*0.4, y, h*(0.8+0.4*j));
+    const j = frac(Math.abs(Math.sin((k+seed)*127.13)*43758.5453));   // stable per cactus
+    cactus(k*spacing - shift + j*spacing*0.4, y, h*(0.7+0.4*j));
   }
 }
 function drawGround(){
   const g = ctx.createLinearGradient(0,H*0.6,0,H);
-  g.addColorStop(0,'#eef4f8'); g.addColorStop(1,'#d3dee6');
+  g.addColorStop(0,'#e7cd9a'); g.addColorStop(1,'#c8a165');
   ctx.fillStyle = g; ctx.fillRect(0,H*0.6,W,H*0.4);
-  ctx.fillStyle = 'rgba(255,255,255,0.55)';
+  ctx.fillStyle = 'rgba(242,216,162,0.55)';
   ctx.beginPath(); ctx.moveTo(0,H*0.66);
   for (let x=0;x<=W;x+=44) ctx.lineTo(x, H*0.66 + 7*Math.sin((x+scroll*0.4)*0.02));
   ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath(); ctx.fill();
@@ -874,12 +875,13 @@ function drawEngine(x, baseY, ew, ch, t){
   }
 }
 function drawSnow(dt){
-  ctx.fillStyle = 'rgba(255,255,255,0.85)';
+  // repurposed as wind-blown desert dust: drifts left, barely falls
+  ctx.fillStyle = 'rgba(206,174,120,0.42)';
   for (const f of snow){
-    f.y += f.s*dt; f.x += (f.d - 5)*dt*0.6;
+    f.x -= (8 + f.s)*dt*0.6; f.y += f.s*dt*0.14 + Math.sin(f.x*0.03)*0.25;
+    if (f.x < -6){ f.x = W+4; f.y = Math.random()*H*0.72; }
     if (f.y > H){ f.y = -4; f.x = Math.random()*W; }
-    if (f.x < -6) f.x = W+4;
-    ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 7); ctx.fill();
+    ctx.beginPath(); ctx.arc(f.x, f.y, f.r*0.8, 0, 7); ctx.fill();
   }
 }
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
@@ -944,6 +946,12 @@ canvas.addEventListener('pointerdown', (e)=>{
 });
 
 document.getElementById('startBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(); });
+// scores-to-beat board on the start screen
+if (window.HSGStreak && HSGStreak.renderBoardInto) {
+  var geSB = document.getElementById('geStartBoard');
+  if (geSB) { geSB.innerHTML = '<div class="lbv-title">🏆 Scores to beat</div><div id="geStartBoardInner"></div>';
+    HSGStreak.renderBoardInto('#geStartBoardInner', { gameId:'grammar-express', level:'', minStreak:1, unit:'points' }); }
+}
 document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(); });
 document.getElementById('quitBtn').addEventListener('click', quitToMenu);
 
