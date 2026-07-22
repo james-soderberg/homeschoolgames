@@ -361,10 +361,10 @@ const GENS = [genEasy, genMedium, genHard, genEinstein];
 function genForLevel(L){
   // Overlapping weights give a gradual hand-off between pools rather than hard jumps.
   const w = [
-    Math.max(0, 6 - L),                  // whole numbers: levels 1-5
-    Math.max(0, 5 - Math.abs(L - 9)),    // fractions/decimals/%: peaks ~level 9
-    Math.max(0, 5 - Math.abs(L - 17)),   // improper/mixed/asymmetric: peaks ~level 17
-    Math.max(0, L - 15),                 // irrationals & brutal scales: from level 16 up
+    Math.max(0, 5 - L),                  // whole numbers: easy band, levels 1-4
+    Math.max(0, 4 - Math.abs(L - 7)),    // fractions/decimals/%: band 2, ~levels 5-10
+    Math.max(0, 6 - Math.abs(L - 15)),   // improper/mixed/asymmetric: band 3, ~levels 11-20
+    Math.max(0, L - 19),                 // irrationals & brutal scales: hard band, level 20+
   ];
   let tot = w[0] + w[1] + w[2] + w[3];
   if (tot <= 0) return genEinstein();
@@ -372,10 +372,17 @@ function genForLevel(L){
   for (let i = 0; i < 4; i++) { if ((r -= w[i]) < 0) return GENS[i](); }
   return genEinstein();
 }
-// Balance/save tolerance: generous at the bottom, brutal near the top (level 23+).
+// Balance/save tolerance: generous at the bottom, brutal near the top (level 23+),
+// then a second brutal ramp past level 40 so an elite climb keeps getting harder.
 function tolsFor(){
   const t = clamp((level - 1) / 22, 0, 1);
-  return { bal: lerp(0.060, 0.020, t), save: lerp(0.125, 0.046, t) };
+  let bal = lerp(0.060, 0.020, t), save = lerp(0.125, 0.046, t);
+  if(level > 40){
+    const h = clamp((level - 40) / 30, 0, 1);   // fully brutal by ~level 70
+    bal  = lerp(0.020, 0.011, h);               // target shrinks by nearly half again
+    save = lerp(0.046, 0.028, h);
+  }
+  return { bal:bal, save:save };
 }
 const START_LIVES = 3;
 const MIN_LEVEL = 5;    // reach at least here for the "great climb!" praise
@@ -428,10 +435,11 @@ const BANNER_DUR=2.0;         // how long the banner stays up
 // The climb slides smoothly between four value pools; these thresholds mark where
 // one pool hands off to the next, so a banner can announce each step up in difficulty.
 function difficultyTier(L){
-  if(L<=5)  return 0;   // whole numbers & friendly halves/quarters
-  if(L<=12) return 1;   // fractions, decimals, percents on 0-1
-  if(L<=18) return 2;   // improper/mixed numbers & asymmetric scales
-  return 3;             // irrationals & brutal off-kilter scales
+  if(L<=4)  return 0;   // easy: whole numbers & friendly halves/quarters
+  if(L<=10) return 1;   // fractions, decimals, percents on 0-1
+  if(L<=20) return 2;   // improper/mixed numbers & asymmetric scales
+  if(L<=40) return 3;   // hard: irrationals & brutal off-kilter scales
+  return 4;             // past 40: the target keeps shrinking - true expert
 }
 function showBanner(){ bannerT=BANNER_DUR; }
 
