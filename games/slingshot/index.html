@@ -306,6 +306,7 @@
         <button class="go-btn" id="beginBtn">Launch mission →</button>
         <button class="go-btn secondary" id="tutorialBtn">▶ Watch tutorial</button>
       </div>
+      <div class="board" id="startBoard" style="margin:1.3rem auto 0"></div>
     </div>
 
     <!-- Deity mode: hidden level picker (type "godmode" to open) -->
@@ -1042,6 +1043,7 @@ function toMenu() {
   overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
   renderVoyage();
+  renderBoard(null, 'startBoard');
 }
 // End the current voyage on purpose. With unlimited probes the run never ends
 // itself, so this is how a score reaches the leaderboard. A scoreless quit just
@@ -1082,8 +1084,9 @@ function saveName() {
   document.getElementById('nameEntry').classList.add('hidden');
   renderBoard(entry); updateHud();
 }
-function renderBoard(hl) {
-  const board = getBoard(), el = document.getElementById('board');
+function renderBoard(hl, elId) {
+  const board = getBoard(), el = document.getElementById(elId || 'board');
+  if (!el) return;
   el.innerHTML = '';
   if (!board.length) { el.innerHTML = '<div class="board-empty">No flights logged yet. Chart the first course!</div>'; return; }
   const head = document.createElement('div'); head.className = 'board-title'; head.textContent = '🏅 Top Pilots · ' + diff.label; el.appendChild(head);
@@ -1409,6 +1412,7 @@ function bootDemo() {
 // ---------- boot ----------
 setupCanvas();
 renderVoyage();
+renderBoard(null, 'startBoard');
 render();
 rafId = requestAnimationFrame(loop);
 if (/[?&]shot\b/.test(location.search)) bootDemo();
