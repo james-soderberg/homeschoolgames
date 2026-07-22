@@ -74,6 +74,14 @@
     .mq-board-region { font-family: var(--font-sans); font-weight: 700; font-size: 0.82rem;
       text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-light); margin-bottom: 0.4rem; text-align: center; }
 
+    /* Start-screen "top scores by region" rail - homepage leaderboard style,
+       nudged down so it clears the header underline. */
+    .mq-picker-rail { margin-top: 1.75rem; }
+    .mq-region-card { cursor: pointer; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+    .mq-region-card:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(40,25,5,0.22); }
+    .mq-picker-rail .lb-empty { font-family: var(--font-sans); font-size: 0.8rem; color: var(--ink-light);
+      text-align: center; margin: 0.35rem 0 0.15rem; }
+
     /* Country prompt - big */
     .prompt-box {
       background: white;
@@ -642,17 +650,59 @@ function renderRegionBoard() {
   HSGStreak.renderBoardInto('#mqRailBoard', { gameId: 'map-quiz', level: currentRegion, minStreak: 1, unit: 'mapscore' });
 }
 
-// Start screen: one collapsible board per region, right in the rail.
+// Start screen: one homepage-style leaderboard card per region, expanded so the
+// top scores show right away. Paints instantly from the localStorage cache, then
+// refreshes live from the global board (/api/top) and repaints as data lands.
+const MQ_PICKER_REGIONS = ['americas', 'europe', 'asia', 'africa'];
+const mqLive = {};   // region -> freshly fetched rows (falls back to cache)
 function renderPickerBoards() {
   const host = document.getElementById('streakRail');
-  if (!host || !window.HSGStreak || !HSGStreak.levelBoards) return;
-  host.innerHTML = '<div id="mqPickerBoards"></div>';
-  HSGStreak.levelBoards('#mqPickerBoards', {
-    gameId: 'map-quiz', unit: 'mapscore', minStreak: 1, title: '🏆 Top scores by region',
-    levels: ['americas', 'europe', 'asia', 'africa'].map(r => ({
-      key: r, label: REGION_META[r].label, icon: REGION_META[r].emoji
-    }))
-  });
+  if (!host) return;
+  const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
+  const fmt = s => (window.HSGStreak && HSGStreak.formatScore) ? HSGStreak.formatScore('mapscore', s) : String(s);
+  const keyFor = r => 'hsg_lb_map-quiz__' + r;
+  const readCache = r => {
+    try {
+      const list = JSON.parse(localStorage.getItem(keyFor(r)) || '[]');
+      return Array.isArray(list)
+        ? list.filter(e => e && typeof e.name === 'string' && typeof e.score === 'number')
+              .sort((a, b) => (b.score - a.score) || ((a.ts || 0) - (b.ts || 0)))
+        : [];
+    } catch (e) { return []; }
+  };
+  const rowsFor = r => mqLive[r] || readCache(r);
+  function cardHTML(r) {
+    const m = REGION_META[r], rows = rowsFor(r);
+    const body = rows.length
+      ? '<ol class="lb-card-list">' + rows.slice(0, 5).map((e, i) =>
+          '<li class="lb-card-row"><span class="lb-card-rank">' + (MEDAL[i + 1] || (i + 1)) + '</span>' +
+          '<span class="lb-card-name">' + esc(e.name) + '</span>' +
+          '<span class="lb-card-score">' + esc(fmt(e.score)) + '</span></li>').join('') + '</ol>'
+      : '<p class="lb-empty">No scores yet. Be the first!</p>';
+    return '<div class="lb-card mq-region-card" data-region="' + r + '">' +
+      '<div class="lb-card-head"><span class="lb-card-emoji">' + m.emoji + '</span>' +
+      '<span class="lb-card-titles"><span class="lb-card-game">' + esc(m.label) + '</span>' +
+      '<span class="lb-card-level">' + REGIONS[r].countries.length + ' countries</span></span></div>' +
+      body + '</div>';
+  }
+  function paint() {
+    host.innerHTML = '<div class="lb-rail mq-picker-rail">' +
+      '<div class="lb-rail-title">🏆 Top Scores by Region</div>' +
+      MQ_PICKER_REGIONS.map(cardHTML).join('') + '</div>';
+    // click a card to jump straight into that region
+    host.querySelectorAll('.mq-region-card').forEach(el =>
+      el.addEventListener('click', () => enterRegion(el.dataset.region)));
+  }
+  paint();   // instant from cache
+  if (typeof fetch === 'function' && /^https?:$/.test(location.protocol)) {
+    MQ_PICKER_REGIONS.forEach(r => {
+      fetch('/api/top?board=' + encodeURIComponent(keyFor(r)))
+        .then(x => x.ok ? x.json() : null)
+        .then(list => { if (Array.isArray(list)) { mqLive[r] = list; paint(); } })
+        .catch(() => {});
+    });
+  }
 }
 
 // Bank this run to the leaderboard (only if at least one country was found), then

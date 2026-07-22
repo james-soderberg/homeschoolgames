@@ -367,7 +367,7 @@
       <div class="ov hidden" id="caughtOverlay">
         <div class="crest" id="ovCrest">🕵️</div>
         <h2 id="ovTitle">Detective Fix nabs you!</h2>
-        <p id="ovText">Your voyage ends here. Your accuracy is logged in the Record Book.</p>
+        <p id="ovText">Your voyage ends here. Your run is logged in the Record Book.</p>
         <div class="final-stats">
           <div class="fs"><b id="cPct">0%</b><span>Accuracy</span></div>
           <div class="fs"><b id="cCorrect">0</b><span>Correct</span></div>
@@ -389,7 +389,7 @@
     </div><!-- /.game-col -->
 
     <aside class="rail" id="rail">
-      <div class="rail-title">🎯 Best Accuracy</div>
+      <div class="rail-title">🏆 Most Flags Named</div>
       <ol class="rail-board" id="railBoard"></ol>
     </aside>
   </div><!-- /.play-area -->
@@ -570,7 +570,6 @@ function getBoard() { try { const a = JSON.parse(localStorage.getItem(BOARD_KEY)
 function saveBoard(b) { try { localStorage.setItem(BOARD_KEY, JSON.stringify(b)); } catch (e) {} }
 // Rank key: most correct wins; fewer wrong (a steadier run) breaks ties.
 function scoreKey(correct, total) { return correct * 1000 + Math.max(0, 999 - (total - correct)); }
-function bestPctEver() { const b = getBoard(); return b.length ? b[0].pct : 0; }
 function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
 function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
 
@@ -1009,7 +1008,7 @@ function endRun(quit) {
   if (window.HSGSound) HSGSound.finish(false);
 }
 
-// ---------------- Streak leaderboard ----------------
+// ---------------- Leaderboard (most flags named) ----------------
 function saveName() {
   if (!pendingScore) return;
   const inp = document.getElementById('nameInput');
