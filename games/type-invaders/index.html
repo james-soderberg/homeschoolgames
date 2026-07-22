@@ -171,7 +171,7 @@
     .final-stats .fs b { display: block; font-family: var(--font-serif); font-size: 1.7rem; color: #fff; line-height: 1; }
     .final-stats .fs span { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #aebfe0; }
 
-    .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: -9999px; }
+    .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: 0; top: 0; z-index: -1; }
 
     .hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin: 0.5rem 0 0.2rem; line-height: 1.5; }
     .hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; }
@@ -373,7 +373,7 @@
     <div class="hunt-win-veil" id="huntWinVeil"><span>A clue surfaces…</span></div>
 
     <input class="type-catcher" id="catcher" type="text" autocomplete="off"
-           autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="latin" aria-hidden="true">
+           autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" aria-label="Type your word">
   </div>
 
   <!-- Constitution reading ticker (Constitution difficulties only) -->

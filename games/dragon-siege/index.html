@@ -222,7 +222,7 @@
       100% { opacity: 0; transform: translate(-50%,-50%) scale(1.12); }
     }
 
-    .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: -9999px; }
+    .type-catcher { position: absolute; opacity: 0; pointer-events: none; width: 1px; height: 1px; left: 0; top: 0; z-index: -1; }
 
     /* pause button, floating top-right of the battlefield */
     .pause-btn {
@@ -384,7 +384,7 @@
     </div>
 
     <input class="type-catcher" id="catcher" type="text" autocomplete="off"
-           autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="latin" aria-hidden="true">
+           autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="text" aria-label="Type your word">
   </div>
 
   <p class="hint">
