@@ -72,7 +72,7 @@
     .diff-btn .d-desc { font-size: 0.76rem; color: var(--ink-light); }
 
     .fw-hint { text-align: center; font-size: 0.82rem; color: var(--ink-light); margin: 0.5rem 0 0.2rem; line-height: 1.5; }
-    .fw-hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; }
+    .fw-hint kbd { font-family: 'Courier New', monospace; background: var(--cream-dark); color: var(--ink); border: 1px solid var(--border); border-radius: 4px; padding: 0.05rem 0.35rem; }
 
     .final-list { list-style: none; padding: 0; margin: 0.2rem auto 1rem; max-width: 340px; }
     .final-list li { display: flex; justify-content: space-between; padding: 0.3rem 0.2rem; border-bottom: 1px solid rgba(255,255,255,0.15); font-size: 0.95rem; }
@@ -109,7 +109,7 @@
         <span>🦊<small>You</small></span><span class="arw">→</span>
         <span>🦅<small>Hawk</small></span>
       </div>
-      <p>You're the fox. <b>Hunt rabbits to survive</b> — but keep the habitat in <b>balance.</b><br><br>
+      <p>You're the fox. <b>Hunt rabbits to survive</b>, but keep the habitat in <b>balance.</b><br><br>
          Eat too many and the herd crashes. Eat too few and the grass dies.<br>
          Flee the hawk 🦅 and last as long as you can.</p>
       <div class="diff-row">
@@ -421,7 +421,7 @@ function loseLife(reason) {
   if (lives <= 0) { gameOver('hawk'); return; }
   player.vx = player.vy = 0;
   for (const p of preds) { const d = Math.hypot(p.x-player.x, p.y-player.y)||1; p.vx=(p.x-player.x)/d*300; p.vy=(p.y-player.y)/d*300; }
-  floaters.push({x:player.x,y:player.y-30,text:'caught! –1 life',color:'#ff9d8a',t:0});
+  floaters.push({x:player.x,y:player.y-30,text:'caught! -1 life',color:'#ff9d8a',t:0});
   updateBadges();
 }
 

@@ -326,7 +326,7 @@
       '<div class="checkpoint">' +
         '<div class="crest">🚩</div>' +
         '<div class="th-tag">' + esc(s.title || ('Checkpoint ' + s.checkpoint)) + '</div>' +
-        '<h2>Congratulations — you’ve reached the first checkpoint!</h2>' +
+        '<h2>Congratulations, you’ve reached the first checkpoint!</h2>' +
         '<p class="cp-lead">The rest of the treasure hunt is still being developed. When it opens, ' +
           'you’ll receive a head start based on your position on this leaderboard.</p>' +
         '<div id="cpClaim"></div>' +
@@ -422,7 +422,7 @@
     if (me && mePos > 0) {
       var you = document.querySelector('.cp-you');
       if (you) you.innerHTML = 'You’re checkpoint pioneer <b>#' + mePos +
-        '</b> — claimed on ' + esc(fmtDate(me.ts)) + '.';
+        '</b>, claimed on ' + esc(fmtDate(me.ts)) + '.';
     }
   }
 

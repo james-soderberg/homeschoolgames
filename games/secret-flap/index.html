@@ -193,7 +193,7 @@ const WIN_SCORE = (window.HSGHunt && HSGHunt.STEPS[0] && HSGHunt.STEPS[0].goal) 
 const HIGH_SCORE = /[?&]hs\b/.test(location.search);
 if (HIGH_SCORE) {
   const _sb = document.getElementById('startBlurb');
-  if (_sb) _sb.innerHTML = 'You’ve already cleared this trial — now <b>fly for a high score</b>. No finish line, just how far you can go!';
+  if (_sb) _sb.innerHTML = 'You’ve already cleared this trial, now <b>fly for a high score</b>. No finish line, just how far you can go!';
 }
 let winT = 0, boom = [], finishedWin = false;
 const rand = (a, b) => a + Math.random() * (b - a);

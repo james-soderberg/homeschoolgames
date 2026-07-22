@@ -422,9 +422,9 @@
       <div class="ov-card">
         <div class="ov-lab" id="ovLab">How to play</div>
         <h1 id="ovTitle">Register</h1>
-        <p id="ovDesc">Hand back each shopper's <b>exact change</b> — in the <b>fewest coins &amp; bills</b>.<br><br>
+        <p id="ovDesc">Hand back each shopper's <b>exact change</b>, in the <b>fewest coins &amp; bills</b>.<br><br>
           Every extra coin costs a fee.<br>
-          Clear the day's rent to move on. No clock — it just gets trickier.</p>
+          Clear the day's rent to move on. No clock, it just gets trickier.</p>
         <button type="button" class="btn btn-gold" id="startBtn">Play →</button>
       </div>
       <div id="startBoard"></div>
@@ -1050,15 +1050,15 @@
     if (tier.expert) {
       $('ovLab').textContent = 'Expert level';
       $('ovTitle').textContent = 'Expert Register';
-      $('ovDesc').innerHTML = "The <b>change due is hidden</b> — work it out yourself.<br><br>" +
+      $('ovDesc').innerHTML = "The <b>change due is hidden</b>, work it out yourself.<br><br>" +
         "Fewest pieces still wins. Extra coins still cost a fee.";
       $('startBtn').textContent = 'Start Expert →';
     } else {
       $('ovLab').textContent = 'How to play';
       $('ovTitle').textContent = 'Register';
-      $('ovDesc').innerHTML = "Hand back each shopper's <b>exact change</b> — in the <b>fewest coins &amp; bills</b>.<br><br>" +
+      $('ovDesc').innerHTML = "Hand back each shopper's <b>exact change</b>, in the <b>fewest coins &amp; bills</b>.<br><br>" +
         "Every extra coin costs a fee.<br>" +
-        "Clear the day's rent to move on. No clock — it just gets trickier.";
+        "Clear the day's rent to move on. No clock, it just gets trickier.";
       $('startBtn').textContent = 'Play →';
     }
     renderDrawer(); renderStartBoard();

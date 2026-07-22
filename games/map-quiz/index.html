@@ -307,7 +307,7 @@
 
   <!-- START: whole-world region picker -->
   <div id="worldPicker" class="world-pick">
-    <p class="pick-intro">Pick a region of the world — click it right on the map to start.</p>
+    <p class="pick-intro">Pick a region of the world, then click it on the map to start.</p>
     <div class="world-map-wrap" id="worldMapWrap"></div>
     <div class="region-legend" id="regionLegend"></div>
   </div>
@@ -470,7 +470,7 @@ let currentCountry = null;
 let completed = new Set();   // ids found so far THIS run (colours the map)
 let runCorrect = 0;          // correct clicks this run
 let runWrong = 0;            // wrong clicks this run
-let streak = 0;              // local streak — only drives confetti milestones
+let streak = 0;              // local streak - only drives confetti milestones
 let waitingForNext = false;
 let advanceTimer = null;
 let regionJustFinished = false;
@@ -732,7 +732,7 @@ function nextQuestion() {
   });
 
   if (queue.length === 0) {
-    // Region complete — every country found.
+    // Region complete - every country found.
     currentCountry = null;
     const total = REGIONS[currentRegion].countries.length;
     setPrompt('All found! 🎉', false);
@@ -808,7 +808,7 @@ function handleCountryClick(countryId) {
       wrongEl.classList.add('wrong-flash');
       setTimeout(() => wrongEl.classList.remove('wrong-flash'), 800);
     }
-    // Missed — put it back in the rotation so you get another shot at it.
+    // Missed - put it back in the rotation so you get another shot at it.
     const at = Math.floor(Math.random() * (queue.length + 1));
     queue.splice(at, 0, currentCountry);
     updateScoreDisplay();
@@ -839,7 +839,7 @@ function shuffle(arr) {
 }
 
 // ============================================================
-// Init — build the world picker; a region is chosen before play
+// Init - build the world picker; a region is chosen before play
 // ============================================================
 document.getElementById('worldMapWrap').innerHTML = buildWorldSVG();
 document.querySelectorAll('#worldMapWrap .wm-region').forEach(g => {
