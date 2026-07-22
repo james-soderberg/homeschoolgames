@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames - Cartoon Portrait engine
+   Accidental Learning - Cartoon Portrait engine
    ---------------------------------------------------------
    One parameterized SVG avatar renderer. A person is a small
    feature config (skin, hair, facial hair, hat, glasses, clothes);

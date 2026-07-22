@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames - Quest Rail engine
+   Accidental Learning - Quest Rail engine
    ---------------------------------------------------------
    A reusable "build vs. threat" mechanic for the right rail.
 

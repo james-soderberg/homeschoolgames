@@ -1,4 +1,4 @@
-# robots.txt for https://homeschoolgames.org
+# robots.txt for https://accidentallearning.org
 User-agent: *
 Allow: /
 
@@ -8,4 +8,4 @@ Disallow: /games/secret-flap/
 Disallow: /games/treasure-hunt/
 Disallow: /games/current/
 
-Sitemap: https://homeschoolgames.org/sitemap.xml
+Sitemap: https://accidentallearning.org/sitemap.xml

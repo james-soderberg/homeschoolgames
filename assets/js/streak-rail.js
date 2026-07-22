@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames - Fire Streak Rail + Leaderboards
+   Accidental Learning - Fire Streak Rail + Leaderboards
    ---------------------------------------------------------
    A live animated streak counter + per-game / per-level
    Top-10 leaderboards.

@@ -1,7 +1,7 @@
 {
-  "name": "HomeschoolGames",
-  "short_name": "HSGames",
-  "description": "Free educational games for homeschoolers and kids - typing, math, spelling, history, geography, science, and Bible.",
+  "name": "Accidental Learning",
+  "short_name": "Accidental",
+  "description": "Free educational games for kids and families - typing, math, spelling, history, geography, science, and Bible.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

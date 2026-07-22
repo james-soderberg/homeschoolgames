@@ -1,5 +1,5 @@
 /* =========================================================
-   HomeschoolGames - The Hunt (site-wide scavenger hunt)
+   Accidental Learning - The Hunt (site-wide scavenger hunt)
    ---------------------------------------------------------
    Each clue is a riddle whose answer is a secret WORD. Type the
    word on the home page to open a hidden GAME; reach that game's
