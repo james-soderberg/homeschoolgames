@@ -48,6 +48,9 @@
   .home-rail .lb-rail{display:flex;flex-direction:column;gap:1.15rem;align-items:stretch;}
   .home-rail .lb-rail-title{width:100%;}
   .home-rail .lb-card{width:100%;max-width:none;}
+  /* the live cards live inside #lbLive; display:contents promotes them into the
+     .lb-rail flex layout so the gap actually spaces them (and they wrap on tablets) */
+  .home-rail #lbLive{display:contents;}
   /* a little breathing room between each game card and between its entries */
   .home-rail .lb-card{padding:0.7rem 0.85rem 0.8rem;}
   .home-rail .lb-card-row{padding:0.3rem 0;}
