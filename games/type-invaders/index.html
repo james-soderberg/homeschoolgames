@@ -406,6 +406,7 @@
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
 <script src="../../assets/js/hunt.js"></script>
+<script src="../../assets/js/raf-guard.js"></script>
 <script>
 // ============================================================
 // TYPE INVADERS: an arcade typing-defense game.
@@ -2318,6 +2319,24 @@ if (/[?&]arcade\b/.test(location.search)) {
     huntMode = true;                        // first pass: the wave-15 clue trial
   }
 }
+
+// Pause both the play loop and the idle menu loop when the tab is hidden.
+(function(){
+  var mode = null;
+  HSGLoop.guard({
+    isActive: () => rafId != null || idleId != null,
+    stop: () => {
+      mode = rafId != null ? 'play' : 'idle';
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (idleId) { cancelAnimationFrame(idleId); idleId = null; }
+    },
+    start: () => {
+      lastTs = 0;
+      if (mode === 'play') { rafId = requestAnimationFrame(tick); }
+      else { startIdle(); }
+    }
+  });
+})();
 
 </script>
 

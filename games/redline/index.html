@@ -159,6 +159,7 @@
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
 <script src="../../assets/js/hunt.js"></script>
+<script src="../../assets/js/raf-guard.js"></script>
 <script>
 (function () {
   'use strict';
@@ -641,6 +642,7 @@
   }
 
   // ================= loop =================
+  var redlineRaf = 0;
   function frame(t) {
     if (!lastRAF) lastRAF = t;
     var dt = Math.min(0.05, (t - lastRAF) / 1000); lastRAF = t;
@@ -652,7 +654,7 @@
     }
     stepFx(dt);   // particles / shake / flash / crash tumble - runs in every state
     draw();
-    requestAnimationFrame(frame);
+    redlineRaf = requestAnimationFrame(frame);
   }
 
   // ================= HUD / overlays =================
@@ -786,7 +788,14 @@
   resize();
   // seed a little idle traffic behind the menu
   for (var i = 0; i < 5; i++) spawnCar();
-  requestAnimationFrame(frame);
+  redlineRaf = requestAnimationFrame(frame);
+
+  // Pause the loop when the tab is hidden (saves battery on tablets/Chromebooks).
+  if (window.HSGLoop) HSGLoop.guard({
+    isActive: function () { return redlineRaf !== 0; },
+    stop: function () { if (redlineRaf) { cancelAnimationFrame(redlineRaf); redlineRaf = 0; } },
+    start: function () { lastRAF = 0; redlineRaf = requestAnimationFrame(frame); }
+  });
 })();
 </script>
 

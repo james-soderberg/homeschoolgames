@@ -386,6 +386,7 @@
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/godmode.js"></script>
+<script src="../../assets/js/raf-guard.js"></script>
 <script>
 // ============================================================
 // SLINGSHOT, fling a probe and let planetary gravity curve it
@@ -1416,6 +1417,13 @@ renderBoard(null, 'startBoard');
 render();
 rafId = requestAnimationFrame(loop);
 if (/[?&]shot\b/.test(location.search)) bootDemo();
+
+// Pause the loop when the tab is hidden (saves battery on tablets/Chromebooks).
+HSGLoop.guard({
+  isActive: () => rafId != null,
+  stop: () => { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } },
+  start: () => { lastTs = 0; rafId = requestAnimationFrame(loop); }
+});
 </script>
 </body>
 </html>

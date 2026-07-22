@@ -254,6 +254,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
+<script src="../../assets/js/raf-guard.js"></script>
 <script>
 // ============================================================
 // TIGHTROPE - place a value on a number line labeled only at its
@@ -897,6 +898,24 @@ function idle(){
 }
 function startIdle(){ if(idleId) cancelAnimationFrame(idleId); idleId = requestAnimationFrame(idle); }
 startIdle();
+
+// Pause both the play loop and the idle menu backdrop when the tab is hidden.
+(function(){
+  var mode = null;
+  HSGLoop.guard({
+    isActive: () => running || idleId != null,
+    stop: () => {
+      mode = running ? 'play' : 'idle';
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      if (idleId) { cancelAnimationFrame(idleId); idleId = null; }
+    },
+    start: () => {
+      lastTs = 0;
+      if (mode === 'play') { rafId = requestAnimationFrame(tick); }
+      else { startIdle(); }
+    }
+  });
+})();
 </script>
 </body>
 </html>

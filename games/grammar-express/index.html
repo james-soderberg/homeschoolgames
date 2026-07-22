@@ -207,6 +207,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
+<script src="../../assets/js/raf-guard.js"></script>
 <script>
 // ============================================================
 //  GRAMMAR EXPRESS - a sentence rides through a mountain pass as
@@ -888,7 +889,7 @@ function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w
 // ============================================================
 //  Loop
 // ============================================================
-let prevTs = 0;
+let prevTs = 0, geRaf = 0;
 function loop(ts){
   const dt = Math.min(0.05, (ts - prevTs)/1000 || 0); prevTs = ts;
   const t = ts/1000;
@@ -924,7 +925,7 @@ function loop(ts){
 
   if (bannerClock > 0){ bannerClock -= dt; drawBanner(); }
 
-  requestAnimationFrame(loop);
+  geRaf = requestAnimationFrame(loop);
 }
 
 // ============================================================
@@ -968,7 +969,14 @@ if (location.search.indexOf('shot') >= 0){
 initWeather();
 setupCanvas();
 updateHud();
-requestAnimationFrame(loop);
+geRaf = requestAnimationFrame(loop);
+
+// Pause the loop when the tab is hidden (saves battery on tablets/Chromebooks).
+HSGLoop.guard({
+  isActive: () => geRaf !== 0,
+  stop: () => { if (geRaf) { cancelAnimationFrame(geRaf); geRaf = 0; } },
+  start: () => { prevTs = 0; geRaf = requestAnimationFrame(loop); }
+});
 </script>
 </body>
 </html>

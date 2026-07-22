@@ -144,6 +144,7 @@
 <script src="../../assets/js/fx.js"></script>
 <script src="../../assets/js/canvas-fit.js"></script>
 <script src="../../assets/js/godmode.js"></script>
+<script src="../../assets/js/raf-guard.js"></script>
 <script>
 // ============================================================
 //  KEEP THE HABITAT ALIVE. A living predator-prey simulation.
@@ -555,6 +556,13 @@ if (window.HSGGod) HSGGod.watch(() => { HSGGod.enable(); updateBadges(); });
 setupCanvas();
 updateBadges();
 rafId = requestAnimationFrame(loop);
+
+// Pause the loop when the tab is hidden (saves battery on tablets/Chromebooks).
+HSGLoop.guard({
+  isActive: () => rafId != null,
+  stop: () => { if (rafId) { cancelAnimationFrame(rafId); rafId = null; } },
+  start: () => { lastTs = 0; rafId = requestAnimationFrame(loop); }
+});
 </script>
 
 </body>
