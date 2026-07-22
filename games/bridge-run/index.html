@@ -104,7 +104,7 @@
 <div class="game-layout game-layout-wide">
 <div class="br-page game-main">
   <h1>Bridge Run</h1>
-  <p class="br-howto">Your runner never stops. Answer math fast to <b>lay the path</b> ahead of him.<br><br>Fall behind and he drops into the chasm.<br>Cross to the far side to advance — each level faster than the last.</p>
+  <p class="br-howto">Your runner never stops. Answer math fast to <b>lay the path</b> ahead of him.<br><br>Fall behind and he drops into the chasm.<br>The questions get harder the farther you go. <b>How far can you run?</b></p>
   <div id="bridgeMount"></div>
 </div><!-- /.br-page -->
 
@@ -144,23 +144,23 @@ function build(prompt, answer, opts) {
   return { prompt, choices, answer };
 }
 
-function makeQuestion(level, tier) {
-  if (tier === 'easy') {
-    // K-2: single-digit answers only (0-9), never negative, doesn't ramp with level
-    if (Math.random() < 0.5) { const ans = ri(0, 9), a = ri(0, ans), b = ans - a; return build(`${a} + ${b}`, ans, { min: 0, max: 9 }); }
-    const a = ri(1, 9), b = ri(0, a); return build(`${a} − ${b}`, a - b, { min: 0, max: 9 });
+// One continuous run: difficulty ramps with how far you've gone. `level` climbs
+// as you cross each bridge, so the questions start gentle and get much harder the
+// farther you run. Answers stay non-negative (the mobile keypad has no minus key).
+function makeQuestion(level) {
+  if (level <= 2) {                    // warm-up: single-digit add & subtract
+    if (Math.random() < 0.5) { const ans = ri(2, 12), a = ri(0, ans), b = ans - a; return build(`${a} + ${b}`, ans, { min: 0, max: 18 }); }
+    const a = ri(2, 12), b = ri(0, a); return build(`${a} − ${b}`, a - b, { min: 0, max: 12 });
   }
-  if (tier === 'medium') {
-    // Grades 3-5: times tables, division, larger add/sub
+  if (level <= 6) {                    // times tables, division, larger add/sub
     const op = pick(['×', '×', '÷', '+', '−']);
-    if (op === '×') { const m = Math.min(6 + level, 12); const a = ri(2, m), b = ri(2, 12); return build(`${a} × ${b}`, a * b); }
-    if (op === '÷') { const b = ri(2, Math.min(6 + level, 12)), q = ri(2, 12); return build(`${b * q} ÷ ${b}`, q); }
-    const cap = Math.min(40 + level * 12, 400);
+    if (op === '×') { const m = Math.min(4 + level, 12); const a = ri(2, m), b = ri(2, 12); return build(`${a} × ${b}`, a * b); }
+    if (op === '÷') { const b = ri(2, Math.min(4 + level, 12)), q = ri(2, 12); return build(`${b * q} ÷ ${b}`, q); }
+    const cap = Math.min(30 + level * 12, 400);
     if (op === '+') { const a = ri(10, cap), b = ri(10, cap); return build(`${a} + ${b}`, a + b); }
     const a = ri(20, cap), b = ri(1, a); return build(`${a} − ${b}`, a - b);
   }
-  if (tier === 'hard') {
-    // Grades 6-8: multi-digit ×/÷, bigger sums
+  if (level <= 11) {                   // multi-digit ×/÷ and bigger sums
     const op = pick(['×', '÷', '+', '−']);
     if (op === '×') { const a = ri(6, 19), b = ri(6, 19); return build(`${a} × ${b}`, a * b); }
     if (op === '÷') { const b = ri(3, 15), q = ri(4, 20); return build(`${b * q} ÷ ${b}`, q); }
@@ -168,28 +168,26 @@ function makeQuestion(level, tier) {
     if (op === '+') { const a = ri(50, cap), b = ri(50, cap); return build(`${a} + ${b}`, a + b); }
     const a = ri(100, cap), b = ri(20, a); return build(`${a} − ${b}`, a - b);
   }
-  // Einstein: order of operations & exponents. Answers stay non-negative because
-  // the mobile numeric keypad has no minus key, so negative answers are avoided.
+  // deep run: order of operations, squares & cubes
   const kind = pick(['order', 'order', 'square', 'cube', 'mixed']);
   if (kind === 'order') { const a = ri(2, 9), b = ri(2, 9), c = ri(2, 9); return build(`${a} + ${b} × ${c}`, a + b * c); }
   if (kind === 'square') { const a = ri(4, 15); return build(`${a}²`, a * a); }
   if (kind === 'cube') { const a = ri(2, 7); return build(`${a}³`, a * a * a); }
-  const a = ri(3, 12), b = ri(3, 12), c = ri(2, a * b - 1); return build(`${a} × ${b} − ${c}`, a * b - c); // order of ops, stays positive
+  const a = ri(3, 12), b = ri(3, 12), c = ri(2, a * b - 1); return build(`${a} × ${b} − ${c}`, a * b - c);
 }
 
 const rail = HSGStreak.init({
   gameId: 'bridge-run', gameName: 'Bridge Run', minStreak: 1,
+  unit: 'distance', level: 'run', levelName: 'Distance',
   mount: document.getElementById('streakRail')
 });
 
 const bridge = HSGBridge.init({
   mount: document.getElementById('bridgeMount'),
   rail,
+  // one continuous run; the single makeQuestion(level) ramps difficulty with distance
   tiers: [
-    { key: 'easy',     label: 'Easy',     desc: 'Grades K-2 · add & subtract' },
-    { key: 'medium',   label: 'Medium',   desc: 'Grades 3-5 · ×, ÷ & bigger sums' },
-    { key: 'hard',     label: 'Hard',     desc: 'Grades 6-8 · multi-digit' },
-    { key: 'einstein', label: 'Einstein', desc: 'Order of ops, exponents & powers' },
+    { key: 'run', label: '▶ Start the run', desc: 'How far can you get? The questions get harder as you go.' },
   ],
   makeQuestion,
 });

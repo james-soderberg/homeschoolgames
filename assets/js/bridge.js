@@ -197,7 +197,7 @@
       <div class="br-wrap">
         <div class="br-hud">
           <span class="br-pill" data-level>Level 1</span>
-          <span class="br-pill" data-dist>0 m</span>
+          <span class="br-pill" data-dist>0 ft</span>
           <div class="br-leadbar"><i></i></div>
         </div>
         <div class="br-stage">
@@ -495,7 +495,7 @@
       setWorld();
 
       const dist = distanceBase + Math.floor((runnerX - RUN_X0) / W * 10);
-      distEl.textContent = Math.max(0, dist) + ' m';
+      distEl.textContent = Math.max(0, dist) + ' ft';
 
       if (runnerX >= finishX()) return clearLevel();
       const lead = builtFrontX() - runnerX;
@@ -589,10 +589,10 @@
 
     function summary() {
       const dist = distanceBase + Math.floor((runnerX - RUN_X0) / W * 10);
-      const banked = bestStreak;
+      const banked = Math.max(0, dist);   // score is how far you ran
       if (fx) {
         fx.showSummary({
-          title: `${tiers[tierIdx].label} · Level ${level} · ${Math.max(0,dist)} m`,
+          title: `You ran ${Math.max(0,dist)} ft`,
           correct: totalCorrect, total: totalQ, best: bestStreak,
           onPlayAgain: () => { rail.reset(); level = 1; totalCorrect = 0; totalQ = 0; streak = 0; bestStreak = 0; distanceBase = 0; startLevel(); },
           allGamesHref: cfg.allGamesHref || '../../index.html',
