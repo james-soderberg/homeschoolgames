@@ -331,7 +331,7 @@
   <div class="chase-top">
     <h1>Around the World in 80 Days<span class="sub">Flag Frenzy · a Phileas Fogg adventure</span></h1>
     <div class="stat-group">
-      <div class="stat-badge" id="scoreBadge">🔥 0 in a row</div>
+      <div class="stat-badge" id="scoreBadge">✅ 0 / 0</div>
       <div class="stat-badge" id="accBadge">🎯 —</div>
     </div>
   </div>
@@ -356,7 +356,7 @@
         <div class="answers" id="answers"></div>
       </div>
 
-      <p class="chase-hint">Name the flag before <b>Detective Fix</b> catches you.<br><br>Tap an answer or press <b>A · B · C · D</b>.<br>Right answers build your <b>streak</b>; a wrong one lets Fix close in.</p>
+      <p class="chase-hint">Name the flag before <b>Detective Fix</b> catches you.<br><br>Tap an answer or press <b>A · B · C · D</b>.<br>Name as many as you can; a wrong one lets Fix close in. <b>Quit any time</b> to log your run.</p>
 
       <div class="control-row">
         <button class="reset-link" id="quitBtn" type="button">Quit &amp; save score</button>
@@ -374,7 +374,7 @@
           <div class="fs"><b id="cGuesses">0</b><span>Guesses</span></div>
         </div>
         <div class="name-entry hidden" id="nameEntry">
-          <span class="ne-label" id="neLabel">🏅 New high streak! Add your name:</span>
+          <span class="ne-label" id="neLabel">🏅 New high score! Add your name:</span>
           <div class="ne-row">
             <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off">
             <button class="play-btn" id="saveNameBtn">Save</button>
@@ -568,8 +568,8 @@ function shuffle(arr) {
 }
 function getBoard() { try { const a = JSON.parse(localStorage.getItem(BOARD_KEY)); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
 function saveBoard(b) { try { localStorage.setItem(BOARD_KEY, JSON.stringify(b)); } catch (e) {} }
-// Rank key: accuracy first, more guesses breaks ties (a steadier, longer run wins).
-function scoreKey(pct, total) { return pct * 1000 + Math.min(total, 999); }
+// Rank key: most correct wins; fewer wrong (a steadier run) breaks ties.
+function scoreKey(correct, total) { return correct * 1000 + Math.max(0, 999 - (total - correct)); }
 function bestPctEver() { const b = getBoard(); return b.length ? b[0].pct : 0; }
 function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
 function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
@@ -709,17 +709,17 @@ function drawFix(t) {
 }
 
 function drawHUD() {
-  // Streak panel, top-left
+  // Score panel, top-left
   const sx = 14, sy = 14, sw = 132, sh = 50;
   ctx.fillStyle = 'rgba(251,244,224,0.92)'; ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 2;
   roundRect(sx, sy, sw, sh, 10); ctx.fill(); ctx.stroke();
   ctx.textAlign = 'left'; ctx.textBaseline = 'top';
   ctx.font = '800 10px sans-serif'; ctx.fillStyle = '#a06a1e';
-  ctx.fillText('🔥 STREAK', sx + 12, sy + 8);
-  ctx.font = '800 26px Georgia, serif'; ctx.fillStyle = '#b9472f';
-  ctx.fillText(String(streak), sx + 12, sy + 19);
+  ctx.fillText('✅ CORRECT', sx + 12, sy + 8);
+  ctx.font = '800 26px Georgia, serif'; ctx.fillStyle = '#2a5c3f';
+  ctx.fillText(String(correctCount), sx + 12, sy + 19);
   ctx.textAlign = 'right'; ctx.font = '700 11px sans-serif'; ctx.fillStyle = '#5a4318';
-  ctx.fillText(correctCount + '/' + totalCount + ' right', sx + sw - 12, sy + 31);
+  ctx.fillText('of ' + totalCount + ' asked', sx + sw - 12, sy + 31);
 
   // Lap, top-center
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
@@ -914,14 +914,9 @@ function answer(idx) {
 }
 
 function updateBadges() {
-  document.getElementById('scoreBadge').textContent = '🔥 ' + streak + ' in a row';
+  document.getElementById('scoreBadge').textContent = '✅ ' + correctCount + ' / ' + totalCount;
   const acc = document.getElementById('accBadge');
-  if (totalCount === 0) {
-    acc.textContent = '🎯 —';
-  } else {
-    const pct = Math.round(correctCount / totalCount * 100);
-    acc.textContent = '🎯 ' + pct + '% · ' + totalCount + (totalCount === 1 ? ' guess' : ' guesses');
-  }
+  acc.textContent = totalCount === 0 ? '🎯 —' : '🎯 ' + Math.round(correctCount / totalCount * 100) + '%';
 }
 
 // ============================================================
@@ -982,9 +977,9 @@ function endRun(quit) {
 
   const board = getBoard();
   const eligible = total >= MIN_GUESSES;
-  const key = scoreKey(pct, total);
+  const key = scoreKey(correct, total);
   const worst = board.length ? board[board.length - 1] : null;
-  const qualifies = eligible && (board.length < 10 || key > scoreKey(worst.pct, worst.total));
+  const qualifies = eligible && (board.length < 10 || key > scoreKey(worst.correct, worst.total));
   const ne = document.getElementById('nameEntry');
   const ovText = document.getElementById('ovText');
 
@@ -994,10 +989,10 @@ function endRun(quit) {
     ne.classList.add('hidden');
   } else if (qualifies) {
     ovText.textContent = quit
-      ? 'You bowed out at ' + pct + '% over ' + total + ' guesses.'
-      : 'Your accuracy is logged in the Record Book.';
-    pendingScore = { pct: pct, correct: correct, total: total };
-    const rank = board.filter(e => scoreKey(e.pct, e.total) > key).length + 1;   // where this run lands
+      ? 'You bowed out with ' + correct + ' of ' + total + ' correct.'
+      : 'Your run is logged in the Record Book.';
+    pendingScore = { correct: correct, total: total };
+    const rank = board.filter(e => scoreKey(e.correct, e.total) > key).length + 1;   // where this run lands
     const medal = { 1:'🥇', 2:'🥈', 3:'🥉' }[rank] || '🏅';
     const ord = rank + (['th','st','nd','rd'][(rank % 100 - 20) % 10] || ['th','st','nd','rd'][rank % 100] || 'th');
     document.getElementById('neLabel').textContent = `${medal} You took ${ord} place! Add your name:`;
@@ -1006,7 +1001,7 @@ function endRun(quit) {
     inp.value = lastName();
     setTimeout(() => inp.focus(), 60);
   } else {
-    ovText.textContent = 'You scored ' + pct + '% over ' + total + ' guesses. Not quite a record this time.';
+    ovText.textContent = 'You named ' + correct + ' of ' + total + ' flags. Not quite a record this time.';
     pendingScore = null;
     ne.classList.add('hidden');
   }
@@ -1020,11 +1015,11 @@ function saveName() {
   const inp = document.getElementById('nameInput');
   const name = ((inp.value || '').trim() || 'Traveller').slice(0, 12);
   setLastName(name);
-  const entry = { name: name, pct: pendingScore.pct, correct: pendingScore.correct, total: pendingScore.total };
+  const entry = { name: name, correct: pendingScore.correct, total: pendingScore.total };
   if (hintUsed) entry.hinted = true;
   const board = getBoard();
   board.push(entry);
-  board.sort((a, b) => scoreKey(b.pct, b.total) - scoreKey(a.pct, a.total));
+  board.sort((a, b) => scoreKey(b.correct, b.total) - scoreKey(a.correct, a.total));
   saveBoard(board.slice(0, 10));
   pendingScore = null;
   document.getElementById('nameEntry').classList.add('hidden');
@@ -1044,13 +1039,13 @@ function renderRail(highlight) {
     return;
   }
   board.forEach((e, i) => {
-    const me = highlight && e.name === highlight.name && e.pct === highlight.pct && e.total === highlight.total;
+    const me = highlight && e.name === highlight.name && e.correct === highlight.correct && e.total === highlight.total;
     const row = document.createElement('li');
     row.className = 'rail-row' + (me ? ' me' : '');
     const rank = document.createElement('span'); rank.className = 'rail-rank'; rank.textContent = (i + 1);
     const nm = document.createElement('span'); nm.className = 'rail-name'; nm.textContent = e.name;
     if (e.hinted) nm.insertAdjacentHTML('beforeend', '<span style="color:#E0531B;font-weight:800"> *</span>');
-    const st = document.createElement('span'); st.className = 'rail-streak'; st.textContent = e.pct + '% · ' + e.total + 'g';
+    const st = document.createElement('span'); st.className = 'rail-streak'; st.textContent = e.correct + ' / ' + e.total;
     row.appendChild(rank); row.appendChild(nm); row.appendChild(st);
     el.appendChild(row);
   });

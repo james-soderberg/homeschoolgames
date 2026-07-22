@@ -603,6 +603,7 @@ function showPicker() {
   document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('worldPicker').style.display = '';
   const fp = document.getElementById('fpBottom'); if (fp) fp.classList.remove('show');
+  renderPickerBoards();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function enterRegion(region) {
@@ -639,6 +640,19 @@ function renderRegionBoard() {
   if (!host || !currentRegion) return;
   host.innerHTML = '<div class="mq-board-region">' + REGIONS[currentRegion].label + ' · Top scores</div><div id="mqRailBoard"></div>';
   HSGStreak.renderBoardInto('#mqRailBoard', { gameId: 'map-quiz', level: currentRegion, minStreak: 1, unit: 'mapscore' });
+}
+
+// Start screen: one collapsible board per region, right in the rail.
+function renderPickerBoards() {
+  const host = document.getElementById('streakRail');
+  if (!host || !window.HSGStreak || !HSGStreak.levelBoards) return;
+  host.innerHTML = '<div id="mqPickerBoards"></div>';
+  HSGStreak.levelBoards('#mqPickerBoards', {
+    gameId: 'map-quiz', unit: 'mapscore', minStreak: 1, title: '🏆 Top scores by region',
+    levels: ['americas', 'europe', 'asia', 'africa'].map(r => ({
+      key: r, label: REGION_META[r].label, icon: REGION_META[r].emoji
+    }))
+  });
 }
 
 // Bank this run to the leaderboard (only if at least one country was found), then
@@ -825,6 +839,7 @@ mapContainerEl.addEventListener('mouseleave', hideTip);
 // Deep link straight into a region, e.g. ?r=asia (otherwise start on the picker).
 const rq = new URLSearchParams(location.search).get('r');
 if (rq && REGIONS[rq]) enterRegion(rq);
+else renderPickerBoards();
 </script>
 
 </body>
