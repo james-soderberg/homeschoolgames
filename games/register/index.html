@@ -422,9 +422,9 @@
       <div class="ov-card">
         <div class="ov-lab" id="ovLab">How to play</div>
         <h1 id="ovTitle">Register</h1>
-        <p id="ovDesc">Ring up each customer, then hand back their <b>exact change</b> using the
-          <b>fewest coins &amp; bills</b>. No clock, so take your time and get it right, but every
-          extra coin costs a fee. Fill the till and clear the day's rent to win.</p>
+        <p id="ovDesc">Hand back each shopper's <b>exact change</b> — in the <b>fewest coins &amp; bills</b>.<br><br>
+          Every extra coin costs a fee.<br>
+          Clear the day's rent to move on. No clock — it just gets trickier.</p>
         <button type="button" class="btn btn-gold" id="startBtn">Play →</button>
       </div>
       <div id="startBoard"></div>
@@ -1050,17 +1050,15 @@
     if (tier.expert) {
       $('ovLab').textContent = 'Expert level';
       $('ovTitle').textContent = 'Expert Register';
-      $('ovDesc').innerHTML = 'The <b>change due is hidden</b>, so work it out from the total and what they hand you. ' +
-        'Watch for shoppers who <b>add a coin so you can give a clean bill back</b>, big-bill overpays, and coin-heavy change. ' +
-        'Fewest pieces still wins; extra coins still cost a fee.';
+      $('ovDesc').innerHTML = "The <b>change due is hidden</b> — work it out yourself.<br><br>" +
+        "Fewest pieces still wins. Extra coins still cost a fee.";
       $('startBtn').textContent = 'Start Expert →';
     } else {
       $('ovLab').textContent = 'How to play';
       $('ovTitle').textContent = 'Register';
-      $('ovDesc').innerHTML = 'Ring up each customer, then hand back their <b>exact change</b> using the ' +
-        '<b>fewest coins &amp; bills</b>. No clock, so take your time, but every extra coin costs a fee. ' +
-        'Clear the day\'s rent to move on, and <b>each day gets harder</b>: shoppers who <b>add coins so the change comes out even</b>, ' +
-        'big-bill overpays, coin-heavy change, and later the <b>change is hidden</b> so you work it out yourself.';
+      $('ovDesc').innerHTML = "Hand back each shopper's <b>exact change</b> — in the <b>fewest coins &amp; bills</b>.<br><br>" +
+        "Every extra coin costs a fee.<br>" +
+        "Clear the day's rent to move on. No clock — it just gets trickier.";
       $('startBtn').textContent = 'Play →';
     }
     renderDrawer(); renderStartBoard();

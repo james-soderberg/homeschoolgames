@@ -100,17 +100,13 @@
     .tr-overlay p { color: #e7ddcf; margin: 0 0 1.1rem; max-width: 40ch; font-size: 0.98rem; line-height: 1.5; }
     .tr-crest { font-size: 3rem; line-height: 1; margin-bottom: 0.3rem; }
 
-    .tier-row { display: flex; flex-direction: column; gap: 0.55rem; width: 100%; max-width: 380px; }
-    .tier-btn {
-      display: flex; align-items: center; gap: 0.75rem; text-align: left;
-      background: rgba(255,253,244,0.96); border: 2.5px solid var(--border); border-radius: 12px;
-      padding: 0.7rem 0.95rem; cursor: pointer; font-family: var(--font-sans); color: var(--ink);
-      transition: transform 0.12s, border-color 0.12s, background 0.12s;
+    /* start-screen note on the gradual climb */
+    .tr-climb-note {
+      max-width: 46ch !important; font-size: 0.9rem !important; color: #d8ccba !important;
+      background: rgba(255,253,244,0.07); border: 1px solid rgba(253,247,236,0.18);
+      border-radius: 12px; padding: 0.7rem 0.95rem; line-height: 1.5;
     }
-    .tier-btn:hover { transform: translateY(-2px); border-color: var(--gold); background: #fff; }
-    .tier-btn .t-icon { font-size: 1.7rem; line-height: 1; flex-shrink: 0; }
-    .tier-btn .t-name { font-weight: 800; font-size: 1.1rem; }
-    .tier-btn .t-desc { font-size: 0.76rem; color: var(--ink-light); }
+    .tr-climb-note b { color: #fdf7ec; }
 
     .play-btn {
       background: var(--gold); color: var(--ink); border: none; border-radius: 99px; padding: 0.8rem 2rem;
@@ -210,8 +206,7 @@
   <div class="tr-top">
     <h1>Tightrope</h1>
     <div class="stat-group">
-      <div class="stat-badge" id="tierBadge">🌱 Easy</div>
-      <div class="stat-badge" id="streakBadge">🔥 0</div>
+      <div class="stat-badge" id="levelBadge">🎪 Level 1</div>
       <div class="stat-badge hearts" id="heartsBadge">❤️❤️❤️</div>
     </div>
   </div>
@@ -225,12 +220,13 @@
     <canvas id="scene"></canvas>
     <button class="tr-balance-btn hidden" id="balanceBtn">Balance! ⚖️</button>
 
-    <!-- Start / tier picker -->
+    <!-- Start -->
     <div class="tr-overlay" id="startOverlay">
       <div class="tr-crest">🎪</div>
       <h2>Tightrope</h2>
-      <p>A value appears. Slide the walker to where it sits on the line. Let go: close means they balance, off means they teeter. The line is only labeled at the ends, so you have to <em>feel</em> the size.</p>
-      <div class="tier-row" id="tierRow"></div>
+      <p>A number appears; slide the walker to where it sits on the line.<br>Close enough and they <b>balance</b>. Off, and they teeter.<br>Only the ends are labeled, so you have to <em>feel</em> the size.</p>
+      <p class="tr-climb-note"><b>One rope, ever higher.</b> You start with whole numbers, and every crossing you clear climbs you a level: the numbers turn to fractions, then decimals and percents, then improper and negative numbers, and finally irrationals, while the balance point keeps narrowing. Three hearts. How high can you climb?</p>
+      <button class="play-btn" id="startBtn">Start climbing 🥾</button>
       <div id="trLevelBoards" style="width:100%;max-width:340px;margin:1.1rem auto 0;"></div>
     </div>
 
@@ -239,21 +235,21 @@
       <div class="tr-crest" id="overCrest">🎪</div>
       <h2 id="overTitle">Nice walking!</h2>
       <div class="final-stats">
-        <div class="fs"><b id="fsStreak">0</b><span>Best Streak</span></div>
+        <div class="fs"><b id="fsLevel">1</b><span>Level Reached</span></div>
         <div class="fs"><b id="fsAcc">0%</b><span>Accuracy</span></div>
         <div class="fs"><b id="fsRounds">0</b><span>Crossings</span></div>
       </div>
       <div class="hsg-board" id="trBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
       <div class="overlay-actions">
-        <button class="play-btn" id="againBtn">Walk Again 🥾</button>
-        <button class="play-btn secondary" id="changeTierBtn">Change Level</button>
+        <button class="play-btn" id="againBtn">Climb Again 🥾</button>
+        <button class="play-btn secondary" id="changeTierBtn">Back to Start</button>
       </div>
     </div>
   </div>
 
   <div class="tr-feedback" id="feedback"></div>
   <p class="tr-hint">Drag the walker along the rope, then press <kbd>Balance</kbd> (or <kbd>Space</kbd>). Nudge with <kbd>←</kbd> <kbd>→</kbd>.</p>
-  <div class="control-row"><button class="reset-link" id="quitBtn">Quit &amp; Choose Level</button></div>
+  <div class="control-row"><button class="reset-link" id="quitBtn">Quit run</button></div>
 
 </div><!-- /.tr-page -->
   <aside class="hsg-rail" id="streakRail"></aside>
@@ -365,29 +361,40 @@ function genEinstein(){
   }
 }
 
-const TIERS = {
-  easy:     { label:'Easy',     icon:'🌱', desc:'Whole numbers & simple halves',              gen:genEasy,     balTol:0.056, saveTol:0.120 },
-  medium:   { label:'Medium',   icon:'✏️', desc:'Fractions, decimals & percents (0-1)',        gen:genMedium,   balTol:0.045, saveTol:0.095 },
-  hard:     { label:'Hard',     icon:'🔥', desc:'Improper fractions, mixed #s & shifting scales', gen:genHard,     balTol:0.031, saveTol:0.068 },
-  einstein: { label:'Einstein', icon:'🧠', desc:'Irrationals & brutal off-kilter scales',         gen:genEinstein, balTol:0.020, saveTol:0.046 },
-};
-const TIER_ORDER = ['easy','medium','hard','einstein'];
-const START_LIVES = 3;
-
-function currentGen(){ return TIERS[tierKey].gen; }
-function tolsFor(){
-  const st = TIERS[tierKey];
-  const k = 1 - Math.min(0.25, streak*0.018);   // tightens with streak - mastery pressure, capped 25%
-  return { bal: st.balTol*k, save: st.saveTol*k };
+// ---------- One continuous climb (no tiers to pick) ----------
+// Each cleared crossing bumps the level. Two things scale smoothly with the level:
+// (1) which value pool the number is drawn from - a weighted blend of the four
+// generators that slides from whole numbers up through irrationals, and (2) the
+// balance tolerance, which narrows the higher you climb.
+const GENS = [genEasy, genMedium, genHard, genEinstein];
+function genForLevel(L){
+  // Overlapping weights give a gradual hand-off between pools rather than hard jumps.
+  const w = [
+    Math.max(0, 6 - L),                  // whole numbers: levels 1-5
+    Math.max(0, 5 - Math.abs(L - 9)),    // fractions/decimals/%: peaks ~level 9
+    Math.max(0, 5 - Math.abs(L - 17)),   // improper/mixed/asymmetric: peaks ~level 17
+    Math.max(0, L - 15),                 // irrationals & brutal scales: from level 16 up
+  ];
+  let tot = w[0] + w[1] + w[2] + w[3];
+  if (tot <= 0) return genEinstein();
+  let r = Math.random() * tot;
+  for (let i = 0; i < 4; i++) { if ((r -= w[i]) < 0) return GENS[i](); }
+  return genEinstein();
 }
+// Balance/save tolerance: generous at the bottom, brutal near the top (level 23+).
+function tolsFor(){
+  const t = clamp((level - 1) / 22, 0, 1);
+  return { bal: lerp(0.060, 0.020, t), save: lerp(0.125, 0.046, t) };
+}
+const START_LIVES = 3;
+const MIN_LEVEL = 5;   // reach at least here to make the leaderboard
 
 // ---------- DOM ----------
 const stage      = document.getElementById('stage');
 const canvas     = document.getElementById('scene');
 const ctx        = canvas.getContext('2d');
 const valueCard  = document.getElementById('valueCard');
-const tierBadge  = document.getElementById('tierBadge');
-const streakBadge= document.getElementById('streakBadge');
+const levelBadge = document.getElementById('levelBadge');
 const heartsBadge= document.getElementById('heartsBadge');
 const balanceBtn = document.getElementById('balanceBtn');
 const startOverlay = document.getElementById('startOverlay');
@@ -417,23 +424,23 @@ function xForValue(v){ const t=(v-round.lo)/(round.hi-round.lo); return ropeLeft
 function errFracOf(x){ return Math.abs(x - actualX)/ropeLen(); }
 
 // ---------- State ----------
-let tierKey='easy', tier=TIERS.easy;
 let state='menu';          // menu | aim | result | over
 let round=null, actualX=0, walkerX=0;
-let lives=START_LIVES, streak=0, bestStreak=0, rounds=0, successes=0;
+let level=1, lives=START_LIVES, rounds=0, successes=0;   // level = crossing you're on / reached
 let outcome=null, resultT=0, wobbleAmp=0, tipDir=1, fallY=0, fellFx=false, advanced=false, revealed=false;
 let fallSev=0, struggleT=0;   // fall dynamics scale with how far off the guess was
 let dragging=false, running=false, rafId=null, lastTs=0, sceneT=0;
 
+// Single "highest level reached" board on a fresh key (level:'climb'), so the old
+// per-tier streak boards are retired rather than mixed in with the new metric.
 const rail = HSGStreak.init({
-  gameId:'tightrope', gameName:'Tightrope', minStreak:3,
-  level:'easy', levelName:'Easy',
+  gameId:'tightrope', gameName:'Tightrope', unit:'level', minStreak:MIN_LEVEL,
+  level:'climb', levelName:'',
   mount: document.getElementById('streakRail')
 });
-// start-screen "scores to beat" - one collapsible board per tier
-if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#trLevelBoards', {
-  gameId:'tightrope', unit:'streak', minStreak:3,
-  levels:[{key:'easy',label:'Easy',icon:'🌱'},{key:'medium',label:'Medium',icon:'✏️'},{key:'hard',label:'Hard',icon:'🔥'},{key:'einstein',label:'Einstein',icon:'🧠'}]
+// start-screen "scores to beat": the one highest-levels board
+if (window.HSGStreak && HSGStreak.renderBoardInto) HSGStreak.renderBoardInto('#trLevelBoards', {
+  gameId:'tightrope', level:'climb', unit:'level', minStreak:MIN_LEVEL, allowClear:false
 });
 
 // ---------- Scenery ----------
@@ -704,7 +711,7 @@ function commit(){
 
   if(success){
     successes++;
-    streak++; if(streak>bestStreak) bestStreak=streak; rail.hit();
+    level++; rail.set(level);   // cleared it - climb one level (rail tracks the session best)
     // On the mark → rock steady (no shake). In the "save" band → a real wobble
     // that grows toward the fall threshold, then visibly corrects.
     if(e <= T.bal){ wobbleAmp = Math.pow(e/T.bal, 2) * 0.12; }        // solidly balanced: barely a flicker
@@ -712,13 +719,13 @@ function commit(){
     if(window.HSGSound) HSGSound.correct();
     if(outcome==='balance' && e<=0.02){ if(window.HSGfx) HSGfx.confetti({big:true, count:60}); }
     else if(outcome==='balance'){ if(window.HSGfx) HSGfx.confetti({count:22}); }
-    if(window.HSGfx && HSGfx.milestone(streak) && window.HSGSound) HSGSound.streak(streak);
+    if(window.HSGfx && HSGfx.milestone(level) && window.HSGSound) HSGSound.streak(level);
     const msg = outcome==='balance'
-      ? (e<=0.02 ? 'Bullseye balance! 🎯' : 'Balanced! ✔')
-      : 'Wobbly, but held on!';
+      ? (e<=0.02 ? 'Bullseye! 🎯 Level '+level : 'Balanced! ✔ Level '+level)
+      : 'Wobbly, but held on! Level '+level;
     feedbackEl.innerHTML = '<span style="color:var(--green)">'+msg+'</span><span class="sub">'+revealText()+'</span>';
   } else {
-    streak=0; if(!(window.HSGGod && HSGGod.on)) lives--; rail.broke();
+    if(!(window.HSGGod && HSGGod.on)) lives--;   // a fall costs a heart; the level holds
     // how badly you missed shapes the fall: a hair past the line → teeter then slump;
     // way off → almost no wobble, an immediate fast plummet.
     fallSev = clamp((e - T.save) / 0.17, 0, 1);
