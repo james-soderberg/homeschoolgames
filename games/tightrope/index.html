@@ -689,7 +689,7 @@ function tick(ts){
 
 // ---------- Round flow ----------
 function newRound(){
-  round = currentGen()();
+  round = genForLevel(level);
   actualX = xForValue(round.value);
   walkerX = (ropeLeftX()+ropeRightX())/2;
   outcome=null; resultT=0; wobbleAmp=0; fallY=0; fellFx=false; advanced=false; revealed=false;
@@ -746,10 +746,10 @@ function advance(){
 }
 
 // ---------- Lifecycle ----------
-function startGame(key){
-  tierKey=key; tier=TIERS[key];
-  lives=START_LIVES; streak=0; bestStreak=0; rounds=0; successes=0;
-  rail.setLevel(key, tier.label);
+function startGame(startLevel){
+  level = Math.max(1, startLevel||1);
+  lives=START_LIVES; rounds=0; successes=0;
+  rail.reset(); rail.set(level);
   setupCanvas(); updateHud();
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden');
   running=true; lastTs=0; state='aim';
@@ -761,18 +761,18 @@ function gameOver(){
   state='over'; running=false; if(rafId) cancelAnimationFrame(rafId);
   balanceBtn.classList.add('hidden');
   const acc = rounds? Math.round(successes/rounds*100) : 0;
-  document.getElementById('fsStreak').textContent = bestStreak;
+  document.getElementById('fsLevel').textContent = level;
   document.getElementById('fsAcc').textContent = acc+'%';
   document.getElementById('fsRounds').textContent = successes;
-  document.getElementById('overTitle').textContent = bestStreak>=8 ? 'Star of the show! ⭐' : (bestStreak>=4 ? 'Nice walking!' : 'Keep practicing!');
-  document.getElementById('overCrest').textContent = bestStreak>=8 ? '⭐' : '🎪';
+  document.getElementById('overTitle').textContent = level>=15 ? 'Star of the show! ⭐' : (level>=MIN_LEVEL ? 'Great climb!' : 'Keep practicing!');
+  document.getElementById('overCrest').textContent = level>=15 ? '⭐' : '🎪';
   overOverlay.classList.remove('hidden');
-  if(window.HSGSound) HSGSound.finish(bestStreak>=4);
-  if(window.HSGfx && bestStreak>=6) HSGfx.confetti({count:60, big:true});
-  rail.gameOver(bestStreak, document.getElementById('trBoard'));   // inline placement + name entry
+  if(window.HSGSound) HSGSound.finish(level>=MIN_LEVEL);
+  if(window.HSGfx && level>=12) HSGfx.confetti({count:60, big:true});
+  rail.gameOver(level, document.getElementById('trBoard'));   // bank the level reached + inline name entry
 }
 function quitToMenu(){
-  if(rounds>0 || bestStreak>0) rail.gameOver(bestStreak);
+  if(successes>0) rail.gameOver(level);   // bank the level reached on the way out
   running=false; state='menu'; if(rafId) cancelAnimationFrame(rafId);
   balanceBtn.classList.add('hidden'); overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden');
   ctx.clearRect(0,0,W,H); drawSky();
@@ -781,8 +781,7 @@ function quitToMenu(){
 
 // ---------- HUD + value card ----------
 function updateHud(){
-  tierBadge.textContent = tier.icon+' '+tier.label;
-  streakBadge.textContent = '🔥 '+streak;
+  levelBadge.textContent = '🎪 Level '+level;
   if(window.HSGGod && HSGGod.on){ heartsBadge.innerHTML = '∞'; return; }
   let h=''; for(let i=0;i<START_LIVES;i++) h += i<lives? '❤️' : '<span class="spent">🤍</span>';
   heartsBadge.innerHTML = h;
@@ -825,27 +824,18 @@ document.addEventListener('keydown', e=>{
 });
 balanceBtn.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); commit(); });
 document.getElementById('quitBtn').addEventListener('click', quitToMenu);
-document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(tierKey); });
+document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(1); });
 document.getElementById('changeTierBtn').addEventListener('click', ()=>{ overOverlay.classList.add('hidden'); startOverlay.classList.remove('hidden'); startIdle(); });
+document.getElementById('startBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(1); });
 
-// tier buttons
-const tierRow=document.getElementById('tierRow');
-TIER_ORDER.forEach(k=>{
-  const t=TIERS[k];
-  const b=document.createElement('button'); b.className='tier-btn';
-  b.innerHTML='<span class="t-icon">'+t.icon+'</span><span><span class="t-name">'+t.label+'</span><br><span class="t-desc">'+t.desc+'</span></span>';
-  b.addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(k); });
-  tierRow.appendChild(b);
-});
-
-// deity mode - type "godmode": unlimited hearts + jump to any difficulty
+// deity mode - type "godmode": unlimited hearts + jump ahead to any level band
 HSGGod.watch(() => {
   HSGGod.enable();
   if(state!=='menu') updateHud();
   HSGGod.picker({
-    label:'Difficulty',
-    tiers: TIER_ORDER.map(k=>({ v:k, label:TIERS[k].icon+' '+TIERS[k].label })),
-    onJump: k => startGame(k)
+    label:'Start level',
+    tiers: [1,5,10,15,20,25].map(n=>({ v:n, label:'🎪 Level '+n })),
+    onJump: n => startGame(n)
   });
 });
 
@@ -853,7 +843,7 @@ HSGGod.watch(() => {
 function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
 
 // homepage-tile capture hook: ?shot jumps straight into a play screen
-if (location.search.indexOf('shot') >= 0) { setTimeout(()=>startGame('medium'), 60); }
+if (location.search.indexOf('shot') >= 0) { setTimeout(()=>startGame(8), 60); }
 
 // idle backdrop behind the start overlay
 setupCanvas(); updateHud();

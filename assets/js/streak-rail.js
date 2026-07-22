@@ -97,7 +97,12 @@
     wave:   { head: '🕹 Furthest Waves',
               score: function (n) { return 'Wave ' + Math.floor(n / 100000) + ' · ' + (n % 100000) + ' hits'; },
               of:    function (n) { return 'Wave ' + Math.floor(n / 100000) + '!'; },
-              claim: 'stand', rIcon: '🕹', rLabel: 'WAVE' }
+              claim: 'stand', rIcon: '🕹', rLabel: 'WAVE' },
+    // Continuous-climb games (e.g. Tightrope) - highest level reached, higher is better.
+    level:  { head: '🎪 Highest Climbers',
+              score: function (n) { return 'Level ' + n; },
+              of:    function (n) { return 'Level ' + n + '!'; },
+              claim: 'climb', rIcon: '🎪', rLabel: 'LEVEL' }
   };
   function unitOf(u) { return UNITS[u] || UNITS.streak; }
 
