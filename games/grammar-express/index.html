@@ -155,7 +155,7 @@
   </div>
 
   <div class="ge-prompt">
-    <span class="lead">Guard the</span>
+    <span class="lead">Click the</span>
     <span class="ge-chip" id="promptChip">Noun</span>
     <span class="ge-count" id="promptCount"></span>
   </div>
@@ -173,7 +173,6 @@
       <div class="overlay-actions">
         <button class="play-btn" id="startBtn">All aboard! 🚂</button>
       </div>
-      <div id="geStartBoard" style="width:100%;max-width:340px;margin:1.3rem auto 0;text-align:left"></div>
     </div>
 
     <!-- Game over -->
@@ -946,12 +945,6 @@ canvas.addEventListener('pointerdown', (e)=>{
 });
 
 document.getElementById('startBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(); });
-// scores-to-beat board on the start screen
-if (window.HSGStreak && HSGStreak.renderBoardInto) {
-  var geSB = document.getElementById('geStartBoard');
-  if (geSB) { geSB.innerHTML = '<div class="lbv-title">🏆 Scores to beat</div><div id="geStartBoardInner"></div>';
-    HSGStreak.renderBoardInto('#geStartBoardInner', { gameId:'grammar-express', level:'', minStreak:1, unit:'points' }); }
-}
 document.getElementById('againBtn').addEventListener('click', ()=>{ if(window.HSGSound) HSGSound.tick(); startGame(); });
 document.getElementById('quitBtn').addEventListener('click', quitToMenu);
 
