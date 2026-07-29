@@ -200,7 +200,7 @@
       .realm-btn .r-name { font-size: 1.02rem; }
     }
 
-    .final-stats { display: flex; gap: 1.5rem; margin-bottom: 1.25rem; }
+    .final-stats { display: flex; flex-wrap: wrap; justify-content: center; gap: 1.1rem 1.5rem; margin-bottom: 1.25rem; }
     .final-stats .fs { display: flex; flex-direction: column; align-items: center; }
     .final-stats .fs b { font-family: var(--font-serif); font-size: 2.2rem; line-height: 1; color: var(--gold-light); }
     .final-stats .fs span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; color: #cdc2b4; margin-top: 0.25rem; }
@@ -374,6 +374,8 @@
       <div class="final-stats">
         <div class="fs"><b id="fsWave">1</b><span>Wave Reached</span></div>
         <div class="fs"><b id="fsSlain">0</b><span>Foes Slain</span></div>
+        <div class="fs"><b id="fsWpm">0</b><span>WPM</span></div>
+        <div class="fs"><b id="fsAcc">100%</b><span>Accuracy</span></div>
       </div>
       <div class="hsg-board" id="dsBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
       <div class="overlay-actions">
@@ -645,6 +647,7 @@ let realmKey='easy', realm=REALMS.easy;
 let threats=[], projectiles=[], particles=[], decals=[], floaters=[], groundArrows=[];
 let active=null;
 let lives=START_LIVES, slain=0, level=1;
+let totalKeys=0, correctKeys=0, runStart=0;   // typing stats for end-of-game WPM & accuracy
 // level/wave roster: squads queued for the current level, plus the phase
 // machine that paces spawning and the breather between levels
 let squadQueue=[], phase='spawning', interT=0, squadGapT=0;
@@ -657,6 +660,17 @@ let nextId=1, troopCount=0;
 let treb={ fireT:0 };   // siege engine arm animation (0 = cocked, pulses to 1 on fire)
 
 const REALM_LABELS = { easy:'Easy', medium:'Medium', hard:'Hard', impossible:'Impossible' };
+// One-time reset: the old streak scores are obsolete now that ranking is by wave
+// reached. Wipe this device's stale realm boards once so they start fresh.
+try {
+  if (localStorage.getItem('hsg_reset_ds_wave') !== '1') {
+    ['easy','medium','hard','impossible'].forEach(function (l) {
+      localStorage.removeItem('hsg_lb_dragon-siege__' + l);
+      localStorage.removeItem('hsg_lbq_hsg_lb_dragon-siege__' + l);
+    });
+    localStorage.setItem('hsg_reset_ds_wave', '1');
+  }
+} catch (e) {}
 const rail = HSGStreak.init({
   gameId:'dragon-siege', gameName:'Dragon Siege', unit:'wave', minStreak:1,
   level:'easy', levelName:'Easy',
@@ -1861,6 +1875,7 @@ function handleChar(chRaw){
   if (!running) return;
   const ch=chRaw.toLowerCase();
   if (!/^[a-z' -]$/.test(ch)) return;
+  totalKeys++;   // every real letter keystroke counts toward accuracy
   if (!active || (active.state!=='live' && active.state!=='siege')){
     const t = acquire(ch);
     if (!t) return;
@@ -1920,6 +1935,7 @@ function enterArcade(){
 }
 function advance(th, ch){
   if (ch===th.word[th.typed]){
+    correctKeys++;
     th.typed++;
     if (th.typed>=th.word.length) landHit(th);
     else renderBubble(th);
@@ -2657,6 +2673,9 @@ function finishDefeat(){
   defeat=false; running=false; paused=false; pauseBtn.classList.add('hidden'); if(rafId) cancelAnimationFrame(rafId);
   document.getElementById('fsSlain').textContent=slain;
   document.getElementById('fsWave').textContent=level;
+  { const mins=Math.max(0.05,(performance.now()-runStart)/60000);
+    document.getElementById('fsWpm').textContent=Math.round((correctKeys/5)/mins);
+    document.getElementById('fsAcc').textContent=(totalKeys?Math.round(correctKeys/totalKeys*100):100)+'%'; }
   document.getElementById('overTitle').textContent='The Castle Is Lost';
   document.getElementById('overCrest').textContent='🔥';
   overOverlay.classList.remove('hidden');
@@ -2674,6 +2693,7 @@ function startGame(key){
   WORDS.scriptureMed.__cur = 0; WORDS.scriptureHard.__cur = 0;   // verses start from the beginning each game
   clearField();
   lives=START_LIVES; slain=0; troopCount=0;
+  totalKeys=0; correctKeys=0; runStart=performance.now();   // reset typing stats
   squadGapT=0; sceneTime=0; phase='spawning'; interT=0;
   shake=0; flashA=0; defeat=false; defeatT=0; paused=false;
   document.getElementById('overTitle').textContent='The Castle Is Lost';
