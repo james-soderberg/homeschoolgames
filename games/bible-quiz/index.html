@@ -17,17 +17,17 @@
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Accidental Learning">
   <meta property="og:locale" content="en_US">
-  <meta property="og:title" content="Paul&#x27;s Voyage">
+  <meta property="og:title" content="Paul&#x27;s Journey">
   <meta property="og:description" content="Identify Scripture passages as you sail Paul&#x27;s missionary voyages. A free Bible game for kids, families, and teachers. Test your Bible knowledge.">
   <meta property="og:image" content="https://accidentallearning.org/assets/img/og/bible-quiz.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Paul&#x27;s Voyage - free bible game">
+  <meta property="og:image:alt" content="Paul&#x27;s Journey - free bible game">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Paul&#x27;s Voyage">
+  <meta name="twitter:title" content="Paul&#x27;s Journey">
   <meta name="twitter:description" content="Identify Scripture passages as you sail Paul&#x27;s missionary voyages. A free Bible game for kids, families, and teachers. Test your Bible knowledge.">
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/bible-quiz.jpg">
-  <title>Paul&#x27;s Voyage - Free Bible Passage Game | Accidental Learning</title>
+  <title>Paul&#x27;s Journey - Free Bible Passage Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
@@ -219,7 +219,7 @@
     "@graph": [
       {
         "@type": "VideoGame",
-        "name": "Paul's Voyage",
+        "name": "Paul's Journey",
         "url": "https://accidentallearning.org/games/bible-quiz/",
         "description": "Identify Scripture passages as you sail Paul's missionary voyages. A free Bible game for kids, families, and teachers. Test your Bible knowledge.",
         "image": "https://accidentallearning.org/assets/img/og/bible-quiz.jpg",
@@ -261,7 +261,7 @@
           {
             "@type": "ListItem",
             "position": 3,
-            "name": "Paul's Voyage",
+            "name": "Paul's Journey",
             "item": "https://accidentallearning.org/games/bible-quiz/"
           }
         ]
@@ -282,7 +282,7 @@
 <div class="voy-page">
 
   <div class="voy-top">
-    <h1>Bible Quiz</h1>
+    <h1>Paul's Journey</h1>
     <div class="stat-group">
       <div class="stat-badge" id="scoreBadge">0 correct</div>
       <div class="stat-badge" id="bestBadge">Best 0</div>
@@ -296,7 +296,7 @@
       <!-- Start overlay -->
       <div class="ov" id="startOverlay">
         <div class="crest">⛵</div>
-        <h2>Paul's Voyage</h2>
+        <h2>Paul's Journey</h2>
         <p>Retrace Paul's voyages to <b>Rome</b>.<br><br>A Bible story appears. Name the <b>book</b> it's from.<br>Five right answers reach the next port. Pick a level to begin.</p>
         <div class="pace-row">
           <button class="pace-btn" data-level="easy">Easy<span class="p-sub">Grades 3-7</span></button>
@@ -597,7 +597,7 @@ let correctCount = 0, streak = 0, bestStreak = 0, runRecorded = false;
 function bankVoyage(showBoard) {
   if (!window.HSGStreak || runRecorded) return;
   runRecorded = true;
-  const opts = { gameId:'bible-quiz', gameName:'Bible Quiz', level:level.key,
+  const opts = { gameId:'bible-quiz', gameName:"Paul's Journey", level:level.key,
                  levelName: level.key.charAt(0).toUpperCase()+level.key.slice(1),
                  minStreak:3, score:bestStreak };
   // Reaching Rome shows the board + inline name entry in the landing card; a

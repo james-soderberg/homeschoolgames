@@ -119,6 +119,16 @@
     .learn-note { display:none; }
     .go-btn { margin-top:.25rem; }
   }
+  /* start-screen difficulty picker */
+  .diff-label { color:#aeb9d6; font-size:.82rem; font-weight:700; text-transform:uppercase; letter-spacing:.08em; margin:.2rem 0 .4rem; }
+  .diff-pick { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; margin:0 auto .9rem; }
+  .diff-btn { display:flex; flex-direction:column; align-items:center; gap:.12rem; min-width:98px; cursor:pointer;
+    background:rgba(255,255,255,.07); border:1.5px solid rgba(255,255,255,.22); border-radius:12px; color:#d3ddf6;
+    padding:.45rem .7rem; font-family:inherit; transition:border-color .12s, background .12s; }
+  .diff-btn:hover { background:rgba(255,255,255,.13); }
+  .diff-btn b { font-size:.98rem; }
+  .diff-btn span { font-size:.68rem; opacity:.72; }
+  .diff-btn.selected { border-color:var(--gold,#C4A040); background:rgba(196,160,64,.24); color:#fff; }
   /* start-screen controls overview */
   .ctl-guide { display:flex; flex-direction:column; gap:.5rem; margin:.3rem auto .9rem; text-align:left; width:max-content; max-width:100%; color:#d3ddf6; font-size:.98rem; }
   .ctl-row { display:flex; align-items:center; gap:.7rem; }
@@ -302,6 +312,12 @@
         <div class="ctl-row"><span class="ctl-keys">drag</span><span>Or drag from the pad to aim &amp; power</span></div>
       </div>
       <p class="learn-note">🌍 Every shot shows how gravity curves a moving object's path, the same slingshot trick real spacecraft use to cross the solar system.</p>
+      <div class="diff-label">Choose your flight difficulty</div>
+      <div class="diff-pick" id="diffPick">
+        <button class="diff-btn" data-diff="cadet" type="button"><b>Cadet</b><span>long path preview</span></button>
+        <button class="diff-btn" data-diff="pilot" type="button"><b>Pilot</b><span>shorter preview</span></button>
+        <button class="diff-btn selected" data-diff="commander" type="button"><b>Commander</b><span>almost no preview</span></button>
+      </div>
       <div class="overlay-actions">
         <button class="go-btn" id="beginBtn">Launch mission →</button>
         <button class="go-btn secondary" id="tutorialBtn">▶ Watch tutorial</button>
@@ -1336,7 +1352,15 @@ document.addEventListener('keydown', e => {
 });
 
 // ---------- wiring ----------
-document.getElementById('beginBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame('commander'); });
+// start-screen difficulty picker
+let pickedDiff = 'commander';
+document.querySelectorAll('#diffPick .diff-btn').forEach((b) => b.addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.querySelectorAll('#diffPick .diff-btn').forEach((x) => x.classList.remove('selected'));
+  b.classList.add('selected'); pickedDiff = b.dataset.diff;
+  if (window.HSGSound) HSGSound.tick();
+}));
+document.getElementById('beginBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(pickedDiff); });
 document.getElementById('tutorialBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); playTutorial(); });
 document.getElementById('tutClose').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); closeTutorial(); });
 document.getElementById('launchBtn').addEventListener('click', (e) => { e.stopPropagation(); launch(); });
@@ -1358,7 +1382,7 @@ document.getElementById('nameInput').addEventListener('keydown', e => { if (e.ke
     btn.textContent = n;
     if (spec.vmax && spec.vmax < 1) btn.classList.add('slow');   // mark low-thrust levels
     btn.title = 'Level ' + n + (spec.vmax && spec.vmax < 1 ? ' · low thrust' : '');
-    btn.addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame('commander', n); });
+    btn.addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(pickedDiff, n); });
     grid.appendChild(btn);
   });
   document.getElementById('godClose').addEventListener('click', (e) => {
