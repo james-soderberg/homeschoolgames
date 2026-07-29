@@ -33,7 +33,13 @@
   <style>
     .wr-page { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
 
-    .wr-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.1rem; flex-wrap: wrap; }
+    .wr-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+    .pack-pick { display: flex; gap: 0.4rem; flex-wrap: wrap; justify-content: center; margin: 0 0 1rem; }
+    .pack-btn { background: var(--cream-dark, #efe7d6); border: 1.5px solid var(--border, #d8cdb8); border-radius: 99px;
+      padding: 0.34rem 0.85rem; font-family: var(--font-sans); font-weight: 700; font-size: 0.82rem;
+      color: var(--ink-light, #6c5836); cursor: pointer; transition: background 0.12s, color 0.12s, border-color 0.12s; }
+    .pack-btn:hover { background: #e6dcc4; }
+    .pack-btn.selected { background: var(--gold, #C4A040); border-color: var(--gold, #C4A040); color: #3a2c05; }
     .wr-top h1 { margin: 0; font-size: 1.8rem; }
     .best-badge {
       background: var(--cream-dark); border: 1.5px solid var(--border); border-radius: 99px;
@@ -274,6 +280,12 @@
     <h1>Word Racer</h1>
     <div class="best-badge" id="bestBadge">Best: - WPM</div>
   </div>
+  <div class="pack-pick" id="packPick" aria-label="Passage pack">
+    <button class="pack-btn" data-pack="warmup" type="button">Warm-Up</button>
+    <button class="pack-btn selected" data-pack="sentences" type="button">Sentences</button>
+    <button class="pack-btn" data-pack="paragraphs" type="button">Paragraphs</button>
+    <button class="pack-btn" data-pack="scripture" type="button">Scripture</button>
+  </div>
 
   <section id="raceScreen">
     <div class="commentary" id="commentary"></div>
@@ -331,25 +343,63 @@
 // Rivals race the same loop by how far they've typed.
 // ============================================================
 
-// KJV verses. `text` is what you type; `ref` is shown only as a watermark (never typed).
-const PASSAGES = [
-  { ref: "John 3:16", text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
-  { ref: "Ephesians 6:11", text: "Put on the whole armour of God, that ye may be able to stand against the wiles of the devil." },
-  { ref: "Isaiah 41:10", text: "Fear thou not; for I am with thee: be not dismayed; for I am thy God: I will strengthen thee; yea, I will help thee; yea, I will uphold thee with the right hand of my righteousness." },
-  { ref: "Romans 8:28", text: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose." },
-  { ref: "Joshua 1:9", text: "Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
-  { ref: "Jeremiah 29:11", text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
-  { ref: "Matthew 5:16", text: "Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven." },
-  { ref: "Philippians 4:6", text: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God." },
-  { ref: "Ephesians 2:8-9", text: "For by grace are ye saved through faith; and that not of yourselves: it is the gift of God: Not of works, lest any man should boast." },
-  { ref: "Matthew 6:33", text: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you." },
-  { ref: "1 Corinthians 13:4", text: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up." },
-  { ref: "John 14:6", text: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." },
-  { ref: "John 8:12", text: "I am the light of the world: he that followeth me shall not walk in darkness, but shall have the light of life." },
-  { ref: "Proverbs 17:22", text: "A merry heart doeth good like a medicine: but a broken spirit drieth the bones." },
-  { ref: "Colossians 3:23", text: "And whatsoever ye do, do it heartily, as to the Lord, and not unto men." },
-  { ref: "Isaiah 40:31", text: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint." }
-];
+// Leveled passage packs. `text` is what you type; `ref`/`tag` are shown only as a
+// faint watermark (never typed). Pick a pack from the header; each has its own board.
+const PACKS = {
+  warmup: { label: 'Warm-Up', tag: '', items: [
+    { ref: '', text: "The cat sat on the soft red mat." },
+    { ref: '', text: "A big dog ran fast across the park." },
+    { ref: '', text: "We like to play out in the warm sun." },
+    { ref: '', text: "The little fish swims in the blue sea." },
+    { ref: '', text: "My mom made a nice cake for us to share." },
+    { ref: '', text: "The green frog can hop up on the log." },
+    { ref: '', text: "Birds sing a sweet song every morning." },
+    { ref: '', text: "I can see a bright star up in the sky." },
+    { ref: '', text: "A kind boy helped his best friend today." },
+    { ref: '', text: "We ride our bikes down to the old park." },
+    { ref: '', text: "The red car goes fast down the long hill." },
+    { ref: '', text: "A duck and a hen live on the farm." },
+  ]},
+  sentences: { label: 'Sentences', tag: '', items: [
+    { ref: 'Pangram', text: "The quick brown fox jumps over the lazy dog." },
+    { ref: 'Fun Fact', text: "Honey never spoils, even after thousands of years." },
+    { ref: 'Fun Fact', text: "A group of flamingos is called a flamboyance." },
+    { ref: 'Fun Fact', text: "Octopuses have three hearts and bright blue blood." },
+    { ref: 'Fun Fact', text: "Butterflies taste with their feet and see many colors." },
+    { ref: 'Space', text: "The Sun is about four hundred times wider than the Moon." },
+    { ref: 'Fun Fact', text: "A bolt of lightning is hotter than the surface of the Sun." },
+    { ref: 'Nature', text: "The tallest mountain on Earth is Mount Everest." },
+    { ref: 'Saying', text: "Practice a little every day and your speed will climb." },
+    { ref: 'Saying', text: "Kindness costs nothing yet it means everything." },
+    { ref: 'Fun Fact', text: "A hummingbird can beat its wings fifty times a second." },
+    { ref: 'Saying', text: "Read each night and you will build a mighty vocabulary." },
+  ]},
+  paragraphs: { label: 'Paragraphs', tag: '', items: [
+    { ref: 'The Water Cycle', text: "The sun warms the ocean and lifts water into the sky, where it gathers into clouds. When the clouds grow heavy, rain falls back to the land, and the whole journey begins again." },
+    { ref: 'Busy Bees', text: "Bees are tiny but mighty workers. They fly from flower to flower gathering sweet nectar, and along the way they carry pollen that helps new plants grow." },
+    { ref: 'The Library', text: "A library is a quiet treasure house. Row after row of books wait on the shelves, each one holding a new story or a fact you never knew before." },
+    { ref: 'Telling Time', text: "Long ago, people told time by watching the sun cross the sky. They built tall stones and sundials to mark the hours, and only much later did gears and springs keep time for them." },
+    { ref: 'The Seasons', text: "As the Earth travels around the sun, its tilt turns the year into seasons. Warm summers give way to crisp autumns, quiet winters, and the fresh green of spring." },
+    { ref: 'Explorers', text: "Great explorers once sailed across unknown seas with only the stars to guide them. They mapped new coastlines and proved that curiosity can carry us farther than fear." },
+  ]},
+  scripture: { label: 'Scripture', tag: 'KJV', items: [
+    { ref: "John 3:16", text: "For God so loved the world, that he gave his only begotten Son, that whosoever believeth in him should not perish, but have everlasting life." },
+    { ref: "Ephesians 6:11", text: "Put on the whole armour of God, that ye may be able to stand against the wiles of the devil." },
+    { ref: "Romans 8:28", text: "And we know that all things work together for good to them that love God, to them who are the called according to his purpose." },
+    { ref: "Joshua 1:9", text: "Be strong and of a good courage; be not afraid, neither be thou dismayed: for the LORD thy God is with thee whithersoever thou goest." },
+    { ref: "Jeremiah 29:11", text: "For I know the thoughts that I think toward you, saith the LORD, thoughts of peace, and not of evil, to give you an expected end." },
+    { ref: "Matthew 5:16", text: "Let your light so shine before men, that they may see your good works, and glorify your Father which is in heaven." },
+    { ref: "Philippians 4:6", text: "Be careful for nothing; but in every thing by prayer and supplication with thanksgiving let your requests be made known unto God." },
+    { ref: "Matthew 6:33", text: "But seek ye first the kingdom of God, and his righteousness; and all these things shall be added unto you." },
+    { ref: "1 Corinthians 13:4", text: "Charity suffereth long, and is kind; charity envieth not; charity vaunteth not itself, is not puffed up." },
+    { ref: "John 14:6", text: "Jesus saith unto him, I am the way, the truth, and the life: no man cometh unto the Father, but by me." },
+    { ref: "Proverbs 17:22", text: "A merry heart doeth good like a medicine: but a broken spirit drieth the bones." },
+    { ref: "Colossians 3:23", text: "And whatsoever ye do, do it heartily, as to the Lord, and not unto men." },
+    { ref: "Isaiah 40:31", text: "But they that wait upon the LORD shall renew their strength; they shall mount up with wings as eagles; they shall run, and not be weary; and they shall walk, and not faint." },
+  ]},
+};
+const PACK_ORDER = ['warmup','sentences','paragraphs','scripture'];
+let curPack = 'sentences';   // secular default
 
 function carSVG(body, accent, num) {
   const wheels =
@@ -372,7 +422,7 @@ const OPPONENTS = [
   { name: 'Zoom',   body: '#7A4FB0', accent: '#FF8A3F', num: 9 },
 ];
 const MEDAL = { 1: '🥇', 2: '🥈', 3: '🥉' };
-const BEST_KEY = 'hsg_wordracer_best';
+const BEST_KEY = () => 'hsg_wordracer_best_' + curPack;   // per-pack best
 
 // ---- DOM ----
 const arena = document.getElementById('arena');
@@ -438,14 +488,14 @@ let lastCommentaryMsg = '', lastCommentaryTime = 0;
 const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 const randRange = (lo, hi) => lo + Math.random() * (hi - lo);
 const shuffle = a => { a = a.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
-function loadBest() { try { return parseInt(localStorage.getItem(BEST_KEY)) || 0; } catch (e) { return 0; } }
-function saveBest() { try { localStorage.setItem(BEST_KEY, String(bestWpm)); } catch (e) {} }
+function loadBest() { try { return parseInt(localStorage.getItem(BEST_KEY())) || 0; } catch (e) { return 0; } }
+function saveBest() { try { localStorage.setItem(BEST_KEY(), String(bestWpm)); } catch (e) {} }
 function showBest() { document.getElementById('bestBadge').textContent = bestWpm ? `Best: ${bestWpm} WPM` : 'Best: - WPM'; }
 function recentWpm() { const now = performance.now(); while (keyTimes.length && now - keyTimes[0] > 2500) keyTimes.shift(); return keyTimes.length * (12 / 2.5); }
 function ordinal(n) { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 // seconds gap: show tenths when it's close (< 10s), whole seconds otherwise
 function fmtSecs(sec) { const s = Math.abs(sec); return (s < 10 ? s.toFixed(1) : Math.round(s)) + 's'; }
-function pickPassage() { let i; do { i = Math.floor(Math.random() * PASSAGES.length); } while (i === lastPassage && PASSAGES.length > 1); lastPassage = i; return PASSAGES[i]; }
+function pickPassage() { const list = PACKS[curPack].items; let i; do { i = Math.floor(Math.random() * list.length); } while (i === lastPassage && list.length > 1); lastPassage = i; return list[i]; }
 
 // break the passage into lines that fit one side of the square
 function measureLines() {
@@ -580,8 +630,10 @@ function startRace() {
   // The trimmed punctuation is kept as `tail` and shown (faint) after the last letter.
   passage = sel.text.replace(/[^\p{L}\p{N}]+$/u, ''); chars = passage.split(''); passageLen = chars.length;
   tail = sel.text.slice(passage.length);
-  document.getElementById('verseRef').innerHTML = sel.ref +
-    '<br><span style="font-size:.72em;letter-spacing:.18em;opacity:.7">KJV</span>';
+  { const pk = PACKS[curPack];
+    document.getElementById('verseRef').innerHTML = sel.ref
+      ? (sel.ref + (pk.tag ? '<br><span style="font-size:.72em;letter-spacing:.18em;opacity:.7">' + pk.tag + '</span>' : ''))
+      : ''; }
   index = 0; errors = 0; totalKeystrokes = 0; activeLine = 0;
   racing = false; keyTimes = []; combo = 0;
   halfPassed = false; lastLeader = ''; said85 = false; lastCommentaryMsg = ''; lastCommentaryTime = 0;
@@ -767,7 +819,7 @@ function finishSequence() {
 
   setTimeout(() => {
     showResults(place, racers, wpm, acc, isBest);
-    if (window.HSGStreak) HSGStreak.endPanel('#wrBoard', { gameId: 'word-racer', gameName: 'Word Racer', unit: 'wpm', score: wpm, minStreak: 1 });
+    if (window.HSGStreak) HSGStreak.endPanel('#wrBoard', { gameId: 'word-racer', gameName: 'Word Racer', level: curPack, levelName: PACKS[curPack].label, unit: 'wpm', score: wpm, minStreak: 1 });
   }, 1900);
 }
 
@@ -873,6 +925,17 @@ function tsBoom(){
 }
 window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
 document.addEventListener('keydown', onKeyDown);
+// passage-pack picker: switch packs, load that pack's best, and start a fresh race
+document.querySelectorAll('#packPick .pack-btn').forEach((btn) => btn.addEventListener('click', () => {
+  if (btn.dataset.pack === curPack) return;
+  document.querySelectorAll('#packPick .pack-btn').forEach((b) => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  curPack = btn.dataset.pack;
+  lastPassage = -1;
+  bestWpm = loadBest(); showBest();
+  if (window.HSGSound) HSGSound.tick();
+  startRace();
+}));
 showBest();
 startRace();   // no intro screen - drop straight into the track, armed and waiting for the first keystroke
 </script>
