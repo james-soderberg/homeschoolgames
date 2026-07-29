@@ -357,9 +357,8 @@
       <div class="crest" id="overCrest">🏛️</div>
       <h2 id="overTitle">The White House Has Fallen</h2>
       <div class="final-stats">
+        <div class="fs"><b id="fsWave">1</b><span>Wave Reached</span></div>
         <div class="fs"><b id="fsKills">0</b><span>Destroyed</span></div>
-        <div class="fs"><b id="fsBest">0</b><span>Best Streak</span></div>
-        <div class="fs"><b id="fsWave">1</b><span>Wave</span></div>
       </div>
       <div class="run-typing" id="runTyping"></div>
       <div class="hsg-board" id="tiBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
@@ -577,7 +576,7 @@ const lerp   = (a, b, t) => a + (b - a) * t;
 
 // ---------- State ----------
 let realmKey = 'easy', realm = REALMS.easy;
-let lives = START_LIVES, kills = 0, wave = 1, bestStreak = 0;
+let lives = START_LIVES, kills = 0, wave = 1;
 let running = false, paused = false, gameLost = false;
 let rafId = null, lastTs = 0, sceneTime = 0;
 let shake = 0, flashRed = 0, flashWhite = 0;
@@ -924,6 +923,7 @@ function descSpeed(){ return (realm.descBase + (wave-1)*realm.descStep) * (arcad
 // ===================================================================
 function startWave(n){
   wave = n;
+  rail.set(sScore());               // live "Wave N" as you push farther
   isBossWave = (n % BOSS_EVERY === 0);
   boss = null;
   document.getElementById('waveBadge').textContent = '🛸 Wave ' + n;
@@ -1916,9 +1916,9 @@ function registerKill(o, noStreak){
   if (noStreak){
     floatText(o.x, o.y-20, '+1', '#8fd3ff');           // an ally's kill - counts, but not your streak
   } else {
-    rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
-    if (window.HSGfx && HSGfx.milestone(rail.value) && window.HSGSound) HSGSound.streak(rail.value);
-    floatText(o.x, o.y-20, '+'+rail.value, '#46d17a');
+    rail.set(sScore());
+    if (window.HSGfx && HSGfx.milestone(kills) && window.HSGSound && HSGSound.streak) HSGSound.streak(6);
+    floatText(o.x, o.y-20, '+1', '#46d17a');
   }
   document.getElementById('killBadge').textContent = '💥 ' + kills;
 }
@@ -1927,7 +1927,7 @@ function destroyBoss(o){
   explosion(o.x, o.y, true, 300);
   // a few secondary booms
   for (let i=0;i<5;i++) setTimeout(()=>{ if(!gameLost) explosion(o.x+rand(-50,50), o.y+rand(-30,30), false, choice([20,40,300])); }, i*120);
-  kills += 5; rail.hit(); if (rail.value>bestStreak) bestStreak=rail.value;
+  kills += 5; rail.set(sScore());
   document.getElementById('killBadge').textContent = '💥 ' + kills;
   floatText(o.x, o.y-40, 'MOTHERSHIP DOWN!', '#ffd23f');
   if (window.HSGfx && !reduceMotion) HSGfx.confetti({ count: 60 });
@@ -1978,7 +1978,7 @@ function houseHit(x){
   if (window.HSGGod && HSGGod.on) return;   // deity mode: the White House is invincible
   explosion(hx, whTopY()+12, false, 18);
   lives--; updateHearts();
-  rail.broke();                       // a breach snuffs the live streak (keeps best, no modal)
+  // a breach costs a life but not your run — survival score (wave + kills) stands
   flashRed = 0.6; shake = Math.max(shake, 13);
   if (lives<=0) gameOver();
 }
@@ -2006,12 +2006,11 @@ function gameOver(){
 function revealEndScreen(){
   if (!gameLost) return;                              // player already left
   document.getElementById('fsKills').textContent = kills;
-  document.getElementById('fsBest').textContent = bestStreak;
   document.getElementById('fsWave').textContent = wave;
   const rt = document.getElementById('runTyping');
   if (rt) rt.innerHTML = arcade ? '' :
     'You typed <b>'+wordsTyped+'</b> '+(wordsTyped===1?'word':'words')+' · <b>'+curWpm()+'</b> WPM · <b>'+curAcc()+'%</b> accuracy';
-  document.getElementById('overTitle').textContent = arcade ? '🕹 Arcade Over' : (bestStreak>=15 ? 'Heroic Last Stand!' : 'The White House Has Fallen');
+  document.getElementById('overTitle').textContent = arcade ? '🕹 Arcade Over' : (wave>=5 ? 'Heroic Last Stand!' : 'The White House Has Fallen');
   const oc = document.getElementById('overCrest'); if (oc) oc.textContent = '👽';
   overOverlay.classList.remove('hidden');
   if (arcadeHighScore) {
@@ -2022,14 +2021,16 @@ function revealEndScreen(){
       unit:'wave', score: wave*100000 + Math.min(kills,99999), minStreak:1 });
   } else if (arcade) {
     // the typed "arcade" cheat (impossible realm, mid-game) stays off the leaderboard
-    HSGStreak.renderBoardInto('#tiBoard', { gameId:'type-invaders', level:realmKey, minStreak:3 });
+    HSGStreak.renderBoardInto('#tiBoard', { gameId:'type-invaders', level:realmKey, unit:'wave', minStreak:1 });
   } else endRun(true);
 }
-// Bank the run's longest streak. On the game-over screen it shows the inline
-// placement + name entry; a quiet retreat falls back to the modal.
+// Bank the run's survival score — how far you got (wave reached, kills as tiebreak).
+// On the game-over screen it shows the inline placement + name entry; a quiet
+// retreat falls back to the modal.
 function endRun(showInline){
-  if (showInline) rail.gameOver(bestStreak, document.getElementById('tiBoard'));
-  else rail.gameOver(bestStreak);
+  var score = sScore();
+  if (showInline) rail.gameOver(score, document.getElementById('tiBoard'));
+  else rail.gameOver(score);
 }
 
 // ===================================================================
@@ -2120,20 +2121,23 @@ function idle(ts){
 //  START / QUIT / PAUSE
 // ===================================================================
 const rail = HSGStreak.init({
-  gameId:'type-invaders', gameName:'Independence Day', minStreak:3,
+  gameId:'type-invaders', gameName:'Independence Day', unit:'wave', minStreak:1,
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
 });
-// start-screen "streaks to beat" - one collapsible board per realm (arcade is secret, so it's left out)
+// start-screen "waves to beat" - one collapsible board per realm (arcade is secret, so it's left out)
 if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#tiLevelBoards', {
-  gameId:'type-invaders', unit:'streak', minStreak:3,
+  gameId:'type-invaders', unit:'wave', minStreak:1,
   levels:[{key:'easy',label:'Easy',icon:'🛰️'},{key:'medium',label:'Medium',icon:'🚀'},{key:'hard',label:'Hard',icon:'👨‍🚀'},{key:'impossible',label:'Impossible',icon:'👽'}]
 });
+// leaderboard score: how far you survive. Wave reached is primary, kills break
+// ties (encoded as wave*100000 + kills — the 'wave' unit format).
+function sScore(){ return wave*100000 + Math.min(kills, 99999); }
 
 function startGame(key, isArcade){
   arcade = !!isArcade;
   realmKey = key; realm = REALMS[key];
-  lives = START_LIVES; kills = 0; bestStreak = 0; gameLost = false; paused = false; constIdx = 0;
+  lives = START_LIVES; kills = 0; gameLost = false; paused = false; constIdx = 0;
   shake=0; flashRed=0; flashWhite=0; shieldT=0; slowT=0; cannonAng=-Math.PI/2; arcadeFireT=0;
   aimKeys.left=aimKeys.right=aimKeys.up=aimKeys.down=false;
   correctKeys=0; totalKeys=0; wordsTyped=0; typeTime=0; wpmUiT=0; updateWpmBadge();
