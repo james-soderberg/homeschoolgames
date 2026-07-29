@@ -421,13 +421,31 @@
 // EASY reuses Dragon Siege's gentle word list. MEDIUM / HARD / IMPOSSIBLE serve
 // the real words of the U.S. Constitution, in order (letters only). You type
 // your way through the document as you defend the capital.
+// Grouped for gentle phonics practice: CVC vowel families, then digraphs and
+// -ck endings, then common CVCe / longer words, then high-frequency sight words.
 const EASY_WORDS = [
-  "cat","hat","dog","sun","run","red","big","bed","cup","top",
-  "box","fox","pig","hen","bug","map","net","pen","jam","mud",
-  "bat","bus","cow","egg","fan","hop","log","mom","dad","sit",
-  "home","ball","book","tree","fish","cake","star","frog","duck","bird",
-  "milk","door","hand","jump","play","rain","sock","ship","king","gold",
-  "moon","leaf","nest","ring","sand","wind","cart","gate","horn","drum"
+  // short a
+  "cat","hat","bat","mat","rat","sat","pat","can","man","fan","pan","ran","tan",
+  "bag","tag","wag","rag","cap","map","nap","tap","lap","jam","ham","ram","bad","mad","sad","dad","had","gas",
+  // short e
+  "bed","red","led","fed","wed","hen","pen","ten","den","men","net","jet","pet","wet","get","let","met","set","leg","beg","peg","egg","web",
+  // short i
+  "pig","big","dig","fig","wig","pin","win","bin","fin","sit","hit","fit","bit","kit","lip","tip","rip","zip","dip","kid","lid","did","him","rim","mix","six","fix",
+  // short o
+  "dog","log","fog","jog","hop","top","mop","pop","cop","box","fox","cot","dot","hot","pot","got","lot","not","job","mob","rob","rod","nod",
+  // short u
+  "sun","run","fun","bun","gun","cup","pup","cut","hut","nut","bug","hug","rug","mug","jug","tug","bus","mud","bud","tub","rub","cub","gum","sum",
+  // digraphs sh / ch / th
+  "ship","shop","shed","fish","dish","wish","cash","dash","chin","chip","chop","chat","rich","much","such","this","that","then","thin","bath","math","path","with",
+  // -ck endings
+  "duck","sock","rock","lock","kick","lick","pick","sick","back","pack","sack","neck","deck","luck","rack",
+  // common CVCe & longer everyday words
+  "home","ball","book","tree","cake","star","frog","bird","milk","door","hand","jump","play","rain","king","gold",
+  "moon","leaf","nest","ring","sand","wind","gate","horn","drum","boat","coat","road","rope","nose","gift","lamp",
+  "bell","fire","lake","time","nine","five","game","name","cave","bike","kite","corn","farm","tent","wolf",
+  // high-frequency sight words
+  "the","and","you","was","for","are","but","all","one","out","see","day","new","now","old",
+  "come","from","they","said","what","when","will","your","look","like","into","good","have","went","them"
 ];
 const MISSILE_WORDS = EASY_WORDS.filter(w => w.length <= 4);
 
@@ -2120,6 +2138,18 @@ function idle(ts){
 // ===================================================================
 //  START / QUIT / PAUSE
 // ===================================================================
+// One-time reset: the old streak scores are obsolete now that ranking is by wave
+// reached. Wipe this device's stale realm boards once (the arcade board was already
+// wave-based, so it's left intact).
+try {
+  if (localStorage.getItem('hsg_reset_ti_wave') !== '1') {
+    ['easy','medium','hard','impossible'].forEach(function (l) {
+      localStorage.removeItem('hsg_lb_type-invaders__' + l);
+      localStorage.removeItem('hsg_lbq_hsg_lb_type-invaders__' + l);
+    });
+    localStorage.setItem('hsg_reset_ti_wave', '1');
+  }
+} catch (e) {}
 const rail = HSGStreak.init({
   gameId:'type-invaders', gameName:'Independence Day', unit:'wave', minStreak:1,
   level:'easy', levelName:'Easy',
