@@ -229,9 +229,8 @@
        game off-center. */
     /* No forced viewport height: cards already fit via vh-sized images, so the
        layout flows naturally and the page grows/scrolls when the timeline opens. */
-    #soloScreen .game-layout { max-width: 1500px; align-items: flex-start; }
+    #soloScreen .game-layout { --gm-w: 960px; --gl-max: 1500px; align-items: start; }
     #soloScreen .game-main {
-      flex: 0 1 960px; max-width: 960px;
       display: flex; flex-direction: column; min-height: 0; gap: 0.25rem;
     }
     #soloScreen .hsg-rail { align-self: flex-start; }

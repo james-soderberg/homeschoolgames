@@ -32,11 +32,8 @@
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .ge-page { max-width: min(1480px, 96vw); margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
-    .game-layout-wide { max-width: min(2200px, 99vw); gap: 1rem; }
-    @media (min-width: 1001px) {
-      .game-layout-wide { justify-content: center; }
-      .game-layout-wide::before { display: block; content: ""; flex: 0 0 240px; }
-    }
+    /* Wide train kept centered in the viewport by the shared grid layout. */
+    .game-layout { --gm-w: 1440px; --gl-max: min(2200px, 99vw); column-gap: 1rem; }
 
     .ge-top { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
     .ge-top h1 { margin: 0; font-size: 1.8rem; }
@@ -142,7 +139,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide">
+<div class="game-layout">
 <div class="ge-page game-main">
 
   <div class="ge-top">

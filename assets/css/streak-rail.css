@@ -6,26 +6,33 @@
    Relies on palette vars from site.css.
    ========================================================= */
 
-/* ---- two-column game + rail layout ---- */
+/* ---- two-column game + rail layout ----
+   A 3-column grid keeps the MAIN play column centered in the viewport no
+   matter how wide the rail is: columns 1 and 3 are equal flexible gutters
+   and the rail lives in column 3 pinned to its start, so it can never pull
+   the play area off-center (the old phantom-spacer trick drifted whenever a
+   game resized the columns without re-tuning the spacer). Games size the
+   play column with `--gm-w` and the whole row with `--gl-max`. */
 .game-layout {
-  display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
-  justify-content: center;
-  max-width: 1140px;
+  display: grid;
+  /* equal 250px-min gutters keep the play column optically centered while the
+     rail lives in the right gutter; both gutters reserve the rail's width so
+     they stay symmetric even when the row is wider than the viewport. */
+  grid-template-columns: minmax(250px, 1fr) minmax(0, var(--gm-w, 580px)) minmax(250px, 1fr);
+  column-gap: 1.5rem;
+  align-items: start;
+  max-width: var(--gl-max, 1140px);
   margin: 0 auto;
   padding: 0 1rem;
 }
-/* phantom spacer mirrors the rail so the MAIN column stays centered in the viewport */
-.game-layout::before {
-  content: "";
-  flex: 0 0 250px;
-}
-.game-layout > .game-main { flex: 0 1 580px; max-width: 580px; min-width: 0; margin: 0 !important; }
+/* neutralize any legacy per-game phantom spacers (they'd become stray grid cells) */
+.game-layout::before, .game-layout-wide::before { content: none !important; display: none !important; }
+.game-layout > .game-main { grid-column: 2; width: 100%; max-width: none; min-width: 0; margin: 0 !important; }
 
 .hsg-rail {
+  grid-column: 3;
+  justify-self: start;
   width: 250px;
-  flex: 0 0 250px;
   position: sticky;
   top: 1rem;
   display: flex;
@@ -33,11 +40,10 @@
   gap: 1rem;
 }
 
-/* wide variant: for map-style games - the main fills, rail sits to its right,
-   no phantom spacer (the wide main doesn't need viewport-centering) */
-.game-layout-wide { max-width: 1300px; justify-content: flex-start; }
-.game-layout-wide::before { display: none; }
-.game-layout-wide > .game-main { flex: 1 1 auto; max-width: none; }
+/* wide variant: for map-style games - the main fills, rail sits to its right */
+.game-layout-wide { grid-template-columns: minmax(0, 1fr) 250px; max-width: 1300px; }
+.game-layout-wide > .game-main { grid-column: 1; width: 100%; max-width: none; }
+.game-layout-wide > .hsg-rail { grid-column: 2; }
 
 /* ======================= FIRE COUNTER ======================= */
 .hsg-streak {
@@ -361,13 +367,12 @@
 
 /* ======================= RESPONSIVE ======================= */
 @media (max-width: 1000px) {
-  .game-layout { flex-direction: column; align-items: center; max-width: 600px; }
-  .game-layout::before { display: none; }      /* drop the spacer when stacked */
-  .game-layout > .game-main { flex: none; width: 100%; margin: 0 auto !important; }
+  .game-layout, .game-layout-wide { grid-template-columns: minmax(0, 600px); justify-content: center; max-width: 600px; }
+  .game-layout > .game-main, .game-layout-wide > .game-main { grid-column: 1; width: 100%; margin: 0 auto !important; }
   .hsg-rail {
+    grid-column: 1;
     position: static;
     width: 100%;
-    flex: none;
     flex-direction: column-reverse; /* leaderboard below, fire counter sits as a fixed badge */
   }
   /* fire counter floats so it's always visible while playing */

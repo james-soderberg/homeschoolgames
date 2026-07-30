@@ -31,11 +31,8 @@
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    /* Wide board, MAIN column centered by mirroring the streak rail with a
-       phantom spacer on the left (same trick as Letter Snake / Dragon Siege). */
-    .game-layout-wide { max-width: min(1800px, 96vw); gap: 1rem; justify-content: center; }
-    .game-layout-wide::before { display: block; content: ""; flex: 0 0 250px; }
-    @media (max-width: 1000px) { .game-layout-wide::before { display: none; } }
+    /* Wide board kept centered in the viewport by the shared grid layout. */
+    .game-layout { --gm-w: 860px; --gl-max: min(1800px, 96vw); column-gap: 1rem; }
     .catch-page { margin: 0 auto; padding: 1.25rem 1rem 3rem; width: 100%; }
     .catch-top {
       display: flex; align-items: center; justify-content: space-between;
@@ -202,7 +199,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide">
+<div class="game-layout">
 <div class="catch-page game-main">
 
   <div class="catch-top">
