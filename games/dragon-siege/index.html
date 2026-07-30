@@ -36,11 +36,10 @@
       margin: 0 auto;
       padding: 1.5rem 1.25rem 3rem;
     }
-    /* the leaderboard shows on the game-over card, so drop the side rail and the
-       balancing spacer and let the battlefield fill the width */
-    .game-layout-wide { max-width: min(1400px, 98vw); gap: 1rem; justify-content: center; }
-    .game-layout-wide::before { display: none; }
-    .hsg-rail { display: none; }
+    /* Leaderboard now lives in the side rail (Letter Snake style); on desktop
+       the battlefield flexes to fill the viewport so realm-select and game-over
+       never need a page scroll (see the viewport-clamp block at the end). */
+    .game-layout { --gm-w: 1040px; --gl-max: min(1500px, 98vw); column-gap: 1rem; }
 
     .siege-top {
       display: flex;
@@ -252,6 +251,21 @@
     @media (max-width: 600px) {
       .battlefield { height: 62vh; min-height: 380px; }
     }
+
+    /* ===== Desktop viewport clamp: fit the whole game on one screen =====
+       Below 1001px the rail stacks under the battlefield, so we keep normal
+       document flow there and only clamp on the wide, side-rail layout. */
+    @media (min-width: 1001px) {
+      html, body { height: 100%; }
+      body { display: flex; flex-direction: column; overflow: hidden; }
+      .site-header { flex: 0 0 auto; }
+      .site-footer { flex: 0 0 auto; margin-top: 0; padding: 0.6rem 2rem; }
+      .game-layout { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+      .siege-page { height: 100%; display: flex; flex-direction: column; min-height: 0; padding-bottom: 0.6rem; }
+      .siege-top, .hint, .control-row { flex: 0 0 auto; }
+      .hint { margin-top: 0.5rem; }
+      .battlefield { flex: 1 1 auto; height: auto; min-height: 240px; }
+    }
   </style>
   <script type="application/ld+json">
   {
@@ -319,7 +333,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide">
+<div class="game-layout">
 <div class="siege-page game-main">
 
   <div class="siege-top">
@@ -377,7 +391,6 @@
         <div class="fs"><b id="fsWpm">0</b><span>WPM</span></div>
         <div class="fs"><b id="fsAcc">100%</b><span>Accuracy</span></div>
       </div>
-      <div class="hsg-board" id="dsBoard" style="text-align:left;margin:0.25rem auto 0.85rem;max-width:340px"></div>
       <div class="overlay-actions">
         <button class="play-btn" id="againBtn">Defend Again ⚔️</button>
         <button class="play-btn secondary" id="changeRealmBtn">Change Realm</button>
@@ -2724,12 +2737,10 @@ function quitToMenu(){
   startIdle();   // re-animate the menu backdrop
 }
 function endRun(showModal){
-  // Defeat shows the inline placement + name entry on the defeat screen; a quiet
-  // surrender (no end screen) falls back to the modal. Either way only records if
-  // this stand — how far you survived — cracks this realm's Top 10.
-  var score = survivalScore();
-  if (showModal) rail.gameOver(score, document.getElementById('dsBoard'));
-  else rail.gameOver(score);
+  // The live board now sits in the side rail, so the defeat card stays lean
+  // (stats + actions) and name entry pops in the modal. Either way this only
+  // records if this stand — how far you survived — cracks the realm's Top 10.
+  rail.gameOver(survivalScore());
 }
 
 // ===================================================================
