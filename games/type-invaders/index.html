@@ -35,9 +35,11 @@
     html, body { height: 100%; }
     body.ti-active { overflow: hidden; }
 
-    .game-layout-wide { max-width: min(1400px, 97vw); gap: 1rem; justify-content: center; }
-    .game-layout-wide::before { display: none; }   /* no left spacer - let the stage fill the width */
-    .hsg-rail { display: none; }                    /* the side streak rail; the leaderboard still shows on the game-over card */
+    /* Leaderboard shows in the side rail (Letter Snake style); on desktop the
+       sky flexes to fill the viewport so start/game-over never need a scroll.
+       The rail is still hidden in screenshot (ti-shot) and treasure-hunt
+       (ti-hunt) modes further down. */
+    .game-layout { --gm-w: 1040px; --gl-max: min(1500px, 98vw); column-gap: 1rem; }
     .ti-page { margin: 0 auto; padding: 0.6rem 1rem 0.5rem; width: 100%; }
 
     .ti-top {
@@ -242,6 +244,21 @@
       font-family:"Cormorant Garamond",Georgia,serif; color:#e7c979; font-weight:700; font-style:italic;
       font-size:clamp(20px,5vw,34px); text-shadow:0 3px 22px rgba(0,0,0,.85); }
     .hunt-win-veil.show { opacity:1; background:radial-gradient(circle at 50% 45%, rgba(70,50,16,.5), rgba(6,5,3,.97)); }
+
+    /* ===== Desktop viewport clamp: fit the whole game on one screen =====
+       Skipped in screenshot mode (ti-shot fills the viewport itself) and below
+       1001px, where the rail stacks and normal scroll flow returns. */
+    @media (min-width: 1001px) {
+      html, body { height: 100%; }
+      body:not(.ti-shot) { display: flex; flex-direction: column; overflow: hidden; }
+      body:not(.ti-shot) .site-header { flex: 0 0 auto; }
+      body:not(.ti-shot) .site-footer { flex: 0 0 auto; margin-top: 0; padding: 0.5rem 2rem; }
+      body:not(.ti-shot) .game-layout { flex: 1 1 auto; min-height: 0; align-items: stretch; }
+      body:not(.ti-shot) .ti-page { height: 100%; display: flex; flex-direction: column; min-height: 0; padding-bottom: 0.5rem; }
+      body:not(.ti-shot) .ti-top, body:not(.ti-shot) .hint,
+      body:not(.ti-shot) .control-row, body:not(.ti-shot) .doc-ticker { flex: 0 0 auto; }
+      body:not(.ti-shot) .ti-sky { flex: 1 1 auto; height: auto; min-height: 240px; }
+    }
   </style>
   <script type="application/ld+json">
   {
@@ -303,7 +320,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide">
+<div class="game-layout">
 <div class="ti-page game-main">
 
   <div class="ti-top">
@@ -2040,7 +2057,7 @@ function revealEndScreen(){
   } else if (arcade) {
     // the typed "arcade" cheat (impossible realm, mid-game) stays off the leaderboard
     HSGStreak.renderBoardInto('#tiBoard', { gameId:'type-invaders', level:realmKey, unit:'wave', minStreak:1 });
-  } else endRun(true);
+  } else endRun(false);   // live board is in the side rail now; name entry pops in the modal
 }
 // Bank the run's survival score — how far you got (wave reached, kills as tiebreak).
 // On the game-over screen it shows the inline placement + name entry; a quiet
