@@ -38,12 +38,28 @@
     background-size:9px 9px,13px 13px;background-position:0 0,4px 6px;}
   .wrap{max-width:min(1780px,96vw);margin:0 auto;padding:2.6rem 1.5rem 4rem;}
 
-  /* games grid stays centred on screen; a smaller running-leaderboard rail sits to the
-     right. an invisible left spacer mirrors the rail's width so the grid is truly centred. */
+  /* games grid stays centred on screen, flanked by two rails: a Top Players
+     (trophy) board on the left and the live running leaderboards on the right. */
   .home-cols{display:flex;gap:2rem;justify-content:center;align-items:flex-start;}
-  .home-cols::before{content:"";flex:0 0 190px;}
   .home-main{flex:0 1 1180px;min-width:0;}
   .home-rail{flex:0 0 190px;align-self:flex-start;}
+  .home-rail-left{flex:0 0 190px;align-self:flex-start;}
+
+  /* ---- Top Players (trophy) board ---- */
+  .tp-row{background:#fffdf6;border-radius:12px;border:1px solid #efe6cf;box-shadow:0 6px 14px rgba(40,25,5,.16);overflow:hidden;margin-bottom:.6rem;}
+  .tp-head{display:flex;align-items:center;gap:.35rem;width:100%;background:none;border:none;cursor:pointer;padding:.5rem .55rem;font-family:inherit;text-align:left;color:#3a2f1b;}
+  .tp-head:hover{background:#fbf3df;}
+  .tp-rank{flex:0 0 1.15rem;text-align:center;font-weight:800;font-size:.82rem;color:#b5942f;}
+  .tp-name{flex:1 1 auto;font-weight:800;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tp-medals{flex:0 0 auto;display:flex;gap:.15rem;font-size:.76rem;font-weight:700;font-variant-numeric:tabular-nums;}
+  .tp-caret{flex:0 0 auto;opacity:.45;font-size:.62rem;transition:transform .15s;}
+  .tp-row.open .tp-caret{transform:rotate(180deg);}
+  .tp-games{list-style:none;margin:0;padding:0;max-height:0;overflow:hidden;transition:max-height .22s ease;}
+  .tp-row.open .tp-games{max-height:460px;padding:.1rem .55rem .5rem;}
+  .tp-games li{display:flex;align-items:center;gap:.35rem;padding:.18rem 0;font-size:.76rem;color:#4a4030;border-top:1px solid #f0e7d2;}
+  .tp-g-medal{flex:0 0 auto;font-size:.8rem;}
+  .tp-g-emoji{flex:0 0 auto;font-size:.9rem;}
+  .tp-g-name{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   /* sidebar: cards stack in a column, each sized to its own rows (no equal-height stretch) */
   .home-rail .lb-rail{display:flex;flex-direction:column;gap:1.15rem;align-items:stretch;}
   .home-rail .lb-rail-title{width:100%;}
@@ -59,20 +75,25 @@
   .home-rail #cpPinned{margin-bottom:0.9rem;}
   .home-rail .lb-card-pin{border:1.5px solid var(--gold,#C4A040);box-shadow:0 3px 12px rgba(180,140,40,.20);}
   .lb-empty.cp-none{color:#9b9b9b;opacity:1;font-weight:600;padding:.35rem .2rem;}
-  /* between phone and ~1400px the rail drops under the games as a wrapping card grid */
+  /* between phone and ~1400px the rails drop under the games as wrapping card grids */
   @media (max-width:1400px){
     .home-cols{flex-direction:column;align-items:center;}
-    .home-cols::before{display:none;}
-    .home-main{flex-basis:auto;width:100%;}
-    .home-rail{position:static;flex-basis:auto;width:100%;max-width:860px;margin-top:2.4rem;}
+    .home-main{flex-basis:auto;width:100%;order:0;}
+    .home-rail,.home-rail-left{position:static;flex-basis:auto;width:100%;max-width:860px;margin-top:2.4rem;}
+    .home-rail-left{order:1;}   /* Top Players first below the grid */
+    .home-rail{order:2;}
+    /* Top Players rows sit side-by-side when stacked */
+    .home-rail-left .tp-row{flex:0 1 250px;}
+    .home-rail-left .lb-rail{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+    .home-rail-left .lb-rail-title{flex-basis:100%;}
     /* stacked under the grid: wrap into a card grid, top-aligned so a 1-row card
        stays short next to a 5-row one */
     .home-rail .lb-rail{flex-direction:row;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
     .home-rail .lb-rail-title{flex-basis:100%;}
     .home-rail .lb-card{flex:0 1 250px;width:auto;max-width:288px;align-self:flex-start;}
   }
-  /* on phones the running leaderboard is just clutter - hide it entirely */
-  @media (max-width:760px){ .home-rail{display:none;} }
+  /* on phones the side rails are just clutter - hide them entirely */
+  @media (max-width:760px){ .home-rail,.home-rail-left{display:none;} }
 
   .banner{margin:0 auto 2.8rem;max-width:560px;background:#fffdf5;padding:1.2rem 1.5rem;text-align:center;
     transform:rotate(-1.2deg);box-shadow:0 8px 18px rgba(40,25,5,.3);position:relative;}
@@ -258,6 +279,7 @@
       <h1>Accidental<span>Learning</span></h1>
     </div>
     <div class="home-cols">
+    <aside class="home-rail home-rail-left" id="lbRailLeft" aria-label="Top players"></aside>
     <div class="home-main">
     <div class="grid" id="board">
     <a href="games/who-said-it/index.html" class="pin"><div class="badge">★ Most Popular</div><img class="pic" width="512" height="512" src="assets/img/home/shots/who-said-it.jpg" alt="Who Said It? - free history game" loading="lazy"><div class="cap">Who Said It?</div><div class="sub">History</div></a>
@@ -392,6 +414,56 @@
     renderPin(null);            // show the checkpoint card right away (empty until it loads)
     poll(); pollPin();
     if(remote) setInterval(function(){ poll(); pollPin(); }, REFRESH_MS);
+  })();
+
+  // ---- left-side "Top Players" trophy board ----
+  // Tallies gold/silver/bronze (1st/2nd/3rd) finishes across the champion boards
+  // (hardest level of each game + no-level games; see championBoards()). Ranks the
+  // top 10 players by golds, then silvers, then bronzes. Each row expands to show
+  // exactly which games they've medaled in.
+  (function(){
+    const rail=document.getElementById('lbRailLeft');
+    if(!rail || typeof championBoards!=='function') return;
+    const remote=(typeof fetch==='function' && /^https?:$/.test(location.protocol));
+    const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const MEDAL={1:'🥇',2:'🥈',3:'🥉'};
+    const boards=championBoards();                       // no group = global tally
+    const meta={}; boards.forEach(b=>{ meta[b.board]=b; });
+
+    function render(rows){
+      const players={};
+      rows.forEach(r=>{
+        const m=meta[r.board]; if(!m) return;
+        const rank=Number(r.rank); if(!(rank>=1&&rank<=3)) return;
+        const p=players[r.name]||(players[r.name]={name:r.name,g:0,s:0,b:0,games:[]});
+        if(rank===1)p.g++; else if(rank===2)p.s++; else p.b++;
+        p.games.push({emoji:m.emoji,game:m.name,rank:rank});
+      });
+      let list=Object.keys(players).map(k=>players[k]);
+      list.sort((a,b)=> b.g-a.g || b.s-a.s || b.b-a.b || (b.g+b.s+b.b)-(a.g+a.s+a.b) || a.name.localeCompare(b.name));
+      list=list.slice(0,10);
+      const host=document.getElementById('tpLive'); if(!host) return;
+      if(!list.length){ host.innerHTML='<p class="lb-empty">No champions yet. Win a game to claim a trophy!</p>'; return; }
+      host.innerHTML=list.map((p,i)=>{
+        const games=p.games.sort((a,b)=>a.rank-b.rank).map(x=>
+          `<li><span class="tp-g-medal">${MEDAL[x.rank]}</span><span class="tp-g-emoji">${x.emoji}</span><span class="tp-g-name">${esc(x.game)}</span></li>`).join('');
+        const medals=(p.g?`<span class="tp-m">🥇${p.g}</span>`:'')+(p.s?`<span class="tp-m">🥈${p.s}</span>`:'')+(p.b?`<span class="tp-m">🥉${p.b}</span>`:'');
+        return `<div class="tp-row"><button class="tp-head" type="button">`+
+          `<span class="tp-rank">${i+1}</span><span class="tp-name">${esc(p.name)}</span>`+
+          `<span class="tp-medals">${medals}</span><span class="tp-caret">▾</span></button>`+
+          `<ul class="tp-games">${games}</ul></div>`;
+      }).join('');
+    }
+    function poll(){
+      const host=document.getElementById('tpLive'); if(!host) return;
+      if(!remote){ host.innerHTML='<p class="lb-empty">Champions appear once the site is live.</p>'; return; }
+      const qs=boards.map(b=>b.board).join(',');
+      fetch('/api/champions?boards='+encodeURIComponent(qs)).then(r=>r.ok?r.json():null).then(rows=>{ if(Array.isArray(rows)) render(rows); }).catch(()=>{});
+    }
+    rail.innerHTML='<div class="lb-rail"><div class="lb-rail-title">🏆 Top Players</div><div id="tpLive"><p class="lb-empty">Loading…</p></div></div>';
+    rail.addEventListener('click',e=>{ const h=e.target.closest('.tp-head'); if(h) h.parentElement.classList.toggle('open'); });
+    poll();
+    if(remote) setInterval(poll, 60000);
   })();
 
   const board=document.getElementById('board');

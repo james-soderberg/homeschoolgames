@@ -62,3 +62,34 @@ function lbResolve(board) {
   var label = LB_LEVEL_LABELS.hasOwnProperty(level) ? LB_LEVEL_LABELS[level] : lbTitleCase(level);
   return { game: game, level: level, levelLabel: label };
 }
+
+// ---- Champion boards (homepage "Top Players" trophy tally) ----
+// One board per game: the HARDEST level of each difficulty game, and the sole
+// board of each no-level game. Easy/medium boards are intentionally excluded so
+// trophies reflect mastery. Map Quiz is omitted - its four regions have no single
+// "hardest" board. Keep these level keys in sync with each game's leaderboards.
+var CHAMPION_LEVEL = {
+  'who-said-it': 'best', 'circa': 'hard', 'dragon-siege': 'impossible',
+  'type-invaders': 'impossible', 'who-painted-it': 'best', 'grammar-express': 'journey',
+  'word-racer': 'paragraphs', 'letter-snake': 'einstein', 'roots': 'hard',
+  'bible-trivia': 'solomon', 'register': 'expert', 'bridge-run': 'run',
+  'flag-frenzy': 'best', 'element-hunter': 'all', 'food-web': 'all',
+  'bible-quiz': 'solomon', 'letter-catch': 'einstein', 'tightrope': 'survived'
+};
+// Returns [{ board, name, emoji }] for the champion boards. Pass a group slug to
+// scope the tally to that group's boards (adds the "__g-<slug>" segment).
+function championBoards(group) {
+  var suffix = group ? ('__g-' + group) : '';
+  var out = [];
+  Object.keys(CHAMPION_LEVEL).forEach(function (id) {
+    var game = LB_BY_ID[id];
+    if (!game) return;
+    var lvl = CHAMPION_LEVEL[id];
+    out.push({
+      board: 'hsg_lb_' + id + (lvl ? '__' + lvl : '') + suffix,
+      name: game.name,
+      emoji: game.emoji
+    });
+  });
+  return out;
+}
