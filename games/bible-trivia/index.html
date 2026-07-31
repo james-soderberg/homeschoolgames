@@ -73,6 +73,21 @@
       backdrop-filter: blur(2px); color: #fff;
     }
     .ov.hidden { display: none; }
+    /* When a full-scene overlay is up (start / level intro / game-over / win),
+       hide the docked question panel + journey map so the scene flexes to full
+       height and the overlay's buttons are reachable without scrolling inside
+       the animation. During actual play no .ov is visible, so both return. */
+    .chase-page:has(.scene-wrap .ov:not(.hidden)) .qpanel,
+    .chase-page:has(.scene-wrap .ov:not(.hidden)) .chase-hint,
+    .chase-page:has(.scene-wrap .ov:not(.hidden)) .journey { display: none; }
+    /* On shorter screens, compact the overlay so its buttons + scores fit. */
+    @media (max-height: 820px) {
+      .ov { padding: 1rem; }
+      .ov .crest { font-size: 2.1rem; margin-bottom: 0.15rem; }
+      .ov h2 { font-size: 1.55rem; margin-bottom: 0.2rem; }
+      .ov p { margin-bottom: 0.7rem; font-size: 0.9rem; }
+      .ov #btLevelBoards { margin-top: 0.6rem !important; }
+    }
     .ov .crest { font-size: 3.2rem; line-height: 1; margin-bottom: 0.3rem; animation: bobCrest 2.4s ease-in-out infinite; }
     @keyframes bobCrest { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-7px); } }
     .ov h2 { font-family: var(--font-serif); font-size: 2rem; margin: 0 0 0.4rem; color: #fff; }

@@ -59,6 +59,11 @@ a:hover { text-decoration: underline; }
   align-items: center;
   justify-content: space-between;
   background: var(--cream);
+  /* Stick to the top so the logo (the return-to-menu) is always reachable while
+     playing or on an end screen, without scrolling. Sits below in-game modals. */
+  position: sticky;
+  top: 0;
+  z-index: 50;
 }
 
 .site-logo {
