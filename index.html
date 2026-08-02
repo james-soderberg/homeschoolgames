@@ -60,6 +60,18 @@
   .tp-g-medal{flex:0 0 auto;font-size:.8rem;}
   .tp-g-emoji{flex:0 0 auto;font-size:.9rem;}
   .tp-g-name{flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  /* ---- group (cohort) box ---- */
+  .grp-box{background:#fffdf6;border:1px solid #efe6cf;border-radius:12px;box-shadow:0 6px 14px rgba(40,25,5,.16);padding:.6rem .7rem;margin-bottom:.9rem;font-size:.8rem;color:#4a4030;}
+  .grp-box b{color:#3a2f1b;}
+  .grp-title{font-weight:800;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#a68a4e;margin-bottom:.4rem;}
+  .grp-box input{width:100%;border:1.5px solid #e2d6b8;border-radius:8px;padding:.4rem .5rem;font:inherit;font-size:.82rem;margin-bottom:.4rem;background:#fff;color:#3a2f1b;}
+  .grp-box button{border:none;border-radius:8px;padding:.42rem .7rem;font:inherit;font-weight:800;font-size:.78rem;cursor:pointer;background:#d98324;color:#fffdf6;}
+  .grp-box button.ghost{background:#efe6cf;color:#6c5836;}
+  .grp-row{display:flex;gap:.35rem;flex-wrap:wrap;align-items:center;}
+  .grp-active{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+  .grp-name{font-weight:800;color:#8a5a12;}
+  .grp-link{width:100%;font-size:.72rem;color:#6c5836;background:#f6efdd;border:1px dashed #d9c79a;border-radius:8px;padding:.35rem .45rem;margin-top:.4rem;word-break:break-all;}
+  .grp-hint{font-size:.72rem;color:#7a6a48;margin-top:.35rem;line-height:1.35;}
   /* sidebar: cards stack in a column, each sized to its own rows (no equal-height stretch) */
   .home-rail .lb-rail{display:flex;flex-direction:column;gap:1.15rem;align-items:stretch;}
   .home-rail .lb-rail-title{width:100%;}
@@ -427,8 +439,12 @@
     const remote=(typeof fetch==='function' && /^https?:$/.test(location.protocol));
     const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const MEDAL={1:'🥇',2:'🥈',3:'🥉'};
-    const boards=championBoards();                       // no group = global tally
-    const meta={}; boards.forEach(b=>{ meta[b.board]=b; });
+    const HS=window.HSGStreak||{};
+    const grp=()=>(HS.group?HS.group():'');
+    const grpName=()=>(HS.groupName?HS.groupName():'');
+    // Champion boards for the ACTIVE group (or global when no group).
+    let boards=championBoards(grp()||undefined);
+    let meta={}; boards.forEach(b=>{ meta[b.board]=b; });
 
     function render(rows){
       const players={};
@@ -460,8 +476,53 @@
       const qs=boards.map(b=>b.board).join(',');
       fetch('/api/champions?boards='+encodeURIComponent(qs)).then(r=>r.ok?r.json():null).then(rows=>{ if(Array.isArray(rows)) render(rows); }).catch(()=>{});
     }
-    rail.innerHTML='<div class="lb-rail"><div class="lb-rail-title">🏆 Top Players</div><div id="tpLive"><p class="lb-empty">Loading…</p></div></div>';
-    rail.addEventListener('click',e=>{ const h=e.target.closest('.tp-head'); if(h) h.parentElement.classList.toggle('open'); });
+    // ---- group (cohort) hub: create a shareable link so a class/club competes on its own board ----
+    function shareLink(slug,name){
+      return location.origin+location.pathname+'?group='+encodeURIComponent(slug)+(name?('&gn='+encodeURIComponent(name)):'');
+    }
+    function renderGroupBox(){
+      const box=document.getElementById('groupBox'); if(!box) return;
+      if(grp()){
+        box.innerHTML='<div class="grp-title">👥 Your group</div>'+
+          '<div class="grp-active"><span class="grp-name">'+esc(grpName())+'</span>'+
+          '<button class="ghost" id="grpLeave" type="button">Leave</button></div>'+
+          '<div class="grp-link" id="grpLink">'+esc(shareLink(grp(),grpName()))+'</div>'+
+          '<div class="grp-hint">Share this link so your group climbs the same board. The trophy board below is your group only.</div>';
+      } else {
+        box.innerHTML='<div class="grp-title">👥 Play as a group</div>'+
+          '<input id="grpName" type="text" maxlength="24" placeholder="e.g. Lizzie&rsquo;s Co-op" aria-label="Group name">'+
+          '<div class="grp-row"><button id="grpMake" type="button">Create group</button></div>'+
+          '<div class="grp-hint">Make a private leaderboard for your class or club, then share the link.</div>';
+      }
+    }
+    function refresh(){
+      boards=championBoards(grp()||undefined); meta={}; boards.forEach(b=>{ meta[b.board]=b; });
+      const t=document.getElementById('tpTitle'); if(t) t.textContent = grp()? ('🏆 '+grpName()+' Champions') : '🏆 Top Players';
+      renderGroupBox();
+      const host=document.getElementById('tpLive'); if(host) host.innerHTML='<p class="lb-empty">Loading…</p>';
+      poll();
+    }
+    rail.innerHTML='<div class="lb-rail"><div id="groupBox" class="grp-box"></div>'+
+      '<div class="lb-rail-title" id="tpTitle">🏆 Top Players</div>'+
+      '<div id="tpLive"><p class="lb-empty">Loading…</p></div></div>';
+    rail.addEventListener('click',e=>{
+      const head=e.target.closest('.tp-head'); if(head){ head.parentElement.classList.toggle('open'); return; }
+      if(e.target.id==='grpMake'){
+        const nm=(document.getElementById('grpName')||{}).value||'';
+        const slug=HS.slugifyGroup?HS.slugifyGroup(nm):'';
+        if(!slug){ const i=document.getElementById('grpName'); if(i){ i.focus(); i.placeholder='Please type a group name'; } return; }
+        if(HS.setGroup) HS.setGroup(slug,nm.trim());
+        refresh(); return;
+      }
+      if(e.target.id==='grpLeave'){ if(HS.leaveGroup) HS.leaveGroup(); refresh(); return; }
+      if(e.target.id==='grpLink'){ // tap the link to copy
+        const txt=e.target.textContent;
+        if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>{ e.target.textContent='Copied! '+txt; setTimeout(()=>{ e.target.textContent=txt; },1400); }).catch(()=>{});
+      }
+    });
+    // title + group box reflect any group already active from the URL/localStorage
+    const t0=document.getElementById('tpTitle'); if(t0 && grp()) t0.textContent='🏆 '+grpName()+' Champions';
+    renderGroupBox();
     poll();
     if(remote) setInterval(poll, 60000);
   })();

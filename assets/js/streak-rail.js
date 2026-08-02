@@ -114,9 +114,56 @@
   };
   function unitOf(u) { return UNITS[u] || UNITS.streak; }
 
-  // ---- storage (keyed by the full game+level key) ----
+  // ---- groups: a shareable ?group=<slug> link scopes every board to a cohort ----
+  // (e.g. a class or club). While a group is active, every board key gets a
+  // "__g-<slug>" segment, so all reads/writes/caches transparently target that
+  // group's private board. The slug persists in localStorage so it survives
+  // navigation between games; ?leavegroup (or an empty ?group) clears it.
+  var GROUP_KEY = 'hsg_group', GROUP_NAME_KEY = 'hsg_group_name';
+  function slugifyGroup(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-+|-+$)/g, '').slice(0, 24);
+  }
+  function prettyGroup(slug, name) {
+    if (name) return name;
+    return slug ? slug.replace(/-/g, ' ').replace(/\b\w/g, function (c) { return c.toUpperCase(); }) : '';
+  }
+  function readGroup() {
+    var slug = '', name = '';
+    try {
+      if (typeof location !== 'undefined') {
+        var params = new URLSearchParams(location.search);
+        if (params.has('leavegroup')) {
+          try { localStorage.removeItem(GROUP_KEY); localStorage.removeItem(GROUP_NAME_KEY); } catch (e) {}
+          return { slug: '', name: '' };
+        }
+        if (params.has('group')) {
+          slug = slugifyGroup(params.get('group'));
+          name = params.get('gn') || params.get('groupname') || '';
+        }
+      }
+    } catch (e) {}
+    if (slug) {
+      try { localStorage.setItem(GROUP_KEY, slug); if (name) localStorage.setItem(GROUP_NAME_KEY, name); } catch (e) {}
+    } else {
+      try { slug = localStorage.getItem(GROUP_KEY) || ''; name = localStorage.getItem(GROUP_NAME_KEY) || ''; } catch (e) {}
+    }
+    return { slug: slug, name: prettyGroup(slug, name) };
+  }
+  var GROUP = readGroup();
+  function groupSuffix() { return GROUP.slug ? ('__g-' + GROUP.slug) : ''; }
+  function setGroup(slug, name) {
+    slug = slugifyGroup(slug);
+    GROUP = { slug: slug, name: prettyGroup(slug, name) };
+    try {
+      if (slug) { localStorage.setItem(GROUP_KEY, slug); localStorage.setItem(GROUP_NAME_KEY, GROUP.name); }
+      else { localStorage.removeItem(GROUP_KEY); localStorage.removeItem(GROUP_NAME_KEY); }
+    } catch (e) {}
+    return GROUP;
+  }
+
+  // ---- storage (keyed by the full game+level+group key) ----
   function levelKey(gameId, level) {
-    return PREFIX + gameId + (level ? '__' + level : '');
+    return PREFIX + gameId + (level ? '__' + level : '') + groupSuffix();
   }
   function load(key) {
     try {
@@ -797,6 +844,12 @@
     // Turn a raw solve time (seconds) into the inverted score a `soltime` board expects.
     encodeTime: function (seconds) { return TIME_BASE - Math.max(0, Math.floor(seconds)); },
     formatName: formatName,
-    lastName: lastName
+    lastName: lastName,
+    // ---- groups ----
+    group: function () { return GROUP.slug; },              // active group slug ('' if none)
+    groupName: function () { return GROUP.name; },          // pretty label for display
+    setGroup: function (slug, name) { return setGroup(slug, name); },
+    leaveGroup: function () { return setGroup('', ''); },
+    slugifyGroup: slugifyGroup
   };
 })();

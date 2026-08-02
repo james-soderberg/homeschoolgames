@@ -7,7 +7,9 @@ import { json } from './_util.js';
 
 const SQL =
   'WITH recent_boards AS (' +
-  '  SELECT board, MAX(ts) AS last_ts FROM scores GROUP BY board ORDER BY last_ts DESC LIMIT ?1' +
+  // exclude private group boards (…__g-<slug>) so they never surface publicly
+  "  SELECT board, MAX(ts) AS last_ts FROM scores WHERE board NOT LIKE '%\\_\\_g-%' ESCAPE '\\'" +
+  '  GROUP BY board ORDER BY last_ts DESC LIMIT ?1' +
   '), ranked AS (' +
   '  SELECT s.board, s.name, s.score, s.hinted, s.ts, rb.last_ts,' +
   '         ROW_NUMBER() OVER (PARTITION BY s.board ORDER BY s.score DESC, s.ts ASC) AS rn' +

@@ -1,7 +1,9 @@
 // Shared validation/sanitation for the leaderboard Functions.
 // Files prefixed with "_" are not routed by Pages, so this is import-only.
 
-const BOARD_RE = /^hsg_lb_[a-z0-9-]+(?:__[a-z0-9-]+)?$/;
+// hsg_lb_<gameId>[__<level>][__g-<groupSlug>] - up to a level segment and a
+// group segment (the "__g-" prefix marks a private group board).
+const BOARD_RE = /^hsg_lb_[a-z0-9-]+(?:__[a-z0-9-]+){0,2}$/;
 const SCORE_CAP = 100000000; // generous universal ceiling (cents/feet/points/wpm)
 
 // Compact kid-facing blocklist; substring match on letters only.
@@ -12,7 +14,7 @@ const PROFANITY = [
 ];
 
 export function validBoard(b) {
-  return typeof b === 'string' && b.length <= 80 && BOARD_RE.test(b);
+  return typeof b === 'string' && b.length <= 96 && BOARD_RE.test(b);
 }
 
 // Coerce to a non-negative integer within the cap; null if implausible.
