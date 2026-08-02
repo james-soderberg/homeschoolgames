@@ -424,6 +424,25 @@
 .lbv-body .hsg-board-head h2 { font-size: 0.72rem; }
 .lbv-body .hsg-board-list { margin-top: 0.2rem; }
 
+/* persistent "you're in a group" chip (injected by streak-rail.js on game pages) */
+.hsg-group-chip {
+  position: fixed; left: 12px; bottom: 12px; z-index: 70;
+  display: flex; align-items: center; gap: 0.4rem;
+  background: #fffdf6; border: 1.5px solid var(--gold, #C4A040);
+  border-radius: 99px; padding: 0.32rem 0.5rem 0.32rem 0.7rem;
+  box-shadow: 0 6px 16px rgba(40,25,5,0.22);
+  font-family: var(--font-sans, system-ui, sans-serif); font-size: 0.8rem; font-weight: 700; color: #6c5836;
+  max-width: min(80vw, 320px);
+}
+.hsg-group-chip .hsg-gc-emoji { flex: 0 0 auto; }
+.hsg-group-chip .hsg-gc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hsg-group-chip .hsg-gc-leave {
+  flex: 0 0 auto; border: none; background: #efe6cf; color: #6c5836;
+  border-radius: 50%; width: 1.35rem; height: 1.35rem; line-height: 1;
+  font-size: 0.8rem; font-weight: 800; cursor: pointer;
+}
+.hsg-group-chip .hsg-gc-leave:hover { background: #e0d3ad; color: #3a2f1b; }
+
 /* homepage running-leaderboard rail (mini-boards, newest-active first) */
 .lb-rail { display: flex; flex-direction: column; gap: 1rem; }
 .lb-rail-title { font-family: var(--font-sans, system-ui, sans-serif); font-weight: 800; font-size: 0.7rem;

@@ -183,6 +183,9 @@
     .reset-link:hover { color: var(--ink); }
     /* keep the leaderboard readable on the dark overlay */
     #tiBoard .hsg-board-head h2, #tiBoard .hsg-board-name, #tiBoard .hsg-board-empty { color: #eaf1ff; }
+    /* on the normal defeat path the board is empty (name entry is in the modal) -
+       collapse it so it leaves no dead gap; arcade paths populate it and it shows */
+    #tiBoard:empty { display: none; }
     #tiBoard .hsg-board-row:not(:last-child) { border-bottom-color: rgba(255,255,255,0.12); }
     /* screenshot mode (open with ?shot): hide the page chrome and fill the viewport
        with the game stage, for capturing the home-tile image */
@@ -246,9 +249,11 @@
     .hunt-win-veil.show { opacity:1; background:radial-gradient(circle at 50% 45%, rgba(70,50,16,.5), rgba(6,5,3,.97)); }
 
     /* ===== Desktop viewport clamp: fit the whole game on one screen =====
-       Skipped in screenshot mode (ti-shot fills the viewport itself) and below
-       1001px, where the rail stacks and normal scroll flow returns. */
-    @media (min-width: 1001px) {
+       Skipped in screenshot mode (ti-shot fills the viewport itself), below
+       1001px (the rail stacks), and on short viewports (< 680px tall) where the
+       start/game-over overlay is taller than the clamped stage - there we fall
+       back to normal scroll flow so every button stays reachable. */
+    @media (min-width: 1001px) and (min-height: 680px) {
       html, body { height: 100%; }
       body:not(.ti-shot) { display: flex; flex-direction: column; overflow: hidden; }
       body:not(.ti-shot) .site-header { flex: 0 0 auto; }

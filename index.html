@@ -52,6 +52,7 @@
   .tp-rank{flex:0 0 1.15rem;text-align:center;font-weight:800;font-size:.82rem;color:#b5942f;}
   .tp-name{flex:1 1 auto;font-weight:800;font-size:.86rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .tp-medals{flex:0 0 auto;display:flex;gap:.15rem;font-size:.76rem;font-weight:700;font-variant-numeric:tabular-nums;}
+  .tp-m{white-space:nowrap;}
   .tp-caret{flex:0 0 auto;opacity:.45;font-size:.62rem;transition:transform .15s;}
   .tp-row.open .tp-caret{transform:rotate(180deg);}
   .tp-games{list-style:none;margin:0;padding:0;max-height:0;overflow:hidden;transition:max-height .22s ease;}
@@ -470,11 +471,15 @@
           `<ul class="tp-games">${games}</ul></div>`;
       }).join('');
     }
+    let tpRendered=false;   // have we ever painted real standings? (keep them on a later failure)
     function poll(){
       const host=document.getElementById('tpLive'); if(!host) return;
       if(!remote){ host.innerHTML='<p class="lb-empty">Champions appear once the site is live.</p>'; return; }
       const qs=boards.map(b=>b.board).join(',');
-      fetch('/api/champions?boards='+encodeURIComponent(qs)).then(r=>r.ok?r.json():null).then(rows=>{ if(Array.isArray(rows)) render(rows); }).catch(()=>{});
+      fetch('/api/champions?boards='+encodeURIComponent(qs))
+        .then(r=>r.ok?r.json():Promise.reject(r.status))
+        .then(rows=>{ render(Array.isArray(rows)?rows:[]); tpRendered=true; })
+        .catch(()=>{ if(!tpRendered) host.innerHTML='<p class="lb-empty">Standings are unavailable right now.</p>'; });
     }
     // ---- group (cohort) hub: create a shareable link so a class/club competes on its own board ----
     function shareLink(slug,name){
@@ -499,6 +504,7 @@
       boards=championBoards(grp()||undefined); meta={}; boards.forEach(b=>{ meta[b.board]=b; });
       const t=document.getElementById('tpTitle'); if(t) t.textContent = grp()? ('🏆 '+grpName()+' Champions') : '🏆 Top Players';
       renderGroupBox();
+      tpRendered=false;   // switching groups: don't keep the previous board's rows if the refetch fails
       const host=document.getElementById('tpLive'); if(host) host.innerHTML='<p class="lb-empty">Loading…</p>';
       poll();
     }
@@ -514,10 +520,17 @@
         if(HS.setGroup) HS.setGroup(slug,nm.trim());
         refresh(); return;
       }
-      if(e.target.id==='grpLeave'){ if(HS.leaveGroup) HS.leaveGroup(); refresh(); return; }
+      if(e.target.id==='grpLeave'){ if(HS.leaveGroup) HS.leaveGroup();
+        // clear group params from the URL so a later reload doesn't re-join
+        try{ const u=new URL(location.href); u.searchParams.delete('group'); u.searchParams.delete('gn'); u.searchParams.delete('groupname'); history.replaceState(null,'',u.pathname+u.search+u.hash); }catch(err){}
+        refresh(); return; }
       if(e.target.id==='grpLink'){ // tap the link to copy
-        const txt=e.target.textContent;
-        if(navigator.clipboard) navigator.clipboard.writeText(txt).then(()=>{ e.target.textContent='Copied! '+txt; setTimeout(()=>{ e.target.textContent=txt; },1400); }).catch(()=>{});
+        const el=e.target; if(el.dataset.copying) return;   // ignore repeat taps mid-animation
+        const link=shareLink(grp(),grpName());               // copy the real link, never the "Copied!" label
+        if(navigator.clipboard) navigator.clipboard.writeText(link).then(()=>{
+          el.dataset.copying='1'; const orig=el.textContent; el.textContent='Copied to clipboard!';
+          setTimeout(()=>{ el.textContent=orig; delete el.dataset.copying; },1400);
+        }).catch(()=>{});
       }
     });
     // title + group box reflect any group already active from the URL/localStorage

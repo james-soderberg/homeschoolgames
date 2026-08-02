@@ -852,4 +852,35 @@
     leaveGroup: function () { return setGroup('', ''); },
     slugifyGroup: slugifyGroup
   };
+
+  // A persistent chip so a grouped player always SEES they're scoped to a cohort
+  // and can leave in one tap - the group otherwise sticks silently (localStorage)
+  // across sessions. Skipped on the homepage, which already has the group hub.
+  (function injectGroupChip() {
+    if (typeof document === 'undefined') return;
+    function make() {
+      if (!GROUP.slug) return;
+      if (document.getElementById('groupBox')) return;       // homepage hub already shows it
+      if (document.querySelector('.hsg-group-chip')) return;
+      var chip = document.createElement('div');
+      chip.className = 'hsg-group-chip';
+      var em = document.createElement('span'); em.className = 'hsg-gc-emoji'; em.textContent = '👥';
+      var nm = document.createElement('span'); nm.className = 'hsg-gc-name'; nm.textContent = GROUP.name; // textContent = XSS-safe
+      var lv = document.createElement('button'); lv.type = 'button'; lv.className = 'hsg-gc-leave';
+      lv.textContent = '✕'; lv.title = 'Leave group'; lv.setAttribute('aria-label', 'Leave group');
+      lv.addEventListener('click', function () {
+        setGroup('', '');
+        // also strip any ?group/&gn from the URL, else reload re-joins the group
+        try {
+          var u = new URL(location.href);
+          u.searchParams.delete('group'); u.searchParams.delete('gn'); u.searchParams.delete('groupname');
+          location.replace(u.pathname + u.search + u.hash);
+        } catch (e) { try { location.reload(); } catch (e2) {} }
+      });
+      chip.appendChild(em); chip.appendChild(nm); chip.appendChild(lv);
+      document.body.appendChild(chip);
+    }
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', make);
+    else make();
+  })();
 })();

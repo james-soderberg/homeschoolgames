@@ -1,6 +1,6 @@
 // Shared game list for the homepage (order here = order on the page).
 // `lb` = the leaderboard score unit (see UNITS in streak-rail.js); games without a
-// leaderboard (flag-frenzy, slingshot) omit it and are skipped by the rail.
+// leaderboard (slingshot) omit it and are skipped by the rail.
 const GAMES = [
   { key:'who-said-it',   name:'Who Said It?',     href:'games/who-said-it/index.html',  subject:'History',   emoji:'🎙️', blurb:'Guess who spoke the famous words.',  photo:'assets/img/home/shots/who-said-it.jpg', featured:true, badge:'★ Most Popular', lb:'wall24' },
   { key:'circa',         name:'Circa',           href:'games/circa/index.html',        subject:'History',   emoji:'🏛️', blurb:'Put history in order, card by card.', photo:'assets/img/home/shots/circa.jpg', lb:'streak' },

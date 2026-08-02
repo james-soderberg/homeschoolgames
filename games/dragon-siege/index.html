@@ -254,8 +254,10 @@
 
     /* ===== Desktop viewport clamp: fit the whole game on one screen =====
        Below 1001px the rail stacks under the battlefield, so we keep normal
-       document flow there and only clamp on the wide, side-rail layout. */
-    @media (min-width: 1001px) {
+       document flow there and only clamp on the wide, side-rail layout. On
+       short viewports (< 680px tall) we also fall back to scroll flow so the
+       realm-select / game-over buttons are never clipped. */
+    @media (min-width: 1001px) and (min-height: 680px) {
       html, body { height: 100%; }
       body { display: flex; flex-direction: column; overflow: hidden; }
       .site-header { flex: 0 0 auto; }
