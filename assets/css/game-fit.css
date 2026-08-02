@@ -22,8 +22,22 @@ body.game-fit {
   min-height: 0;
 }
 
-body.game-fit .site-header,
+/* Keep a SLIM site header at the top (branding + a way home + a little breathing
+   room) as a static flex item - the play area below flexes to absorb its height,
+   so the page still never scrolls. The footer is dropped to save that space. */
+body.game-fit .site-header {
+  position: static;
+  flex: 0 0 auto;
+  padding: .5rem 1.15rem;
+}
 body.game-fit .site-footer { display: none !important; }
+
+/* With the header back, its logo is the way home, so the floating exit button is
+   redundant. Kept in the DOM (hidden) so a game can opt back into a bare,
+   header-less layout by adding class="game-fit-bare" to <body>. */
+body.game-fit .game-exit { display: none; }
+body.game-fit-bare .site-header { display: none !important; }
+body.game-fit-bare .game-exit { display: flex; }
 
 /* The primary container fills the leftover height and can itself flex. */
 body.game-fit .game-fit-main {

@@ -30,6 +30,7 @@
   <title>Register - Free Money Math Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <style>
     :root {
       --till-green:#2A5C3F; --till-green-d:#1c4a31;
@@ -41,6 +42,19 @@
     .reg-page h1 { font-size: 1.9rem; margin: 0 0 .1rem; }
     .reg-howto { color: var(--ink-light); font-size: .92rem; margin: 0 0 1.1rem; max-width: 66ch; }
     .hidden { display:none !important; }
+
+    /* ===== fullscreen shell: fill the viewport, never scroll the page ===== */
+    body.game-fit .reg-page { width:100%; max-width:860px; padding:.6rem 1rem .7rem 2.5rem;
+      display:flex; flex-direction:column; min-height:0; }
+    body.game-fit .reg-stage { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+    body.game-fit #playScreen { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+    body.game-fit #playScreen .reg-drawer { flex:0 0 auto; }
+    /* On short/narrow screens the register + receipt + tray + drawer stack taller than
+       the viewport; let the play panel scroll *inside* the shell so the page never does. */
+    @media (max-width:680px), (max-height:640px) {
+      body.game-fit #playScreen { overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    }
+    /* the overlays already fill the stage via inset:0; keep them scrollable if short */
 
     /* ================= start / end overlays (float over the register) ================= */
     .reg-stage { position: relative; }
@@ -345,7 +359,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -354,7 +370,7 @@
   </nav>
 </header>
 
-<div class="reg-page">
+<div class="reg-page game-fit-main">
   <div class="reg-stage" id="stage">
 
   <!-- ============ PLAY (always on; the start card floats over it) ============ -->

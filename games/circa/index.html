@@ -30,6 +30,7 @@
   <title>Circa: Free History Timeline Card Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <style>
     :root {
       --card-bg:     #FBF6E8;
@@ -763,6 +764,45 @@
     .final-row .pos { font-family: var(--font-serif); font-size: 1.1rem; font-weight: 600; color: var(--gold); width: 2rem; }
     .final-row .name { font-weight: 500; flex: 1; }
     .final-row .wins { font-family: var(--font-serif); font-size: 1.2rem; font-weight: 600; }
+
+    /* ============================================================
+       Fullscreen "game-fit" shell overrides.
+       The .circa-app wrapper fills the leftover viewport height and owns
+       vertical scrolling; whichever screen is active flexes to fill it and
+       scrolls internally if it is taller than the screen. The page itself
+       never scrolls. Top-left padding clears the floating exit button.
+       ============================================================ */
+    body.game-fit .circa-app {
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 2.5rem 0.9rem 0.9rem;   /* top-left pad clears the exit button */
+    }
+    /* The site-header/footer are hidden by game-fit; drop their reserved space. */
+    body.game-fit .circa-app > * { flex: 0 0 auto; }
+
+    /* Setup / pass / end screens: keep them centered but tighten the huge
+       top/bottom margins so they sit inside the shell without forcing scroll. */
+    body.game-fit .setup-screen { margin: auto; }
+    body.game-fit .end-screen { margin: auto; }
+
+    /* Solo screen: override body.solo-active's own scroll column so the game-fit
+       flex shell stays in charge (fixed viewport height, scroll via .circa-app). */
+    body.game-fit.solo-active { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
+    body.game-fit #soloScreen { flex: 1 1 auto; min-height: 0; padding-top: 0; display: flex; flex-direction: column; }
+    body.game-fit #soloScreen .game-layout { flex: 1 1 auto; min-height: 0; align-items: start; }
+    /* Trim vertical footprint so the whole solo hand fits inside the shell. The
+       .showdown reserves 340px for the reveal animation; that space is the big
+       gap above the hand, so shrink it under game-fit and let cards scale down. */
+    body.game-fit #soloScreen .showdown { min-height: 240px; }
+    body.game-fit #soloScreen .card-img { max-height: 14vh; }
+    body.game-fit #soloScreen .circa-card.center .card-img { max-height: 15vh; }
+    body.game-fit #soloScreen .card-desc { -webkit-line-clamp: 2; }
+
+    /* Pass-and-play game screen fills and centers within the shell. */
+    body.game-fit .game-screen { flex: 1 1 auto; min-height: 0; padding: 0.5rem 1.25rem 1rem; }
   </style>
   <script type="application/ld+json">
   {
@@ -821,7 +861,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+  <a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
   <header class="site-header">
     <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -829,6 +871,8 @@
       <a href="../../subjects/history.html">← History</a>
     </nav>
   </header>
+
+  <div class="circa-app game-fit-main">
 
   <!-- ===================== SETUP SCREEN ===================== -->
   <div class="setup-screen" id="setupScreen">
@@ -968,6 +1012,8 @@
 
     <div class="circa-leaderboard" id="circaEndBoard"></div>
   </div>
+
+  </div><!-- /.circa-app -->
 
   <footer class="site-footer">
     <a href="../../index.html">accidentallearning.org</a>

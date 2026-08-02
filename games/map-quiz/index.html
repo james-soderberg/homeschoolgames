@@ -29,6 +29,7 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/map-quiz.jpg">
   <title>Map Quiz - Free World Geography Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     @keyframes pop {
@@ -38,6 +39,25 @@
     }
 
     .map-page { max-width: 1000px; margin: 0 auto; padding: 1.5rem; }
+
+    /* ---- Fullscreen "game-fit" shell ----
+       The whole page fills the viewport and never scrolls. The .game-layout
+       grid flexes to fill the leftover height; its play column becomes a flex
+       column so the interactive map/SVG grows to fill the remaining space. */
+    body.game-fit .game-layout { min-height: 0; padding: .5rem 1rem; align-items: stretch; }
+    body.game-fit .map-page { max-width: none; padding: .6rem 1rem .7rem 2.5rem; /* clear the exit button */
+      display: flex; flex-direction: column; min-height: 0; }
+    body.game-fit .hsg-rail { max-height: 100%; overflow-y: auto; }
+    body.game-fit .map-header { margin-bottom: .5rem; }
+    /* start screen: picker column scrolls internally if the world map is tall */
+    body.game-fit #worldPicker { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+    /* game screen: the map container flexes to fill; the SVG fits inside it */
+    body.game-fit #gameScreen { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+    body.game-fit #gameScreen .map-container { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
+    body.game-fit #gameScreen .map-container svg { width: auto; height: auto; max-width: 100%; max-height: 100%; }
+    body.game-fit .prompt-box { margin-bottom: .5rem; }
+    body.game-fit .feedback-bar { min-height: 1.8rem; margin-bottom: .4rem; }
+    body.game-fit .btn-row { margin-top: .6rem; }
 
     .map-header { margin-bottom: 1rem; }
     .map-header h1 { font-size: 1.8rem; margin-bottom: 0.1rem; }
@@ -290,7 +310,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -299,7 +321,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide">
+<div class="game-layout game-layout-wide game-fit-main">
 <div class="map-page game-main">
   <div class="map-header">
     <h1>Map Quiz</h1>

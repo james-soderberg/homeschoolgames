@@ -29,6 +29,7 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/default.jpg">
   <title>REDLINE (a secret game)</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     body.rl-body { background:#1c140b; color:#f3e9d6; }
@@ -104,9 +105,17 @@
     .rl-secret { font-size: 0.66rem; color: #97815c; margin-top: 0.7rem; letter-spacing: 0.05em; }
     .rl-mobile { display:none; }
     @media (hover: none) and (pointer: coarse) { .rl-mobile { display:block; } .rl-deskonly { display:none; } }
+
+    /* Fullscreen: the page fills the viewport and the stage flexes to take all the
+       leftover height, so the game never scrolls. */
+    body.game-fit .rl-wrap { width:100%; max-width:1240px; padding:.7rem .9rem .8rem;
+      display:flex; flex-direction:column; min-height:0; }
+    body.game-fit .rl-stage { flex:1 1 auto; height:auto !important; min-height:0 !important; }
+    body.game-fit .hud-l { left:1rem; }   /* HUD is absolute inside the stage; nothing to shift for the exit button */
   </style>
 </head>
-<body class="rl-body">
+<body class="rl-body game-fit">
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header rl-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -115,7 +124,7 @@
   </nav>
 </header>
 
-<div class="rl-wrap">
+<div class="rl-wrap game-fit-main">
   <div class="rl-stage" id="stage">
     <canvas id="cv"></canvas>
 

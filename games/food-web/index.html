@@ -15,9 +15,18 @@
   <meta property="og:description" content="Hunt to survive, but keep the herd and the grass balanced, or the habitat collapses. Learn predator-prey cycles and carrying capacity by living them.">
   <title>Keep the Habitat Alive, an Ecosystem Balance Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .fw-page { max-width: 1400px; margin: 0 auto; padding: 0.6rem 1rem 0.5rem; }
+    /* Fullscreen: the page fills the viewport and the stage flexes to take all the
+       leftover height, so the game never scrolls. */
+    body.game-fit .fw-page { width:100%; padding:0.5rem 1rem 0.35rem;
+      display:flex; flex-direction:column; min-height:0; }
+    body.game-fit .fw-stage { flex:1 1 auto; height:auto !important; min-height:0 !important; }
+    body.game-fit .fw-top { margin-bottom:0.5rem; padding-left:2.5rem; }  /* clear the floating exit button */
+    body.game-fit .fw-page > .fw-hint { margin:0.4rem 0 0; }
+    @media (max-height: 620px){ body.game-fit .fw-page > .fw-hint { display:none; } }
     .fw-top { display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
     .fw-top h1 { margin: 0; font-size: 1.5rem; }
     .stat-group { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
@@ -80,14 +89,15 @@
     .fw-board { width: 100%; max-width: 340px; margin: 0.4rem auto 0.8rem; text-align: left; }
   </style>
 </head>
-<body>
+<body class="game-fit">
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav"><a href="../../subjects/science.html">← Science</a></nav>
 </header>
 
-<div class="fw-page">
+<div class="fw-page game-fit-main">
   <div class="fw-top">
     <h1>🦊 Keep the Habitat Alive</h1>
     <div class="stat-group">

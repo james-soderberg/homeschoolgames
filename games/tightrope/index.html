@@ -29,9 +29,22 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/tightrope.jpg">
   <title>Tightrope: Free Number-Line Math Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .tr-page { max-width: 1180px; margin: 0 auto; padding: 1.25rem 1.25rem 3rem; }
+
+    /* Fullscreen: the page fills the viewport and the stage flexes to take all the
+       leftover height, so the game never scrolls. */
+    body.game-fit .game-layout { min-height: 0; grid-template-rows: 1fr; align-items: stretch; }
+    body.game-fit .game-layout > .hsg-rail { align-self: start; }
+    body.game-fit .tr-page {
+      display: flex; flex-direction: column; min-height: 0;
+      padding: .7rem 1.25rem .8rem; padding-left: 2.5rem;  /* clear the floating exit button */
+    }
+    body.game-fit .tr-stage { flex: 1 1 auto; height: auto !important; min-height: 0 !important; }
+    body.game-fit .tr-hint { margin: .3rem 0 0; }
+    @media (max-height: 640px){ body.game-fit .tr-hint { display: none; } }
     /* Wide beam kept centered in the viewport by the shared grid layout. */
     .game-layout { --gm-w: 1180px; --gl-max: min(2200px, 98vw); column-gap: 1rem; }
 
@@ -180,7 +193,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -189,7 +204,7 @@
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-fit-main">
 <div class="tr-page game-main">
 
   <div class="tr-top">
@@ -386,6 +401,7 @@ function tolsFor(){
 const START_LIVES = 3;
 const MIN_LEVEL = 5;    // reach at least here for the "great climb!" praise
 const MIN_ROUNDS = 4;   // survive at least this many crossings to make the leaderboard
+const REVEAL_HOLD = 2.0;   // seconds the true-position reveal stays up after a guess before advancing
 
 // ---------- DOM ----------
 const stage      = document.getElementById('stage');
@@ -714,9 +730,9 @@ function tick(ts){
         const fallSpeed = Math.min(lerp(700,1650,fallSev), lerp(150,660,fallSev) + tp*lerp(500,1550,fallSev));
         fallY += dt*fallSpeed;
       }
-      if(resultT > struggleT+1.0 && !advanced) advance();
+      if(resultT > Math.max(struggleT+1.0, REVEAL_HOLD) && !advanced) advance();
     }
-    else if(resultT>1.6 && !advanced) advance();   // teeter settles in place - no walking on
+    else if(resultT>REVEAL_HOLD && !advanced) advance();   // hold the reveal so the correct scale is visible, then walk on
   }
   draw();
   rafId=requestAnimationFrame(tick);

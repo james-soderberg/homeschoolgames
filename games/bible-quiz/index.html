@@ -29,16 +29,21 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/bible-quiz.jpg">
   <title>Paul&#x27;s Journey - Free Bible Passage Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
-    /* Fit the whole game to the viewport - no page scroll on desktop. */
-    html, body { height: 100%; }
-    body { display: flex; flex-direction: column; overflow: hidden; }
-    .site-header, .site-footer { flex: 0 0 auto; }
+    /* Fit the whole game to the viewport - no page scroll on desktop.
+       The outer shell (body flex column, hidden header/footer) is owned by
+       game-fit.css; here we only lay out the game wrapper inside it. */
     .voy-page {
-      flex: 1 1 auto; min-height: 0; width: 100%; max-width: 1180px; margin: 0 auto;
+      width: 100%; max-width: 1180px; margin: 0 auto;
       padding: 0.7rem 1.1rem 0.6rem; display: flex; flex-direction: column; gap: 0.5rem;
     }
+    body.game-fit .voy-page {
+      min-height: 0; padding: 0.6rem 1.1rem 0.5rem;
+    }
+    /* clear the floating exit button in the top-left */
+    body.game-fit .voy-top { padding-left: 2.5rem; }
 
     .voy-top {
       display: flex; align-items: center; justify-content: space-between;
@@ -199,10 +204,10 @@
     /* On phones/short screens, stop fitting to the viewport - stack and allow scroll. */
     /* narrow OR short windows: stop fitting to the viewport - scroll instead, and
        give the scene a real height so the start menu never gets crushed */
-    @media (max-width: 760px), (max-height: 900px) {
-      html, body { height: auto; }
-      body { display: block; overflow: auto; }
-      .voy-page { display: block; padding-bottom: 2rem; }
+    @media (max-width: 760px), (max-height: 560px) {
+      html, body.game-fit { height: auto; }
+      body.game-fit { display: block; overflow: auto; }
+      .voy-page, body.game-fit .voy-page { display: block; padding-bottom: 2rem; }
       .stage { flex-direction: column; }
       .scene-wrap { height: 54vh; min-height: 380px; max-height: 560px; }
       .map-panel { flex: none; width: auto; }
@@ -270,7 +275,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -279,7 +286,7 @@
   </nav>
 </header>
 
-<div class="voy-page">
+<div class="voy-page game-fit-main">
 
   <div class="voy-top">
     <h1>Paul's Journey</h1>

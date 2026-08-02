@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Slide Puzzle (a secret game)</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     #spBoardWin, #spBoardFail { width:100%; max-width:340px; margin:.3rem auto 1rem; text-align:left; }
@@ -14,6 +15,25 @@
     .sp-header .site-nav a { color:#9a8a63; } .sp-header .site-nav a:hover { color:#e7c979; }
 
     .sp-wrap { max-width: 1120px; margin: 0 auto; padding: 1.2rem 1rem 2.6rem; }
+
+    /* Fullscreen: the wrap fills the viewport as a flex column, the board-wrap
+       flexes to take the leftover height and centres the puzzle, so the page
+       never scrolls. */
+    body.game-fit .sp-wrap {
+      width:100%; max-width:1120px; padding:.6rem 1rem .7rem;
+      display:flex; flex-direction:column; min-height:0;
+    }
+    body.game-fit .sp-top { margin-bottom:.55rem; padding-left:2.5rem; }  /* clear the floating exit button */
+    body.game-fit .board-wrap {
+      flex:1 1 auto; min-height:0; display:flex; align-items:center; justify-content:center;
+      margin:0 auto;
+    }
+    body.game-fit .board-wrap { width:auto; }
+    /* board is square; cap it by the leftover height so it never overflows the flex column */
+    body.game-fit .board-wrap .board { width:auto; height:min(100%, 94vw, 1040px); aspect-ratio:1/1; }
+    body.game-fit .sp-controls { margin-top:.55rem; }
+    body.game-fit .sp-hint { margin-top:.45rem; }
+    @media (max-height: 640px){ body.game-fit .sp-hint, body.game-fit .sp-secret { display:none; } }
     .sp-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:.9rem; }
     .sp-top h1 { margin:0; font-size:1.5rem; color:#f0e6cf; }
     .sp-stats { display:flex; gap:.5rem; align-items:center; }
@@ -76,14 +96,16 @@
     .sp-secret { text-align:center; font-size:.7rem; color:#5f5540; margin-top:.4rem; }
   </style>
 </head>
-<body class="sp-body">
+<body class="sp-body game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header sp-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav"><a href="../../index.html">← Home</a></nav>
 </header>
 
-<div class="sp-wrap">
+<div class="sp-wrap game-fit-main">
   <div class="sp-top">
     <h1>🧩 Slide Puzzle</h1>
     <div class="sp-stats">

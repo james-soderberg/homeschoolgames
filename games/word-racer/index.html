@@ -29,6 +29,7 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/word-racer.jpg">
   <title>Word Racer - Free Typing Speed Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .wr-page { max-width: 920px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
@@ -207,6 +208,29 @@
   @keyframes tsBlast { 0% { opacity: 1; transform: translate(-50%,50%) scale(.3) } 100% { opacity: 0; transform: translate(-50%,50%) scale(10) } }
   @keyframes tsShake { 0%,100% { transform: translate(0,0) } 20% { transform: translate(-9px,5px) } 40% { transform: translate(9px,-5px) } 60% { transform: translate(-7px,-6px) } 80% { transform: translate(7px,6px) } }
   @media (prefers-reduced-motion: reduce) { #tsScene .ts-car { transition: none } #tsScene .ts-sign { animation: none } }
+
+  /* ---------- fullscreen game-fit shell ---------- */
+  body.game-fit .wr-page {
+    max-width: 920px; width: 100%; padding: .5rem 1.1rem .7rem;
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  body.game-fit .wr-top { margin-bottom: .35rem; padding-left: 2.5rem; }  /* clear the floating exit button */
+  body.game-fit .pack-pick { margin-bottom: .5rem; }
+  /* the race screen flexes to fill; the arena fills whatever height is left and
+     may be non-square. The ring geometry (JS layout()) squares itself to the
+     smaller of the arena's width/height and centres, so the track always fits. */
+  body.game-fit #raceScreen { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+  body.game-fit #raceScreen .arena {
+    flex: 1 1 auto; min-height: 0;
+    width: auto; max-width: min(94vw, 780px); aspect-ratio: 1 / 1;
+    margin: .3rem auto .4rem;
+  }
+  body.game-fit .commentary { min-height: 1.2rem; margin-bottom: .3rem; }
+  body.game-fit .race-stats { margin-bottom: .4rem; }
+  body.game-fit .progress-wrap { margin-bottom: .5rem; }
+  body.game-fit .race-hint { margin-top: .3rem; }
+  body.game-fit #resultScreen { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+  @media (max-height: 620px) { body.game-fit .race-hint { display: none; } }
   </style>
   <script type="application/ld+json">
   {
@@ -265,7 +289,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -274,7 +300,7 @@
   </nav>
 </header>
 
-<div class="wr-page">
+<div class="wr-page game-fit-main">
 
   <div class="wr-top">
     <h1>Word Racer</h1>
@@ -449,7 +475,14 @@ function spaceW() {   // width of one space in the track font, cached (reset in 
 }
 function layout() {
   _spaceW = 0;
-  S = arena.clientWidth || 440;
+  // Square the track to the smaller of the arena's width/height. In the fullscreen
+  // fit shell the arena box can be taller than it is wide; keep the ring a centred
+  // square so the track never floats in a corner.
+  const aw = arena.clientWidth || 440, ah = arena.clientHeight || aw;
+  S = Math.max(200, Math.min(aw, ah));
+  ring.style.width = S + 'px'; ring.style.height = S + 'px';
+  ring.style.inset = 'auto'; ring.style.left = '50%'; ring.style.top = '50%';
+  ring.style.marginLeft = (-S / 2) + 'px'; ring.style.marginTop = (-S / 2) + 'px';
   FS = Math.round(Math.min(24, Math.max(16, S / 22)));
   LINEH = Math.round(FS * 1.62);
   LANE_H = Math.max(26, Math.round(S / 22));   // lane pitch - must clear the (now larger) cars so they don't stack
@@ -923,7 +956,14 @@ function tsBoom(){
   setTimeout(() => { s.classList.add('boom'); if (window.HSGSound && HSGSound.boom) HSGSound.boom(); }, 280);
   setTimeout(() => { location.href = '../redline/index.html?hunt'; }, 1500);   // enter the desmond game in treasure-hunt mode
 }
-window.addEventListener('resize', () => { if (lines.length) { layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); } });
+function relayout() { if (!lines.length) return; layout(); measureLines(); activeLine = Math.min(lineIndexForChar(index), lines.length - 1); renderEdges(); positionCars(); }
+window.addEventListener('resize', relayout);
+// In the fullscreen fit shell the arena's final size only settles after flex +
+// aspect-ratio resolve (a frame or two after load), so re-layout when it changes.
+if (window.ResizeObserver) { let _aw = 0, _ah = 0; new ResizeObserver(() => {
+  const w = arena.clientWidth, h = arena.clientHeight;
+  if (w && h && (w !== _aw || h !== _ah)) { _aw = w; _ah = h; relayout(); }
+}).observe(arena); }
 document.addEventListener('keydown', onKeyDown);
 // passage-pack picker: switch packs, load that pack's best, and start a fresh race
 document.querySelectorAll('#packPick .pack-btn').forEach((btn) => btn.addEventListener('click', () => {

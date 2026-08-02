@@ -30,10 +30,31 @@
   <title>Bridge Run: Free Mental Math Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <style>
     .br-page { padding: 1.25rem 1rem 3rem; }
     .br-page h1 { font-size: 1.8rem; margin: 0 0 0.2rem; }
     .br-howto { color: var(--ink-light); font-size: 0.95rem; margin: 0 0 1rem; max-width: 64ch; }
+
+    /* Fullscreen: the layout fills the viewport and never scrolls the page.
+       The play column flexes to fill leftover height; the bridge mount fills it. */
+    body.game-fit .game-layout {
+      display: flex; flex-direction: column; align-items: stretch;
+      gap: 1rem; padding: 0 .75rem; min-height: 0;
+    }
+    @media (min-width: 1001px) {
+      body.game-fit .game-layout { flex-direction: row; }
+    }
+    body.game-fit .br-page {
+      display: flex; flex-direction: column; min-height: 0; min-width: 0; flex: 1 1 auto;
+      overflow-y: auto;                   /* internal scroll if very short viewport */
+      padding: .6rem 1rem .7rem 2.5rem;   /* top-left clears the exit button */
+    }
+    body.game-fit .br-page h1 { font-size: 1.4rem; }
+    body.game-fit .br-howto { margin: 0 0 .6rem; }
+    body.game-fit #bridgeMount { min-height: 0; }
+    body.game-fit .hsg-rail { position: static; top: auto; align-self: flex-start; }
+    @media (max-height: 620px) { body.game-fit .br-howto { display: none; } }
   </style>
   <script type="application/ld+json">
   {
@@ -92,7 +113,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -101,7 +124,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide">
+<div class="game-layout game-layout-wide game-fit-main">
 <div class="br-page game-main">
   <h1>Bridge Run</h1>
   <p class="br-howto">Your runner never stops. Answer math fast to <b>lay the path</b> ahead of him.<br><br>Fall behind and he drops into the chasm.<br>The questions get harder the farther you go. <b>How far can you run?</b></p>

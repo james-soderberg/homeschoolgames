@@ -29,11 +29,25 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/letter-catch.jpg">
   <title>Letter Catch - Free Spelling Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     /* Wide board kept centered in the viewport by the shared grid layout. */
     .game-layout { --gm-w: 860px; --gl-max: min(1800px, 96vw); column-gap: 1rem; }
     .catch-page { margin: 0 auto; padding: 1.25rem 1rem 3rem; width: 100%; }
+
+    /* Fullscreen: the page fills the viewport and the board flexes to take all the
+       leftover height, so the game never scrolls. The layout grid stretches its
+       row, the play column becomes a flex column, and .stage flexes. */
+    body.game-fit .game-layout { height: 100%; align-items: stretch; }
+    body.game-fit .catch-page {
+      padding: .55rem 1rem .7rem; display: flex; flex-direction: column; min-height: 0;
+    }
+    body.game-fit .catch-top { padding-left: 2.5rem; }  /* clear the floating exit button */
+    body.game-fit .stage {
+      flex: 1 1 auto; height: auto !important; min-height: 0 !important;
+    }
+    @media (max-height: 620px){ body.game-fit .hint, body.game-fit .control-row { display: none; } }
     .catch-top {
       display: flex; align-items: center; justify-content: space-between;
       gap: 0.6rem; flex-wrap: wrap; margin-bottom: 0.75rem;
@@ -190,7 +204,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -199,7 +215,7 @@
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-fit-main">
 <div class="catch-page game-main">
 
   <div class="catch-top">

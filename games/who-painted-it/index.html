@@ -20,8 +20,19 @@
 <title>Who Painted It? - Free Art History Game | Accidental Learning</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
 <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+<link rel="stylesheet" href="../../assets/css/game-fit.css">
 <style>
   .wpi-page { max-width: 1240px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  /* Fullscreen: fill the viewport, never scroll the page. The three columns
+     share the leftover height and each scrolls internally if its content is
+     taller than the screen (the quiz column almost never is on desktop). */
+  body.game-fit .wpi-page { width:100%; max-width:1240px; padding:.75rem 1.25rem .9rem;
+    display:flex; flex-direction:column; min-height:0; }
+  body.game-fit .wpi-top { margin-bottom:.7rem; padding-left:2.5rem; }  /* clear the exit button */
+  body.game-fit .wpi-layout { flex:1 1 auto; min-height:0; align-items:stretch; }
+  body.game-fit .board-col, body.game-fit .gallery-col { overflow-y:auto; }
+  body.game-fit .quiz-col { overflow-y:auto; }
+  body.game-fit .board-panel { position:static; }
   .wpi-top { display:flex; align-items:center; justify-content:space-between; gap:.75rem; flex-wrap:wrap; margin-bottom:1.1rem; }
   .wpi-top h1 { margin:0; font-size:1.7rem; }
   .stat-badge { background: var(--cream-dark); border:1.5px solid var(--border); border-radius:99px;
@@ -121,14 +132,16 @@
   @media (max-width: 520px){ .option-grid{ grid-template-columns:1fr; } .g-grid{ grid-template-columns:repeat(5,1fr); } }
 </style>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav"><a href="../../index.html" id="allGamesLink">← All Games</a></nav>
 </header>
 
-<div class="wpi-page">
+<div class="wpi-page game-fit-main">
   <div class="wpi-top">
     <h1>Who Painted It?</h1>
     <div class="top-right">

@@ -30,13 +30,16 @@
   <title>The Exodus Journey - Free Bible Trivia | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <style>
     /* Fit the whole game in one viewport - the scene flexes to fill the space
-       left over so the question panel is always visible without scrolling. */
-    html, body { height: 100%; }
-    body { display: flex; flex-direction: column; min-height: 100dvh; margin: 0; }
-    .chase-page { max-width: 1180px; width: 100%; margin: 0 auto; padding: 1rem 1.25rem 1.25rem;
-      flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+       left over so the question panel is always visible without scrolling.
+       The outer shell (body.game-fit + .game-fit-main) is owned by
+       assets/css/game-fit.css; here we just make the page a flex column so the
+       scene stretches, and clear the floating exit button top-left. */
+    .chase-page { max-width: 1180px; width: 100%; margin: 0 auto; padding: 0.75rem 1.25rem 0.9rem;
+      display: flex; flex-direction: column; min-height: 0; }
+    body.game-fit .chase-top { padding-left: 2.5rem; }  /* clear the floating exit button */
 
     .chase-top {
       display: flex; align-items: center; justify-content: space-between;
@@ -272,7 +275,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -281,7 +286,7 @@
   </nav>
 </header>
 
-<div class="chase-page">
+<div class="chase-page game-fit-main">
 
   <div class="chase-top">
     <h1>The Exodus Journey</h1>

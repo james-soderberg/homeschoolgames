@@ -30,10 +30,22 @@
 <title>Roots - Free Greek &amp; Latin Vocabulary Game | Accidental Learning</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
 <link rel="stylesheet" href="../../assets/css/streak-rail.css">
+<link rel="stylesheet" href="../../assets/css/game-fit.css">
 <style>
   .roots-wrap { max-width: 1200px; margin: 0 auto; padding: 1.1rem 1rem 3rem; }
   /* widen the centered play column so 3-4 part words sit on one row */
   .roots-wrap .game-layout { max-width: 1200px; }
+
+  /* Fullscreen: fill the viewport, never scroll the page. The wrapper becomes a
+     flex column; the .game-layout play area flexes to fill the leftover height
+     and the play column (.game-main) scrolls internally if a monster word is
+     taller than the screen. */
+  body.game-fit .roots-wrap { width:100%; padding:.6rem 1rem .7rem;
+    display:flex; flex-direction:column; min-height:0; }
+  body.game-fit .roots-top { margin-bottom:.6rem; padding-left:2.5rem; }  /* clear the exit button */
+  body.game-fit .game-layout { flex:1 1 auto; min-height:0; align-items:stretch; }
+  body.game-fit .game-main { min-height:0; overflow-y:auto; display:flex; flex-direction:column; justify-content:center; }
+  body.game-fit .hsg-rail { position:static; top:auto; }
   .roots-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:1rem; }
   .roots-top h1 { margin:0; font-size:1.7rem; }
   .roots-top .right { display:flex; align-items:center; gap:.5rem; flex-wrap:wrap; justify-content:flex-end; }
@@ -198,14 +210,16 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav"><a href="../../index.html" id="allGamesLink">← All Games</a></nav>
 </header>
 
-<div class="roots-wrap">
+<div class="roots-wrap game-fit-main">
   <div class="roots-top">
     <h1>Roots</h1>
     <div class="right">

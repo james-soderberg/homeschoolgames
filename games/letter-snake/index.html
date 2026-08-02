@@ -29,8 +29,26 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/letter-snake.jpg">
   <title>Letter Snake - Free Spelling Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
+    /* Fullscreen: the page fills the viewport and the board flexes to take all
+       the leftover height, so the game never scrolls. */
+    body.game-fit .game-layout { align-items: stretch; }
+    body.game-fit .snake-page {
+      display: flex; flex-direction: column; min-height: 0;
+      padding: 0.7rem 1rem 0.85rem; padding-left: 2.5rem;  /* top-left clears the exit button */
+    }
+    body.game-fit .snake-top { margin-bottom: 0.4rem; }
+    body.game-fit .word-rail { margin-bottom: 0.45rem; }
+    body.game-fit .stage {
+      flex: 1 1 auto; height: auto !important; min-height: 0 !important;
+    }
+    body.game-fit .hint { margin-top: 0.45rem; }
+    body.game-fit .control-row { margin-top: 0.35rem; }
+    @media (max-height: 640px) {
+      body.game-fit .hint, body.game-fit .control-row { display: none; }
+    }
     /* Wide board kept centered in the viewport by the shared grid layout. */
     .game-layout { --gm-w: 860px; --gl-max: min(1800px, 96vw); column-gap: 1rem; }
     .snake-page { margin: 0 auto; padding: 1.25rem 1rem 3rem; width: 100%; }
@@ -247,7 +265,9 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
@@ -256,7 +276,7 @@
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-fit-main">
 <div class="snake-page game-main">
 
   <div class="snake-top">
