@@ -290,6 +290,8 @@
     .stat-pill.streak .stat-val { color: var(--gold); }
     .stat-pill.best { background: var(--cream-dark); }
     .stat-pill.best .stat-val { color: var(--ink); }
+    .stat-pill.score { border-color: var(--gold); }
+    .stat-pill.score .stat-val { color: #8B6A20; }
 
     /* Center card - the target */
     .center-card-wrap {
@@ -420,6 +422,11 @@
       background: #F0FAF3;
       box-shadow: 0 4px 14px rgba(42,92,63,0.15);
     }
+    /* a middle-of-the-pack pick: no points won, no points lost */
+    .circa-card.neutral-card {
+      border-color: #8A7C5E;
+      background: #F6F1E4;
+    }
 
     /* ---- Flip reveal + "closest" pop & glow ---- */
     .hand-grid, .center-card-wrap { perspective: 1200px; }
@@ -510,6 +517,7 @@
       transform: scaleX(0); transform-origin: left center; transition: transform 0.5s ease 0.4s; }
     .tl-fill.good { background: var(--green); }
     .tl-fill.bad  { background: var(--red); }
+    .tl-fill.mid  { background: #8A7C5E; }
     .tl-fill.grow { transform: scaleX(1); }
     .tl-pin { position: absolute; top: 3px; animation: tlDrop 0.5s cubic-bezier(.34,1.56,.64,1) both; }
     .tl-pin.pick { animation-delay: 0.16s; }
@@ -518,6 +526,7 @@
     .tl-pin.center .dot { background: var(--gold); }
     .tl-pin.pick.good .dot { background: var(--green); }
     .tl-pin.pick.bad  .dot { background: var(--red); }
+    .tl-pin.pick.mid  .dot { background: #8A7C5E; }
     .tl-pin .yr { position: absolute; left: 50%; transform: translateX(-50%);
       font-family: var(--font-serif); font-size: 0.74rem; font-weight: 700; white-space: nowrap; }
     .tl-pin .tag { position: absolute; left: 50%; transform: translateX(-50%);
@@ -528,6 +537,7 @@
     .tl-pin.pick .tag { top: 32px; }
     .tl-pin.pick.good .yr { color: var(--green); }
     .tl-pin.pick.bad  .yr { color: var(--red); }
+    .tl-pin.pick.mid  .yr { color: #5C5140; }
 
     /* staggered hand deal-in */
     .circa-card.deal-in { animation: dealIn 0.4s ease both; }
@@ -555,6 +565,16 @@
     }
     @media (prefers-reduced-motion: reduce) {
       .round-verdict { animation: none !important; }
+    }
+    /* points awarded this round, colour-coded: win / neutral / loss */
+    .round-verdict.gain { color: var(--green, #2A5C3F); }
+    .round-verdict.zero { color: var(--on-backdrop-dim, #6B5E42); }
+    .round-verdict.loss { color: var(--red, #8B2020); }
+    .verdict-note {
+      display: block;
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 500;
     }
     .circa-card.disabled { cursor: default; opacity: 0.5; }
     .circa-card.no-hover { cursor: default; }
@@ -676,10 +696,13 @@
     }
     .circa-card.correct-card .card-result-badge,
     .circa-card.show-best .card-result-badge,
+    .circa-card.neutral-card .card-result-badge,
     .circa-card.wrong-card .card-result-badge { display: inline-block; }
     .circa-card.correct-card .card-result-badge { background: #2A5C3F; color: white; }
     .circa-card.show-best .card-result-badge { background: #2A5C3F; color: white; }
+    .circa-card.neutral-card .card-result-badge { background: #6B5E42; color: white; }
     .circa-card.wrong-card .card-result-badge { background: #8B2020; color: white; }
+    .circa-card.neutral-card .card-big-date { color: #5C5140; }
 
     /* Action bar */
     .action-bar {
@@ -791,7 +814,10 @@
     /* Solo screen: override body.solo-active's own scroll column so the game-fit
        flex shell stays in charge (fixed viewport height, scroll via .circa-app). */
     body.game-fit.solo-active { overflow: hidden; min-height: 0; display: flex; flex-direction: column; }
-    body.game-fit #soloScreen { flex: 1 1 auto; min-height: 0; padding-top: 0; display: flex; flex-direction: column; }
+    /* Must stay scoped to .solo-active: an unscoped `#soloScreen` beats
+       `.solo-screen { display: none }` on specificity and leaks the whole solo
+       screen (stat pills + streak rail) onto the setup screen. */
+    body.game-fit.solo-active #soloScreen { flex: 1 1 auto; min-height: 0; padding-top: 0; display: flex; flex-direction: column; }
     body.game-fit #soloScreen .game-layout { flex: 1 1 auto; min-height: 0; align-items: start; }
     /* Trim vertical footprint so the whole solo hand fits inside the shell. The
        .showdown reserves 340px for the reveal animation; that space is the big
@@ -860,6 +886,25 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1, .setup-icon, .era-prompt, .solo-header h2, #soloInstruction { color: var(--on-backdrop); }
+  /* the start-screen difficulty boards inherit their host's colour (translucent
+     fills, no background of their own), so hand them the on-backdrop ink */
+  #circaSetupBoards { color: var(--on-backdrop); margin-top: 1.5rem; }
+  .setup-tagline, .setup-how, .friends-link, .solo-header h2 span,
+  .hand-label-solo { color: var(--on-backdrop-dim); }
+  .friends-link:hover { color: var(--on-backdrop); }
+  /* pass-and-play + end screens also sit straight on the backdrop */
+  #passTitle, .game-header h2, #endTitle { color: var(--on-backdrop); }
+  #passMsg, #handLabel, #endSubtitle,
+  .site-footer span { color: var(--on-backdrop-dim); }
+  /* the years-apart readout and the timeline sit straight on the backdrop too */
+  .year-diff .num { color: var(--on-backdrop); }
+  .year-diff .label { color: var(--on-backdrop-dim); }
+  .tl-pin.pick.mid .yr { color: #B9B2A3; }
+</style>
 </head>
 <body class="game-fit">
 
@@ -879,7 +924,7 @@
     <div class="setup-icon">🏛️</div>
     <h1>Circa</h1>
     <p class="setup-tagline">A history card game</p>
-    <p class="setup-how">You get a hand of history cards. Each round, play the card <strong>closest in date</strong> to the center card. Fewer cards makes it easier!</p>
+    <p class="setup-how">You get a hand of history cards. Each round, play the card <strong>closest in date</strong> to the center card. The closest card scores <strong>+100</strong>; the further off you land, the fewer points you get, and the worst pick costs you <strong>50</strong>.</p>
 
     <p class="era-prompt">Choose a difficulty</p>
     <div class="era-grid mode-grid" id="modeGrid"></div>
@@ -918,7 +963,7 @@
       <button class="start-friends-btn" onclick="startFriendsGame()">Start Game →</button>
     </div>
 
-    <div class="circa-leaderboard"></div>
+    <div id="circaSetupBoards"></div>
   </div>
 
   <!-- ===================== PASS SCREEN ===================== -->
@@ -934,8 +979,9 @@
     <div class="game-main">
 
     <div class="solo-header">
-      <h2>Circa <span style="font-size:1rem;color:var(--ink-light);font-family:var(--font-sans);font-weight:400;">· Solo</span></h2>
+      <h2>Circa <span style="font-size:1rem;color:var(--on-backdrop-dim);font-family:var(--font-sans);font-weight:400;">· Solo</span></h2>
       <div class="solo-stats">
+        <div class="stat-pill score">Score <span class="stat-val" id="soloScore">0</span></div>
         <div class="stat-pill best">Best <span class="stat-val" id="soloBest">0</span></div>
         <div class="stat-pill">Round <span class="stat-val" id="soloRound">1</span></div>
         <button class="btn btn-outline btn-sm" onclick="quitSolo()">Quit</button>
@@ -1205,8 +1251,10 @@ const DECK = (window.CIRCA_DECK && window.CIRCA_DECK.length) ? window.CIRCA_DECK
 
 // ============================================================
 // High score - persists via localStorage
+// (its own key: the old `circa_solo_highscore` held streak lengths, which mean
+//  nothing on a points board)
 // ============================================================
-const HS_KEY = 'circa_solo_highscore';
+const HS_KEY = 'circa_points_highscore';
 let soloDiff = 'easy';   // current solo difficulty (easy/hard) - keeps the Best pill per-difficulty
 
 function getHighScore() {
@@ -1290,18 +1338,65 @@ let mode = 'solo';
 // ============================================================
 // ============================================================
 
+// ============================================================
+// Points scoring
+// ------------------------------------------------------------
+// Every card you play scores by how close it ranks against the rest of your
+// hand, not by right/wrong: the closest card is worth +100, the middle of the
+// pack is worth nothing, and the furthest-off card costs you 50. Cards tied on
+// distance from the center share the better rank.
+// ============================================================
+const POINT_TABLES = {
+  4: [100, 25, 0, -50],
+  6: [100, 50, 20, 0, -25, -50],
+};
+
+// Points for finishing `rank`-th closest (1-based) out of a hand of `n`.
+// Hands without an explicit table (pass-and-play allows 5/7/8) are sampled off
+// the 6-card curve so the shape - +100 top, ~0 middle, -50 bottom - still holds.
+function pointsFor(rank, n) {
+  const table = POINT_TABLES[n];
+  if (table) return table[Math.min(rank, table.length) - 1];
+  if (n <= 1) return 100;
+  const curve = POINT_TABLES[6];
+  const t = (Math.min(rank, n) - 1) / (n - 1) * (curve.length - 1);
+  const lo = Math.floor(t), hi = Math.min(curve.length - 1, lo + 1);
+  return Math.round((curve[lo] + (curve[hi] - curve[lo]) * (t - lo)) / 5) * 5;
+}
+
+// 1-based closeness rank of hand[idx] against the center card. Ties share a rank.
+function closenessRank(hand, center, idx) {
+  const d = Math.abs(hand[idx].year - center.year);
+  return 1 + hand.filter(c => Math.abs(c.year - center.year) < d).length;
+}
+
+function fmtPoints(p) { return (p > 0 ? '+' : '') + p; }
+
+function ordinalPlace(n) {
+  const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+  return n + (s[(v - 20) % 10] || s[v] || s[0]);
+}
+
+function esc(str) {
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// A scored run is a fixed number of rounds so every leaderboard entry is
+// comparable (the deck holds ~100 rounds' worth of cards).
+const SOLO_ROUNDS = 12;
+
 let soloDeck = [];
 let soloHand = [];
 let soloCenterCard = null;
-let soloStreak = 0;
+let soloScore = 0;
 let soloRoundNum = 0;
 let handSize = 4;
 let soloAwaitingNext = false;
 let soloSourceDeck = null;   // set by the era picker; null = whole deck
 
 function startSoloGame() {
-  soloStreak = 0;
-  if (typeof rail !== 'undefined') rail.reset();
+  soloScore = 0;
+  if (typeof rail !== 'undefined') { rail.reset(); rail.set(0); }
   soloRoundNum = 0;
   const src = (soloSourceDeck && soloSourceDeck.length) ? soloSourceDeck : DECK;
   soloDeck = shuffle([...src]);
@@ -1320,6 +1415,12 @@ function startSoloGame() {
 
 function soloNextRound() {
   soloAwaitingNext = false;
+
+  // Fixed-length run: once the last round is played, the score is final.
+  if (soloRoundNum >= SOLO_ROUNDS) {
+    soloEndGame('Run complete!');
+    return;
+  }
   soloRoundNum++;
 
   // Refill hand to handSize if possible
@@ -1336,7 +1437,7 @@ function soloNextRound() {
   // Draw center card (from deck, not hand)
   soloCenterCard = soloDeck.pop();
 
-  document.getElementById('soloRound').textContent = soloRoundNum;
+  document.getElementById('soloRound').textContent = soloRoundNum + ' / ' + SOLO_ROUNDS;
   document.getElementById('soloInstruction').textContent = 'Pick the card from your hand that is closest in date.';
 
   resetShowdown();
@@ -1429,14 +1530,16 @@ function fmtYearShort(y) { return Math.abs(y) + (y < 0 ? ' BC' : ' AD'); }
 // Timeline scale spans the whole deck's range (set in startSoloWithMode).
 let tlBounds = [-3600, 2025];
 
-function renderTimeline(centerYear, pickYear, isCorrect) {
+// `tone` is 'good' | 'mid' | 'bad' - it tracks the points won, so a scoreless
+// (but not penalised) pick doesn't get painted as a miss.
+function renderTimeline(centerYear, pickYear, tone) {
   const wrap = document.getElementById('timelineWrap');
   if (!wrap) return;
   const s = tlBounds[0], e = tlBounds[1], span = (e - s) || 1;
   const pos = y => Math.max(1.5, Math.min(98.5, (y - s) / span * 100));
   const cPos = pos(centerYear), pPos = pos(pickYear);
   const fillLeft = Math.min(cPos, pPos), fillW = Math.abs(cPos - pPos);
-  const cls = isCorrect ? 'good' : 'bad';
+  const cls = tone || 'good';
 
   // BC/AD divider only if this era's range crosses year 0
   let zero = '';
@@ -1493,10 +1596,12 @@ function soloPickCard(pickedIdx) {
   const bestCard = soloHand[bestIdx];
 
   const pickedDiff = Math.abs(pickedCard.year - soloCenterCard.year);
-  const bestDiff = Math.abs(bestCard.year - soloCenterCard.year);
-  // correct if the pick is as close as the best possible - ties (two cards
-  // equally near the center) both count, not just the lowest-index one.
-  const isCorrect = (pickedDiff === bestDiff);
+  // Score by closeness rank. Rank 1 (ties included) is the closest card.
+  const rank = closenessRank(soloHand, soloCenterCard, pickedIdx);
+  const pts = pointsFor(rank, soloHand.length);
+  const isCorrect = (rank === 1);
+  const resultCls = pts > 0 ? (isCorrect ? 'show-best' : 'correct-card')
+                            : (pts < 0 ? 'wrong-card' : 'neutral-card');
 
   const grid = document.getElementById('soloHandGrid');
   const cardEls = [...grid.children];
@@ -1555,14 +1660,14 @@ function soloPickCard(pickedIdx) {
       pickedEl.style.transform = '';
       pickedEl.classList.add('flipping');
       setTimeout(() => {
-        pickedEl.classList.add(isCorrect ? 'show-best' : 'wrong-card', 'revealed-date');
+        pickedEl.classList.add(resultCls, 'revealed-date');
         const d = document.createElement('div');
         d.className = 'card-big-date';
         d.textContent = fmtYear(pickedCard);
         pickedEl.appendChild(d);
         const badge = document.createElement('span');
         badge.className = 'card-result-badge';
-        badge.textContent = isCorrect ? '✓ Correct' : '✗ Your pick';
+        badge.textContent = fmtPoints(pts) + ' pts';
         pickedEl.appendChild(badge);
       }, 350);
       setTimeout(() => {
@@ -1594,55 +1699,44 @@ function soloPickCard(pickedIdx) {
       if (yd) yd.classList.add('show');
       countUpEl(gapEl.querySelector('.num'), pickedDiff, 750); // tally up the gap for tension
     });
-    renderTimeline(soloCenterCard.year, pickedCard.year, isCorrect); // drop both onto a BC->AD ribbon
+    // drop both onto a BC->AD ribbon, coloured by what the pick scored
+    renderTimeline(soloCenterCard.year, pickedCard.year, pts > 0 ? 'good' : (pts < 0 ? 'bad' : 'mid'));
 
     const instruction = document.getElementById('soloInstruction');
     const bar = document.getElementById('soloActionBar');
     bar.innerHTML = '';
 
-    if (isCorrect) {
-      soloStreak++;
-      rail.hit();
+    // ---- bank the points ----
+    soloScore += pts;
+    rail.set(soloScore);
+    if (soloScore > getHighScore()) setHighScore(soloScore);
+    soloHand.splice(pickedIdx, 1);   // every played card leaves the hand
+    updateSoloStats();
+
+    if (pts > 0) {
       if (window.HSGSound) HSGSound.correct();
-      if (window.HSGfx) HSGfx.confetti({ big: pickedDiff <= 300 }); // bigger burst for a tight guess
-      if (window.HSGfx && HSGfx.milestone(soloStreak) && window.HSGSound) HSGSound.streak(soloStreak);
-      if (soloStreak > getHighScore()) setHighScore(soloStreak);
-      updateSoloStats();
-      soloHand.splice(pickedIdx, 1); // played card leaves the hand
-
-      instruction.innerHTML = `Your card was the closest.`;
-
-      const nextBtn = document.createElement('button');
-      nextBtn.className = 'btn btn-gold btn-next';
-      nextBtn.textContent = soloDeck.length > 0 ? 'Next round →' : 'See results →';
-      nextBtn.addEventListener('click', () => {
-        if (soloDeck.length === 0 && soloHand.length === 0) soloEndGame('You cleared the deck!');
-        else soloNextRound();
-      });
-      bar.appendChild(nextBtn);
-    } else {
-      const prevStreak = soloStreak;
-      soloStreak = 0;
+      // bigger burst for the closest card, and bigger still for a tight guess
+      if (window.HSGfx) HSGfx.confetti({ big: isCorrect && pickedDiff <= 300, count: isCorrect ? 45 : 22 });
+    } else if (pts < 0) {
       if (window.HSGSound) HSGSound.wrong();
       if (window.HSGfx) { HSGfx.flash('red'); if (pickedDiff > 2000) HSGfx.shake(); } // shake on a wild miss
-      updateSoloStats();
-
-      instruction.innerHTML = `The closest was “${bestCard.title}.”`;
-
-      const nextBtn = document.createElement('button');
-      nextBtn.className = 'btn btn-gold btn-next';
-      nextBtn.textContent = 'Keep going →';
-      nextBtn.addEventListener('click', () => soloNextRound());
-      bar.appendChild(nextBtn);
-
-      if (prevStreak > 0) {
-        const streakNote = document.createElement('span');
-        streakNote.style.cssText = 'font-size:0.82rem;color:var(--ink-light);margin-left:0.75rem;';
-        streakNote.textContent = `Streak of ${prevStreak} ended.`;
-        bar.appendChild(streakNote);
-      }
-      rail.broke(); // wrong pick snaps the streak - play continues, no modal
+    } else {
+      if (window.HSGSound) HSGSound.tick();
     }
+
+    const note = isCorrect
+      ? 'Closest card in your hand!'
+      : `${ordinalPlace(rank)} closest. The closest was “${bestCard.title}.”`;
+    instruction.innerHTML =
+      `<span class="round-verdict ${pts > 0 ? 'gain' : (pts < 0 ? 'loss' : 'zero')}">${fmtPoints(pts)} pts</span>` +
+      `<span class="verdict-note">${esc(note)}</span>`;
+
+    const last = soloRoundNum >= SOLO_ROUNDS || soloDeck.length === 0;
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn btn-gold btn-next';
+    nextBtn.textContent = last ? 'See final score →' : 'Next round →';
+    nextBtn.addEventListener('click', () => soloNextRound());
+    bar.appendChild(nextBtn);
   };
 
   // Kick off the flip once the float lands (with a safety fallback).
@@ -1663,7 +1757,8 @@ function soloPickCard(pickedIdx) {
 }
 
 function updateSoloStats() {
-  document.getElementById('soloBest').textContent = getHighScore();
+  document.getElementById('soloScore').textContent = soloScore.toLocaleString();
+  document.getElementById('soloBest').textContent = getHighScore().toLocaleString();
 }
 
 function soloEndGame(reason) {
@@ -1672,20 +1767,21 @@ function soloEndGame(reason) {
   document.getElementById('endScreen').style.display = 'block';
   document.getElementById('endTitle').textContent = reason || 'Game Over';
 
-  // The run is over - bank the longest streak and show the placement + name entry
-  // inline on the end screen (no popup). Only shows if it makes the Top 10.
-  rail.gameOver(undefined, document.getElementById('circaEndBoard'));
+  // The run is over - bank the final score (not the running best, which would
+  // reward stopping at a peak) and show the placement + name entry inline on the
+  // end screen (no popup). Only shows if it makes the Top 10.
+  rail.gameOver(soloScore, document.getElementById('circaEndBoard'));
 
   const hs = getHighScore();
   document.getElementById('endSubtitle').textContent =
-    `Final streak: ${soloStreak}  •  Best ever: ${hs}`;
+    `Final score: ${soloScore.toLocaleString()}  •  Best ever: ${hs.toLocaleString()}`;
 
   const container = document.getElementById('finalScores');
   container.innerHTML = '';
 
   const rows = [
-    { label: 'Streak this game', val: soloStreak },
-    { label: 'All-time best streak', val: hs },
+    { label: 'Score this game', val: soloScore },
+    { label: 'All-time best score', val: hs },
     { label: 'Rounds played', val: soloRoundNum },
   ];
 
@@ -1701,7 +1797,7 @@ function soloEndGame(reason) {
     rows.forEach((r, i) => countUpEl(nums[i], r.val, 650));
   }, 120);
 
-  const newBest = soloStreak > 0 && soloStreak >= hs;
+  const newBest = soloScore > 0 && soloScore >= hs;
   if (window.HSGSound) HSGSound.finish(true);
   if (window.HSGfx) HSGfx.confetti({ big: newBest, count: newBest ? 90 : 45 });
 }
@@ -1711,9 +1807,11 @@ function soloEndGame(reason) {
 // ============================================================
 
 // ---- Difficulty picker (solo only) ----
+// `board` is the leaderboard level id. The "-pts" suffix parks the points boards
+// away from the old streak boards instead of mixing two metrics on one list.
 const MODES = [
-  { key: 'easy', emoji: '🌱', label: 'Easy', range: '4 cards in hand', hand: 4 },
-  { key: 'hard', emoji: '🔥', label: 'Hard', range: '6 cards in hand', hand: 6 },
+  { key: 'easy', board: 'easy-pts', emoji: '🌱', label: 'Easy', range: '4 cards in hand', hand: 4 },
+  { key: 'hard', board: 'hard-pts', emoji: '🔥', label: 'Hard', range: '6 cards in hand', hand: 6 },
 ];
 
 // Timeline ribbon spans the whole deck's range (BC -> today).
@@ -1747,7 +1845,7 @@ function startSoloWithMode(key, tileEl) {
   soloDiff = m.key;                      // Best pill + high score track the chosen difficulty
   soloSourceDeck = DECK;                 // one combined deck - no era split
   tlBounds = wholeDeckBounds();
-  rail.setLevel(key, m.label);           // Easy / Hard keep separate streak boards
+  rail.setLevel(m.board, m.label);       // Easy / Hard keep separate points boards
   if (window.HSGSound) HSGSound.tick();
   const grid = document.getElementById('modeGrid');
   if (grid) grid.classList.add('chosen');
@@ -1772,10 +1870,16 @@ function quitSolo() {
 // Init - fire counter on the solo screen, leaderboard mirrored on the
 // setup and end screens via the boardMount selector.
 const rail = HSGStreak.init({
-  gameId: 'circa', gameName: 'Circa', minStreak: 1,
-  level: 'all', levelName: 'All Time',
+  gameId: 'circa', gameName: 'Circa', unit: 'points', minStreak: 1,
+  level: 'easy-pts', levelName: 'Easy',
   mount: document.getElementById('streakRail'),
   boardMount: '.circa-leaderboard'
+});
+
+// Start screen: one collapsible high-score board per difficulty.
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#circaSetupBoards', {
+  gameId: 'circa', unit: 'points', minStreak: 1,
+  levels: MODES.map(m => ({ key: m.board, label: m.label, icon: m.emoji }))
 });
 
 // ============================================================
