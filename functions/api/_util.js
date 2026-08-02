@@ -47,6 +47,11 @@ export function sanitizeName(raw) {
 export function json(data, status) {
   return new Response(JSON.stringify(data), {
     status: status || 200,
-    headers: { 'content-type': 'application/json; charset=utf-8' }
+    headers: {
+      'content-type': 'application/json; charset=utf-8',
+      // leaderboard/champion data must always be live — never serve a stale cache,
+      // or a lost trophy / new score wouldn't show up
+      'cache-control': 'no-store'
+    }
   });
 }

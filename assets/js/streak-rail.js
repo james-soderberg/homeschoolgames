@@ -97,10 +97,14 @@
               claim: 'solve', rIcon: '🧩', rLabel: 'TIME' },
     // Independence Day arcade - furthest wave held, tiebroken by hits: wave*1e5 + kills
     // (a deeper wave always outranks; equal waves sort by more kills). Higher is better.
-    wave:   { head: '🕹 Furthest Waves',
-              score: function (n) { return 'Wave ' + Math.floor(n / 100000) + ' · ' + (n % 100000) + ' hits'; },
-              of:    function (n) { return 'Wave ' + Math.floor(n / 100000) + '!'; },
-              claim: 'stand', rIcon: '🕹', rLabel: 'WAVE' },
+    // Level-reached metric for the defense games (Dragon Siege, Independence Day).
+    // Score encodes level*100000 + kills so a higher level always wins and kills
+    // only break ties; the board shows just the level they made it to.
+    wave:   { head: '🎮 Highest Level',
+              score: function (n) { return 'Level ' + Math.floor(n / 100000); },
+              of:    function (n) { return 'Level ' + Math.floor(n / 100000) + '!'; },
+              display: function (n) { return Math.floor(n / 100000); },   // live counter shows just the level
+              claim: 'stand', rIcon: '🎮', rLabel: 'LEVEL' },
     // Continuous-climb games (e.g. Tightrope) - highest level reached, higher is better.
     level:  { head: '🎪 Highest Climbers',
               score: function (n) { return 'Level ' + n; },
@@ -579,20 +583,24 @@
 
   Rail.prototype._paint = function (animate) {
     if (!this.streakEl) return;
-    this.countEl.textContent = this.value;
+    var u = unitOf(this.unit);
+    // some metrics encode extra data in the score (e.g. wave = level*100000 + kills);
+    // `display` maps the stored value to what the live counter should show.
+    var shown = function (n) { return u.display ? u.display(n) : n; };
     if (!this.unit || this.unit === 'streak') {   // fire-streak escalation
+      this.countEl.textContent = this.value;
       var lvl = levelFor(this.value);
       this.streakEl.dataset.level = lvl;
       this.flameEl.textContent = lvl >= 5 ? '❄️🔥' : '🔥';
       this.labelEl.textContent = LABELS[lvl];
       edgeGlow(lvl);
     } else {                                       // a highest-value metric (length / wpm / points…)
-      var u = unitOf(this.unit);
+      this.countEl.textContent = shown(this.value);
       this.streakEl.dataset.level = 1;             // steady, non-escalating look
       this.flameEl.textContent = u.rIcon || '⭐';
       this.labelEl.textContent = u.rLabel || 'SCORE';
     }
-    this.bestEl.textContent = 'best  ' + Math.max(this.best, this.bestToBeat());
+    this.bestEl.textContent = 'best  ' + shown(Math.max(this.best, this.bestToBeat()));
     if (animate) {
       var el = this.streakEl;
       el.classList.remove('bump');

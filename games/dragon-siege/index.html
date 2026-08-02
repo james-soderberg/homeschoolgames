@@ -29,6 +29,7 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/dragon-siege.jpg">
   <title>Dragon Siege: Free Typing Speed Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     .siege-page {
@@ -39,7 +40,10 @@
     /* Leaderboard now lives in the side rail (Letter Snake style); on desktop
        the battlefield flexes to fill the viewport so realm-select and game-over
        never need a page scroll (see the viewport-clamp block at the end). */
-    .game-layout { --gm-w: 1040px; --gl-max: min(1500px, 98vw); column-gap: 1rem; }
+    /* wide 2-column layout: the battlefield fills the row (landscape rectangle),
+       the leaderboard rail sits on the right - not the centered 3-col grid, which
+       squeezed the scene toward square. */
+    .game-layout-wide { max-width: min(1500px, 98vw); column-gap: 1rem; }
 
     .siege-top {
       display: flex;
@@ -252,22 +256,27 @@
       .battlefield { height: 62vh; min-height: 380px; }
     }
 
-    /* ===== Desktop viewport clamp: fit the whole game on one screen =====
-       Below 1001px the rail stacks under the battlefield, so we keep normal
-       document flow there and only clamp on the wide, side-rail layout. On
-       short viewports (< 680px tall) we also fall back to scroll flow so the
-       realm-select / game-over buttons are never clipped. */
-    @media (min-width: 1001px) and (min-height: 680px) {
-      html, body { height: 100%; }
-      body { display: flex; flex-direction: column; overflow: hidden; }
-      .site-header { flex: 0 0 auto; }
-      .site-footer { flex: 0 0 auto; margin-top: 0; padding: 0.6rem 2rem; }
-      .game-layout { flex: 1 1 auto; min-height: 0; align-items: stretch; }
-      .siege-page { height: 100%; display: flex; flex-direction: column; min-height: 0; padding-bottom: 0.6rem; }
-      .siege-top, .hint, .control-row { flex: 0 0 auto; }
-      .hint { margin-top: 0.5rem; }
-      .battlefield { flex: 1 1 auto; height: auto; min-height: 240px; }
+    /* ===== Fullscreen game-fit shell =====
+       body.game-fit (see assets/css/game-fit.css) hides the site header/footer
+       and makes the body a fixed-height flex column; .game-fit-main (the
+       .game-layout wrapper) flexes to fill it. Here we make the inner column
+       (siege-page) flex too, and let the battlefield take the leftover height so
+       realm-select / game-over never need a page scroll. The exit button lives
+       top-left, so pad the header row to clear it. */
+    body.game-fit .game-layout-wide { align-items: stretch; }
+    body.game-fit .siege-page {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      padding-bottom: 0.6rem;
     }
+    body.game-fit .siege-top, body.game-fit .hint, body.game-fit .control-row { flex: 0 0 auto; }
+    body.game-fit .siege-top { padding-left: 2.5rem; }  /* clear the floating exit button */
+    body.game-fit .hint { margin-top: 0.5rem; }
+    body.game-fit .battlefield { flex: 1 1 auto; height: auto; min-height: 240px; }
+    /* short viewports: drop the hint so the battlefield keeps room */
+    @media (max-height: 620px){ body.game-fit .hint { display: none; } }
   </style>
   <script type="application/ld+json">
   {
@@ -325,17 +334,27 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1 { color: var(--on-backdrop); }
+  .hint, .reset-link { color: var(--on-backdrop-dim); }
+  .reset-link:hover { color: var(--on-backdrop); }
+</style>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav">
+    <a href="../typing-tutorial/index.html">⌨️ Typing Tutorial</a>
     <a href="../../subjects/typing.html">← Typing</a>
   </nav>
 </header>
 
-<div class="game-layout">
+<div class="game-layout game-layout-wide game-fit-main">
 <div class="siege-page game-main">
 
   <div class="siege-top">
@@ -380,7 +399,6 @@
           <span class="r-icon">💀</span><span class="r-name">Impossible</span>
         </button>
       </div>
-      <div id="dsLevelBoards" style="width:100%;max-width:340px;margin:1.1rem auto 0;"></div>
     </div>
 
     <!-- Game over overlay -->
@@ -388,7 +406,7 @@
       <div class="crest" id="overCrest">🏰</div>
       <h2 id="overTitle">The Keep Has Fallen</h2>
       <div class="final-stats">
-        <div class="fs"><b id="fsWave">1</b><span>Wave Reached</span></div>
+        <div class="fs"><b id="fsWave">1</b><span>Level Reached</span></div>
         <div class="fs"><b id="fsSlain">0</b><span>Foes Slain</span></div>
         <div class="fs"><b id="fsWpm">0</b><span>WPM</span></div>
         <div class="fs"><b id="fsAcc">100%</b><span>Accuracy</span></div>
@@ -692,11 +710,8 @@ const rail = HSGStreak.init({
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
 });
-// start-screen "scores to beat" - one collapsible board per realm
-if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#dsLevelBoards', {
-  gameId:'dragon-siege', unit:'wave', minStreak:1,
-  levels:[{key:'easy',label:'Easy',icon:'🛡️'},{key:'medium',label:'Medium',icon:'⚔️'},{key:'hard',label:'Hard',icon:'🐲'},{key:'impossible',label:'Impossible',icon:'💀'}]
-});
+// The "scores to beat" board already shows on the right rail, so it's no longer
+// duplicated inside the start overlay (which kept the start menu from scrolling).
 // leaderboard score: how far you survive. Wave reached is primary; foes slain
 // breaks ties (encoded as wave*100000 + slain, the 'wave' unit format).
 function survivalScore(){ return level*100000 + slain; }
@@ -2565,14 +2580,14 @@ function startLevel(n){
   squadQueue = buildLevel(n);
   phase = 'spawning';
   squadGapT = SQUAD_MAX_GAP;        // first squad marches in right away
-  rail.set(survivalScore());        // live "Wave N" as you push farther
+  rail.set(survivalScore());        // live "Level N" as you push farther
   updateHud();
-  flashWave('Level '+n, n===1 ? 'To arms!' : 'A bigger wave approaches!');
+  flashWave('Level '+n, n===1 ? 'To arms!' : 'A bigger assault approaches!');
 }
 function levelComplete(){
   phase = 'intermission';
   interT = 2.6;                    // breather before the next wave
-  flashWave('Level '+level+' Complete!', 'Wave '+(level+1)+' incoming…');
+  flashWave('Level '+level+' Complete!', 'Level '+(level+1)+' incoming…');
   if (window.HSGSound && HSGSound.streak) HSGSound.streak(Math.min(level+3, 8));
   if (window.HSGfx && HSGfx.confetti) HSGfx.confetti({ count: 26 });
 }

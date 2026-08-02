@@ -112,6 +112,13 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1 { color: var(--on-backdrop); }
+  .br-howto { color: var(--on-backdrop-dim); }
+  .br-help-label { color: var(--on-backdrop-dim); }
+</style>
 </head>
 <body class="game-fit">
 
@@ -151,7 +158,11 @@ function pick(arr) { return arr[ri(0, arr.length - 1)]; }
 function build(prompt, answer, opts) {
   const lo = opts && opts.min != null ? opts.min : null;
   const hi = opts && opts.max != null ? opts.max : null;
-  const ok = v => v !== answer && (lo == null || v >= lo) && (hi == null || v <= hi);
+  // Distractors stay on the same side of zero as the answer - a negative option
+  // next to three positives reads as obviously wrong (and can't be typed on the
+  // mobile keypad, which has no minus key).
+  const ok = v => v !== answer && (answer < 0 || v >= 0) &&
+    (lo == null || v >= lo) && (hi == null || v <= hi);
   const set = new Set([answer]);
   let g = 0;
   while (set.size < 4 && g++ < 200) {
@@ -168,26 +179,41 @@ function build(prompt, answer, opts) {
 }
 
 // One continuous run: difficulty ramps with how far you've gone. `level` climbs
-// as you cross each bridge, so the questions start gentle and get much harder the
+// as you cross each bridge, so the questions start gentle and get harder the
 // farther you run. Answers stay non-negative (the mobile keypad has no minus key).
+//
+// The bands are deliberately WIDE and each one grows inside itself, because the
+// runner is speeding up at the same time (see TIER_SPEED_CAP in bridge.js).
+// Stacking a band jump on top of a speed jump is what made the old ramp
+// unplayable - you hit two-digit multiplication around level 7 with about a
+// second to answer. Full times tables now arrive around level 11 and two-digit
+// multiplication around level 18, by which point a question still gets ~1.6s.
 function makeQuestion(level) {
-  if (level <= 2) {                    // warm-up: single-digit add & subtract
+  if (level <= 4) {                    // warm-up: single-digit add & subtract
     if (Math.random() < 0.5) { const ans = ri(2, 12), a = ri(0, ans), b = ans - a; return build(`${a} + ${b}`, ans, { min: 0, max: 18 }); }
     const a = ri(2, 12), b = ri(0, a); return build(`${a} − ${b}`, a - b, { min: 0, max: 12 });
   }
-  if (level <= 6) {                    // times tables, division, larger add/sub
+  if (level <= 10) {                   // small times tables, easy division, two-digit add/sub
     const op = pick(['×', '×', '÷', '+', '−']);
-    if (op === '×') { const m = Math.min(4 + level, 12); const a = ri(2, m), b = ri(2, 12); return build(`${a} × ${b}`, a * b); }
-    if (op === '÷') { const b = ri(2, Math.min(4 + level, 12)), q = ri(2, 12); return build(`${b * q} ÷ ${b}`, q); }
-    const cap = Math.min(30 + level * 12, 400);
+    if (op === '×') { const m = Math.min(2 + level, 10); const a = ri(2, m), b = ri(2, 10); return build(`${a} × ${b}`, a * b); }
+    if (op === '÷') { const b = ri(2, Math.min(level - 3, 10)), q = ri(2, 10); return build(`${b * q} ÷ ${b}`, q); }
+    const cap = Math.min(20 + (level - 4) * 10, 99);
     if (op === '+') { const a = ri(10, cap), b = ri(10, cap); return build(`${a} + ${b}`, a + b); }
     const a = ri(20, cap), b = ri(1, a); return build(`${a} − ${b}`, a - b);
   }
-  if (level <= 11) {                   // multi-digit ×/÷ and bigger sums
+  if (level <= 17) {                   // the full times tables and three-digit add/sub
+    const op = pick(['×', '×', '÷', '+', '−']);
+    if (op === '×') { const a = ri(2, 12), b = ri(2, 12); return build(`${a} × ${b}`, a * b); }
+    if (op === '÷') { const b = ri(2, 12), q = ri(2, 12); return build(`${b * q} ÷ ${b}`, q); }
+    const cap = Math.min(100 + (level - 10) * 40, 400);
+    if (op === '+') { const a = ri(20, cap), b = ri(20, cap); return build(`${a} + ${b}`, a + b); }
+    const a = ri(100, cap), b = ri(20, a); return build(`${a} − ${b}`, a - b);
+  }
+  if (level <= 24) {                   // two-digit × one-digit, longer division, bigger sums
     const op = pick(['×', '÷', '+', '−']);
-    if (op === '×') { const a = ri(6, 19), b = ri(6, 19); return build(`${a} × ${b}`, a * b); }
-    if (op === '÷') { const b = ri(3, 15), q = ri(4, 20); return build(`${b * q} ÷ ${b}`, q); }
-    const cap = Math.min(200 + level * 40, 2000);
+    if (op === '×') { const a = ri(11, 19), b = ri(3, 9); return build(`${a} × ${b}`, a * b); }
+    if (op === '÷') { const b = ri(3, 12), q = ri(4, 15); return build(`${b * q} ÷ ${b}`, q); }
+    const cap = Math.min(400 + (level - 17) * 100, 1200);
     if (op === '+') { const a = ri(50, cap), b = ri(50, cap); return build(`${a} + ${b}`, a + b); }
     const a = ri(100, cap), b = ri(20, a); return build(`${a} − ${b}`, a - b);
   }

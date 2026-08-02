@@ -192,6 +192,14 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1 { color: var(--on-backdrop); }
+  .tr-prompt-label, .tr-hint, #quitBtn { color: var(--on-backdrop-dim); }
+  #quitBtn:hover { color: var(--on-backdrop); }
+  .tr-hint kbd { color: var(--ink); }
+</style>
 </head>
 <body class="game-fit">
 
@@ -230,7 +238,6 @@
       <h2>Tightrope</h2>
       <p>A number appears; slide the walker to where it sits on the line.<br>Close enough and they <b>balance</b>. Off, and they teeter.<br>Only the ends are labeled, so you have to <em>feel</em> the size.</p>
       <button class="play-btn" id="startBtn">Start climbing 🥾</button>
-      <div id="trLevelBoards" style="width:100%;max-width:340px;margin:1.1rem auto 0;"></div>
     </div>
 
     <!-- Game over -->
@@ -465,10 +472,9 @@ const rail = HSGStreak.init({
   level:'survived', levelName:'',
   mount: document.getElementById('streakRail')
 });
-// start-screen "scores to beat": the one rounds-survived board
-if (window.HSGStreak && HSGStreak.renderBoardInto) HSGStreak.renderBoardInto('#trLevelBoards', {
-  gameId:'tightrope', level:'survived', unit:'rounds', minStreak:MIN_ROUNDS, allowClear:false
-});
+// The "scores to beat" board already lives on the right rail (#streakRail), so we
+// no longer duplicate it inside the start overlay - that kept the start menu short
+// enough to never scroll.
 
 // ---------- Scenery ----------
 let clouds=[], hills=[], birds=[];
@@ -588,15 +594,15 @@ function drawWalker(){
       if(resultT < struggleT){                       // teeter - a near-miss fights it; a far miss barely does
         const sp = struggleT>0 ? resultT/struggleT : 1;
         const wob = 1 - fallSev;                      // far off → essentially no wobble
-        const sway = Math.sin(resultT * lerp(4.4, 9, fallSev));
+        const sway = Math.sin(resultT * lerp(3.0, 5.6, fallSev));   // slower, more watchable teeter
         tilt = tipDir*( sp*sp*(0.5+fallSev*0.35) + (0.2+sp*0.3)*sway*wob );
       } else {                                        // over the edge - tip and drop (far = faster & tumbling)
         const tp = resultT - struggleT;
-        tilt = tipDir*Math.min(lerp(1.35,8,fallSev), (0.45+fallSev*0.35) + tp*lerp(1.8,7,fallSev));
+        tilt = tipDir*Math.min(lerp(1.35,8,fallSev), (0.45+fallSev*0.35) + tp*lerp(1.05,3.8,fallSev));   // gentler topple
         dy = fallY;
       }
     }
-    else { tilt = tipDir * wobbleAmp * Math.cos(resultT*9) * Math.exp(-resultT*3.1);
+    else { tilt = tipDir * wobbleAmp * Math.cos(resultT*5.5) * Math.exp(-resultT*2.0);   // slower, longer rebalance sway
            mood = (Math.abs(tilt)>0.09) ? 'wobble' : 'happy'; }   // steadies → smiles in place
   }
 
@@ -727,10 +733,10 @@ function tick(ts){
         }
         const tp = resultT - struggleT;
         // fall speed scales with how far off you were: near-miss slumps, far miss plummets
-        const fallSpeed = Math.min(lerp(700,1650,fallSev), lerp(150,660,fallSev) + tp*lerp(500,1550,fallSev));
+        const fallSpeed = Math.min(lerp(380,900,fallSev), lerp(90,360,fallSev) + tp*lerp(260,820,fallSev));   // more gradual fall
         fallY += dt*fallSpeed;
       }
-      if(resultT > Math.max(struggleT+1.0, REVEAL_HOLD) && !advanced) advance();
+      if(resultT > Math.max(struggleT+1.8, REVEAL_HOLD) && !advanced) advance();   // let the slower fall finish
     }
     else if(resultT>REVEAL_HOLD && !advanced) advance();   // hold the reveal so the correct scale is visible, then walk on
   }
@@ -783,7 +789,7 @@ function commit(){
     // how badly you missed shapes the fall: a hair past the line → teeter then slump;
     // way off → almost no wobble, an immediate fast plummet.
     fallSev = clamp((e - T.save) / 0.17, 0, 1);
-    struggleT = lerp(0.85, 0.05, fallSev);
+    struggleT = lerp(1.25, 0.45, fallSev);   // teeter longer before dropping - even far misses get a visible wobble
     feedbackEl.innerHTML = '<span style="color:#b0803a">'+(fallSev>0.6?'Overbalanced!':'Wobbling…')+'</span>';
   }
   updateHud();

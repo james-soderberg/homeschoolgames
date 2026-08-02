@@ -17,13 +17,19 @@ export async function onRequestGet({ request, env }) {
   if (!list.length) return json([], 400);
   try {
     const placeholders = list.map(function (_, i) { return '?' + (i + 1); }).join(',');
-    // Top 3 per board by score (ties broken by earliest timestamp), via a window
-    // function — SQLite/D1 supports ROW_NUMBER() OVER (PARTITION BY ...).
+    // Top 3 DISTINCT players per board (gold/silver/bronze), ties broken by earliest
+    // timestamp. First collapse each player to their single best score on the board
+    // (prn = 1), then rank those. This keeps one player from holding several medals
+    // on the same board, and lets a lost #1 transfer cleanly to the next player.
     const sql =
       'SELECT board, name, score, ts, rank FROM (' +
       '  SELECT board, name, score, ts,' +
       '    ROW_NUMBER() OVER (PARTITION BY board ORDER BY score DESC, ts ASC) AS rank' +
-      '  FROM scores WHERE board IN (' + placeholders + ')' +
+      '  FROM (' +
+      '    SELECT board, name, score, ts,' +
+      '      ROW_NUMBER() OVER (PARTITION BY board, name ORDER BY score DESC, ts ASC) AS prn' +
+      '      FROM scores WHERE board IN (' + placeholders + ')' +
+      '  ) WHERE prn = 1' +
       ') WHERE rank <= 3';
     const { results } = await env.DB.prepare(sql).bind(...list).all();
     return json(results || []);

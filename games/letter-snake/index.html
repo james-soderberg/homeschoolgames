@@ -264,6 +264,14 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1, #clueText { color: var(--on-backdrop); }
+  .hint, .reset-link { color: var(--on-backdrop-dim); }
+  .reset-link:hover { color: var(--on-backdrop); }
+  .hint kbd { color: var(--ink); }
+</style>
 </head>
 <body class="game-fit">
 
@@ -334,7 +342,6 @@
         <button class="level-btn" data-level="hard"><span class="l-icon">🦉</span><span><span class="l-name">Hard</span><span class="l-desc">High school+</span></span></button>
         <button class="level-btn" data-level="einstein"><span class="l-icon">🧠</span><span><span class="l-name">Einstein</span><span class="l-desc">Spelling-bee level</span></span></button>
       </div>
-      <div id="lsLevelBoards" style="width:100%;max-width:320px;margin:1.1rem auto 0;"></div>
     </div>
   </div>
 
@@ -489,11 +496,8 @@ let stepAcc=0, curInterval=0.3, lastTs=0, rafId=null, flashT=0, shakeT=0, lifeT=
 const rail = HSGStreak.init({ gameId:'letter-snake', gameName:'Letter Snake', minStreak:6,
   unit:'length', level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail') });
-// start-screen "scores to beat" - one collapsible board per level
-if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#lsLevelBoards', {
-  gameId:'letter-snake', unit:'length', minStreak:6,
-  levels:[{key:'easy',label:'Easy',icon:'🐤'},{key:'medium',label:'Medium',icon:'🦊'},{key:'hard',label:'Hard',icon:'🦉'},{key:'einstein',label:'Einstein',icon:'🧠'}]
-});
+// The "scores to beat" board already shows on the right rail, so it's no longer
+// duplicated inside the start overlay (which kept the start menu from scrolling).
 
 // ---- slots (blank until spelled) ----
 function renderSlots(){

@@ -86,6 +86,16 @@
   .bin .part canvas { width:56px; height:34px; }
   .hint { text-align:center; font-family:var(--font-sans); font-size:.8rem; color:var(--ink-light); margin-top:.6rem; line-height:1.5; }
 </style>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1 { color: var(--on-backdrop); }
+  .cur-top .sub, .lightmeter, #hintLine { color: var(--on-backdrop-dim); }
+  /* ghost buttons sit on the backdrop, so they get a faint light fill */
+  .btn.ghost { background: rgba(255,255,255,0.07); color: var(--on-backdrop);
+    border-color: rgba(255,255,255,0.22); }
+  .btn.ghost:hover { background: rgba(255,255,255,0.14); }
+</style>
 </head>
 <body>
 

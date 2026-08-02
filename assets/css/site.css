@@ -16,6 +16,15 @@
   --green:       #2A5C3F;
   --border:      #D4C9B5;
 
+  /* Graphite Grid backdrop - the dark surface every page sits on. Panels, cards
+     and tiles keep their light colours; only things drawn DIRECTLY on the
+     backdrop use the --on-backdrop text colours below. */
+  --backdrop:        #1e1e20;
+  --backdrop-line:   rgba(255,255,255,0.035);
+  --backdrop-panel:  #17171a;   /* header / darker chrome bars */
+  --on-backdrop:     #e6e4e0;   /* primary text on the backdrop */
+  --on-backdrop-dim: #9d9a94;   /* secondary text on the backdrop */
+
   --font-serif:  'Cormorant Garamond', Georgia, serif;
   --font-sans:   'Inter', system-ui, sans-serif;
 
@@ -28,7 +37,11 @@
 html { font-size: 16px; }
 
 body {
-  background: var(--cream);
+  background: var(--backdrop);
+  background-image:
+    linear-gradient(var(--backdrop-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--backdrop-line) 1px, transparent 1px);
+  background-size: 32px 32px, 32px 32px;
   color: var(--ink);
   font-family: var(--font-sans);
   line-height: 1.6;
@@ -53,12 +66,12 @@ a:hover { text-decoration: underline; }
 
 /* ---- Site Header ---- */
 .site-header {
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255,255,255,0.10);
   padding: 1rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--cream);
+  background: var(--backdrop-panel);
   /* Stick to the top so the logo (the return-to-menu) is always reachable while
      playing or on an end screen, without scrolling. Sits below in-game modals. */
   position: sticky;
@@ -70,7 +83,7 @@ a:hover { text-decoration: underline; }
   font-family: var(--font-serif);
   font-size: 1.3rem;
   font-weight: 600;
-  color: var(--ink);
+  color: #f2efe9;
   text-decoration: none;
   letter-spacing: 0.02em;
 }
@@ -81,25 +94,25 @@ a:hover { text-decoration: underline; }
 
 .site-nav a {
   font-size: 0.875rem;
-  color: var(--ink-light);
+  color: #a9a5a0;
   margin-left: 1.5rem;
   text-decoration: none;
   font-family: var(--font-sans);
 }
 
-.site-nav a:hover { color: var(--ink); }
+.site-nav a:hover { color: #fff; }
 
 /* ---- Breadcrumb ---- */
 .breadcrumb {
   padding: 0.75rem 2rem;
   font-size: 0.8rem;
-  color: var(--ink-light);
-  border-bottom: 1px solid var(--border);
-  background: var(--cream-dark);
+  color: var(--on-backdrop-dim);
+  border-bottom: 1px solid rgba(255,255,255,0.09);
+  background: #26262a;
 }
 
-.breadcrumb a { color: var(--ink-light); text-decoration: none; }
-.breadcrumb a:hover { color: var(--gold); }
+.breadcrumb a { color: var(--on-backdrop-dim); text-decoration: none; }
+.breadcrumb a:hover { color: var(--gold-light); }
 .breadcrumb span { margin: 0 0.4rem; }
 
 /* ---- Buttons ---- */
@@ -120,8 +133,10 @@ a:hover { text-decoration: underline; }
 
 .btn:hover { background: var(--ink-light); border-color: var(--ink-light); text-decoration: none; color: var(--cream); }
 
+/* Filled with cream rather than transparent so it stays legible both on a light
+   panel and on the graphite backdrop. */
 .btn-outline {
-  background: transparent;
+  background: var(--cream);
   color: var(--ink);
 }
 
@@ -190,12 +205,13 @@ a:hover { text-decoration: underline; }
 /* ---- Footer ---- */
 .site-footer {
   margin-top: 4rem;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(255,255,255,0.09);
   padding: 1.5rem 2rem;
   text-align: center;
   font-size: 0.8rem;
-  color: var(--ink-light);
+  color: var(--on-backdrop-dim);
 }
+.site-footer a { color: var(--gold-light); }
 
 /* ---- Responsive ---- */
 @media (max-width: 600px) {
@@ -267,17 +283,19 @@ a:hover { text-decoration: underline; }
   text-align: center;
 }
 
-/* staggered float + soft subject colours */
-.game-grid .game-tile:nth-child(1) { animation-delay:  0s;   background: #FFF6DD; }
-.game-grid .game-tile:nth-child(2) { animation-delay: -0.6s; background: #E1F2F7; }
-.game-grid .game-tile:nth-child(3) { animation-delay: -1.2s; background: #E7F4EC; }
-.game-grid .game-tile:nth-child(4) { animation-delay: -1.8s; background: #EEE6F8; }
-.game-grid .game-tile:nth-child(5) { animation-delay: -2.4s; background: #E1F2F7; }
-.game-grid .game-tile:nth-child(6) { animation-delay: -3.0s; background: #FFF6DD; }
-.game-grid .game-tile:nth-child(7) { animation-delay: -3.6s; background: #F3E2E2; }
-.game-grid .game-tile:nth-child(8) { animation-delay: -4.2s; background: #DCEFE8; }
-.game-grid .game-tile:nth-child(9) { animation-delay: -4.8s; background: #E1F2F7; }
-.game-grid .game-tile:nth-child(10){ animation-delay: -5.4s; background: #F3E2E2; }
+/* staggered float + soft subject colours. The palette cycles every ten tiles so
+   a long grid (all-games) never runs out and leaves a tile with no surface -
+   which would now show as bare graphite behind dark text. */
+.game-grid .game-tile:nth-child(10n+1) { animation-delay:  0s;   background: #FFF6DD; }
+.game-grid .game-tile:nth-child(10n+2) { animation-delay: -0.6s; background: #E1F2F7; }
+.game-grid .game-tile:nth-child(10n+3) { animation-delay: -1.2s; background: #E7F4EC; }
+.game-grid .game-tile:nth-child(10n+4) { animation-delay: -1.8s; background: #EEE6F8; }
+.game-grid .game-tile:nth-child(10n+5) { animation-delay: -2.4s; background: #E1F2F7; }
+.game-grid .game-tile:nth-child(10n+6) { animation-delay: -3.0s; background: #FFF6DD; }
+.game-grid .game-tile:nth-child(10n+7) { animation-delay: -3.6s; background: #F3E2E2; }
+.game-grid .game-tile:nth-child(10n+8) { animation-delay: -4.2s; background: #DCEFE8; }
+.game-grid .game-tile:nth-child(10n+9) { animation-delay: -4.8s; background: #E1F2F7; }
+.game-grid .game-tile:nth-child(10n)   { animation-delay: -5.4s; background: #F3E2E2; }
 
 /* featured "Most Popular" tile */
 .game-tile--featured {

@@ -29,6 +29,7 @@
   <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/type-invaders.jpg">
   <title>Independence Day: Free Typing Game | Accidental Learning</title>
   <link rel="stylesheet" href="../../assets/css/site.css">
+  <link rel="stylesheet" href="../../assets/css/game-fit.css">
   <link rel="stylesheet" href="../../assets/css/streak-rail.css">
   <style>
     /* Fill the screen - the battlefield takes as much height as fits. */
@@ -264,6 +265,26 @@
       body:not(.ti-shot) .control-row, body:not(.ti-shot) .doc-ticker { flex: 0 0 auto; }
       body:not(.ti-shot) .ti-sky { flex: 1 1 auto; height: auto; min-height: 240px; }
     }
+
+    /* ===== Shared fullscreen "game-fit" shell =====
+       Fill the viewport exactly, never scroll the page. The .ti-page wrapper
+       becomes a flex column; the .ti-sky battlefield flexes to take all the
+       leftover height. Top-left padding clears the floating exit button. */
+    body.game-fit .game-layout {
+      flex: 1 1 auto; min-height: 0; align-items: stretch;
+      grid-template-rows: minmax(0, 1fr);
+    }
+    body.game-fit .ti-page {
+      width: 100%; padding: 0.6rem 1rem 0.35rem;
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    body.game-fit .ti-top { padding-left: 2.5rem; }  /* clear the floating exit button */
+    body.game-fit .ti-top, body.game-fit .hint,
+    body.game-fit .control-row, body.game-fit .doc-ticker { flex: 0 0 auto; }
+    body.game-fit .ti-sky {
+      flex: 1 1 auto; height: auto; min-height: 200px;
+    }
+    @media (max-height: 620px){ body.game-fit .hint { display: none; } }
   </style>
   <script type="application/ld+json">
   {
@@ -315,23 +336,34 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1 { color: var(--on-backdrop); }
+  .hint, .reset-link { color: var(--on-backdrop-dim); }
+  .reset-link:hover { color: var(--on-backdrop); }
+  .hint kbd { color: var(--ink); }
+</style>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav">
+    <a href="../typing-tutorial/index.html">⌨️ Typing Tutorial</a>
     <a href="../../subjects/typing.html">← Typing</a>
   </nav>
 </header>
 
 <div class="game-layout">
-<div class="ti-page game-main">
+<div class="ti-page game-main game-fit-main">
 
   <div class="ti-top">
     <h1>Independence Day</h1>
     <div class="stat-group">
-      <div class="stat-badge" id="waveBadge">🛸 Wave 1</div>
+      <div class="stat-badge" id="waveBadge">🛸 Level 1</div>
       <div class="stat-badge" id="killBadge">💥 0</div>
       <div class="stat-badge" id="wpmBadge" title="Typing speed (words per minute)">⌨️ 0 wpm</div>
       <div class="stat-badge hearts" id="heartsBadge">🏛️🏛️🏛️🏛️🏛️</div>
@@ -363,14 +395,13 @@
         <button class="realm-btn" data-realm="hard"><span class="r-icon">👨‍🚀</span><span><span class="r-name">Hard</span><span class="r-desc">The Constitution · fast</span></span></button>
         <button class="realm-btn" data-realm="impossible"><span class="r-icon">👽</span><span><span class="r-name">Impossible</span><span class="r-desc">The Constitution · relentless</span></span></button>
       </div>
-      <div id="tiLevelBoards" style="width:100%;max-width:360px;margin:1.1rem auto 0;"></div>
     </div>
 
     <!-- Treasure-hunt arcade intro (shown when arrived via ?arcade) -->
     <div class="bf-overlay hidden" id="huntStartOverlay">
       <div class="crest">🗝️</div>
       <h2>Arcade Assault</h2>
-      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong>: the cannon fires on its own, so sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Wave 15</strong> and the next clue is yours. Good luck!</p>
+      <p><strong>Welcome, treasure hunter.</strong> This is <strong>Arcade Mode</strong>: the cannon fires on its own, so sweep it with the <kbd>←</kbd> <kbd>→</kbd> arrows. Hold the capital to <strong>Level 15</strong> and the next clue is yours. Good luck!</p>
       <button class="play-btn" id="huntStartBtn">Launch 🚀</button>
     </div>
 
@@ -379,7 +410,7 @@
       <div class="crest" id="overCrest">🏛️</div>
       <h2 id="overTitle">The White House Has Fallen</h2>
       <div class="final-stats">
-        <div class="fs"><b id="fsWave">1</b><span>Wave Reached</span></div>
+        <div class="fs"><b id="fsWave">1</b><span>Level Reached</span></div>
         <div class="fs"><b id="fsKills">0</b><span>Destroyed</span></div>
       </div>
       <div class="run-typing" id="runTyping"></div>
@@ -964,10 +995,10 @@ function descSpeed(){ return (realm.descBase + (wave-1)*realm.descStep) * (arcad
 // ===================================================================
 function startWave(n){
   wave = n;
-  rail.set(sScore());               // live "Wave N" as you push farther
+  rail.set(sScore());               // live "Level N" as you push farther
   isBossWave = (n % BOSS_EVERY === 0);
   boss = null;
-  document.getElementById('waveBadge').textContent = '🛸 Wave ' + n;
+  document.getElementById('waveBadge').textContent = '🛸 Level ' + n;
   if (huntMode && n >= HUNT_GOAL_WAVE && !huntCluePopped){ revealHuntClue(); return; }   // trial cleared - erupt instead of starting the wave
 
   if (isBossWave){
@@ -977,7 +1008,7 @@ function startWave(n){
     toSpawn = (4 + n) * (arcade?2:1);       // grows each wave (arcade: swarms)
     spawnTimer = 0.5;
     gap = Math.max(realm.gapMin, realm.gapBase - (n-1)*realm.gapStep) * (arcade?0.45:1);
-    flashWave((arcade?'🕹 WAVE ':'WAVE ') + n, waveSub(n));
+    flashWave((arcade?'🕹 LEVEL ':'LEVEL ') + n, waveSub(n));
   }
   // occasional power-up wave
   if (!isBossWave && n>1 && Math.random() < 0.30) maybeSpawnPowerup();
@@ -2178,11 +2209,8 @@ const rail = HSGStreak.init({
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
 });
-// start-screen "waves to beat" - one collapsible board per realm (arcade is secret, so it's left out)
-if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#tiLevelBoards', {
-  gameId:'type-invaders', unit:'wave', minStreak:1,
-  levels:[{key:'easy',label:'Easy',icon:'🛰️'},{key:'medium',label:'Medium',icon:'🚀'},{key:'hard',label:'Hard',icon:'👨‍🚀'},{key:'impossible',label:'Impossible',icon:'👽'}]
-});
+// The "scores to beat" board already shows on the right rail, so it's no longer
+// duplicated inside the start overlay (which kept the start menu from scrolling).
 // leaderboard score: how far you survive. Wave reached is primary, kills break
 // ties (encoded as wave*100000 + kills — the 'wave' unit format).
 function sScore(){ return wave*100000 + Math.min(kills, 99999); }
@@ -2237,7 +2265,7 @@ function startHuntArcade(){
 function revealHuntClue(){
   huntCluePopped = true;
   huntWinning = true; huntWinT = 0; huntBoomT = 0;
-  flashWave('🗝 CLUE UNLOCKED', 'Wave ' + HUNT_GOAL_WAVE + ' held, the capital is saved!');
+  flashWave('🗝 CLUE UNLOCKED', 'Level ' + HUNT_GOAL_WAVE + ' held, the capital is saved!');
   // blow every invader on screen sky-high
   for (const o of allTargets()) explosion(o.x, o.y, true, rand(0, 60));
   for (const w of walkers) explosion(w.x, w.y, false, rand(0, 60));
@@ -2304,7 +2332,7 @@ document.querySelectorAll('.realm-btn').forEach(b=> b.addEventListener('click', 
 HSGGod.watch(() => {
   HSGGod.enable(); updateHearts();
   HSGGod.picker({
-    levels: 20, label: 'Wave',
+    levels: 20, label: 'Level',
     onJump: n => { if (!running) startGame(realmKey); startWave(n); }
   });
 });

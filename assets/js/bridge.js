@@ -15,8 +15,17 @@
   const W = 54, START_PLAT = 96, RUN_X0 = 48, HEAD_START = 5, KEYS = ['A','B','C','D'];
   const GROUND_BOTTOM = 34;   // % of stage height where the path sits
 
-  // base walking speed (px/sec) per difficulty tier index (Easy is gentle for little kids)
-  const TIER_SPEED = [18, 34, 44, 56];
+  // Base walking speed (px/sec) per difficulty tier index (Easy is gentle for
+  // little kids) and the ceiling that speed creeps toward as the levels climb.
+  // The runner accelerates on a curve that FLATTENS OUT rather than a straight
+  // line: the first few levels loosen up noticeably, deep levels barely change.
+  // A block is W px wide, so seconds-per-question is W/speed - on tier 0 that
+  // goes 3.0s at level 1 to about 1.7s by level 10 and never drops below 1.2s.
+  // A long run should stay hard because of the MATH, not because the path
+  // scrolls past faster than anyone can read it.
+  const TIER_SPEED     = [18, 34, 44, 56];
+  const TIER_SPEED_CAP = [44, 62, 74, 88];
+  const SPEED_HALF = 9;   // levels needed to close half the gap to the cap
 
   // Each level is a different TRAVERSAL, not just a new backdrop. Level 1 is the
   // flat wooden drawbridge; after that the laid path RISES (rise = px climbed per
@@ -263,8 +272,13 @@
     function startLevel() {
       mode = modeFor(level);
       terrain = { key: mode.terrain };
-      target = 11 + level * 2;
-      speed = TIER_SPEED[tierIdx] + (level - 1) * 6;
+      // Blocks to lay before the finish. Grows, then holds, so a level stays a
+      // ~20-40s push instead of turning into a 90s marathon at depth. Score is
+      // total feet run (10 per block), so where the level breaks fall makes no
+      // difference to the leaderboard - only to the pacing.
+      target = Math.min(11 + level, 30);
+      const spBase = TIER_SPEED[tierIdx], spCap = TIER_SPEED_CAP[tierIdx];
+      speed = spBase + (spCap - spBase) * (level - 1) / ((level - 1) + SPEED_HALF);
       runnerX = RUN_X0;
       builtBlocks = Math.min(HEAD_START, target);
       coasting = false; over = false;

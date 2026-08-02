@@ -144,6 +144,13 @@
     ]
   }
   </script>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  h1 { color: var(--on-backdrop); }
+  .ge-prompt .lead, .ge-hint, #quitBtn { color: var(--on-backdrop-dim); }
+  #quitBtn:hover { color: var(--on-backdrop); }
+</style>
 </head>
 <body class="game-fit">
 

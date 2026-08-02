@@ -45,6 +45,7 @@
       font-size: clamp(2.2rem, 6vw, 3.2rem);
       line-height: 1.05;
       margin: 0 0 0.5rem;
+      color: var(--on-backdrop);   /* sits straight on the graphite backdrop */
     }
     .games-heading h1 .pop {
       background: linear-gradient(90deg, #E0853B, var(--gold) 45%, #7A9C5C 90%);
@@ -53,7 +54,7 @@
       -webkit-text-fill-color: transparent;
     }
     .games-heading p {
-      color: var(--ink-light);
+      color: var(--on-backdrop-dim);
       font-size: clamp(1rem, 2.6vw, 1.2rem);
     }
     @media (max-width: 600px) {
@@ -127,6 +128,12 @@
 
 
     <div class="game-grid">
+
+        <a href="../games/typing-tutorial/index.html" class="game-tile game-tile--new">
+          <span class="new-badge">★ Start here</span>
+          <span class="tile-icon">⌨️</span>
+          <span class="tile-name">Typing Tutorial</span>
+        </a>
 
         <a href="../games/word-racer/index.html" class="game-tile game-tile--new">
           <span class="new-badge">✦ New</span>

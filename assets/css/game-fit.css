@@ -59,7 +59,8 @@ body.game-fit .game-fit-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(20, 18, 15, .34);
+  /* light-on-dark: it floats over the graphite page backdrop */
+  background: rgba(255, 255, 255, .10);
   color: #fff;
   font-size: 1.15rem;
   line-height: 1;
@@ -69,5 +70,5 @@ body.game-fit .game-fit-main {
   backdrop-filter: blur(4px);
   transition: background .15s;
 }
-.game-exit:hover { background: rgba(20, 18, 15, .58); text-decoration: none; }
+.game-exit:hover { background: rgba(255, 255, 255, .22); text-decoration: none; }
 .game-exit:active { transform: translateY(1px); }

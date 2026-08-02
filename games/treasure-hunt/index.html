@@ -148,6 +148,12 @@
     .cpr-txt b { color:#f0e6cf; font-family:var(--font-sans); font-weight:800; font-size:.96rem; }
     .cpr-txt span { color:#9a8a63; font-family:var(--font-sans); font-size:.78rem; }
   </style>
+<style>
+  /* Graphite backdrop: text drawn straight on the page (rather than on a card or
+     panel) has to read light. Panel contents keep their own colours. */
+  #hintToggle, #resetBtn { color: var(--on-backdrop-dim); }
+  #hintToggle:hover, #resetBtn:hover { color: var(--on-backdrop); }
+</style>
 </head>
 <body class="th-body">
 
