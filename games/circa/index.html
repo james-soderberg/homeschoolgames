@@ -1342,26 +1342,22 @@ let mode = 'solo';
 // Points scoring
 // ------------------------------------------------------------
 // Every card you play scores by how close it ranks against the rest of your
-// hand, not by right/wrong: the closest card is worth +100, the middle of the
-// pack is worth nothing, and the furthest-off card costs you 50. Cards tied on
-// distance from the center share the better rank.
+// hand, not by right/wrong. It's one even ladder whatever the hand size: the
+// closest card is always +100, the furthest-off always -50, and the ranks in
+// between step down evenly, so the gap between any two neighbouring places is
+// the same. Cards tied on distance from the center share the better rank.
+//
+//   4 cards:  100 /  50 /  0 / -50                    (steps of 50)
+//   6 cards:  100 /  70 / 40 / 10 / -20 / -50         (steps of 30)
 // ============================================================
-const POINT_TABLES = {
-  4: [100, 25, 0, -50],
-  6: [100, 50, 20, 0, -25, -50],
-};
+const TOP_POINTS = 100, BOTTOM_POINTS = -50;
 
 // Points for finishing `rank`-th closest (1-based) out of a hand of `n`.
-// Hands without an explicit table (pass-and-play allows 5/7/8) are sampled off
-// the 6-card curve so the shape - +100 top, ~0 middle, -50 bottom - still holds.
 function pointsFor(rank, n) {
-  const table = POINT_TABLES[n];
-  if (table) return table[Math.min(rank, table.length) - 1];
-  if (n <= 1) return 100;
-  const curve = POINT_TABLES[6];
-  const t = (Math.min(rank, n) - 1) / (n - 1) * (curve.length - 1);
-  const lo = Math.floor(t), hi = Math.min(curve.length - 1, lo + 1);
-  return Math.round((curve[lo] + (curve[hi] - curve[lo]) * (t - lo)) / 5) * 5;
+  if (n <= 1) return TOP_POINTS;
+  const step = (TOP_POINTS - BOTTOM_POINTS) / (n - 1);
+  const raw = TOP_POINTS - (Math.min(rank, n) - 1) * step;
+  return Math.round(raw / 5) * 5;   // tidy multiples of 5 for odd hand sizes
 }
 
 // 1-based closeness rank of hand[idx] against the center card. Ties share a rank.
