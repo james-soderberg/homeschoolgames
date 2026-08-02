@@ -1,0 +1,59 @@
+/* ============================================================
+   Fullscreen game shell.
+
+   Opt in by putting class="game-fit" on <body>. The page then fills
+   the viewport exactly and never scrolls: the site header/footer are
+   hidden, the body becomes a fixed-height flex column, and the element
+   you mark with class="game-fit-main" flexes to fill whatever space is
+   left. A small floating button returns the player home (since the
+   header - the usual way out - is gone).
+
+   Games keep their own internal layout; this only owns the outer shell.
+   ============================================================ */
+html, body { height: 100%; }
+
+body.game-fit {
+  margin: 0;
+  height: 100vh;         /* fallback */
+  height: 100dvh;        /* tracks the *dynamic* viewport (mobile URL bar) */
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+body.game-fit .site-header,
+body.game-fit .site-footer { display: none !important; }
+
+/* The primary container fills the leftover height and can itself flex. */
+body.game-fit .game-fit-main {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* Floating "return home" control - replaces the header's logo/back link.
+   Sits above the game but below full-screen modals (which use z-index >= 1000). */
+.game-exit {
+  position: fixed;
+  top: .55rem;
+  left: .55rem;
+  z-index: 200;
+  width: 2.15rem;
+  height: 2.15rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 18, 15, .34);
+  color: #fff;
+  font-size: 1.15rem;
+  line-height: 1;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, .28);
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+  transition: background .15s;
+}
+.game-exit:hover { background: rgba(20, 18, 15, .58); text-decoration: none; }
+.game-exit:active { transform: translateY(1px); }

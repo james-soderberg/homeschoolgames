@@ -29,8 +29,17 @@
 <meta name="twitter:image" content="https://accidentallearning.org/assets/img/og/slingshot.jpg">
 <title>Gravity Slingshot: Free Astronomy Game | Accidental Learning</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
+<link rel="stylesheet" href="../../assets/css/game-fit.css">
 <style>
   .sl-page { max-width: min(1720px, 98vw); margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
+  /* Fullscreen: the page fills the viewport and the stage flexes to take all the
+     leftover height, so the game never scrolls. */
+  body.game-fit .sl-page { width:100%; max-width:min(1720px,98vw); padding:.7rem 1.1rem .8rem;
+    display:flex; flex-direction:column; min-height:0; }
+  body.game-fit .sl-stage { flex:1 1 auto; height:auto !important; min-height:0 !important; }
+  body.game-fit .sl-top { margin-bottom:.4rem; padding-left:2.5rem; }  /* clear the floating exit button */
+  body.game-fit .sl-hint { margin-top:.5rem; }
+  @media (max-height: 620px){ body.game-fit .sl-hint { display:none; } }
   .sl-top { display:flex; align-items:center; justify-content:space-between; gap:.6rem; flex-wrap:wrap; margin-bottom:.6rem; }
   .sl-top h1 { margin:0; font-size:1.7rem; }
   .sl-top h1 .sub { display:block; font-family:var(--font-sans); font-size:.68rem; font-weight:700;
@@ -260,14 +269,16 @@
   }
   </script>
 </head>
-<body>
+<body class="game-fit">
+
+<a class="game-exit" href="../../index.html" title="All games" aria-label="Back to all games">←</a>
 
 <header class="site-header">
   <a href="../../index.html" class="site-logo">Accidental<span>Learning</span></a>
   <nav class="site-nav"><a href="../../subjects/science.html">← Science</a></nav>
 </header>
 
-<div class="sl-page">
+<div class="sl-page game-fit-main">
   <div class="sl-top">
     <h1>Gravity Slingshot<span class="sub">Gravity &amp; Orbits · a voyage through the solar system</span></h1>
     <div class="stat-group">
