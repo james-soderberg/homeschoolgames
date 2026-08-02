@@ -89,11 +89,18 @@ function championBoards(group) {
     var game = LB_BY_ID[id];
     if (!game) return;
     var levels = CHAMPION_LEVEL[id];
+    // A game with several champion boards (e.g. Map Quiz's four regions) isn't a
+    // difficulty ramp - each board is its own challenge, so prefix the region to
+    // the name ("Europe Map Quiz") to tell the trophies apart when expanded.
+    var perRegion = Array.isArray(levels) && levels.length > 1;
     if (!Array.isArray(levels)) levels = [levels];
     levels.forEach(function (lvl) {
+      var label = perRegion && lvl
+        ? (LB_LEVEL_LABELS.hasOwnProperty(lvl) ? LB_LEVEL_LABELS[lvl] : lbTitleCase(lvl))
+        : '';
       out.push({
         board: 'hsg_lb_' + id + (lvl ? '__' + lvl : '') + suffix,
-        name: game.name,
+        name: label ? (label + ' ' + game.name) : game.name,
         emoji: game.emoji
       });
     });
