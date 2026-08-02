@@ -68,13 +68,17 @@ function lbResolve(board) {
 // board of each no-level game. Easy/medium boards are intentionally excluded so
 // trophies reflect mastery. Map Quiz is omitted - its four regions have no single
 // "hardest" board. Keep these level keys in sync with each game's leaderboards.
+// Value is the hardest level key, or an array of level keys for games whose
+// boards aren't a difficulty ramp but where each board is its own mastery
+// challenge (Map Quiz: one champion board per region).
 var CHAMPION_LEVEL = {
   'who-said-it': 'best', 'circa': 'hard', 'dragon-siege': 'impossible',
   'type-invaders': 'impossible', 'who-painted-it': 'best', 'grammar-express': 'journey',
   'word-racer': 'paragraphs', 'letter-snake': 'einstein', 'roots': 'hard',
   'bible-trivia': 'solomon', 'register': 'expert', 'bridge-run': 'run',
   'flag-frenzy': 'best', 'element-hunter': 'all', 'food-web': 'all',
-  'bible-quiz': 'solomon', 'letter-catch': 'einstein', 'tightrope': 'survived'
+  'bible-quiz': 'solomon', 'letter-catch': 'einstein', 'tightrope': 'survived',
+  'map-quiz': ['americas', 'europe', 'asia', 'africa']
 };
 // Returns [{ board, name, emoji }] for the champion boards. Pass a group slug to
 // scope the tally to that group's boards (adds the "__g-<slug>" segment).
@@ -84,11 +88,14 @@ function championBoards(group) {
   Object.keys(CHAMPION_LEVEL).forEach(function (id) {
     var game = LB_BY_ID[id];
     if (!game) return;
-    var lvl = CHAMPION_LEVEL[id];
-    out.push({
-      board: 'hsg_lb_' + id + (lvl ? '__' + lvl : '') + suffix,
-      name: game.name,
-      emoji: game.emoji
+    var levels = CHAMPION_LEVEL[id];
+    if (!Array.isArray(levels)) levels = [levels];
+    levels.forEach(function (lvl) {
+      out.push({
+        board: 'hsg_lb_' + id + (lvl ? '__' + lvl : '') + suffix,
+        name: game.name,
+        emoji: game.emoji
+      });
     });
   });
   return out;
