@@ -829,6 +829,45 @@
 
     /* Pass-and-play game screen fills and centers within the shell. */
     body.game-fit .game-screen { flex: 1 1 auto; min-height: 0; padding: 0.5rem 1.25rem 1rem; }
+
+    /* ---- Solo legend: points for how close your pick ranks (lives in the empty
+       left gutter, mirroring the leaderboard rail on the right) ---- */
+    #soloScreen .solo-legend { grid-column: 1; justify-self: end; align-self: start;
+      width: 200px; position: sticky; top: 1rem; }
+    .legend-card { background: #fff; border: 2px solid var(--border); border-radius: 14px;
+      box-shadow: 0 4px 16px rgba(26,23,20,.1); overflow: hidden; }
+    .legend-head { padding: .7rem .85rem .55rem; border-bottom: 1.5px solid var(--border); }
+    .legend-head h3 { margin: 0; font-family: var(--font-serif); font-size: .98rem; color: var(--ink); }
+    .legend-head p { margin: .12rem 0 0; font-size: .68rem; color: var(--ink-light); font-family: var(--font-sans); line-height: 1.3; }
+    .legend-rows { padding: .4rem .5rem .55rem; display: flex; flex-direction: column; gap: .2rem; }
+    .legend-row { display: flex; align-items: center; gap: .5rem; padding: .32rem .5rem; border-radius: 8px;
+      font-family: var(--font-sans); font-size: .82rem; }
+    .legend-row .lg-rank { flex: 1; color: var(--ink); }
+    .legend-row .lg-pts { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .legend-row.pos .lg-pts { color: #2A5C3F; }
+    .legend-row.zero .lg-pts { color: var(--ink-light); }
+    .legend-row.neg { background: #fbeeee; }
+    .legend-row.neg .lg-pts { color: var(--red); }
+    .legend-row.top { background: #fbf3df; }
+    .legend-row.top .lg-rank { font-weight: 800; }
+    /* Narrow screens have no left gutter to spare, so the legend steps aside. */
+    @media (max-width: 1080px) { #soloScreen .solo-legend { display: none; } }
+
+    /* ---- Score pill turns RED once the running score goes negative (it read as
+       "doing well" in gold before) ---- */
+    .stat-pill.score.negative { border-color: var(--red); background: #fbeeee; }
+    .stat-pill.score.negative .stat-val { color: var(--red); }
+
+    /* ---- Reveal: compact the remaining hand so the showdown + timeline + verdict
+       all fit on one screen (no scrolling) ---- */
+    #soloScreen.revealing #soloHandGrid .card-img { max-height: 8vh; }
+    #soloScreen.revealing #soloHandGrid .card-desc,
+    #soloScreen.revealing .hand-label-solo { display: none; }
+    #soloScreen.revealing #soloHandGrid .circa-card { padding-bottom: .3rem; }
+
+    /* ---- Make a miss loud: a bold red verdict and note ---- */
+    .round-verdict.loss { font-weight: 900; }
+    .round-verdict.loss + .verdict-note { color: var(--red); font-weight: 700; }
   </style>
   <script type="application/ld+json">
   {
@@ -924,7 +963,7 @@
     <div class="setup-icon">🏛️</div>
     <h1>Circa</h1>
     <p class="setup-tagline">A history card game</p>
-    <p class="setup-how">You get a hand of history cards. Each round, play the card <strong>closest in date</strong> to the center card. The closest card scores <strong>+100</strong>; the further off you land, the fewer points you get, and the worst pick costs you <strong>50</strong>.</p>
+    <p class="setup-how">You get a hand of history cards. Each round, play the card <strong>closest in date</strong> to the center card. Get it right and you score <strong>+100</strong>. Miss and you score nothing, or <strong>-50</strong> if your card was over 1,000 years off.</p>
 
     <p class="era-prompt">Choose a difficulty</p>
     <div class="era-grid mode-grid" id="modeGrid"></div>
@@ -976,6 +1015,7 @@
   <!-- ===================== SOLO SCREEN ===================== -->
   <div class="solo-screen" id="soloScreen">
    <div class="game-layout">
+    <aside class="solo-legend" id="soloLegend"></aside>
     <div class="game-main">
 
     <div class="solo-header">
@@ -1341,23 +1381,21 @@ let mode = 'solo';
 // ============================================================
 // Points scoring
 // ------------------------------------------------------------
-// Every card you play scores by how close it ranks against the rest of your
-// hand, not by right/wrong. It's one even ladder whatever the hand size: the
-// closest card is always +100, the furthest-off always -50, and the ranks in
-// between step down evenly, so the gap between any two neighbouring places is
-// the same. Cards tied on distance from the center share the better rank.
-//
-//   4 cards:  100 /  50 /  0 / -50                    (steps of 50)
-//   6 cards:  100 /  70 / 40 / 10 / -20 / -50         (steps of 30)
+// Three outcomes, whatever the hand size:
+//   +100  played the closest card in your hand
+//      0  missed, but landed within 1,000 years of the center card
+//    -50  missed and landed more than 1,000 years off
+// Playing the closest card always pays, even when it is itself far off - the
+// deck sometimes deals a hand with nothing near, and the player can't do
+// better than the best card they hold. Cards tied on distance from the center
+// all count as closest.
 // ============================================================
-const TOP_POINTS = 100, BOTTOM_POINTS = -50;
+const CLOSEST_POINTS = 100, FAR_PENALTY = -50, FAR_YEARS = 1000;
 
-// Points for finishing `rank`-th closest (1-based) out of a hand of `n`.
-function pointsFor(rank, n) {
-  if (n <= 1) return TOP_POINTS;
-  const step = (TOP_POINTS - BOTTOM_POINTS) / (n - 1);
-  const raw = TOP_POINTS - (Math.min(rank, n) - 1) * step;
-  return Math.round(raw / 5) * 5;   // tidy multiples of 5 for odd hand sizes
+// Points for a pick that ranked `rank`-th closest and missed by `yearsOff`.
+function pointsFor(rank, yearsOff) {
+  if (rank === 1) return CLOSEST_POINTS;
+  return yearsOff > FAR_YEARS ? FAR_PENALTY : 0;
 }
 
 // 1-based closeness rank of hand[idx] against the center card. Ties share a rank.
@@ -1405,12 +1443,34 @@ function startSoloGame() {
 
   document.getElementById('soloScreen').style.display = 'block';
   document.body.classList.add('solo-active');
+  renderLegend();
   updateSoloStats();
   soloNextRound();
 }
 
+// The left-gutter legend: the three things a pick can be worth, so the stakes
+// (and why a far pick loses points) are clear at a glance.
+function renderLegend() {
+  const host = document.getElementById('soloLegend');
+  if (!host) return;
+  const far = FAR_YEARS.toLocaleString();
+  const rows = [
+    { cls: 'pos top', label: '🎯 Closest card', pts: CLOSEST_POINTS },
+    { cls: 'zero',    label: 'Missed, within ' + far + ' yrs', pts: 0 },
+    { cls: 'neg',     label: 'Missed by over ' + far + ' yrs', pts: FAR_PENALTY },
+  ].map(r =>
+    '<div class="legend-row ' + r.cls + '">' +
+      '<span class="lg-rank">' + r.label + '</span>' +
+      '<span class="lg-pts">' + fmtPoints(r.pts) + '</span></div>'
+  ).join('');
+  host.innerHTML = '<div class="legend-card">' +
+    '<div class="legend-head"><h3>🏅 Points</h3><p>What each pick is worth</p></div>' +
+    '<div class="legend-rows">' + rows + '</div></div>';
+}
+
 function soloNextRound() {
   soloAwaitingNext = false;
+  document.getElementById('soloScreen').classList.remove('revealing');  // hand returns to full size
 
   // Fixed-length run: once the last round is played, the score is final.
   if (soloRoundNum >= SOLO_ROUNDS) {
@@ -1558,13 +1618,9 @@ function renderTimeline(centerYear, pickYear, tone) {
     wrap.classList.add('show');
     const fill = wrap.querySelector('.tl-fill');
     if (fill) requestAnimationFrame(() => fill.classList.add('grow'));
-    // Bring the whole timeline into view. block:'end' aligns its bottom edge to
-    // the viewport bottom, so when the solo screen fills the height the ribbon
-    // isn't left peeking below the fold (block:'nearest' only nudged it ~25px).
-    // Wait for the max-height expand (0.4s) to finish so the element is at full
-    // height before scrolling - otherwise block:'end' under-scrolls to a partly
-    // collapsed ribbon and leaves it below the fold.
-    setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'end' }), 480);
+    // The reveal is sized to fit the screen (compact hand + capped showdown), so
+    // there's no need to scroll the timeline into view - doing so is exactly the
+    // scroll we're trying to avoid.
   });
 }
 
@@ -1585,6 +1641,7 @@ function countUpEl(el, to, dur) {
 function soloPickCard(pickedIdx) {
   if (soloAwaitingNext) return;
   soloAwaitingNext = true; // lock further picks during the reveal
+  document.getElementById('soloScreen').classList.add('revealing');  // compact the hand so it all fits
   if (window.HSGSound) HSGSound.tick();
 
   const bestIdx = findBestCardIndex(soloHand, soloCenterCard);
@@ -1594,7 +1651,7 @@ function soloPickCard(pickedIdx) {
   const pickedDiff = Math.abs(pickedCard.year - soloCenterCard.year);
   // Score by closeness rank. Rank 1 (ties included) is the closest card.
   const rank = closenessRank(soloHand, soloCenterCard, pickedIdx);
-  const pts = pointsFor(rank, soloHand.length);
+  const pts = pointsFor(rank, pickedDiff);
   const isCorrect = (rank === 1);
   const resultCls = pts > 0 ? (isCorrect ? 'show-best' : 'correct-card')
                             : (pts < 0 ? 'wrong-card' : 'neutral-card');
@@ -1722,7 +1779,9 @@ function soloPickCard(pickedIdx) {
 
     const note = isCorrect
       ? 'Closest card in your hand!'
-      : `${ordinalPlace(rank)} closest. The closest was “${bestCard.title}.”`;
+      : (pts < 0
+          ? `Off by ${pickedDiff.toLocaleString()} years. The closest was “${bestCard.title}.”`
+          : `${ordinalPlace(rank)} closest. The closest was “${bestCard.title}.”`);
     instruction.innerHTML =
       `<span class="round-verdict ${pts > 0 ? 'gain' : (pts < 0 ? 'loss' : 'zero')}">${fmtPoints(pts)} pts</span>` +
       `<span class="verdict-note">${esc(note)}</span>`;
@@ -1753,7 +1812,10 @@ function soloPickCard(pickedIdx) {
 }
 
 function updateSoloStats() {
-  document.getElementById('soloScore').textContent = soloScore.toLocaleString();
+  const scoreEl = document.getElementById('soloScore');
+  scoreEl.textContent = soloScore.toLocaleString();
+  const pill = scoreEl.closest('.stat-pill');           // red when you're in the hole
+  if (pill) pill.classList.toggle('negative', soloScore < 0);
   document.getElementById('soloBest').textContent = getHighScore().toLocaleString();
 }
 
