@@ -860,10 +860,31 @@
 
     /* ---- Reveal: compact the remaining hand so the showdown + timeline + verdict
        all fit on one screen (no scrolling) ---- */
-    #soloScreen.revealing #soloHandGrid .card-img { max-height: 8vh; }
+    #soloScreen.revealing #soloHandGrid .card-img { max-height: 6vh; }
     #soloScreen.revealing #soloHandGrid .card-desc,
     #soloScreen.revealing .hand-label-solo { display: none; }
-    #soloScreen.revealing #soloHandGrid .circa-card { padding-bottom: .3rem; }
+    #soloScreen.revealing #soloHandGrid .circa-card { padding-bottom: .3rem; min-height: 0; }
+    #soloScreen.revealing .action-bar { margin-top: .25rem; }
+    #soloScreen.revealing .solo-header { margin-bottom: .1rem; }
+    /* Also shrink the showdown pair (center + your pick) during the reveal so the
+       whole column - showdown, verdict, timeline, hand - clears the fold. */
+    #soloScreen.revealing .showdown { min-height: 0; }
+    #soloScreen.revealing .showdown .circa-card { width: 196px; }
+    #soloScreen.revealing .showdown .card-img { max-height: 10vh; }
+    #soloScreen.revealing .card-big-date { font-size: 1.25rem; padding: .08rem 0; }
+    #soloScreen.revealing .showdown-label, #soloScreen.revealing .center-label { font-size: .7rem; margin: .05rem 0; }
+    #soloScreen.revealing .center-card-wrap { margin-bottom: 0; }
+    #soloScreen.revealing .center-label { margin-bottom: .1rem; }
+    #soloScreen.revealing .solo-instruction { margin: .1rem 0; }
+
+    /* Short viewports (small laptops): compact the reveal further so it still
+       clears the fold without page scroll. */
+    @media (max-height: 780px) {
+      #soloScreen.revealing .showdown .card-img { max-height: 9vh; }
+      #soloScreen.revealing #soloHandGrid .card-img { max-height: 5vh; }
+      #soloScreen.revealing .card-big-date { font-size: 1.2rem; }
+      #soloScreen.revealing .showdown .circa-card { width: 184px; }
+    }
 
     /* ---- Make a miss loud: a bold red verdict and note ---- */
     .round-verdict.loss { font-weight: 900; }
