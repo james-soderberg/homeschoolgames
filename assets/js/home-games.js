@@ -17,6 +17,7 @@ const GAMES = [
   { key:'bridge-run',    name:'Bridge Run',       href:'games/bridge-run/index.html',   subject:'Math',      emoji:'🌉', blurb:'Solve the math and run as far as you can.',   photo:'assets/img/home/shots/bridge-run.jpg', lb:'distance' },
   { key:'flag-frenzy',   name:'Flag Frenzy',      href:'games/flag-frenzy/index.html',  subject:'Flag Identification', emoji:'🚩', blurb:'Guess the flag and fill your Wall of Flags.',photo:'assets/img/home/shots/flag-frenzy.jpg', lb:'flags' },
   { key:'map-quiz',      name:'Map Quiz',         href:'games/map-quiz/index.html',     subject:'Geography', emoji:'🗺️', blurb:'Find every country on the map.',     photo:'assets/img/home/shots/map-quiz.jpg', lb:'mapscore' },
+  { key:'statehouse',    name:'Statehouse',       href:'games/statehouse/index.html',   subject:'Geography', emoji:'🏛️', blurb:'Find the 50 states and their capitals.', photo:'assets/img/home/shots/statehouse.jpg', badge:'✦ New', lb:'mapscore' },
   { key:'element-hunter',name:'Element Hunter',   href:'games/element-hunter/index.html',subject:'Science',  emoji:'🧪', blurb:'Hunt down the periodic table.',      photo:'assets/img/home/shots/element-hunter.jpg', lb:'streak' },
   { key:'food-web',      name:'Keep the Habitat Alive', href:'games/food-web/index.html', subject:'Biology',   emoji:'🦊', blurb:'Hunt to survive, but keep the whole habitat in balance.', photo:'assets/img/home/shots/food-web.jpg', badge:'✦ New', lb:'points' },
   { key:'bible-quiz',    name:"Paul's Journey",   href:'games/bible-quiz/index.html',   subject:'Passage Identification', emoji:'📖', blurb:'Test how well you know scripture.',  photo:'assets/img/home/shots/bible-quiz.jpg', lb:'streak' },
@@ -40,6 +41,7 @@ const LB_LEVEL_LABELS = {
   '': '', all: 'All', best: 'Best', journey: 'Journey', einstein: 'Einstein',
   impossible: 'Impossible', solomon: 'Solomon', americas: 'Americas', europe: 'Europe',
   asia: 'Asia', africa: 'Africa', oceania: 'Oceania', world: 'World',
+  states: 'States', capitals: 'Capitals',
   bills: 'Bills & Coins', fewest: 'Fewest Pieces', tax: 'Sales Tax', expert: 'Expert',
   common: 'Common', nonmetal: 'Nonmetals', noble: 'Noble Gases', alkali: 'Alkali',
   alkaline: 'Alkaline Earth', transition: 'Transition', post: 'Post-transition'
