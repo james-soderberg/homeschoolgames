@@ -810,6 +810,13 @@
        top/bottom margins so they sit inside the shell without forcing scroll. */
     body.game-fit .setup-screen { margin: auto; }
     body.game-fit .end-screen { margin: auto; }
+    /* Tighten the end screen so the score, the buttons and the leaderboard all
+       land on one screen down to ~700px tall (it ran past the fold otherwise). */
+    body.game-fit .end-screen h2 { font-size: 1.8rem; margin-bottom: .2rem; }
+    body.game-fit .final-scores { margin: .9rem 0; }
+    body.game-fit .final-row { padding: .55rem 1.1rem; }
+    body.game-fit .end-screen br { display: none; }   /* the two buttons share a row */
+    body.game-fit .end-screen .btn { margin: .35rem .25rem 0; }
 
     /* Solo screen: override body.solo-active's own scroll column so the game-fit
        flex shell stays in charge (fixed viewport height, scroll via .circa-app). */
@@ -886,6 +893,77 @@
       #soloScreen.revealing .showdown .circa-card { width: 184px; }
     }
 
+    /* ---- Reveal fits by construction, not by tuning ----
+       Every block above the hand (header, showdown, timeline, verdict) is a
+       fixed height, so on a short screen the leftover was simply negative and
+       the Next button dropped below the fold. Give the play column the full
+       height and make the HAND the one elastic block: it takes whatever is
+       left over and its card images flex to match, so the column always ends
+       on-screen no matter the viewport or how tall a card's title runs. */
+    body.game-fit #soloScreen .game-layout > .game-main { align-self: stretch; }
+    /* Everything except the hand is fixed-size. Without this the timeline (and
+       its pin labels) got shrunk and clipped by its own hidden overflow. */
+    #soloScreen .game-main > * { flex: 0 0 auto; }
+    /* Applies to BOTH phases - picking overflowed on a short screen too. */
+    #soloScreen #soloHandGrid {
+      flex: 1 1 auto;
+      min-height: 74px;      /* floor: below this the cards stop being readable */
+      overflow: hidden;
+      /* Bind the row(s) to the grid's own height. `align-content: stretch` only
+         hands out SPARE space, so on a short screen the row kept its content
+         height and the cards were clipped mid-title instead of shrinking. */
+      grid-auto-rows: minmax(0, 1fr);
+    }
+    #soloScreen #soloHandGrid .circa-card { min-height: 0; overflow: hidden; }
+    #soloScreen.revealing #soloHandGrid .circa-card { padding: .5rem .55rem .35rem; }
+    /* aspect-ratio would pin the image height to the card width; here it takes
+       the leftover height instead (object-fit crops). Basis 0, not auto: with
+       `auto` the image asks for its natural height and pushes the title out. */
+    body.game-fit #soloScreen #soloHandGrid .card-img {
+      aspect-ratio: auto; height: auto; flex: 1 1 0;
+      min-height: 0; max-height: none; margin-bottom: .35rem;
+    }
+    /* the blurb keeps its clamped height so only the image gives; left flexible
+       it competed with the image and got sliced mid-line by the card's clip */
+    #soloScreen .card-desc { flex: 0 0 auto; }
+    #soloScreen.revealing #soloHandGrid .card-title {
+      font-size: .84rem; margin-bottom: .2rem;
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+    }
+    #soloScreen.revealing #soloHandGrid .card-rule { margin: .2rem 0; }
+    #soloScreen.revealing #soloHandGrid .card-year-tag { font-size: .72rem; margin-top: .25rem; }
+    /* the badge normally hangs above the card; the card clips during the reveal,
+       so tuck it inside instead of letting it get cut in half */
+    #soloScreen.revealing #soloHandGrid .card-result-badge { top: 3px; }
+    /* The showdown pair flexes on the same principle, so a short screen shrinks
+       the two big cards instead of pushing the Next button off the bottom. */
+    #soloScreen .center-card-wrap {
+      flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+    }
+    /* `body.game-fit` prefix required: the shell's own `#soloScreen .showdown`
+       and `.circa-card.center .card-img` rules carry an extra element selector
+       and would otherwise win and re-pin these heights. */
+    body.game-fit #soloScreen .showdown { flex: 1 1 auto; min-height: 132px; align-items: stretch; }
+    /* stretch, or the slot centres a content-sized card and the pair ends up
+       different heights once their images start flexing */
+    #soloScreen .showdown-slot { min-height: 0; align-items: stretch; }
+    #soloScreen.revealing .showdown .card-result-badge { top: 3px; }
+    #soloScreen .showdown .circa-card { height: 100%; min-height: 0; overflow: hidden; }
+    body.game-fit #soloScreen .showdown .card-img,
+    body.game-fit #soloScreen .showdown .circa-card.center .card-img {
+      aspect-ratio: auto; height: auto; flex: 1 1 0; min-height: 0; max-height: none;
+    }
+    #soloScreen .showdown .card-title {
+      display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+    }
+    /* the reserved two-line slot is only needed while the verdict is absent */
+    #soloScreen.revealing .solo-instruction { min-height: 0; }
+
+    /* trim the ribbon's padding, but not past what the pin labels need above and
+       below the track (they'd clip against the wrap's hidden overflow) */
+    #soloScreen.revealing .timeline { padding: 42px 18px 46px; min-height: 0; }
+    #soloScreen.revealing .btn-next { padding: .6rem 2.2rem; font-size: 1.05rem; }
+
     /* ---- Make a miss loud: a bold red verdict and note ---- */
     .round-verdict.loss { font-weight: 900; }
     .round-verdict.loss + .verdict-note { color: var(--red); font-weight: 700; }
@@ -960,10 +1038,15 @@
   #passTitle, .game-header h2, #endTitle { color: var(--on-backdrop); }
   #passMsg, #handLabel, #endSubtitle,
   .site-footer span { color: var(--on-backdrop-dim); }
-  /* the years-apart readout and the timeline sit straight on the backdrop too */
+  /* the years-apart readout and the timeline sit straight on the backdrop too,
+     so their ink-on-cream colours have to be lifted to read against graphite */
   .year-diff .num { color: var(--on-backdrop); }
   .year-diff .label { color: var(--on-backdrop-dim); }
-  .tl-pin.pick.mid .yr { color: #B9B2A3; }
+  .tl-end, .tl-zero-label, .tl-pin .tag { color: var(--on-backdrop-dim); opacity: 1; }
+  .tl-pin.center .yr { color: #E3C377; }
+  .tl-pin.pick.good .yr { color: #6BC694; }
+  .tl-pin.pick.bad  .yr { color: #EC8579; }
+  .tl-pin.pick.mid  .yr { color: #B9B2A3; }
 </style>
 </head>
 <body class="game-fit">
@@ -1462,7 +1545,10 @@ function startSoloGame() {
     if (soloDeck.length) soloHand.push(soloDeck.pop());
   }
 
-  document.getElementById('soloScreen').style.display = 'block';
+  // Clear, don't set: an inline `display:block` outranks the stylesheet's
+  // `display:flex` for the fullscreen shell, which breaks the flex chain that
+  // keeps the reveal on one screen. `body.solo-active` alone reveals it.
+  document.getElementById('soloScreen').style.display = '';
   document.body.classList.add('solo-active');
   renderLegend();
   updateSoloStats();

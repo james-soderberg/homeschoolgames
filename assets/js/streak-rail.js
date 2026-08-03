@@ -600,6 +600,8 @@
       this.flameEl.textContent = u.rIcon || '⭐';
       this.labelEl.textContent = u.rLabel || 'SCORE';
     }
+    // a score in the red shouldn't wear the same gold as a score in the black
+    this.streakEl.classList.toggle('negative', shown(this.value) < 0);
     this.bestEl.textContent = 'best  ' + shown(Math.max(this.best, this.bestToBeat()));
     if (animate) {
       var el = this.streakEl;

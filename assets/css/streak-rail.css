@@ -147,6 +147,16 @@
 .hsg-streak[data-level="4"] { animation: hsg-halo 1.6s ease-in-out infinite; }
 .hsg-streak[data-level="5"] { animation: hsg-halo-blue 1.4s ease-in-out infinite; }
 
+/* ---- in the hole ----
+   A points metric can run negative, and the steady gold look reads as "doing
+   well". A negative value flips the card red instead. Declared after the heat
+   levels so it wins on source order (same specificity as [data-level="n"]). */
+.hsg-streak.negative { --heat: #C0392B; border-color: #E08B7F; background: #FDF0EE;
+  animation: none; }
+.hsg-streak.negative::before { height: 30%; }
+.hsg-streak.negative .flame { filter: none; animation: none; }
+.hsg-streak.negative .streak-best { color: #9A5347; }
+
 /* count pop on each correct answer */
 @keyframes hsg-bump {
   0%   { transform: scale(1); }
