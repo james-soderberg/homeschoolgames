@@ -258,10 +258,43 @@ let waitingForNext = false, advanceTimer = null, modeJustFinished = false;
 // mapscore: more correct wins, ties broken by fewer wrong (see streak-rail unit).
 function encodeScore(correct, wrong) { return correct * 1000 + (999 - Math.min(wrong, 999)); }
 
-// ---- found-state colours: a stable, varied hue per state ----
-function hashStr(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return Math.abs(h); }
-function colorFor(id) { const hue = hashStr(id) % 360; return { fill: `hsl(${hue}, 52%, 62%)`, stroke: `hsl(${hue}, 45%, 37%)` }; }
-function paintCompleted(el, id) { if (!el) return; const c = colorFor(id); el.style.fill = c.fill; el.style.stroke = c.stroke; el.style.strokeWidth = '0.7'; }
+// ---- found-state colours: paint each found state so a completed 50-state map
+// reads like the US flag - a blue canton with stars over the top-left states, and
+// red/white stripes elsewhere, keyed off each state's rough position on the map. ----
+const FLAG_W = 960, FLAG_H = 600;
+const CENTER = {};   // rough bbox centre per state, in map coords
+for (const [sid, sd] of Object.entries(US.paths)) {
+  const nums = sd.match(/-?\d+(?:\.\d+)?/g).map(Number);
+  let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    const x = nums[i], y = nums[i + 1];
+    if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+  }
+  CENTER[sid] = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+}
+function flagColor(id) {
+  const p = CENTER[id] || { x: FLAG_W / 2, y: FLAG_H / 2 };
+  if (p.x < FLAG_W * 0.40 && p.y < FLAG_H * 0.42) return { fill: '#3C3B6E', stroke: '#26264a', star: true };   // blue canton
+  return (Math.floor(p.y / (FLAG_H / 7)) % 2 === 0)
+    ? { fill: '#B22234', stroke: '#7c1826' }     // red stripe
+    : { fill: '#ffffff', stroke: '#b7c3cc' };    // white stripe
+}
+function addStar(id) {
+  const svg = document.querySelector('#mapContainer svg'), p = CENTER[id];
+  if (!svg || !p) return;
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+  s.setAttribute('x', p.x); s.setAttribute('y', p.y + 0.5);
+  s.setAttribute('text-anchor', 'middle'); s.setAttribute('dominant-baseline', 'central');
+  s.setAttribute('font-size', '14'); s.setAttribute('fill', '#fff'); s.setAttribute('pointer-events', 'none');
+  s.textContent = '★';
+  svg.appendChild(s);
+}
+function paintCompleted(el, id) {
+  if (!el) return;
+  const c = flagColor(id);
+  el.style.fill = c.fill; el.style.stroke = c.stroke; el.style.strokeWidth = '0.7';
+  if (c.star) addStar(id);
+}
 function setTitle(el, name) {
   if (!el) return;
   let t = el.querySelector('title');
