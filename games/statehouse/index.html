@@ -46,7 +46,7 @@
     body.game-fit #gameScreen .map-container { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; }
     body.game-fit #gameScreen .map-container svg { width: auto; height: auto; max-width: 100%; max-height: 100%; }
     body.game-fit .prompt-box { margin-bottom: .5rem; }
-    body.game-fit .feedback-bar { min-height: 1.8rem; margin-bottom: .4rem; }
+    body.game-fit .feedback-bar { height: 2.7rem; margin-bottom: .4rem; }
     body.game-fit .btn-row { margin-top: .6rem; }
 
     .map-header { margin-bottom: 1rem; }
@@ -100,7 +100,11 @@
     .score-num.correct { color: var(--green); }
     .score-num.wrong { color: var(--red); }
 
-    .feedback-bar { min-height: 2.4rem; margin-bottom: 0.75rem; font-size: 1.05rem; font-weight: 600; padding: 0.3rem 0; }
+    /* Fixed height so a short or long message never reflows the column (which would
+       rescale the map between questions). Text is centered and clamped to two lines. */
+    .feedback-bar { height: 3rem; margin-bottom: 0.6rem; font-size: 1.02rem; font-weight: 600;
+      display: flex; align-items: center; justify-content: center; text-align: center; overflow: hidden; }
+    .feedback-bar span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
     .feedback-correct { color: var(--green); }
     .feedback-wrong { color: var(--red); }
 
@@ -238,6 +242,7 @@ const MODE_ORDER = ['states', 'capitals'];
 
 function buildUSMap(interactive) {
   let svg = `<svg viewBox="${US.viewBox}" xmlns="http://www.w3.org/2000/svg" class="us-svg">`;
+  if (interactive) svg += flagDefs();
   for (const [id, d] of Object.entries(US.paths)) {
     svg += interactive
       ? `<path id="${id}" class="state" d="${d}"></path>`
@@ -258,42 +263,50 @@ let waitingForNext = false, advanceTimer = null, modeJustFinished = false;
 // mapscore: more correct wins, ties broken by fewer wrong (see streak-rail unit).
 function encodeScore(correct, wrong) { return correct * 1000 + (999 - Math.min(wrong, 999)); }
 
-// ---- found-state colours: paint each found state so a completed 50-state map
-// reads like the US flag - a blue canton with stars over the top-left states, and
-// red/white stripes elsewhere, keyed off each state's rough position on the map. ----
-const FLAG_W = 960, FLAG_H = 600;
-const CENTER = {};   // rough bbox centre per state, in map coords
-for (const [sid, sd] of Object.entries(US.paths)) {
-  const nums = sd.match(/-?\d+(?:\.\d+)?/g).map(Number);
+// ---- The flag overlay: an actual US flag (13 straight stripes + a blue canton of
+// 50 stars) drawn once as a full-map SVG pattern. A found state is filled with that
+// pattern, so it reveals exactly the slice of flag it covers - find all 50 and the
+// map fills into the Stars and Stripes. The flag is fit to the continental bounding
+// box (AK/HI insets fall on the continuing lower stripes). ----
+const CONT = (function () {   // continental bbox, excluding the AK/HI insets
   let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
-  for (let i = 0; i + 1 < nums.length; i += 2) {
-    const x = nums[i], y = nums[i + 1];
-    if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+  for (const [id, d] of Object.entries(US.paths)) {
+    if (id === 'AK' || id === 'HI') continue;
+    const n = d.match(/-?\d+(?:\.\d+)?/g).map(Number);
+    for (let i = 0; i + 1 < n.length; i += 2) {
+      const x = n[i], y = n[i + 1];
+      if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y;
+    }
   }
-  CENTER[sid] = { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+  return { minX, minY, maxX, maxY };
+})();
+function flagDefs() {
+  const vb = US.viewBox.split(/\s+/).map(Number);        // [x, y, w, h]
+  const W = vb[0] + vb[2], H = vb[1] + vb[3];
+  const { minX, minY, maxX, maxY } = CONT;
+  const stripeH = (maxY - minY) / 13;
+  const cantonR = minX + 0.40 * (maxX - minX), cantonB = minY + 7 * stripeH;
+  const f = n => (+n).toFixed(1);
+  let s = `<rect x="0" y="0" width="${f(W)}" height="${f(H)}" fill="#B22234"/>`;   // red base
+  for (let i = 1; i < 13; i += 2) s += `<rect x="0" y="${f(minY + i * stripeH)}" width="${f(W)}" height="${f(stripeH)}" fill="#fff"/>`;
+  s += `<rect x="0" y="0" width="${f(cantonR)}" height="${f(cantonB)}" fill="#3C3B6E"/>`;
+  // 50 stars: 9 staggered rows (6,5,6,5,6,5,6,5,6), inset within the canton
+  const gL = cantonR * 0.10, gR = cantonR * 0.94, gT = cantonB * 0.11, gB = cantonB * 0.91;
+  const sz = Math.min((gB - gT) / 9, (gR - gL) / 6) * 0.92;
+  for (let r = 0; r < 9; r++) {
+    const six = r % 2 === 0, cnt = six ? 6 : 5, y = gT + r * (gB - gT) / 8;
+    for (let k = 0; k < cnt; k++) {
+      const x = six ? gL + k * (gR - gL) / 5 : gL + (gR - gL) / 10 + k * (gR - gL) / 5;
+      s += `<text x="${f(x)}" y="${f(y)}" text-anchor="middle" dominant-baseline="central" font-size="${f(sz)}" fill="#fff">★</text>`;
+    }
+  }
+  return `<defs><pattern id="usflag" patternUnits="userSpaceOnUse" x="0" y="0" width="${f(W)}" height="${f(H)}">${s}</pattern></defs>`;
 }
-function flagColor(id) {
-  const p = CENTER[id] || { x: FLAG_W / 2, y: FLAG_H / 2 };
-  if (p.x < FLAG_W * 0.40 && p.y < FLAG_H * 0.42) return { fill: '#3C3B6E', stroke: '#26264a', star: true };   // blue canton
-  return (Math.floor(p.y / (FLAG_H / 7)) % 2 === 0)
-    ? { fill: '#B22234', stroke: '#7c1826' }     // red stripe
-    : { fill: '#ffffff', stroke: '#b7c3cc' };    // white stripe
-}
-function addStar(id) {
-  const svg = document.querySelector('#mapContainer svg'), p = CENTER[id];
-  if (!svg || !p) return;
-  const s = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-  s.setAttribute('x', p.x); s.setAttribute('y', p.y + 0.5);
-  s.setAttribute('text-anchor', 'middle'); s.setAttribute('dominant-baseline', 'central');
-  s.setAttribute('font-size', '14'); s.setAttribute('fill', '#fff'); s.setAttribute('pointer-events', 'none');
-  s.textContent = '★';
-  svg.appendChild(s);
-}
-function paintCompleted(el, id) {
+function paintCompleted(el) {
   if (!el) return;
-  const c = flagColor(id);
-  el.style.fill = c.fill; el.style.stroke = c.stroke; el.style.strokeWidth = '0.7';
-  if (c.star) addStar(id);
+  el.style.fill = 'url(#usflag)';
+  el.style.stroke = 'rgba(30,25,15,0.20)';
+  el.style.strokeWidth = '0.4';
 }
 function setTitle(el, name) {
   if (!el) return;
@@ -480,7 +493,7 @@ function handleStateClick(id) {
     if (correctEl) {
       correctEl.classList.add('correct-flash', 'completed');
       setTitle(correctEl, NAME(currentState));
-      paintCompleted(correctEl, currentState);
+      paintCompleted(correctEl);
       const fid = currentState;
       setTimeout(() => { const e = document.getElementById(fid); if (e) e.classList.remove('correct-flash'); }, 450);
     }
