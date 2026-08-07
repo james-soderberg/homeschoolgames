@@ -44,9 +44,13 @@
       game: 'redline', goal: 15,
       riddle: 'Go to Word Racer and type treasure repeatedly.' },
 
-    { token: 'p9m4tq', word: 'four', open: 'games/slide-puzzle/index.html', game: 'slidepuzzle', goal: 1,
-      accept: ['four', '4'],
-      image: 'assets/img/hunt/four-stereogram.png',
+    // Atomic numbers, read as element symbols: I(53) S(16) La(57) Nd(60).
+    // The first three clues all hide the word in the letters you are already
+    // looking at; this one sends the hunter to an outside table instead.
+    { token: 'p9m4tq', word: 'island', open: 'games/slide-puzzle/index.html', game: 'slidepuzzle', goal: 1,
+      accept: ['island'], mono: true,
+      riddle: '53 · 16 · 57 · 60',
+      hint: 'These are numbers, not letters, and no cipher wheel will crack them. Finish a set in Element Hunter with 80% or better and its summary hands you the key.',
       trial: 'Rebuild the scrambled map before the clock runs out.' },
 
     // CHECKPOINT ONE - reached the moment the slide puzzle is solved. A real,

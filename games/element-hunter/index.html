@@ -160,6 +160,34 @@
     @media (max-width: 520px) {
       .el-cell .el-num { display: none; }
     }
+
+    /* Treasure-hunt reward, shown on the (cream) summary card once a set is
+       finished at 80%+. It hands over the key to the hunt's fourth clue, which
+       is four atomic numbers - see STEPS in assets/js/hunt.js. */
+    .eh-hunt-clue {
+      max-width: 430px; margin: 0.4rem auto 0.9rem; padding: 0.9rem 1.1rem; text-align: center;
+      background: linear-gradient(180deg, #FFF8E6, #FDF1D4);
+      border: 2.5px solid var(--gold, #C4A040); border-radius: 14px;
+      box-shadow: 0 0 18px rgba(196,160,64,0.35);
+    }
+    .eh-hunt-clue .ehc-tag {
+      font-size: 0.72rem; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase;
+      color: #8B6A20; margin-bottom: 0.4rem;
+    }
+    .eh-hunt-clue .ehc-body {
+      font-family: var(--font-serif), Georgia, serif; font-size: 0.98rem;
+      color: var(--ink); line-height: 1.4;
+    }
+    .eh-hunt-clue .ehc-key {
+      display: flex; flex-wrap: wrap; justify-content: center; gap: 0.35rem; margin: 0.6rem 0 0.45rem;
+    }
+    .eh-hunt-clue .ehc-key span {
+      font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.95rem; color: #2A2318;
+      background: #fff; border: 1.5px solid var(--gold, #C4A040); border-radius: 8px; padding: 0.25rem 0.5rem;
+    }
+    .eh-hunt-clue .ehc-foot {
+      font-family: var(--font-serif), Georgia, serif; font-style: italic; font-size: 0.9rem; color: #6B5E42;
+    }
   </style>
   <script type="application/ld+json">
   {
@@ -420,6 +448,27 @@ function resetSet() {
   startSet();
 }
 
+// ---- treasure-hunt reward -------------------------------------------------
+// The hunt's fourth clue is four bare atomic numbers; finishing a set here
+// accurately enough earns the key that turns them into a word. Kept at the
+// game's own "B" grade so it's a reward for playing well, not a participation
+// prize. The numbers below must match STEPS[3].riddle in assets/js/hunt.js.
+const HUNT_CLUE_PCT = 80;
+const HUNT_CLUE_KEY = [['53', 'I'], ['16', 'S'], ['57', 'La'], ['60', 'Nd']];
+
+function huntClueHTML(pct) {
+  if (pct < HUNT_CLUE_PCT) return '';
+  return '<div class="eh-hunt-clue">' +
+      '<div class="ehc-tag">🗝 Treasure Hunt Clue</div>' +
+      '<div class="ehc-body">Those four numbers on the hunt\'s fourth clue are <strong>atomic numbers</strong>. ' +
+        'On this table they read:</div>' +
+      '<div class="ehc-key">' +
+        HUNT_CLUE_KEY.map(p => '<span>' + p[0] + ' = ' + p[1] + '</span>').join('') +
+      '</div>' +
+      '<div class="ehc-foot">Run the four symbols together and you have the word.</div>' +
+    '</div>';
+}
+
 function nextQuestion() {
   clearTimeout(advanceTimer);
   waitingForNext = false;
@@ -438,11 +487,13 @@ function nextQuestion() {
       setJustFinished = false;
       HSGfx.confetti({ count: 90, big: true });
       const banked = bestStreak;
+      const attempts = total + missed;
+      const pct = attempts ? Math.round((total / attempts) * 100) : 0;
       HSGfx.showSummary({
         title: `${curFilter.label} complete!`,
-        correct: total, total: total + missed, best: bestStreak,
+        correct: total, total: attempts, best: bestStreak,
         onPlayAgain: () => { try { localStorage.removeItem(storageKey(curFilter.key)); } catch (e) {} startSet(); },
-        extraHTML: '<div id="ehBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
+        extraHTML: huntClueHTML(pct) + '<div id="ehBoard" style="text-align:left;margin:0.25rem 0 0.5rem"></div>',
         // bank the streak + show the placement/name entry INLINE in the summary card
         onMount: card => rail.gameOver(banked, card.querySelector('#ehBoard')),
       });
