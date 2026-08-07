@@ -83,6 +83,16 @@ var CHAMPION_LEVEL = {
   'statehouse': ['states', 'capitals'],
   'map-quiz': ['americas', 'europe', 'asia', 'africa']
 };
+// Trophy boards that have no tile in the grid. Only the Hunt qualifies: it
+// lives on its own page rather than in GAMES, but Checkpoint One is a real
+// ranked board (every arrival posts the same score, so the champions API's
+// score-then-earliest-timestamp ranking makes gold/silver/bronze the first
+// three to reach it). Everything else off the grid stays out on purpose -
+// secret games and anything still in progress.
+var OFF_GRID_CHAMPIONS = [
+  { board: 'hsg_lb_checkpoint-1', name: 'The Hunt', emoji: '🗝️' }
+];
+
 // Returns [{ board, name, emoji }] for the champion boards. Pass a group slug to
 // scope the tally to that group's boards (adds the "__g-<slug>" segment).
 function championBoards(group) {
@@ -107,6 +117,12 @@ function championBoards(group) {
         emoji: game.emoji
       });
     });
+  });
+  // Group tallies still get the suffix, so a cohort's board stays its own. The
+  // Hunt doesn't write group-scoped arrivals yet, so that row is simply empty
+  // inside a group rather than leaking the global standings into it.
+  OFF_GRID_CHAMPIONS.forEach(function (c) {
+    out.push({ board: c.board + suffix, name: c.name, emoji: c.emoji });
   });
   return out;
 }
