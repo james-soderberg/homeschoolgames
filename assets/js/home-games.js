@@ -6,7 +6,7 @@ const GAMES = [
   { key:'circa',         name:'Circa',           href:'games/circa/index.html',        subject:'History',   emoji:'🏛️', blurb:'Put history in order, card by card.', photo:'assets/img/home/shots/circa.jpg', lb:'streak' },
   { key:'dragon-siege',  name:'Dragon Siege',     href:'games/dragon-siege/index.html', subject:'Typing',    emoji:'🐉', blurb:'Type fast to defend the keep.',      photo:'assets/img/home/shots/dragon-siege.jpg', lb:'wave' },
   { key:'type-invaders', name:'Independence Day',    href:'games/type-invaders/index.html',subject:'Typing',    emoji:'🛸', blurb:'Type to blast aliens off the White House.', photo:'assets/img/home/shots/type-invaders.jpg', lb:'wave' },
-  { key:'slingshot',     name:'Gravity Slingshot', href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg' },
+  { key:'slingshot',     name:'Gravity Slingshot', href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg', lb:'points' },
   { key:'who-painted-it',name:'Who Painted It?',  href:'games/who-painted-it/index.html', subject:'Art',      emoji:'🎨', blurb:'Name the artist behind the masterpiece.', photo:'assets/img/home/shots/who-painted-it.jpg', lb:'art20t' },
   { key:'grammar-express',name:'Grammar Express', href:'games/grammar-express/index.html', subject:'Grammar', emoji:'🚂', blurb:'Guard the train by naming each part of speech.', photo:'assets/img/home/shots/grammar-express.jpg', lb:'points' },
   { key:'word-racer',    name:'Word Racer',       href:'games/word-racer/index.html',   subject:'Typing',    emoji:'🏎️', blurb:'Type fast to win the race.',         photo:'assets/img/home/shots/word-racer.jpg', lb:'wpm' },
@@ -76,7 +76,7 @@ function lbResolve(board) {
 var CHAMPION_LEVEL = {
   'who-said-it': 'timed', 'circa': 'hard-pts', 'dragon-siege': 'impossible',
   'type-invaders': 'impossible', 'who-painted-it': 'timed', 'grammar-express': 'journey',
-  'word-racer': '', 'letter-snake': 'einstein', 'roots': 'hard',
+  'word-racer': '', 'letter-snake': 'einstein', 'roots': 'hard', 'slingshot': '',
   'bible-trivia': 'solomon', 'register': 'expert', 'bridge-run': 'run',
   'flag-frenzy': 'timed', 'element-hunter': 'all', 'food-web': 'all',
   'bible-quiz': 'solomon', 'letter-catch': 'einstein', 'tightrope': 'survived',

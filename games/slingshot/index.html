@@ -30,6 +30,7 @@
 <title>Gravity Slingshot: Free Astronomy Game | Accidental Learning</title>
 <link rel="stylesheet" href="../../assets/css/site.css">
 <link rel="stylesheet" href="../../assets/css/game-fit.css">
+<link rel="stylesheet" href="../../assets/css/streak-rail.css">
 <style>
   .sl-page { max-width: min(1720px, 98vw); margin: 0 auto; padding: 1.25rem 1.1rem 3rem; }
   /* Fullscreen: the page fills the viewport and the stage flexes to take all the
@@ -165,22 +166,35 @@
   #briefOrder { color:#8fbcff; }
   #briefOverlay .fact-card { max-width:400px; }
 
-  /* leaderboard */
-  .board { width:100%; max-width:340px; margin:.2rem auto 1.1rem; }
-  .board-title { font-size:.72rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:#a9b6dd; margin-bottom:.45rem; }
-  .board-row { display:flex; align-items:center; gap:.55rem; padding:.32rem .6rem; border-radius:8px; color:#dbe4ff; font-family:var(--font-sans); font-size:.92rem; }
-  .board-row:nth-child(even){ background:rgba(255,255,255,.05); }
-  .board-row.me { background:var(--gold); color:#2a1f08; font-weight:800; }
-  .bk-rank { width:1.4rem; text-align:right; opacity:.75; font-weight:700; font-size:.82rem; }
-  .bk-name { flex:1; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .bk-score { font-weight:800; }
-  .board-empty { color:#a9b6dd; font-style:italic; font-size:.88rem; text-align:center; }
-  .name-entry { margin-bottom:1rem; }
-  .name-entry.hidden { display:none; }
-  .ne-label { display:block; font-size:.85rem; color:#ffe1a6; font-weight:700; margin-bottom:.5rem; }
-  .ne-row { display:flex; gap:.5rem; justify-content:center; }
-  #nameInput { border:2px solid var(--border); border-radius:10px; padding:.55rem .8rem; font-size:1rem; font-family:var(--font-sans);
-    width:170px; max-width:52vw; color:var(--ink); background:#fff; }
+  /* leaderboard - the shared board (streak-rail.css) recoloured for deep space.
+     Its stock palette is ink-on-white, which is unreadable on these overlays. */
+  .board { width:100%; max-width:340px; margin:.2rem auto 1.1rem; text-align:left; }
+  .board .hsg-board, .board.hsg-board, .board.hsg-endpanel .hsg-board {
+    background:rgba(255,255,255,.05); border:1.5px solid rgba(160,180,235,.28);
+    box-shadow:none; border-radius:14px; padding:.85rem .8rem .7rem;
+  }
+  .board .hsg-board-head h2 { color:#eaf0ff; font-size:1rem; }
+  /* A full top-10 would push the voyage buttons off the bottom. Everything in
+     the card is fixed except the list, which takes whatever height is left and
+     scrolls inside itself - so "Launch again" is always reachable. */
+  #overOverlay .board { flex:0 1 auto; min-height:0; display:flex; flex-direction:column; }
+  #overOverlay .board .hsg-ep-prompt, #overOverlay .board .hsg-board-head { flex:0 0 auto; }
+  #overOverlay .board .hsg-board { flex:1 1 auto; min-height:0; display:flex; flex-direction:column; }
+  #overOverlay .board .hsg-board-list { flex:1 1 auto; min-height:0; overflow-y:auto; }
+  .board .hsg-board-row:not(:last-child) { border-bottom:1px solid rgba(160,180,235,.16); }
+  .board .hsg-board-rank { color:#a9b6dd; }
+  .board .hsg-board-name { color:#dbe4ff; }
+  .board .hsg-board-score { color:var(--gold, #E0A53B); }
+  .board .hsg-board-row.is-new { background:rgba(224,165,59,.22); animation:none; }
+  .board .hsg-board-empty, .board .hsg-board-legend { color:#a9b6dd; }
+  .board .hsg-board-legend { border-top-color:rgba(160,180,235,.16); }
+  /* the inline "you placed" prompt + name entry */
+  .board .hsg-ep-prompt {
+    background:rgba(224,165,59,.12); border-color:rgba(224,165,59,.55);
+  }
+  .board .hsg-ep-place { color:#ffe1a6; }
+  .board .hsg-ep-place strong { color:#fff; }
+  .board .hsg-ep-input { background:#fff; color:var(--ink); border-color:rgba(160,180,235,.4); }
 
   .sl-hint { text-align:center; font-size:.82rem; color:var(--ink-light); margin-top:.7rem; line-height:1.5; }
   .sl-hint kbd { font-family:'Courier New',monospace; background:var(--cream-dark); border:1px solid var(--border); border-radius:4px; padding:.05rem .35rem; }
@@ -325,7 +339,6 @@
         <button class="go-btn" id="beginBtn">Launch mission →</button>
         <button class="go-btn secondary" id="tutorialBtn">▶ Watch tutorial</button>
       </div>
-      <div class="board" id="startBoard" style="margin:1.3rem auto 0"></div>
     </div>
 
     <!-- Deity mode: hidden level picker (type "godmode" to open) -->
@@ -371,13 +384,7 @@
         <div class="fs"><b id="fsReached">None</b><span>Reached</span></div>
         <div class="fs"><b id="fsStreak">0</b><span>Best streak</span></div>
       </div>
-      <div class="name-entry hidden" id="nameEntry">
-        <span class="ne-label">🏅 New high score! Add your name:</span>
-        <div class="ne-row">
-          <input id="nameInput" maxlength="12" placeholder="Your name" autocomplete="off">
-          <button class="go-btn" id="saveNameBtn">Save</button>
-        </div>
-      </div>
+      <!-- the shared leaderboard + inline placement/name entry (end of voyage only) -->
       <div class="board" id="board"></div>
       <div class="overlay-actions">
         <button class="go-btn" id="againBtn">Launch again 🚀</button>
@@ -405,6 +412,7 @@
 
 <script src="../../assets/js/sfx.js"></script>
 <script src="../../assets/js/fx.js"></script>
+<script src="../../assets/js/streak-rail.js"></script>
 <script src="../../assets/js/godmode.js"></script>
 <script src="../../assets/js/raf-guard.js"></script>
 <script>
@@ -569,12 +577,9 @@ let flightPath = [];   // full path the probe has travelled this shot (uncapped)
 let solutionPath = null, godUnlocked = false;   // god-mode "show solution" route overlay
 let aim = { angle: 0, power: 0.5, dragging: false };
 let sceneTime = 0, shake = 0, flashR = 0, flashG = 0, flightT = 0, flightAcc = 0, bonusMsg = '', bonusT = 0;
-let pendingScore = null;
 let lastTs = 0, rafId = null;
 let stars = [];
 
-const BOARD_KEY = () => 'slingshot_board_' + diffKey;
-const NAME_KEY = 'slingshot_name';
 
 // ---------- helpers ----------
 const rand = (a, b) => a + Math.random() * (b - a);
@@ -1033,10 +1038,21 @@ function updateHud() {
 }
 
 // ---------- leaderboard ----------
-function getBoard() { try { const a = JSON.parse(localStorage.getItem(BOARD_KEY())); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
-function saveBoard(b) { try { localStorage.setItem(BOARD_KEY(), JSON.stringify(b)); } catch (e) {} }
-function lastName() { try { return localStorage.getItem(NAME_KEY) || ''; } catch (e) { return ''; } }
-function setLastName(n) { try { localStorage.setItem(NAME_KEY, n); } catch (e) {} }
+// The shared/global board (streak-rail.js + /api), not a device-local list.
+// Slingshot has one fixed difficulty, so it's a single board: hsg_lb_slingshot.
+// There's no rail during play - the board only appears at the end of a voyage,
+// where the placement + name entry are rendered inline by HSGStreak.endPanel.
+const LB = { gameId: 'slingshot', gameName: 'Gravity Slingshot', unit: 'points', minStreak: 1 };
+
+// End of voyage: the board plus, if the run makes the Top 10, an inline
+// placement + name entry. Pass 0 to show the board without offering a claim.
+function showEndBoard(bankScore) {
+  if (!window.HSGStreak) return;
+  HSGStreak.endPanel('#board', {
+    gameId: LB.gameId, gameName: LB.gameName, unit: LB.unit,
+    minStreak: LB.minStreak, score: bankScore
+  });
+}
 
 // ---------- lifecycle ----------
 function endTutorialUI() {   // tear down any active/pending tutorial before another mode starts
@@ -1049,7 +1065,7 @@ function startGame(key, startLevel) {
   endTutorialUI();
   diffKey = key; diff = DIFF[key] || DIFF.pilot;
   level = startLevel || 1; score = 0; probes = diff.probes; streak = 0; bestStreak = 0; reachedName = 'None';
-  particles = []; pendingScore = null; solutionPath = null; flightPath = [];
+  particles = []; solutionPath = null; flightPath = [];
   startOverlay.classList.add('hidden'); overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   const god = document.getElementById('godOverlay'); if (god) god.classList.add('hidden');
   setupCanvas(); genLevel(level); phase = 'aim'; updateHud();
@@ -1067,7 +1083,6 @@ function toMenu() {
   overOverlay.classList.add('hidden'); factOverlay.classList.add('hidden');
   startOverlay.classList.remove('hidden');
   renderVoyage();
-  renderBoard(null, 'startBoard');
 }
 // End the current voyage on purpose. With unlimited probes the run never ends
 // itself, so this is how a score reaches the leaderboard. A scoreless quit just
@@ -1084,48 +1099,14 @@ function gameOver() {
   document.getElementById('fsScore').textContent = score.toLocaleString();
   document.getElementById('fsReached').textContent = titleName(reachedName);
   document.getElementById('fsStreak').textContent = bestStreak;
-  const board = getBoard();
-  // Deity mode gives infinite probes, so that run is not comparable. This board
-  // is local (not HSGStreak), so it needs its own copy of the same guard.
+  // Deity mode gives infinite probes, so that run isn't comparable - show the
+  // board but bank nothing (endPanel offers no claim for a score of 0).
   const cheated = !!(window.HSGGod && window.HSGGod.on);
-  const qualifies = !cheated && score > 0 && (board.length < 10 || score > board[board.length - 1].score);
-  const ne = document.getElementById('nameEntry');
-  if (qualifies) {
-    pendingScore = { score, streak: bestStreak, level };
-    ne.classList.remove('hidden');
-    const inp = document.getElementById('nameInput'); inp.value = lastName();
-    setTimeout(() => inp.focus(), 60);
-  } else { pendingScore = null; ne.classList.add('hidden'); }
-  renderBoard(null);
+  showEndBoard(cheated ? 0 : score);
   overOverlay.classList.remove('hidden');
   if (window.HSGSound) HSGSound.finish(false);
 }
-function saveName() {
-  if (!pendingScore) return;
-  const inp = document.getElementById('nameInput');
-  const name = ((inp.value || '').trim() || 'Pilot').slice(0, 12);
-  setLastName(name);
-  const entry = { name, score: pendingScore.score, streak: pendingScore.streak, level: pendingScore.level };
-  const board = getBoard(); board.push(entry); board.sort((a, b) => b.score - a.score);
-  saveBoard(board.slice(0, 10)); pendingScore = null;
-  document.getElementById('nameEntry').classList.add('hidden');
-  renderBoard(entry); updateHud();
-}
-function renderBoard(hl, elId) {
-  const board = getBoard(), el = document.getElementById(elId || 'board');
-  if (!el) return;
-  el.innerHTML = '';
-  if (!board.length) { el.innerHTML = '<div class="board-empty">No flights logged yet. Chart the first course!</div>'; return; }
-  const head = document.createElement('div'); head.className = 'board-title'; head.textContent = '🏅 Top Pilots · ' + diff.label; el.appendChild(head);
-  board.forEach((e, i) => {
-    const me = hl && e.name === hl.name && e.score === hl.score && e.level === hl.level;
-    const row = document.createElement('div'); row.className = 'board-row' + (me ? ' me' : '');
-    const rk = document.createElement('span'); rk.className = 'bk-rank'; rk.textContent = (i + 1);
-    const nm = document.createElement('span'); nm.className = 'bk-name'; nm.textContent = e.name;
-    const sc = document.createElement('span'); sc.className = 'bk-score'; sc.textContent = (e.score || 0).toLocaleString();
-    row.append(rk, nm, sc); el.appendChild(row);
-  });
-}
+
 
 // ============================================================
 // RENDER
@@ -1371,8 +1352,6 @@ document.getElementById('onwardBtn').addEventListener('click', (e) => { e.stopPr
 document.getElementById('briefBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); beginApproach(); });
 document.getElementById('againBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); startGame(diffKey); });
 document.getElementById('menuBtn').addEventListener('click', (e) => { e.stopPropagation(); toMenu(); });
-document.getElementById('saveNameBtn').addEventListener('click', (e) => { e.stopPropagation(); if (window.HSGSound) HSGSound.tick(); saveName(); });
-document.getElementById('nameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); saveName(); } });
 
 // ---------- deity mode: type "godmode" anywhere to open a level picker ----------
 (function () {
@@ -1439,7 +1418,6 @@ function bootDemo() {
 // ---------- boot ----------
 setupCanvas();
 renderVoyage();
-renderBoard(null, 'startBoard');
 render();
 rafId = requestAnimationFrame(loop);
 if (/[?&]shot\b/.test(location.search)) bootDemo();
