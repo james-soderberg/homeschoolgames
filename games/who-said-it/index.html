@@ -304,6 +304,11 @@ let answered = false, current = null, advanceTimer = null;
 // The game is a fixed run of WALL_SIZE (24) questions. Score = correct - hints,
 // so a flawless 24/24 with no hints is the best possible (24). A miss or a hint
 // each costs a point.
+// Thinking time: the clock runs only while the options are on screen waiting for
+// an answer, and stops the moment one is given. Time spent reading the revealed
+// bio, or waiting on auto-advance, is deliberately NOT counted - it breaks ties
+// on the leaderboard, and nobody should be rushed out of reading what they missed.
+let thinkMs = 0, askedAt = 0;
 let roundIndex = 0;          // questions asked so far (0..WALL_SIZE)
 let correctCount = 0;        // correct answers (portraits earned)
 let hintCount = 0;           // hints revealed across the run (each costs a point)
@@ -416,10 +421,12 @@ async function nextCard(){
     btn.addEventListener('click', ()=>handleAnswer(who, btn));
     grid.appendChild(btn);
   });
+  askedAt = Date.now();          // options are up: start this question's clock
 }
 
 function handleAnswer(chosen, btn){
   if(answered) return; answered = true;
+  if(askedAt){ thinkMs += Date.now() - askedAt; askedAt = 0; }
   const btns = document.querySelectorAll('.option-btn');
   btns.forEach(b=>b.disabled=true);
   const correct = chosen === current.n;
@@ -464,8 +471,12 @@ function endGame(){
   const score = Math.max(0, correctCount - hintCount);
   const hinted = hintCount > 0;
   const perfect = score >= WALL_SIZE;
-  const panel = { gameId:'who-said-it', gameName:'Who Said It?', level:'best', levelName:'Best Score',
-                  minStreak:1, unit:'wall24', score:score, hinted:hinted,
+  // Score out of 24 with thinking time as the tiebreaker. A fresh board key
+  // ('timed'), because the encoded score is not comparable with the plain 0-24
+  // numbers the old 'best' board holds.
+  const encoded = HSGStreak.encodeQuiz(score, thinkMs / 1000);
+  const panel = { gameId:'who-said-it', gameName:'Who Said It?', level:'timed', levelName:'Best Score',
+                  minStreak:1, unit:'wall24t', score:encoded, hinted:hinted,
                   onSaved:()=>renderSideBoard() };   // reflect the new score in the left board
   if(window.HSGfx && HSGfx.showSummary){
     HSGfx.showSummary({
@@ -482,6 +493,7 @@ function endGame(){
 function resetGame(){
   collected = []; collectedNames.clear();
   roundIndex = 0; correctCount = 0; hintCount = 0; hintThisRound = false;
+  thinkMs = 0; askedAt = 0;
   answerPool = shuffle(PEOPLE.filter(p=>!brokenImg.has(p.n)));
   buildWall(); nextCard();
 }
@@ -536,7 +548,7 @@ if(allGamesLink) allGamesLink.addEventListener('click', (e)=>{ e.preventDefault(
 // The Wall of Fame leaderboard stays visible on the left the whole time.
 function renderSideBoard(){
   if(window.HSGStreak && HSGStreak.renderBoardInto){
-    HSGStreak.renderBoardInto('#wsiSideBoard', { gameId:'who-said-it', level:'best', unit:'wall24', minStreak:1 });
+    HSGStreak.renderBoardInto('#wsiSideBoard', { gameId:'who-said-it', level:'timed', unit:'wall24t', minStreak:1 });
   }
 }
 

@@ -4,6 +4,10 @@
 // unlimited lives (each game gates its own life-loss on HSGGod.on)
 // and can pop a picker to jump to any level / stage / difficulty.
 //
+// A deity-mode run is NEVER recorded: streak-rail.js checks HSGGod.on in
+// qualifies(), which every submission path goes through, so no cheat score can
+// reach the shared leaderboards. Nothing to remember when adding it to a game.
+//
 // Usage in a game:
 //   <script src="../../assets/js/godmode.js"></script>
 //   HSGGod.watch(() => {            // fires when "godmode" is typed
@@ -49,7 +53,10 @@
     injectStyles();
     badgeEl = document.createElement('div');
     badgeEl.className = 'hsg-god-badge';
-    badgeEl.textContent = 'DEITY MODE';
+    // Say plainly that this run is unranked: streak-rail refuses to record any
+    // score while deity mode is on, and a player who is never asked for their
+    // name would otherwise just think the leaderboard was broken.
+    badgeEl.textContent = 'DEITY MODE · not scored';
     document.body.appendChild(badgeEl);
   }
 

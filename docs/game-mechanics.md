@@ -8,9 +8,16 @@
 
 ---
 
-## 1. The Quest-Rail engine (DONE)
+## 1. The Quest-Rail engine (REMOVED - 2026-08)
 
-Files: `assets/js/quest-rail.js`, `assets/css/quest-rail.css`.
+> **Deleted.** `assets/js/quest-rail.js` (684 lines) and `assets/css/quest-rail.css`
+> were removed: no page loaded them. Bible Quiz moved to the Paul's Voyage design
+> and Bible Trivia was always self-contained, so the engine had no callers left.
+> It also kept its own local-only leaderboard (`hsg_quest_<gameId>`), separate
+> from the shared D1 boards, so reviving it would mean re-pointing that at
+> `HSGStreak` first. The design notes below are kept as a record of the decision.
+
+Files: `assets/js/quest-rail.js`, `assets/css/quest-rail.css` (both deleted).
 
 A reusable **"build vs. threat"** mechanic that lives in a game's right rail
 (replaces the streak counter). It is **theme-driven** so each game is mostly an

@@ -555,9 +555,12 @@ let W = DW, H = DH, dpr = 1, view = { scale: 1, ox: 0, oy: 0 };
 let phase = 'menu';      // menu | aim | flight | crashwait | fact | over | demo | tutorial
 let tutT = 0, tutAcc = 0, tutLaunched = false, tutDone = false, tutReplay = null;   // auto-played tutorial
 let diffKey = 'commander', diff = DIFF.commander;   // single fixed difficulty
-// Unlimited lives by default: probes never run out, so the voyage is an endless
-// practice / score-chase. End it any time with "End voyage" to log your score.
-const UNLIMITED_PROBES = true;
+// Probes are limited, so a voyage can actually end: you start with diff.probes,
+// a crash or a miss costs one, and every 5th world earns a spare back. Without a
+// fail state the score board only measured how long someone kept clicking.
+// "End voyage" still logs your score early if you want to stop on a good run.
+// (Set true for an endless practice voyage - nothing else needs changing.)
+const UNLIMITED_PROBES = false;
 let level = 1, score = 0, probes = 5, streak = 0, bestStreak = 0, attempts = 0, reachedName = 'None';
 let bodies = [], target = null, pad = null, objective = '', maneuver = '', targetInfo = null, levelKind = 'single';
 let levelVmax = 1;   // per-level max launch velocity (1 = full; <1 caps thrust so gravity dominates)
@@ -1082,7 +1085,10 @@ function gameOver() {
   document.getElementById('fsReached').textContent = titleName(reachedName);
   document.getElementById('fsStreak').textContent = bestStreak;
   const board = getBoard();
-  const qualifies = score > 0 && (board.length < 10 || score > board[board.length - 1].score);
+  // Deity mode gives infinite probes, so that run is not comparable. This board
+  // is local (not HSGStreak), so it needs its own copy of the same guard.
+  const cheated = !!(window.HSGGod && window.HSGGod.on);
+  const qualifies = !cheated && score > 0 && (board.length < 10 || score > board[board.length - 1].score);
   const ne = document.getElementById('nameEntry');
   if (qualifies) {
     pendingScore = { score, streak: bestStreak, level };

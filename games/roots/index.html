@@ -439,6 +439,26 @@ const WORDS = [
   {w:'biodegradable',     p:['bio','de','grad','able'],  d:'Able to be broken down by living things', rd:'Able to rot away naturally without harming the environment', t:4},
   {w:'microorganism',     p:['micro','organ','ism'],     d:'A tiny living thing', rd:'A living thing too small to see, such as a germ', t:4},
   {w:'microbiologist',    p:['micro','bio','log','ist'], d:'A scientist who studies tiny life', rd:'A scientist who studies microbes', t:4},
+  // Tier 4 was only four words deep, so a Hard run kept serving the same ones.
+  // These are all four-part builds from roots already in the map above. Words
+  // where "in-" means "not" are deliberately avoided: the map defines in='into',
+  // so their literal gloss would come out wrong.
+  {w:'reconstruction',    p:['re','con','struct','ion'],  d:'The process of building together again', rd:'The act of building something again after it has been damaged or taken apart', t:4},
+  {w:'deconstruction',    p:['de','con','struct','ion'],  d:'The process of taking a building-together back down', rd:'The act of carefully taking something apart to see how it was made', t:4},
+  {w:'reproduction',      p:['re','pro','duct','ion'],    d:'The process of leading forward again', rd:'The way living things make more of their own kind', t:4},
+  {w:'reintroduction',    p:['re','intro','duct','ion'],  d:'The process of leading inward again', rd:'Bringing something back to a place it used to be, as with wolves returned to a park', t:4},
+
+  // Tier 3 top-ups, same reasoning as the tier 4 batch above: three-part builds
+  // from existing roots, so the cap tier has enough depth to stay varied.
+  {w:'contradiction', p:['contra','dict','ion'],  d:'The act of speaking against', rd:'A statement that says the opposite of another, so both cannot be true', t:3},
+  {w:'interruption',  p:['inter','rupt','ion'],   d:'The act of breaking in between', rd:'Something that stops a person or an activity partway through', t:3},
+  {w:'introspection', p:['intro','spect','ion'],  d:'The act of looking inward', rd:'Examining your own thoughts and feelings', t:3},
+  {w:'prescription',  p:['pre','script','ion'],   d:'Something written beforehand', rd:"A doctor's written order for medicine", t:3},
+  {w:'subscription',  p:['sub','script','ion'],   d:'A writing-under, or signing up', rd:'An arrangement to keep receiving something regularly, such as a magazine', t:3},
+  {w:'inscription',   p:['in','script','ion'],    d:'The act of writing into', rd:'Words carved or written onto something, such as a stone or a ring', t:3},
+  {w:'disruption',    p:['dis','rupt','ion'],     d:'The act of breaking apart', rd:'A disturbance that stops something working the way it normally does', t:3},
+  {w:'transformation',p:['trans','form','ation'], d:'The act of shaping across', rd:'A complete change in form or appearance', t:3},
+  {w:'malformation',  p:['mal','form','ation'],   d:'A bad shaping', rd:'A part that has grown or formed in the wrong shape', t:3},
 
   // ---- audited batch: more words + tougher, closely-related roots ----
   {w:'thermal',      p:['therm','al'],       d:'Relating to heat', rd:'Relating to heat, or designed to keep in warmth', t:1},
@@ -468,9 +488,15 @@ const WORDS = [
 // clue: 'literal' spells the parts out (a gentle scaffold); 'real' gives the true
 // dictionary definition, so you must translate meaning -> word using your roots.
 const DIFF = {
-  easy:   { key:'easy',   label:'Easy',   icon:'🌱', desc:'Two-part words, literal clues', tiers:[1],       distract:3, decodeEvery:0, hint:true,  perLevel:5, clue:'literal' },
-  medium: { key:'medium', label:'Medium', icon:'🌳', desc:'Real definitions, three-part words', tiers:[1,2,3],   distract:5, decodeEvery:5, hint:true,  perLevel:5, clue:'real' },
-  hard:   { key:'hard',   label:'Hard',   icon:'🔥', desc:'Real definitions, monster words',    tiers:[1,2,3,4], distract:6, decodeEvery:3, hint:false, perLevel:4, clue:'real' },
+  // `tiers` is indexed by level, so a repeated entry holds the cap for an extra
+  // level. Easy used to be [1] alone, which meant its level counter changed
+  // nothing at all - same tier, same word pool, same everything, forever. Hard
+  // used to reach tier 4 by level 4, long before there were enough tier 4 words
+  // to draw on. `distract`..`distractMax` ramps the decoy count with the level
+  // so a level-up is always felt, even while the tier holds.
+  easy:   { key:'easy',   label:'Easy',   icon:'🌱', desc:'Two-part words, literal clues', tiers:[1,1,2],       distract:3, distractMax:5, decodeEvery:0, hint:true,  perLevel:5, clue:'literal' },
+  medium: { key:'medium', label:'Medium', icon:'🌳', desc:'Real definitions, three-part words', tiers:[1,2,3],   distract:5, distractMax:7, decodeEvery:5, hint:true,  perLevel:5, clue:'real' },
+  hard:   { key:'hard',   label:'Hard',   icon:'🔥', desc:'Real definitions, monster words',    tiers:[1,2,3,3,4], distract:6, distractMax:9, decodeEvery:3, hint:false, perLevel:4, clue:'real' },
 };
 
 // ---- helpers ----
@@ -541,12 +567,23 @@ function currentMaxTier(){
   return cfg.tiers[idx];
 }
 
+// How many decoy roots to offer. Grows with the level and stops at distractMax,
+// so climbing a level always tightens the puzzle even when the tier hasn't moved.
+function distractCount(){
+  return Math.min(cfg.distract + Math.floor((level - 1) / 2), cfg.distractMax);
+}
+
 function pickWord(){
   const cap = currentMaxTier();
   let pool = WORDS.filter(x => x.t <= cap && !usedWords.has(x.w));
   if(!pool.length){ usedWords.clear(); pool = WORDS.filter(x => x.t <= cap); }
   const atCap = pool.filter(x => x.t === cap);
-  let cand = (atCap.length && Math.random() < 0.7) ? atCap : pool;
+  // Bias toward the cap tier so the run feels like it's climbing - but scale the
+  // bias to how deep that tier actually is. A flat 0.7 meant the top tier (four
+  // words at the time) was served over and over; now a thin tier shares the
+  // spotlight with the rest of the pool instead of monopolising it.
+  const capBias = Math.min(0.7, atCap.length / 16);
+  let cand = (atCap.length && Math.random() < capBias) ? atCap : pool;
   const known = cand.filter(x => x.p.some(id => unlocked.has(id)));
   if(known.length && Math.random() < 0.55) cand = known;   // recycle learned roots
   return shuffle(cand)[0];
@@ -558,7 +595,7 @@ function buildBank(word){
   // Prefer confusable decoys (same meaning-family, one per needed part); top up with other real roots.
   const conf = confusablesFor(need);
   const rest = shuffle(POOL.filter(id => !needSet.has(id) && !conf.includes(id)));
-  const distract = conf.concat(rest).slice(0, cfg.distract);
+  const distract = conf.concat(rest).slice(0, distractCount());
   return shuffle(need.concat(distract));
 }
 

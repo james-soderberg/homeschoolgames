@@ -47,6 +47,27 @@
   var TIME_BASE = 100000;
   function fmtClock(s) { s = Math.max(0, Math.floor(s)); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
+  // Fixed-length quiz scores: `correct` in the high digits, elapsed thinking time
+  // inverted in the low digits so faster breaks a tie. QUIZ_T caps a run's timed
+  // portion at 99999s (~27h), far beyond any real run, and the largest possible
+  // encoded score (24 * QUIZ_T + 99999) stays well inside the server's cap.
+  var QUIZ_T = 100000;
+  function encodeQuiz(correct, seconds) {
+    var t = Math.max(0, Math.min(QUIZ_T - 1, Math.round(seconds || 0)));
+    return Math.max(0, Math.floor(correct)) * QUIZ_T + (QUIZ_T - 1 - t);
+  }
+  function quizCorrect(n) { return Math.floor(n / QUIZ_T); }
+  function quizSecs(n) { return QUIZ_T - 1 - (n % QUIZ_T); }
+  function quizUnit(total, head, icon) {
+    return {
+      head: head,
+      score: function (n) { return quizCorrect(n) + ' / ' + total + ' · ' + fmtClock(quizSecs(n)); },
+      of: function (n) { return quizCorrect(n) + ' / ' + total + ' in ' + fmtClock(quizSecs(n)) + '!'; },
+      display: function (n) { return quizCorrect(n); },   // live counter shows just the score
+      claim: 'game', rIcon: icon, rLabel: 'SCORE'
+    };
+  }
+
   // Per-metric presentation. `streak` is the default fire streak; every other unit
   // is a "highest value" metric and drives the rail widget with its own icon/label
   // (rIcon / rLabel) instead of the fire-streak escalation.
@@ -81,6 +102,22 @@
     // Flag Frenzy - score out of 24 (higher is better)
     flags:  { head: '🏆 Flag Champions',        score: function (n) { return n + ' / 24'; },
               of: function (n) { return n + ' / 24!'; },                           claim: 'game', rIcon: '🚩', rLabel: 'SCORE' },
+    // ---- fixed-length quizzes, with a tiebreaker ----
+    // A run is always the same number of questions, so the raw score has a hard
+    // ceiling (24, 24, 20) and everyone who aces it lands on the identical
+    // number - the board fills with ties broken only by who got there first.
+    // These units pack THINKING TIME into the low digits, the same trick
+    // mapscore uses for correct/wrong:
+    //     score = correct * QUIZ_T + (QUIZ_T - 1 - seconds)
+    // so it sorts by most-correct first, then fastest. "Thinking time" is the
+    // sum of how long each question's options were on screen before the answer -
+    // it deliberately EXCLUDES the reveal/bio reading time, so a player who
+    // stops to read what they got wrong is never punished for learning.
+    // These replace the plain wall24 / flags / art20 units, which are kept
+    // above so any board still written in the old format renders correctly.
+    wall24t:  quizUnit(24, '🏆 Wall of Fame',    '🏛️'),
+    flags24t: quizUnit(24, '🏆 Flag Champions', '🚩'),
+    art20t:   quizUnit(20, '🏆 Master Curators', '🎨'),
     // Map Quiz accuracy - a single integer encodes BOTH correct and wrong:
     //   score = correct*1000 + (999 - min(wrong,999))
     // so it sorts by most-correct first, then by fewest-wrong (best accuracy).
@@ -293,7 +330,16 @@
       .catch(function () { clear(); return null; });             // network error - keep queued
   }
 
+  // Deity mode ("godmode") hands out unlimited lives, invincibility and level
+  // jumps, so a run played under it is not comparable to a real one. Boards are
+  // shared now, so such a score would sit at the top of a global board forever.
+  // Every submission path (record / endPanel / Rail.gameOver) gates on this, so
+  // one check here keeps cheat runs off the leaderboards entirely - the player
+  // still sees the board, they just can't post to it.
+  function cheating() { return !!(window.HSGGod && window.HSGGod.on); }
+
   function qualifies(key, score, minStreak) {
+    if (cheating()) return false;
     if (!score || score < (minStreak || 1)) return false;
     var list = load(key);
     if (list.length < MAX) return true;
@@ -302,7 +348,7 @@
   // Where would `score` land right now (1-based)? Ties sit below equal earlier scores.
   function projectedRank(key, score) {
     var list = load(key).slice();
-    var marker = { name: ' new', score: score, ts: Number.MAX_SAFE_INTEGER };
+    var marker = { name: '', score: score, ts: Number.MAX_SAFE_INTEGER };
     list.push(marker);
     list.sort(byScore);
     for (var i = 0; i < list.length; i++) if (list[i] === marker) return i + 1;
@@ -853,6 +899,10 @@
     bestScore: function (gameId, level) { var l = load(levelKey(gameId, level)); return l.length ? l[0].score : 0; },
     // Turn a raw solve time (seconds) into the inverted score a `soltime` board expects.
     encodeTime: function (seconds) { return TIME_BASE - Math.max(0, Math.floor(seconds)); },
+    // Pack a fixed-length quiz result (correct answers + thinking time in
+    // seconds) into the single sortable integer the wall24t/flags24t/art20t
+    // boards expect. Most correct wins; equal scores are broken by faster time.
+    encodeQuiz: encodeQuiz,
     formatName: formatName,
     lastName: lastName,
     // ---- groups ----

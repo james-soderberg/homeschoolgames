@@ -43,7 +43,11 @@
     /* wide 2-column layout: the battlefield fills the row (landscape rectangle),
        the leaderboard rail sits on the right - not the centered 3-col grid, which
        squeezed the scene toward square. */
-    .game-layout-wide { max-width: min(1500px, 98vw); column-gap: 1rem; }
+    /* single centered column: the battlefield is a wide landscape rectangle,
+       centered on screen. The leaderboard lives on the start "Scores to Beat"
+       boards + the game-over card, so no side rail squeezes/offsets the scene. */
+    .siege-page { max-width: 1240px; }
+    .hsg-rail { display: none; }
 
     .siege-top {
       display: flex;
@@ -160,6 +164,7 @@
     .bf-overlay .crest { font-size: 3rem; line-height: 1; margin-bottom: 0.4rem; }
 
     .realm-row { display: flex; flex-direction: column; gap: 0.6rem; width: 100%; max-width: 340px; }
+    #dsLevelBoards { width: 100%; max-width: 360px; margin: 1.15rem auto 0; text-align: left; }
     .realm-btn {
       display: flex; align-items: center; justify-content: center; gap: 0.6rem;
       background: rgba(255,253,244,0.96);
@@ -354,7 +359,7 @@
   </nav>
 </header>
 
-<div class="game-layout game-layout-wide game-fit-main">
+<div class="game-fit-main">
 <div class="siege-page game-main">
 
   <div class="siege-top">
@@ -399,6 +404,7 @@
           <span class="r-icon">💀</span><span class="r-name">Impossible</span>
         </button>
       </div>
+      <div id="dsLevelBoards"></div>
     </div>
 
     <!-- Game over overlay -->
@@ -580,14 +586,29 @@ const GIANT_PHRASES = [
 // are: a faster approach OR longer words both demand more WPM. So each realm is
 // calibrated by  required_wpm ≈ marchSpeed × avgWordLength / 5.5.
 //
-// Difficulty climbs purely with level via marchSpeed = marchBase + (level-1)*marchStep,
-// tuned so LEVEL 1 sits at the BOTTOM of the band and LEVEL 5 reaches the TOP -
-// then it keeps climbing past it. The `targetWpm` note on each realm is just
-// documentation of the intended band (L1 → L5):
-//   easy        10 → 20 wpm   (kids words,      avg ~3.6 chars)
-//   medium      20 → 40 wpm   (knight words,    avg ~6.6 chars)
-//   hard        40 → 60 wpm   (dragonlord words, avg ~9 chars)
-//   impossible  60+   wpm     (warlord words,   avg ~11 chars) - left as-is
+// IMPORTANT: the scripture pools do NOT differ much in word length. An earlier
+// calibration assumed ~6.6 / 9 / 11 chars for medium / hard / impossible, but a
+// KJV verse split into words averages ~4.0-4.2 chars in ALL THREE pools (the
+// text is mostly "the", "and", "of", "unto"). Word length therefore separates
+// the realms hardly at all, and marchStep has to do the whole job. Measured:
+//   easy 3.50   medium 4.16   hard 4.05   impossible 3.99
+//
+// Because that was missed, the steps used to be non-monotonic (medium 4.0 was
+// the steepest in the game, impossible 0.8 the gentlest), so Medium overtook
+// Impossible around level 5 and Hard around level 6. The steps below are
+// ordered so a lower realm can NEVER demand more WPM than a higher one, at any
+// level. Difficulty still climbs forever - marchSpeed = marchBase + (level-1)*marchStep -
+// so a run always ends eventually.
+//
+// Resulting required WPM (L1 → L10 → L20):
+//   easy         6 → 18 → 31
+//   medium      11 → 25 → 40
+//   hard        16 → 35 → 55
+//   impossible  22 → 45 → 71
+//
+// The secondary knobs below (rock/dragon time-to-type, siege tick) are ordered
+// the same way. They previously were not: impossible carried medium's exact
+// values, which made it gentler than hard on every one of them.
 const EASY_BOSS_WORDS = ["dragon","castle","knight","wizard","monster","attack","sword","fire","wings","giant","flame","beast"];
 const REALMS = {
   // genuinely gentle: slow foes, sparse squads, no bosses until L6 (see buildLevelEasy)
@@ -598,28 +619,31 @@ const REALMS = {
     dragonBase:10, dragonStep:0.15, dragonMin:7,
     mountedFrom:1, siegeInterval:3.5
   },
-  // = the build you tested as "easy" (gentle layout + this speed), now labelled Medium
+  // = the build you tested as "easy" (gentle layout + this speed), now labelled Medium.
+  // marchBase is unchanged; only the step came down (it was 4.0, the steepest in
+  // the game, which is what let Medium overtake both realms above it).
   medium: {
-    pool:"scriptureMed", bossWords:BOSS_WORDS, targetWpm:"was the old 'easy'",
-    marchBase:15, marchStep:4.0,
+    pool:"scriptureMed", bossWords:BOSS_WORDS, targetWpm:"11 → 25 → 40",
+    marchBase:15, marchStep:2.0,
     rockBase:11, rockStep:0.2, rockMin:8,
     dragonBase:9, dragonStep:0.2, dragonMin:6.5,
     mountedFrom:1, siegeInterval:2.0
   },
   hard: {
-    pool:"scriptureHard", bossWords:BOSS_WORDS, targetWpm:"40-60",
-    marchBase:22, marchStep:2.8,             // L1≈40 wpm … L5≈60 wpm (mirrors Medium at 2× the pace)
+    pool:"scriptureHard", bossWords:BOSS_WORDS, targetWpm:"16 → 35 → 55",
+    marchBase:22, marchStep:2.8,
     rockBase:9, rockStep:0.2, rockMin:6.5,
     dragonBase:7, dragonStep:0.2, dragonMin:5.5,
     mountedFrom:1, siegeInterval:1.2
   },
-  // left exactly as the build you liked - now the words are the hardest KJV verses
+  // Now genuinely the hardest on every axis: the steepest climb, the least time
+  // to type a siege rock or dragon, and the fastest dragon-fire tick.
   impossible: {
-    pool:"scriptureImpossible", bossWords:BOSS_WORDS, targetWpm:"60+",
-    marchBase:30, marchStep:0.8,
-    rockBase:11, rockStep:0.2, rockMin:8,
-    dragonBase:9, dragonStep:0.2, dragonMin:6.5,
-    mountedFrom:1, siegeInterval:2.0
+    pool:"scriptureImpossible", bossWords:BOSS_WORDS, targetWpm:"22 → 45 → 71",
+    marchBase:30, marchStep:3.6,
+    rockBase:8, rockStep:0.22, rockMin:5.5,
+    dragonBase:6, dragonStep:0.22, dragonMin:4.8,
+    mountedFrom:1, siegeInterval:0.9
   }
 };
 
@@ -710,8 +734,13 @@ const rail = HSGStreak.init({
   level:'easy', levelName:'Easy',
   mount: document.getElementById('streakRail')
 });
-// The "scores to beat" board already shows on the right rail, so it's no longer
-// duplicated inside the start overlay (which kept the start menu from scrolling).
+// The leaderboard lives on the start overlay ("scores to beat" per realm) + the
+// game-over card, so the battlefield can be a wide, centered rectangle with no
+// side rail squeezing it.
+if (window.HSGStreak && HSGStreak.levelBoards) HSGStreak.levelBoards('#dsLevelBoards', {
+  gameId:'dragon-siege', unit:'wave', minStreak:1,
+  levels:[{key:'easy',label:'Easy',icon:'🛡️'},{key:'medium',label:'Medium',icon:'⚔️'},{key:'hard',label:'Hard',icon:'🐲'},{key:'impossible',label:'Impossible',icon:'💀'}]
+});
 // leaderboard score: how far you survive. Wave reached is primary; foes slain
 // breaks ties (encoded as wave*100000 + slain, the 'wave' unit format).
 function survivalScore(){ return level*100000 + slain; }

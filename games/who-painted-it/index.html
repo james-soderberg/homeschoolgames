@@ -274,6 +274,11 @@ const brokenImg = new Set();
 let pool = shuffle(ART);
 let used = new Set();
 let answered = false, current = null, advanceTimer = null;
+// Thinking time: the clock runs only while the options are on screen waiting for
+// an answer, and stops the moment one is given. Time spent reading the reveal is
+// deliberately NOT counted - it only breaks ties on the leaderboard, and nobody
+// should be rushed out of reading what they missed.
+let thinkMs = 0, askedAt = 0;
 let roundIndex = 0, correctCount = 0, hintCount = 0, hintThisRound = false;
 
 function loadImg(p){ return new Promise(res=>{ const im=new Image(); im.onload=()=>res(true); im.onerror=()=>{ brokenImg.add(p.s); res(false); }; im.src=imgFor(p); }); }
@@ -352,10 +357,12 @@ async function nextCard(){
     btn.addEventListener('click', ()=>handleAnswer(who, btn));
     grid.appendChild(btn);
   });
+  askedAt = Date.now();          // options are up: start this question's clock
 }
 
 function handleAnswer(chosen, btn){
   if(answered) return; answered = true;
+  if(askedAt){ thinkMs += Date.now() - askedAt; askedAt = 0; }
   const btns = [...document.querySelectorAll('.option-btn')];
   btns.forEach(b=>b.disabled=true);
   const correct = chosen === current.a;
@@ -390,8 +397,11 @@ function handleAnswer(chosen, btn){
 function endGame(){
   const score = Math.max(0, correctCount - hintCount);
   const hinted = hintCount > 0, perfect = score >= RUN;
-  const panel = { gameId:'who-painted-it', gameName:'Who Painted It?', level:'best', levelName:'Best Score',
-                  minStreak:1, unit:'art20', score:score, hinted:hinted, onSaved:()=>renderSideBoard() };
+  // Score out of 20, tiebroken by thinking time. Fresh board key ('timed') -
+  // the encoded score is not comparable with the plain 0-20 'best' board.
+  const encoded = HSGStreak.encodeQuiz(score, thinkMs / 1000);
+  const panel = { gameId:'who-painted-it', gameName:'Who Painted It?', level:'timed', levelName:'Best Score',
+                  minStreak:1, unit:'art20t', score:encoded, hinted:hinted, onSaved:()=>renderSideBoard() };
   if(window.HSGfx && HSGfx.showSummary){
     HSGfx.showSummary({
       title: perfect ? '🎨 Master curator! '+RUN+' / '+RUN : '🖼️ Gallery tour complete!',
@@ -404,6 +414,7 @@ function endGame(){
 }
 function resetGame(){
   used = new Set(); roundIndex = 0; correctCount = 0; hintCount = 0; hintThisRound = false;
+  thinkMs = 0; askedAt = 0;
   pool = shuffle(ART.filter(p=>!brokenImg.has(p.s)));
   buildGallery(); nextCard();
 }
@@ -411,7 +422,7 @@ function resetGame(){
 // The leaderboard stays on the left the whole time.
 function renderSideBoard(){
   if(window.HSGStreak && HSGStreak.renderBoardInto)
-    HSGStreak.renderBoardInto('#wpiSideBoard', { gameId:'who-painted-it', level:'best', unit:'art20', minStreak:1 });
+    HSGStreak.renderBoardInto('#wpiSideBoard', { gameId:'who-painted-it', level:'timed', unit:'art20t', minStreak:1 });
 }
 
 document.getElementById('hintBtn').addEventListener('click', ()=>{

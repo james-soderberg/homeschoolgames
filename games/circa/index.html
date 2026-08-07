@@ -864,6 +864,8 @@
        "doing well" in gold before) ---- */
     .stat-pill.score.negative { border-color: var(--red); background: #fbeeee; }
     .stat-pill.score.negative .stat-val { color: var(--red); }
+    /* (The big right-rail score card going red on a negative score is handled by
+       streak-rail.js/.css's own `.hsg-streak.negative`, so no override here.) */
 
     /* ---- Reveal: compact the remaining hand so the showdown + timeline + verdict
        all fit on one screen (no scrolling) ---- */
@@ -880,6 +882,11 @@
     #soloScreen.revealing .showdown .card-img { max-height: 10vh; }
     #soloScreen.revealing .card-big-date { font-size: 1.25rem; padding: .08rem 0; }
     #soloScreen.revealing .showdown-label, #soloScreen.revealing .center-label { font-size: .7rem; margin: .05rem 0; }
+    /* The BC->AD timeline is the tall piece that used to shove "Next round" off the
+       bottom - trim its reserved height and padding so it, the verdict, and the
+       button all stay on screen. */
+    #soloScreen.revealing .timeline-wrap.show { max-height: 128px; margin-top: .4rem; }
+    #soloScreen.revealing .timeline { padding: 30px 18px 34px; min-height: 0; }
     #soloScreen.revealing .center-card-wrap { margin-bottom: 0; }
     #soloScreen.revealing .center-label { margin-bottom: .1rem; }
     #soloScreen.revealing .solo-instruction { margin: .1rem 0; }
@@ -1042,7 +1049,7 @@
      so their ink-on-cream colours have to be lifted to read against graphite */
   .year-diff .num { color: var(--on-backdrop); }
   .year-diff .label { color: var(--on-backdrop-dim); }
-  .tl-end, .tl-zero-label, .tl-pin .tag { color: var(--on-backdrop-dim); opacity: 1; }
+  .tl-end, .tl-zero-label, .tl-pin .tag { color: #fff; opacity: 1; }
   .tl-pin.center .yr { color: #E3C377; }
   .tl-pin.pick.good .yr { color: #6BC694; }
   .tl-pin.pick.bad  .yr { color: #EC8579; }

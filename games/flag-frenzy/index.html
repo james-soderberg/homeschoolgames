@@ -398,6 +398,11 @@ let collected = [];               // flags filling the wall this game (in order)
 const collectedNames = new Set();
 let answered = false, current = null, advanceTimer = null;
 let roundIndex = 0;          // flags shown so far (0..WALL_SIZE)
+// Thinking time: the clock runs only while the options are on screen waiting for
+// an answer, and stops the moment one is given. Time spent reading the reveal is
+// deliberately NOT counted - it only breaks ties on the leaderboard, and nobody
+// should be rushed out of reading what they missed.
+let thinkMs = 0, askedAt = 0;
 let correctCount = 0;        // correct answers (flags earned)
 let hintCount = 0;           // hints revealed across the run (each costs a point)
 let hintThisRound = false;
@@ -492,10 +497,12 @@ function nextCard(){
     btn.addEventListener('click', ()=>handleAnswer(who, btn));
     grid.appendChild(btn);
   });
+  askedAt = Date.now();          // options are up: start this question's clock
 }
 
 function handleAnswer(chosen, btn){
   if(answered) return; answered = true;
+  if(askedAt){ thinkMs += Date.now() - askedAt; askedAt = 0; }
   const btns = document.querySelectorAll('.option-btn');
   btns.forEach(b=>b.disabled=true);
   const correct = chosen === current.country;
@@ -536,8 +543,11 @@ function endGame(){
   const score = Math.max(0, correctCount - hintCount);
   const hinted = hintCount > 0;
   const perfect = score >= WALL_SIZE;
-  const panel = { gameId:'flag-frenzy', gameName:'Flag Frenzy', level:'best', levelName:'Best Score',
-                  minStreak:1, unit:'flags', score:score, hinted:hinted,
+  // Score out of 24, tiebroken by thinking time. Fresh board key ('timed') -
+  // the encoded score is not comparable with the plain 0-24 'best' board.
+  const encoded = HSGStreak.encodeQuiz(score, thinkMs / 1000);
+  const panel = { gameId:'flag-frenzy', gameName:'Flag Frenzy', level:'timed', levelName:'Best Score',
+                  minStreak:1, unit:'flags24t', score:encoded, hinted:hinted,
                   onSaved:()=>renderSideBoard() };
   if(window.HSGfx && HSGfx.showSummary){
     HSGfx.showSummary({
@@ -554,6 +564,7 @@ function endGame(){
 function resetGame(){
   collected = []; collectedNames.clear();
   roundIndex = 0; correctCount = 0; hintCount = 0; hintThisRound = false;
+  thinkMs = 0; askedAt = 0;
   answerPool = shuffle(DECK);
   buildWall(); nextCard();
 }
@@ -606,7 +617,7 @@ if(allGamesLink) allGamesLink.addEventListener('click', (e)=>{ e.preventDefault(
 
 function renderSideBoard(){
   if(window.HSGStreak && HSGStreak.renderBoardInto){
-    HSGStreak.renderBoardInto('#ffSideBoard', { gameId:'flag-frenzy', level:'best', unit:'flags', minStreak:1 });
+    HSGStreak.renderBoardInto('#ffSideBoard', { gameId:'flag-frenzy', level:'timed', unit:'flags24t', minStreak:1 });
   }
 }
 
