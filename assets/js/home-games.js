@@ -6,20 +6,20 @@ const GAMES = [
   { key:'circa',         name:'Circa',           href:'games/circa/index.html',        subject:'History',   emoji:'🏛️', blurb:'Put history in order, card by card.', photo:'assets/img/home/shots/circa.jpg', lb:'streak' },
   { key:'dragon-siege',  name:'Dragon Siege',     href:'games/dragon-siege/index.html', subject:'Typing',    emoji:'🐉', blurb:'Type fast to defend the keep.',      photo:'assets/img/home/shots/dragon-siege.jpg', lb:'wave' },
   { key:'type-invaders', name:'Independence Day',    href:'games/type-invaders/index.html',subject:'Typing',    emoji:'🛸', blurb:'Type to blast aliens off the White House.', photo:'assets/img/home/shots/type-invaders.jpg', lb:'wave' },
-  { key:'slingshot',     name:'Gravity Slingshot', href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg', badge:'✦ New' },
-  { key:'who-painted-it',name:'Who Painted It?',  href:'games/who-painted-it/index.html', subject:'Art',      emoji:'🎨', blurb:'Name the artist behind the masterpiece.', photo:'assets/img/home/shots/who-painted-it.jpg', badge:'✦ New', lb:'art20' },
-  { key:'grammar-express',name:'Grammar Express', href:'games/grammar-express/index.html', subject:'Grammar', emoji:'🚂', blurb:'Guard the train by naming each part of speech.', photo:'assets/img/home/shots/grammar-express.jpg', badge:'✦ New', lb:'points' },
+  { key:'slingshot',     name:'Gravity Slingshot', href:'games/slingshot/index.html',    subject:'Astronomy', emoji:'🪐', blurb:'Use gravity to reach the planets.', photo:'assets/img/home/shots/slingshot.jpg' },
+  { key:'who-painted-it',name:'Who Painted It?',  href:'games/who-painted-it/index.html', subject:'Art',      emoji:'🎨', blurb:'Name the artist behind the masterpiece.', photo:'assets/img/home/shots/who-painted-it.jpg', lb:'art20' },
+  { key:'grammar-express',name:'Grammar Express', href:'games/grammar-express/index.html', subject:'Grammar', emoji:'🚂', blurb:'Guard the train by naming each part of speech.', photo:'assets/img/home/shots/grammar-express.jpg', lb:'points' },
   { key:'word-racer',    name:'Word Racer',       href:'games/word-racer/index.html',   subject:'Typing',    emoji:'🏎️', blurb:'Type fast to win the race.',         photo:'assets/img/home/shots/word-racer.jpg', lb:'wpm' },
   { key:'letter-snake',  name:'Letter Snake',     href:'games/letter-snake/index.html', subject:'Spelling',  emoji:'🐍', blurb:'Spell words as you slither.',        photo:'assets/img/home/shots/letter-snake.jpg', lb:'length' },
-  { key:'roots',         name:'Roots',            href:'games/roots/index.html',        subject:'Vocabulary', emoji:'🧩', blurb:'Forge words from Greek & Latin roots.', photo:'assets/img/home/shots/roots.jpg', badge:'✦ New', lb:'streak' },
+  { key:'roots',         name:'Roots',            href:'games/roots/index.html',        subject:'Vocabulary', emoji:'🧩', blurb:'Forge words from Greek & Latin roots.', photo:'assets/img/home/shots/roots.jpg', lb:'streak' },
   { key:'bible-trivia',  name:'The Exodus Journey', href:'games/bible-trivia/index.html', subject:'Bible Trivia', emoji:'📜', blurb:'From slavery in Egypt to the Promised Land.', photo:'assets/img/home/shots/bible-trivia.jpg', lb:'streak' },
-  { key:'register',      name:'Register',         href:'games/register/index.html',     subject:'Math',      emoji:'🛒', blurb:'Run the shop and make the change.', photo:'assets/img/home/shots/register.jpg', badge:'✦ New', lb:'takings' },
+  { key:'register',      name:'Register',         href:'games/register/index.html',     subject:'Math',      emoji:'🛒', blurb:'Run the shop and make the change.', photo:'assets/img/home/shots/register.jpg', lb:'takings' },
   { key:'bridge-run',    name:'Bridge Run',       href:'games/bridge-run/index.html',   subject:'Math',      emoji:'🌉', blurb:'Solve the math and run as far as you can.',   photo:'assets/img/home/shots/bridge-run.jpg', lb:'distance' },
   { key:'flag-frenzy',   name:'Flag Frenzy',      href:'games/flag-frenzy/index.html',  subject:'Flag Identification', emoji:'🚩', blurb:'Guess the flag and fill your Wall of Flags.',photo:'assets/img/home/shots/flag-frenzy.jpg', lb:'flags' },
   { key:'map-quiz',      name:'Map Quiz',         href:'games/map-quiz/index.html',     subject:'Geography', emoji:'🗺️', blurb:'Find every country on the map.',     photo:'assets/img/home/shots/map-quiz.jpg', lb:'mapscore' },
-  { key:'statehouse',    name:'Statehouse',       href:'games/statehouse/index.html',   subject:'Geography', emoji:'🏛️', blurb:'Find the 50 states and their capitals.', photo:'assets/img/home/shots/statehouse.jpg', badge:'✦ New', lb:'mapscore' },
+  { key:'statehouse',    name:'Statehouse',       href:'games/statehouse/index.html',   subject:'Geography', emoji:'🏛️', blurb:'Find the 50 states and their capitals.', photo:'assets/img/home/shots/statehouse.jpg', lb:'mapscore' },
   { key:'element-hunter',name:'Element Hunter',   href:'games/element-hunter/index.html',subject:'Science',  emoji:'🧪', blurb:'Hunt down the periodic table.',      photo:'assets/img/home/shots/element-hunter.jpg', lb:'streak' },
-  { key:'food-web',      name:'Keep the Habitat Alive', href:'games/food-web/index.html', subject:'Biology',   emoji:'🦊', blurb:'Hunt to survive, but keep the whole habitat in balance.', photo:'assets/img/home/shots/food-web.jpg', badge:'✦ New', lb:'points' },
+  { key:'food-web',      name:'Keep the Habitat Alive', href:'games/food-web/index.html', subject:'Biology',   emoji:'🦊', blurb:'Hunt to survive, but keep the whole habitat in balance.', photo:'assets/img/home/shots/food-web.jpg', lb:'points' },
   { key:'bible-quiz',    name:"Paul's Journey",   href:'games/bible-quiz/index.html',   subject:'Passage Identification', emoji:'📖', blurb:'Test how well you know scripture.',  photo:'assets/img/home/shots/bible-quiz.jpg', lb:'streak' },
   { key:'letter-catch',  name:'Letter Catch',     href:'games/letter-catch/index.html', subject:'Spelling',  emoji:'🪣', blurb:'Catch letters to spell the word.',   photo:'assets/img/home/shots/letter-catch.jpg', lb:'streak' },
   { key:'tightrope',     name:'Tightrope',        href:'games/tightrope/index.html',    subject:'Math',      emoji:'🎪', blurb:'Balance a value on the number line.', photo:'assets/img/home/shots/tightrope.jpg', lb:'rounds' },
@@ -74,12 +74,13 @@ function lbResolve(board) {
 // boards aren't a difficulty ramp but where each board is its own mastery
 // challenge (Map Quiz: one champion board per region).
 var CHAMPION_LEVEL = {
-  'who-said-it': 'best', 'circa': 'hard', 'dragon-siege': 'impossible',
+  'who-said-it': 'best', 'circa': 'hard-pts', 'dragon-siege': 'impossible',
   'type-invaders': 'impossible', 'who-painted-it': 'best', 'grammar-express': 'journey',
-  'word-racer': 'paragraphs', 'letter-snake': 'einstein', 'roots': 'hard',
+  'word-racer': '', 'letter-snake': 'einstein', 'roots': 'hard',
   'bible-trivia': 'solomon', 'register': 'expert', 'bridge-run': 'run',
   'flag-frenzy': 'best', 'element-hunter': 'all', 'food-web': 'all',
   'bible-quiz': 'solomon', 'letter-catch': 'einstein', 'tightrope': 'survived',
+  'statehouse': ['states', 'capitals'],
   'map-quiz': ['americas', 'europe', 'asia', 'africa']
 };
 // Returns [{ board, name, emoji }] for the champion boards. Pass a group slug to
