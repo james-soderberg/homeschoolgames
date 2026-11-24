@@ -1187,6 +1187,7 @@ function rockDuration(){ return Math.max(realm.rockMin, realm.rockBase - (level-
 function dragonDuration(){ return Math.max(realm.dragonMin, realm.dragonBase - (level-1)*realm.dragonStep); }
 
 function renderBubble(th){
+  if (!th.bubble) return;   // a foe that has died has no label; throwing here would stop the game loop
   const w=reverentCase(th.word), d=w.slice(0,th.typed), nx=w.slice(th.typed,th.typed+1), rest=w.slice(th.typed+1);
   const letters='<span class="done">'+escapeHtml(d)+'</span>'+
                 '<span class="next">'+escapeHtml(nx)+'</span>'+
@@ -2046,6 +2047,9 @@ function woundKnight(th){
   const ax = arcade ? castleW()*0.6 : castleW()*0.3, ay = arcade ? towerTopY()+10 : wallTopY()-2;
   // the knight only REACTS when the arrow actually lands: skid back, stagger, new word
   loose(ax, ay, th.sx, th.sy+28, 'arrow', ()=>{
+    // it may have died while this arrow was in flight (reached the wall, crushed
+    // by a boulder, caught in a blaze) - its word is gone, so nothing to re-arm
+    if (th.state!=='live' || !th.bubble) return;
     th.arrowStuck = true;
     th.kb = 1020;                   // recoil/skid backward - a big 3× shove
     th.pauseT = 1.0;                // then pause ~1s before it starts moving again
